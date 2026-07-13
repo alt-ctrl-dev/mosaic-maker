@@ -13,7 +13,6 @@ concurrency:
   cancel-in-progress: true
 
 jobs:
-  # Determine if this is a documentation-only change
   changes:
     if: github.event.pull_request.draft == false
     runs-on: ubuntu-latest
@@ -26,13 +25,12 @@ jobs:
         with:
           filters: |
             docs_only:
-              - added|modified: 
+              - added|modified:
                 - '*.md'
                 - 'docs/**'
                 - '.github/**/*.md'
 
   lint:
-    if: github.event.pull_request.draft == false
     runs-on: ubuntu-latest
     needs: changes
     steps:
@@ -42,9 +40,6 @@ jobs:
         with:
           node-version: 24
           cache: pnpm
-      - name: Skip for docs-only changes
-        if: needs.changes.outputs.docs_only == 'true'
-        run: echo "Documentation-only change, skipping lint"
       - name: Run lint
         if: needs.changes.outputs.docs_only != 'true'
         run: |
@@ -52,7 +47,6 @@ jobs:
           pnpm run lint
 
   format:
-    if: github.event.pull_request.draft == false
     runs-on: ubuntu-latest
     needs: changes
     steps:
@@ -62,9 +56,6 @@ jobs:
         with:
           node-version: 24
           cache: pnpm
-      - name: Skip for docs-only changes
-        if: needs.changes.outputs.docs_only == 'true'
-        run: echo "Documentation-only change, skipping format"
       - name: Run format
         if: needs.changes.outputs.docs_only != 'true'
         run: |
@@ -72,7 +63,6 @@ jobs:
           pnpm run format
 
   test:
-    if: github.event.pull_request.draft == false
     runs-on: ubuntu-latest
     needs: changes
     steps:
@@ -82,9 +72,6 @@ jobs:
         with:
           node-version: 24
           cache: pnpm
-      - name: Skip for docs-only changes
-        if: needs.changes.outputs.docs_only == 'true'
-        run: echo "Documentation-only change, skipping tests"
       - name: Run tests
         if: needs.changes.outputs.docs_only != 'true'
         run: |
@@ -92,7 +79,6 @@ jobs:
           pnpm run test
 
   typecheck:
-    if: github.event.pull_request.draft == false
     runs-on: ubuntu-latest
     needs: changes
     steps:
@@ -102,9 +88,6 @@ jobs:
         with:
           node-version: 24
           cache: pnpm
-      - name: Skip for docs-only changes
-        if: needs.changes.outputs.docs_only == 'true'
-        run: echo "Documentation-only change, skipping typecheck"
       - name: Run typecheck
         if: needs.changes.outputs.docs_only != 'true'
         run: |
@@ -112,7 +95,6 @@ jobs:
           pnpm run typecheck
 
   build:
-    if: github.event.pull_request.draft == false
     runs-on: ubuntu-latest
     needs: [changes, lint, format, test, typecheck]
     steps:
@@ -122,9 +104,6 @@ jobs:
         with:
           node-version: 24
           cache: pnpm
-      - name: Skip for docs-only changes
-        if: needs.changes.outputs.docs_only == 'true'
-        run: echo "Documentation-only change, skipping build"
       - name: Run build
         if: needs.changes.outputs.docs_only != 'true'
         run: |
