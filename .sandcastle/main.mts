@@ -30,6 +30,14 @@ import { z } from "zod";
 // GH_TOKEN here for the GitHub CLI as well as the provider credentials.
 process.loadEnvFile(".sandcastle/.env");
 
+const sandboxEnv = {
+  OPENROUTER_API_KEY:
+    process.env.OPENROUTER_API_KEY ??
+    (() => {
+      throw new Error("OPENROUTER_API_KEY is required on host");
+    })(),
+};
+
 // New sandbox branches must start from the latest main, not whichever branch
 // happened to be checked out when this workflow was launched.
 const hasLocalChanges = execFileSync("git", ["status", "--porcelain"], {
@@ -97,13 +105,7 @@ for (let iteration = 1; iteration <= MAX_ITERATIONS; iteration++) {
   // It outputs a <plan> JSON block — Output.object parses and validates it.
   // -------------------------------------------------------------------------
   const plan = await sandcastle.run({
-    sandbox: docker(
-      {
-        env: {
-          OPENROUTER_API_KEY: process.env.OPENROUTER_API_KEY || (() => { throw new Error("OPENROUTER_API_KEY is required on host") })(),
-        },
-      }
-    ),
+    sandbox: docker({ env: sandboxEnv }),
     name: "planner",
     // One iteration is enough: the planner just needs to read and reason,
     // not write code. (Structured output requires maxIterations: 1.)
@@ -146,7 +148,7 @@ for (let iteration = 1; iteration <= MAX_ITERATIONS; iteration++) {
     issues.map(async (issue) => {
       const sandbox = await sandcastle.createSandbox({
         branch: issue.branch,
-        sandbox: docker(),
+        sandbox: docker({ env: sandboxEnv }),
         hooks,
         copyToWorktree,
       });
