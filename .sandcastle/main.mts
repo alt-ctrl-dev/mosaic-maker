@@ -1,4 +1,4 @@
-// Parallel Planner with Review — four-phase orchestration loop
+// Parallel Planner with Review — pull request orchestration loop
 //
 // This template drives a multi-phase workflow:
 //   Phase 1 (Plan):             An opus agent analyzes open issues, builds a
@@ -10,11 +10,11 @@
 //                               reviewer runs in the same sandbox on the same
 //                               branch (1 iteration). All issue pipelines run
 //                               concurrently via Promise.allSettled().
-//   Phase 3 (Merge):            A single agent merges all completed branches
-//                               into the current branch.
+//   Phase 3 (Publish):          Completed branches are pushed and opened as
+//                               GitHub pull requests against main.
 //
-// The outer loop repeats up to MAX_ITERATIONS times so that newly unblocked
-// issues are picked up after each round of merges.
+// The run stops after publishing so merges happen only through GitHub. Run it
+// again after those pull requests merge to pick up newly unblocked issues.
 //
 // Usage:
 //   npx tsx .sandcastle/main.mts
@@ -23,7 +23,12 @@
 
 import * as sandcastle from "@ai-hero/sandcastle";
 import { docker } from "@ai-hero/sandcastle/sandboxes/docker";
+import { execFileSync, spawnSync } from "node:child_process";
 import { z } from "zod";
+
+// Publishing runs on the host rather than inside a Sandcastle agent, so load
+// GH_TOKEN here for the GitHub CLI as well as the provider credentials.
+process.loadEnvFile(".sandcastle/.env");
 
 // The planner emits its plan as JSON inside <plan> tags; Output.object extracts
 // and validates it against this schema. We use Zod here, but any Standard
@@ -39,7 +44,7 @@ const planSchema = z.object({
 // Configuration
 // ---------------------------------------------------------------------------
 
-// Maximum number of plan→execute→merge cycles before stopping.
+// Maximum number of planning cycles before stopping when no commits are made.
 // Raise this if your backlog is large; lower it for a quick smoke-test run.
 const MAX_ITERATIONS = 10;
 
@@ -152,7 +157,7 @@ for (let iteration = 1; iteration <= MAX_ITERATIONS; iteration++) {
             },
           });
 
-          // Merge commits from both runs so the merge phase sees all of them.
+          // Combine commits from both runs so the publish phase sees all of them.
           // Each sandbox.run() only returns commits from its own run.
           return {
             ...review,
@@ -176,8 +181,8 @@ for (let iteration = 1; iteration <= MAX_ITERATIONS; iteration++) {
     }
   }
 
-  // Only pass branches that actually produced commits to the merge phase.
-  // An agent that ran successfully but made no commits has nothing to merge.
+  // Only publish branches that actually produced commits.
+  // An agent that ran successfully but made no commits has nothing to publish.
   const completedIssues = settled
     .map((outcome, i) => ({ outcome, issue: issues[i]! }))
     .filter(
@@ -197,36 +202,62 @@ for (let iteration = 1; iteration <= MAX_ITERATIONS; iteration++) {
   }
 
   if (completedBranches.length === 0) {
-    // All agents ran but none made commits — nothing to merge this cycle.
-    console.log("No commits produced. Nothing to merge.");
+    // All agents ran but none made commits — nothing to publish this cycle.
+    console.log("No commits produced. Nothing to publish.");
     continue;
   }
 
   // -------------------------------------------------------------------------
-  // Phase 3: Merge
+  // Phase 3: Publish pull requests
   //
-  // One agent merges all completed branches into the current branch,
-  // resolving any conflicts and running tests to confirm everything works.
-  //
-  // The {{BRANCHES}} and {{ISSUES}} prompt arguments are lists that the agent
-  // uses to know which branches to merge and which issues to close.
+  // This replaces the old merge agent. Completed work remains isolated on its
+  // issue branch; GitHub owns CI, review, and the eventual merge into main.
   // -------------------------------------------------------------------------
-  await sandcastle.run({
-    hooks,
-    sandbox: docker(),
-    name: "merger",
-    maxIterations: 1,
-    agent: sandcastle.pi("claude-sonnet-4-6"),
-    promptFile: "./.sandcastle/merge-prompt.md",
-    promptArgs: {
-      // A markdown list of branch names, one per line.
-      BRANCHES: completedBranches.map((b) => `- ${b}`).join("\n"),
-      // A markdown list of issue IDs and titles, one per line.
-      ISSUES: completedIssues.map((i) => `- ${i.id}: ${i.title}`).join("\n"),
-    },
-  });
 
-  console.log("\nBranches merged.");
+  for (const issue of completedIssues) {
+    // Push the reviewed branch without changing or merging the host branch.
+    execFileSync(
+      "git",
+      ["push", "--set-upstream", "origin", issue.branch],
+      { stdio: "inherit" },
+    );
+
+    // A rerun may encounter a branch whose PR was already created. Treat that
+    // as success instead of creating a duplicate pull request.
+    const existing = spawnSync(
+      "gh",
+      ["pr", "view", issue.branch, "--json", "url", "--jq", ".url"],
+      { stdio: "inherit" },
+    );
+
+    if (existing.status !== 0) {
+      execFileSync(
+        "gh",
+        [
+          "pr",
+          "create",
+          "--base",
+          "main",
+          "--head",
+          issue.branch,
+          "--title",
+          issue.title,
+          "--body",
+          // GitHub closes the issue only after this PR is merged.
+          `## Summary\n\nCloses #${issue.id}\n\n## Verification\n\n- [ ] Tests pass\n- [ ] Typecheck passes\n- [ ] Lint and formatting pass\n\n## Review notes\n\nReview the implementation against #${issue.id}.`,
+        ],
+        { stdio: "inherit" },
+      );
+    }
+  }
+
+  console.log(
+    "\nPull requests opened. Merge them through GitHub, then run Sandcastle again.",
+  );
+
+  // Stop planning until these PRs merge; otherwise their still-open issues
+  // would be selected and implemented again during the next iteration.
+  break;
 }
 
 console.log("\nAll done.");
