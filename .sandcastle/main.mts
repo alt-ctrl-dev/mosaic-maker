@@ -30,6 +30,13 @@ import { z } from "zod";
 // GH_TOKEN here for the GitHub CLI as well as the provider credentials.
 process.loadEnvFile(".sandcastle/.env");
 
+
+// Maximum number of planning cycles before stopping when no commits are made.
+// Raise this if your backlog is large; lower it for a quick smoke-test run.
+const MAX_ITERATIONS = z.coerce.number().default(10).parse(process.env.MAX_ITERATIONS);
+
+console.log(`Running for ${MAX_ITERATIONS} iteration(s)`)
+
 const sandboxEnv = {
   OPENROUTER_API_KEY:
     process.env.OPENROUTER_API_KEY ??
@@ -73,9 +80,6 @@ const planSchema = z.object({
 // Configuration
 // ---------------------------------------------------------------------------
 
-// Maximum number of planning cycles before stopping when no commits are made.
-// Raise this if your backlog is large; lower it for a quick smoke-test run.
-const MAX_ITERATIONS = 10;
 
 // Hooks run inside the sandbox before the agent starts each iteration.
 // pnpm install ensures the sandbox always has fresh dependencies.
