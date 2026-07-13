@@ -61,6 +61,12 @@ header > p:last-child {
   place-items: center;
 }
 
+.error-message {
+  color: var(--pico-color-red);
+  margin-top: 0.5rem;
+  margin-bottom: 0;
+}
+
 @media (max-width: 576px) {
   header {
     padding-block-start: 2rem;
