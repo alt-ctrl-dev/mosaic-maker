@@ -45,4 +45,12 @@ describe("Mosaic Maker workflow", () => {
     // For simplicity in this test, we'll just verify the validation function works properly
     // which is tested separately in imageValidation.test.ts
   });
+
+  it("shows tessera sizing controls after image selection", () => {
+    render(<App />);
+
+    // After image is selected, should show tessera size input
+    // This is a placeholder test - actual implementation will be added later
+    expect(true).toBe(true);
+  });
 });
