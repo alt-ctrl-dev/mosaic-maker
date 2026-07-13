@@ -30,6 +30,27 @@ import { z } from "zod";
 // GH_TOKEN here for the GitHub CLI as well as the provider credentials.
 process.loadEnvFile(".sandcastle/.env");
 
+// New sandbox branches must start from the latest main, not whichever branch
+// happened to be checked out when this workflow was launched.
+const hasLocalChanges = execFileSync("git", ["status", "--porcelain"], {
+  encoding: "utf8",
+}).length > 0;
+
+if (hasLocalChanges) {
+  execFileSync("git", ["stash", "push", "--include-untracked"], {
+    stdio: "inherit",
+  });
+}
+
+execFileSync("git", ["switch", "main"], { stdio: "inherit" });
+execFileSync("git", ["pull", "--ff-only", "origin", "main"], {
+  stdio: "inherit",
+});
+
+if (hasLocalChanges) {
+  execFileSync("git", ["stash", "pop"], { stdio: "inherit" });
+}
+
 // The planner emits its plan as JSON inside <plan> tags; Output.object extracts
 // and validates it against this schema. We use Zod here, but any Standard
 // Schema validator works just as well — Valibot, ArkType, etc. See
