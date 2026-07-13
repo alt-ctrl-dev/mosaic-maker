@@ -27,7 +27,7 @@ RUN groupmod -o -g $AGENT_GID node && usermod -o -u $AGENT_UID -g $AGENT_GID -d 
 # Install pi coding agent and the project's package manager
 ENV PNPM_HOME=/pnpm
 ENV PATH=$PNPM_HOME/bin:$PATH
-RUN corepack enable
+RUN npm install -g pnpm@11.10.0
 RUN pnpm install -g @mariozechner/pi-coding-agent
 
 USER ${AGENT_UID}:${AGENT_GID}
