@@ -1,27 +1,30 @@
 # Coding Standards
 
-<!-- Customize this file with your project's coding standards.
-     The reviewer agent loads it during code review via @.sandcastle/CODING_STANDARDS.md
-     so these standards are enforced during review without costing tokens during implementation. -->
-
 ## Style
 
-<!-- Example:
-- Use camelCase for variables and functions
-- Use PascalCase for classes and types
-- Prefer named exports over default exports
--->
+- Use clear names and straightforward control flow.
+- Avoid unnecessary complexity, nesting, and abstractions.
+- Do not add comments that merely restate what the code makes clear.
+- Use the glossary terms defined in `CONTEXT.md` across code, tests, and specifications. Avoid synonyms that the glossary rejects.
+
+## Type Safety
+
+- Do not bypass type safety with `any` or unchecked assertions.
+- Validate data at trust boundaries.
 
 ## Testing
 
-<!-- Example:
-- Every public function must have at least one test
-- Use descriptive test names that explain the expected behavior
--->
+- Add tests for new or changed behavior.
+- Add regression tests for bug fixes.
+- Run the relevant tests and type checks for each change; do not commit with failing checks.
 
 ## Architecture
 
-<!-- Example:
-- Keep modules focused on a single responsibility
-- Prefer composition over inheritance
--->
+- Keep modules focused; do not combine unrelated concerns.
+- Follow relevant ADRs and explicitly flag conflicts rather than silently overriding them.
+- Refactors must preserve observable behavior unless a behavior change is explicitly required.
+
+## Security
+
+- Do not introduce injection vulnerabilities.
+- Do not expose credentials or other secrets.
