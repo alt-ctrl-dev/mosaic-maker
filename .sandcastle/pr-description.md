@@ -6,7 +6,7 @@
 
 !`git log {{TARGET_BRANCH}}..{{BRANCH}} --oneline`
 
-### Full commit messages
+### Full commit messages with body
 
 !`git log {{TARGET_BRANCH}}..{{BRANCH}} --format="%B" --reverse`
 
@@ -14,35 +14,50 @@
 
 !`git diff {{TARGET_BRANCH}}...{{BRANCH}} --stat`
 
+### Files changed
+
+!`git diff {{TARGET_BRANCH}}...{{BRANCH}} --name-only`
+
 ## Task
 
-Generate a PR description that:
+Analyze the commits on this branch and generate a detailed PR body that follows the GitHub PR template. The description should:
 
-1. **Summarizes what changed** — one or two sentences of high-level intent
-2. **Lists key changes** — bullet points of what was added/fixed/improved
-3. **References issues** — link to any GitHub issues mentioned in commits
-4. **Explains the why** — briefly mention why these changes matter
-5. **Highlights any breaking changes** — if applicable
-6. **Notes any concerns** — dependencies added, performance implications, areas needing review
+1. **Summary** — Clear, concise explanation of what changed and why (2-3 sentences)
+2. **Changes** — Bullet points of specific modifications organized by concern
+3. **Verification** — Note what checks have been run (tests, typecheck, lint, format)
+4. **Review notes** — Call out risks, trade-offs, architectural decisions, or areas needing careful review
+5. **References** — Extract and list any issue numbers from commit messages using `Closes #<issue>`
+6. **Breaking changes** — If applicable, document what breaks and migration path
 
-## Format
+## Template
+
+Follow this structure exactly:
 
 ```markdown
 ## Summary
-[One or two sentence high-level overview]
+[What changed and why? 2-3 sentences]
 
 ## Changes
-- [Specific change 1]
-- [Specific change 2]
-- [Specific change 3]
+[Organized bullet points of specific changes]
+- [Change 1]
+- [Change 2]
+- [Change 3]
 
-## Issues Fixed
-Closes #123, Closes #456
+## Verification
 
-## Notes
-[Any additional context, concerns, or review guidance]
+- [x] Tests pass
+- [x] Typecheck passes
+- [x] Lint and formatting pass
+
+## Review notes
+
+[Call out risks, trade-offs, architectural decisions, or areas reviewers should focus on.]
+
+## References
+
+Closes #<issue-id>
 ```
 
 ## Output
 
-Output the markdown-formatted PR description. Keep it concise but complete.
+Output only the markdown-formatted PR body following the template above. Do not include the PR title. Be specific and detailed — reviewers should understand the full scope and intent of the changes from this description.
