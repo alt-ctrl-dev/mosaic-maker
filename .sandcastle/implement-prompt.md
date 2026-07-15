@@ -1,54 +1,77 @@
-# Context
+# TASK
 
-## Open issues
+Fix issue {{ISSUE_ID}}: {{ISSUE_TITLE}}
 
-!`gh issue list --state open --label ready-for-agent --limit 100 --json number,title,body,labels,comments --jq '[.[] | {number, title, body, labels: [.labels[].name], comments: [.comments[].body]}]'`
+Pull in the issue using `gh issue view <ISSUE_ID>`. If it has a parent PRD, pull that in too.
 
-The list above has already been filtered to issues ready for work and is the sole source of truth for what work exists. Do not run your own unfiltered query to find more issues — if the list is empty, there is nothing to do.
+Only work on the issue specified.
 
-## Recent commits (last 10)
+Work on branch {{BRANCH}}. Make commits and run tests.
 
-!`git log --oneline -10`
+# CONTEXT
 
-# Task
+Here are the last 10 commits:
 
-You are RALPH — an autonomous coding agent working through issues one at a time.
+<recent-commits>
 
-## Priority order
+!`git log -n 10 --format="%H%n%ad%n%B---" --date=short`
 
-Work on issues in this order:
+</recent-commits>
 
-1. **In-progress work** — resume any open issue tagged with the label `in-progress` from the previous iteration
-2. **Bug fixes** — broken behaviour affecting users
-3. **Tracer bullets** — thin end-to-end slices that prove an approach works
-4. **Polish** — improving existing functionality (error messages, UX, docs)
-5. **Refactors** — internal cleanups with no user-visible change
+# EXPLORATION
 
-Always resume in-progress issues before picking a new one. Pick the highest-priority unblocked issue, in order above.
+Explore the repo and fill your context window with relevant information that will allow you to complete the task.
 
-## Workflow
+Pay extra attention to test files that touch the relevant parts of the code.
 
-1. **Explore** — read the issue carefully. Pull in the parent PRD if referenced. Read the relevant source files and tests before writing any code.
-2. **Plan** — decide what to change and why. Keep the change as small as possible.
-3. **Execute** — use RGR (Red → Green → Repeat → Refactor): write a failing test first, then write the implementation to pass it.
-4. **Verify** — run all feedback loops before committing. Fix any failures before proceeding.
-5. **Commit** — make a single git commit. Use the /git-workflow-and-versioning skill. The message MUST:
-   - Include the task completed and any PRD reference
-   - List key decisions made
-   - List files changed
-   - Note any blockers for the next iteration. Leave detailed notes in the issue about what is pending, what was tried, and what needs to happen next. Tag the issue with `in-progress` if not already tagged. Do **not** close the issue.
+# PLAN 
+Decide what to change and why. Keep the change as small as possible.
 
-## Feedback loops
+
+# EXECUTION
+
+Mark the task as in progress.
+!gh issue edit $ISSUE_ID --add-label "in-progress" 
+
+If applicable, use RGR to complete the task.
+
+1. RED: write one test
+2. GREEN: write the implementation to pass that test
+3. REPEAT until done
+4. REFACTOR the code
+
+# FEEDBACK LOOPS
+
+Before committing, run the following to ensure the code is upto standard.
+
 - `npm run typecheck` 
 - `npm run test`
 - `npm run format`
 - `npm run lint`
 
-## Rules
+# COMMIT
 
-- **Resume before starting:** Always check in-progress issues first. Resume the oldest one before picking a new issue.
-- Work on **one issue per iteration**. Do not attempt multiple issues in a single iteration.
-- Do not stop until you have committed the fix and verified tests pass.
+Make a git commit. Load the /git-workflow-and-versioning skill. The commit message must:
+
+1. Include task completed + PRD reference
+2. Key decisions made
+3. Files changed
+4. Blockers or notes for next iteration
+
+Keep it concise.
+
+# THE ISSUE
+
+If the task is not complete, leave a comment on the issue with what was done.
+
+Do not close the issue - this will be done later.
+
+Once complete, output <promise>COMPLETE</promise>.
+
+# FINAL RULES
+
+- **ONLY WORK ON A SINGLE TASK.**
+- Do not stop until you have committed the fix and verified the feedback loop has passed.
 - Do not leave commented-out code or TODO comments in committed code.
 - **Always use the git-workflow-and-versioning skill for all commits.** Do not commit without invoking the skill.
 - **If blocked:** Leave a detailed comment on the issue stating:
@@ -56,14 +79,4 @@ Always resume in-progress issues before picking a new one. Pick the highest-prio
   - What failed and why
   - What is needed to proceed (missing context, external dependency, decision needed, etc.)
   - Concrete next steps
-- **Never close a blocked issue.** Leave it tagged with `in-progress` and move on. The next iteration will resume from this checkpoint.
-
-# Done
-
-When all work is complete, output only the issue id, wrapped in `<issue-id>` tags. No other explanation or markdown formatting.
-
-<issue-id>ISSUE_ID</issue-id>
-
-If no issues were available to work on, output:
-
-<issue-id>blocked</issue-id>
+- **Never close a blocked issue.**

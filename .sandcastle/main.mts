@@ -24,6 +24,9 @@
 import * as sandcastle from "@ai-hero/sandcastle";
 import { docker } from "@ai-hero/sandcastle/sandboxes/docker";
 import { z } from "zod";
+import { sandboxEnv } from "./sandbox-env.mts";
+import { planWork } from "./plan.mts";
+import { createPr } from "./pr.mts";
 
 // ---------------------------------------------------------------------------
 // Configuration
@@ -48,22 +51,15 @@ const hooks = {
 // platform-specific binaries and any packages added since the last copy.
 const copyToWorktree = ["node_modules"];
 
-const sandboxEnv = {
-  OPENROUTER_API_KEY:
-    process.env.OPENROUTER_API_KEY ??
-    (() => {
-      throw new Error("OPENROUTER_API_KEY is required on host");
-    })(),
-};
 // ---------------------------------------------------------------------------
 // Main loop
 // ---------------------------------------------------------------------------
 
 for (let iteration = 1; iteration <= MAX_ITERATIONS; iteration++) {
   console.log(`\n=== Iteration ${iteration}/${MAX_ITERATIONS} ===\n`);
-
-  // Generate a unique branch name for this iteration.
-  const branch = `sandcastle/sequential-reviewer/${Date.now()}`;
+  const topIssue = await planWork(sandboxEnv)
+  // Generate a branch name for this issue.
+  const branch = topIssue.branch;
 
   // Create a single sandbox that both the implementer and reviewer share.
   // This gives both agents a real, named branch that persists across phases.
@@ -73,10 +69,10 @@ for (let iteration = 1; iteration <= MAX_ITERATIONS; iteration++) {
     hooks,
     copyToWorktree,
   });
-
   try {
+
     // -----------------------------------------------------------------------
-    // Phase 1: Implement
+    // Phase 2: Implement
     //
     // A sonnet agent picks the next open issue, writes the
     // implementation (using RGR: Red → Green → Repeat → Refactor), and
@@ -91,11 +87,17 @@ for (let iteration = 1; iteration <= MAX_ITERATIONS; iteration++) {
     const implement = await sandbox.run({
       name: "implementer",
       maxIterations: 1,
-      agent: sandcastle.pi("qwen/qwen3-coder"),
+      agent: sandcastle.pi("openrouter/qwen/qwen3-coder"),
       promptFile: "./.sandcastle/implement-prompt.md",
+      promptArgs: {
+        ISSUE_ID: topIssue.id,
+        ISSUE_TITLE: topIssue.title,
+        BRANCH: topIssue.branch
+      },
+      completionSignal: "<promise>COMPLETE</promise>"
     });
 
-    console.log(`completionSignal = ${implement.completionSignal}`)
+    console.log(`Commits: ${implement.commits.length}`);
 
     if (!implement.commits.length) {
       // No commits means the backlog is empty or every remaining issue is
@@ -104,12 +106,10 @@ for (let iteration = 1; iteration <= MAX_ITERATIONS; iteration++) {
       break;
     }
 
-    const issueId = 1;
     console.log(`\nImplementation complete on branch: ${branch}`);
-    console.log(`Commits: ${implement.commits.length}`);
 
     // -----------------------------------------------------------------------
-    // Phase 2: Review
+    // Phase 3: Review
     //
     // A second sonnet agent reviews the diff of the branch produced by
     // Phase 1. It uses the {{BRANCH}} prompt argument to inspect the right
@@ -118,82 +118,18 @@ for (let iteration = 1; iteration <= MAX_ITERATIONS; iteration++) {
     await sandbox.run({
       name: "reviewer",
       maxIterations: 1,
-      agent: sandcastle.pi("deepseek/deepseek-v4-pro"),
+      agent: sandcastle.pi("openrouter/deepseek/deepseek-v4-pro"),
       promptFile: "./.sandcastle/review-prompt.md",
       promptArgs: {
         BRANCH: branch,
+        TARGET_BRANCH: "main"
       },
     });
 
     console.log("\nReview complete.");
 
-    // -----------------------------------------------------------------------
-    // Phase 3: Create Pull Request
-    //
-    // After review is complete, create a pull request for the branch.
-    // This move the reviewed changes into a PR ready for merge.
-    // -----------------------------------------------------------------------
-    // -----------------------------------------------------------------------
-    // Phase 3: Generate PR Title and Description
-    //
-    // Use dedicated prompts to analyze commits and generate a structured
-    // PR title and description based on the commits made.
-    // -----------------------------------------------------------------------
-    console.log("\nGenerating PR title and description...");
+    await createPr(sandboxEnv, topIssue.id, { current: topIssue.branch })
 
-    console.log("\nGenerating PR title...\n");
-
-    const prTitle = await sandcastle.run({
-      sandbox: docker({ env: sandboxEnv }),
-      name: "pr-title-generator",
-      // One iteration is enough: the planner just needs to read and reason,
-      // not write code. (Structured output requires maxIterations: 1.)
-      maxIterations: 1,
-      // Opus for planning: dependency analysis benefits from deeper reasoning.
-      agent: sandcastle.pi("openrouter/anthropic/claude-haiku-4.5"),
-      promptFile: "./.sandcastle/pr-title.md",
-      promptArgs: { BRANCH: branch, ISSUE_ID: issueId },
-      // Extract and validate the <plan> output into a string. Throws
-      // StructuredOutputError if the tag is missing, the output is malformed, or
-      // validation fails — which aborts the loop.
-      output: sandcastle.Output.string({ tag: "pr-title" }),
-    });
-
-    console.log("\n================ PR Title ================\n");
-    console.log(prTitle.output);
-
-
-    console.log("\nGenerating PR description...\n");
-    const prDescription = await sandcastle.run({
-      sandbox: docker({ env: sandboxEnv }),
-      name: "pr-description-generator",
-      // One iteration is enough: the planner just needs to read and reason,
-      // not write code. (Structured output requires maxIterations: 1.)
-      maxIterations: 1,
-      // Opus for planning: dependency analysis benefits from deeper reasoning.
-      agent: sandcastle.pi("openrouter/anthropic/claude-haiku-4.5"),
-      promptFile: "./.sandcastle/pr-description.md",
-      promptArgs: { BRANCH: branch, ISSUE_ID: issueId },
-      // Extract and validate the <pr-description> output into a string. Throws
-      // StructuredOutputError if the tag is missing, the output is malformed, or
-      // validation fails — which aborts the loop.
-      output: sandcastle.Output.string({ tag: "pr-description" }),
-    });
-
-    console.log("\n============= PR Description =============\n");
-    console.log(prDescription.output);
-
-    console.log("PR title and description generated.");
-
-    // -----------------------------------------------------------------------
-    // Phase 4: Create Pull Request
-    //
-    // After title and description are generated, create the PR with
-    // the generated content.
-    // -----------------------------------------------------------------------
-    console.log("\nCreating pull request...");
-    // TODO create PR
-    console.log("Pull request creation complete.");
   } finally {
     await sandbox.close();
   }
