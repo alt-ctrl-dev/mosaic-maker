@@ -84,7 +84,7 @@ for (let iteration = 1; iteration <= MAX_ITERATIONS; iteration++) {
     const implement = await sandbox.run({
       name: "implementer",
       maxIterations: 1,
-      agent: sandcastle.pi("claude-sonnet-4-6"),
+      agent: sandcastle.pi("qwen/qwen3-coder"),
       promptFile: "./.sandcastle/implement-prompt.md",
     });
 
@@ -108,7 +108,7 @@ for (let iteration = 1; iteration <= MAX_ITERATIONS; iteration++) {
     await sandbox.run({
       name: "reviewer",
       maxIterations: 1,
-      agent: sandcastle.pi("claude-sonnet-4-6"),
+      agent: sandcastle.pi("deepseek/deepseek-v4-pro"),
       promptFile: "./.sandcastle/review-prompt.md",
       promptArgs: {
         BRANCH: branch,
@@ -116,6 +116,63 @@ for (let iteration = 1; iteration <= MAX_ITERATIONS; iteration++) {
     });
 
     console.log("\nReview complete.");
+
+    // -----------------------------------------------------------------------
+    // Phase 3: Create Pull Request
+    //
+    // After review is complete, create a pull request for the branch.
+    // This move the reviewed changes into a PR ready for merge.
+    // -----------------------------------------------------------------------
+    // -----------------------------------------------------------------------
+    // Phase 3: Generate PR Title and Description
+    //
+    // Use dedicated prompts to analyze commits and generate a structured
+    // PR title and description based on the commits made.
+    // -----------------------------------------------------------------------
+    console.log("\nGenerating PR title and description...");
+    
+    const prTitle = await sandbox.run({
+      name: "pr-title-generator",
+      maxIterations: 1,
+      agent: sandcastle.pi("claude-sonnet-4-6"),
+      promptFile: "./.sandcastle/pr-title.md",
+      promptArgs: {
+        BRANCH: branch,
+      },
+    });
+
+    const prDescription = await sandbox.run({
+      name: "pr-description-generator",
+      maxIterations: 1,
+      agent: sandcastle.pi("claude-sonnet-4-6"),
+      promptFile: "./.sandcastle/pr-description.md",
+      promptArgs: {
+        BRANCH: branch,
+      },
+    });
+
+    console.log("PR title and description generated.");
+
+    // -----------------------------------------------------------------------
+    // Phase 4: Create Pull Request
+    //
+    // After title and description are generated, create the PR with
+    // the generated content.
+    // -----------------------------------------------------------------------
+    console.log("\nCreating pull request...");
+    const prResult = await sandbox.exec({
+      command: `
+        BRANCH_NAME="${branch}"
+        
+        gh pr create \
+          --base main \
+          --head "$BRANCH_NAME" \
+          --title "PR from Sandcastle" \
+          --body "Automated pull request from Sandcastle workflow" \
+          --repo "$(gh repo view --json nameWithOwner -q)" || true
+      `,
+    });
+    console.log("Pull request creation complete.");
   } finally {
     await sandbox.close();
   }
