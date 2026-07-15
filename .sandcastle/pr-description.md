@@ -18,16 +18,36 @@
 
 !`git diff {{TARGET_BRANCH}}...{{BRANCH}} --name-only`
 
+### Full code diff
+
+!`git diff {{TARGET_BRANCH}}...{{BRANCH}}`
+
 ## Task
 
-Analyze the commits on this branch and generate a detailed PR body that follows the GitHub PR template. The description should:
+Analyze the commits and code changes on this branch and generate a detailed PR body that follows the GitHub PR template. Review both the commit messages AND the actual code diff to understand what was changed.
 
-1. **Summary** — Clear, concise explanation of what changed and why (2-3 sentences)
-2. **Changes** — Bullet points of specific modifications organized by concern
-3. **Verification** — Note what checks have been run (tests, typecheck, lint, format)
-4. **Review notes** — Call out risks, trade-offs, architectural decisions, or areas needing careful review
-5. **References** — Extract and list any issue numbers from commit messages using `Closes #<issue>`
-6. **Breaking changes** — If applicable, document what breaks and migration path
+The description should:
+
+1. **Summary** — Clear, concise explanation of what changed and why (2-3 sentences), based on commits and code diff
+2. **Changes** — Bullet points of specific modifications organized by file/concern, including:
+   - New files or modules
+   - Modified functions or logic with the key intent
+   - Added/removed dependencies
+   - Configuration or schema changes
+3. **Code Analysis** — Technical insight from the actual diff:
+   - New patterns, utilities, or architectural changes
+   - Refactoring or consolidation of logic
+   - Error handling or validation improvements
+   - Performance implications or trade-offs
+   - Complexity or maintainability impact
+4. **Verification** — Note what checks have been run (tests, typecheck, lint, format)
+5. **Review notes** — Call out risks, trade-offs, architectural decisions, or areas needing careful review:
+   - Complexity hotspots or hard-to-understand code
+   - Edge cases or potential bugs
+   - Areas that need thorough testing
+   - Security considerations
+6. **References** — Extract and list any issue numbers from commit messages using `Closes #<issue>`
+7. **Breaking changes** — If applicable, document what breaks and migration path
 
 ## Template
 
@@ -35,13 +55,26 @@ Follow this structure exactly:
 
 ```markdown
 ## Summary
-[What changed and why? 2-3 sentences]
+[What changed and why? 2-3 sentences, explaining the high-level intent]
 
 ## Changes
-[Organized bullet points of specific changes]
-- [Change 1]
-- [Change 2]
-- [Change 3]
+
+- `src/file1.ts`: [Specific change with context]
+- `src/file2.ts`: [Specific change with context]
+- [New files, removed files, etc.]
+
+## Code Analysis
+
+### Key changes
+- [Function/logic changes with before/after intent]
+- [New patterns or utilities]
+- [Refactoring or consolidation]
+
+### Technical considerations
+- [Performance implications]
+- [Edge cases or error handling]
+- [Architectural decisions or trade-offs]
+- [Complexity or maintainability impact]
 
 ## Verification
 
@@ -51,7 +84,7 @@ Follow this structure exactly:
 
 ## Review notes
 
-[Call out risks, trade-offs, architectural decisions, or areas reviewers should focus on.]
+[Call out risks, trade-offs, complexity hotspots, or areas reviewers should focus on based on code analysis.]
 
 ## References
 
@@ -60,4 +93,12 @@ Closes #<issue-id>
 
 ## Output
 
-Output only the markdown-formatted PR body following the template above. Do not include the PR title. Be specific and detailed — reviewers should understand the full scope and intent of the changes from this description.
+Output only the markdown-formatted PR body following the template above. Do not include the PR title.
+
+**Requirements:**
+- Be specific and detailed — reference actual file names and functions where applicable
+- Analyze the diff, not just the commit messages
+- Explain *why* changes were made, not just *what* changed
+- Highlight non-obvious code patterns, refactorings, or trade-offs
+- Flag areas needing extra review attention based on code complexity or risk
+- Include technical details that help reviewers understand the implementation
