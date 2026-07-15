@@ -57,11 +57,6 @@ Follow this structure exactly:
 ## Summary
 [What changed and why? 2-3 sentences, explaining the high-level intent]
 
-## Changes
-
-- `src/file1.ts`: [Specific change with context]
-- `src/file2.ts`: [Specific change with context]
-- [New files, removed files, etc.]
 
 ## Code Analysis
 
@@ -81,6 +76,12 @@ Follow this structure exactly:
 - [x] Tests pass
 - [x] Typecheck passes
 - [x] Lint and formatting pass
+
+## Changes
+
+- `src/file1.ts`: [Specific change with context]
+- `src/file2.ts`: [Specific change with context]
+- [New files, removed files, etc.]
 
 ## Review notes
 

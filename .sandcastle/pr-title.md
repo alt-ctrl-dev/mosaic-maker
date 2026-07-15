@@ -15,19 +15,41 @@
 Analyze the commits on this branch and generate a concise PR title that:
 
 1. **Follows semantic commit type** — start with `feat:`, `fix:`, `refactor:`, `test:`, `docs:`, or `chore:`
-2. **Is descriptive but brief** — 50 characters or less (after the type prefix)
+2. **Is descriptive but brief** — 100 characters or less (after the type prefix)
 3. **Captures the primary intent** — if multiple commits, summarize the main theme
 4. **References the issue** — if commits mention issue numbers, include them (e.g., "feat: add auth validation #42")
 5. **Uses imperative mood** — "add" not "adds" or "added"
 
-## Examples
+
+
+### Descriptive Messages
+
+Commit messages explain the *why*, not just the *what*:
 
 ```
-feat: add email validation to registration #123
-fix: resolve duplicate task creation race condition
-refactor: consolidate auth middleware into single handler
-test: add integration tests for payment flow
+# Good: Explains intent
+feat: add email validation to registration endpoint
+
+
+# Bad: Describes what's obvious from the diff
+update auth.ts
 ```
+
+**Format:**
+```
+<type>: <short description>
+
+<optional body explaining why, not what>
+```
+
+**Types:**
+- `feat` — New feature
+- `fix` — Bug fix
+- `refactor` — Code change that neither fixes a bug nor adds a feature
+- `test` — Adding or updating tests
+- `docs` — Documentation only
+- `chore` — Tooling, dependencies, config
+
 
 ## Output
 
