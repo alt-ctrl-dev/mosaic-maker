@@ -4,23 +4,23 @@
 
 ### Commits on this branch
 
-!`git log {{TARGET_BRANCH}}..{{BRANCH}} --oneline`
+!`git log {{BASE_BRANCH}}..{{BRANCH}} --oneline`
 
 ### Full commit messages with body
 
-!`git log {{TARGET_BRANCH}}..{{BRANCH}} --format="%B" --reverse`
+!`git log {{BASE_BRANCH}}..{{BRANCH}} --format="%B" --reverse`
 
 ### Branch diff stats
 
-!`git diff {{TARGET_BRANCH}}...{{BRANCH}} --stat`
+!`git diff {{BASE_BRANCH}}...{{BRANCH}} --stat`
 
 ### Files changed
 
-!`git diff {{TARGET_BRANCH}}...{{BRANCH}} --name-only`
+!`git diff {{BASE_BRANCH}}...{{BRANCH}} --name-only`
 
 ### Full code diff
 
-!`git diff {{TARGET_BRANCH}}...{{BRANCH}}`
+!`git diff {{BASE_BRANCH}}...{{BRANCH}}`
 
 ## Task
 
@@ -89,12 +89,12 @@ Follow this structure exactly:
 
 ## References
 
-Closes #<issue-id>
+Closes #{{ISSUE_ID}}
 ```
 
 ## Output
 
-Output only the markdown-formatted PR body following the template above. Do not include the PR title.
+Wrap the final markdown-formatted PR body in `<pr-description>` tags. Do not include the PR title or any text outside the tags.
 
 **Requirements:**
 - Be specific and detailed — reference actual file names and functions where applicable
@@ -103,3 +103,11 @@ Output only the markdown-formatted PR body following the template above. Do not 
 - Highlight non-obvious code patterns, refactorings, or trade-offs
 - Flag areas needing extra review attention based on code complexity or risk
 - Include technical details that help reviewers understand the implementation
+
+Example:
+```
+<pr-description>
+## Summary
+...
+</pr-description>
+```

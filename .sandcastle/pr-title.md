@@ -4,11 +4,11 @@
 
 ### Commits on this branch
 
-!`git log {{TARGET_BRANCH}}..{{BRANCH}} --oneline`
+!`git log {{BASE_BRANCH}}..{{BRANCH}} --oneline`
 
 ### Commit messages in detail
 
-!`git log {{TARGET_BRANCH}}..{{BRANCH}} --format="%B" --reverse`
+!`git log {{BASE_BRANCH}}..{{BRANCH}} --format="%B" --reverse`
 
 ## Task
 
@@ -53,9 +53,9 @@ update auth.ts
 
 ## Output
 
-Output only the PR title, nothing else. No explanation, no markdown formatting.
+Output only the PR title, wrapped in `<pr-title>` tags. No other explanation or markdown formatting.
 
 Example output:
 ```
-feat: add task creation with validation
+<pr-title>feat: add task creation with validation</pr-title>
 ```

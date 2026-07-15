@@ -2,7 +2,7 @@
 
 ## Open issues
 
-!`gh issue list --state open --limit 100 --json number,title,body,labels,comments --jq '[.[] | {number, title, body, labels: [.labels[].name], comments: [.comments[].body]}]'`
+!`gh issue list --state open --label ready-for-agent --limit 100 --json number,title,body,labels,comments --jq '[.[] | {number, title, body, labels: [.labels[].name], comments: [.comments[].body]}]'`
 
 The list above has already been filtered to issues ready for work and is the sole source of truth for what work exists. Do not run your own unfiltered query to find more issues — if the list is empty, there is nothing to do.
 
@@ -60,6 +60,10 @@ Always resume in-progress issues before picking a new one. Pick the highest-prio
 
 # Done
 
-When all actionable issues are complete (or you are blocked on all remaining ones), or the open-issues block at the top of this prompt is empty, output the completion signal:
+When all work is complete, output only the issue id, wrapped in `<issue-id>` tags. No other explanation or markdown formatting.
 
-<promise>COMPLETE</promise>
+<issue-id>ISSUE_ID</issue-id>
+
+If no issues were available to work on, output:
+
+<issue-id>blocked</issue-id>

@@ -48,6 +48,13 @@ const hooks = {
 // platform-specific binaries and any packages added since the last copy.
 const copyToWorktree = ["node_modules"];
 
+const sandboxEnv = {
+  OPENROUTER_API_KEY:
+    process.env.OPENROUTER_API_KEY ??
+    (() => {
+      throw new Error("OPENROUTER_API_KEY is required on host");
+    })(),
+};
 // ---------------------------------------------------------------------------
 // Main loop
 // ---------------------------------------------------------------------------
@@ -62,7 +69,7 @@ for (let iteration = 1; iteration <= MAX_ITERATIONS; iteration++) {
   // This gives both agents a real, named branch that persists across phases.
   const sandbox = await sandcastle.createSandbox({
     branch,
-    sandbox: docker(),
+    sandbox: docker({ env: sandboxEnv }),
     hooks,
     copyToWorktree,
   });
@@ -88,6 +95,8 @@ for (let iteration = 1; iteration <= MAX_ITERATIONS; iteration++) {
       promptFile: "./.sandcastle/implement-prompt.md",
     });
 
+    console.log(`completionSignal = ${implement.completionSignal}`)
+
     if (!implement.commits.length) {
       // No commits means the backlog is empty or every remaining issue is
       // blocked — there is nothing left to implement or review, so stop.
@@ -95,6 +104,7 @@ for (let iteration = 1; iteration <= MAX_ITERATIONS; iteration++) {
       break;
     }
 
+    const issueId = 1;
     console.log(`\nImplementation complete on branch: ${branch}`);
     console.log(`Commits: ${implement.commits.length}`);
 
@@ -130,26 +140,48 @@ for (let iteration = 1; iteration <= MAX_ITERATIONS; iteration++) {
     // PR title and description based on the commits made.
     // -----------------------------------------------------------------------
     console.log("\nGenerating PR title and description...");
-    
-    const prTitle = await sandbox.run({
+
+    console.log("\nGenerating PR title...\n");
+
+    const prTitle = await sandcastle.run({
+      sandbox: docker({ env: sandboxEnv }),
       name: "pr-title-generator",
+      // One iteration is enough: the planner just needs to read and reason,
+      // not write code. (Structured output requires maxIterations: 1.)
       maxIterations: 1,
-      agent: sandcastle.pi("claude-sonnet-4-6"),
+      // Opus for planning: dependency analysis benefits from deeper reasoning.
+      agent: sandcastle.pi("openrouter/anthropic/claude-haiku-4.5"),
       promptFile: "./.sandcastle/pr-title.md",
-      promptArgs: {
-        BRANCH: branch,
-      },
+      promptArgs: { BRANCH: branch, ISSUE_ID: issueId },
+      // Extract and validate the <plan> output into a string. Throws
+      // StructuredOutputError if the tag is missing, the output is malformed, or
+      // validation fails — which aborts the loop.
+      output: sandcastle.Output.string({ tag: "pr-title" }),
     });
 
-    const prDescription = await sandbox.run({
+    console.log("\n================ PR Title ================\n");
+    console.log(prTitle.output);
+
+
+    console.log("\nGenerating PR description...\n");
+    const prDescription = await sandcastle.run({
+      sandbox: docker({ env: sandboxEnv }),
       name: "pr-description-generator",
+      // One iteration is enough: the planner just needs to read and reason,
+      // not write code. (Structured output requires maxIterations: 1.)
       maxIterations: 1,
-      agent: sandcastle.pi("claude-sonnet-4-6"),
+      // Opus for planning: dependency analysis benefits from deeper reasoning.
+      agent: sandcastle.pi("openrouter/anthropic/claude-haiku-4.5"),
       promptFile: "./.sandcastle/pr-description.md",
-      promptArgs: {
-        BRANCH: branch,
-      },
+      promptArgs: { BRANCH: branch, ISSUE_ID: issueId },
+      // Extract and validate the <pr-description> output into a string. Throws
+      // StructuredOutputError if the tag is missing, the output is malformed, or
+      // validation fails — which aborts the loop.
+      output: sandcastle.Output.string({ tag: "pr-description" }),
     });
+
+    console.log("\n============= PR Description =============\n");
+    console.log(prDescription.output);
 
     console.log("PR title and description generated.");
 
@@ -160,18 +192,7 @@ for (let iteration = 1; iteration <= MAX_ITERATIONS; iteration++) {
     // the generated content.
     // -----------------------------------------------------------------------
     console.log("\nCreating pull request...");
-    const prResult = await sandbox.exec({
-      command: `
-        BRANCH_NAME="${branch}"
-        
-        gh pr create \
-          --base main \
-          --head "$BRANCH_NAME" \
-          --title "PR from Sandcastle" \
-          --body "Automated pull request from Sandcastle workflow" \
-          --repo "$(gh repo view --json nameWithOwner -q)" || true
-      `,
-    });
+    // TODO create PR
     console.log("Pull request creation complete.");
   } finally {
     await sandbox.close();
