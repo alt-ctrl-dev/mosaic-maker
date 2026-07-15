@@ -1,3 +1,7 @@
+## Required workflow
+
+**All commits must use the `git-workflow-and-versioning` skill.** This ensures commits follow the project's semantic versioning and structured message format. Invoke `/git-workflow-and-versioning` before `git commit`.
+
 ## Agent skills
 
 ### Issue tracker
