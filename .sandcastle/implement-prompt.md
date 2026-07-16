@@ -1,8 +1,8 @@
 # TASK
 
-Fix issue {{TASK_ID}}: {{ISSUE_TITLE}}
+Fix issue {{ISSUE_ID}}: {{ISSUE_TITLE}}
 
-Pull in the issue using `gh issue view <ID>`. If it has a parent PRD, pull that in too.
+Pull in the issue using `gh issue view <ISSUE_ID>`. If it has a parent PRD, pull that in too.
 
 Only work on the issue specified.
 
@@ -24,7 +24,14 @@ Explore the repo and fill your context window with relevant information that wil
 
 Pay extra attention to test files that touch the relevant parts of the code.
 
+# PLAN 
+Decide what to change and why. Keep the change as small as possible.
+
+
 # EXECUTION
+
+Mark the task as in progress.
+!gh issue edit $ISSUE_ID --add-label "in-progress" 
 
 If applicable, use RGR to complete the task.
 
@@ -35,17 +42,21 @@ If applicable, use RGR to complete the task.
 
 # FEEDBACK LOOPS
 
-Before committing, run  to ensure the tests pass.
+Before committing, run the following to ensure the code is upto standard.
+
+- `npm run typecheck` 
+- `npm run test`
+- `npm run format`
+- `npm run lint`
 
 # COMMIT
 
-Make a git commit. The commit message must:
+Make a git commit. Load the /git-workflow-and-versioning skill. The commit message must:
 
-1. Start with `RALPH:` prefix
-2. Include task completed + PRD reference
-3. Key decisions made
-4. Files changed
-5. Blockers or notes for next iteration
+1. Include task completed + PRD reference
+2. Key decisions made
+3. Files changed
+4. Blockers or notes for next iteration
 
 Keep it concise.
 
@@ -59,4 +70,13 @@ Once complete, output <promise>COMPLETE</promise>.
 
 # FINAL RULES
 
-ONLY WORK ON A SINGLE TASK.
+- **ONLY WORK ON A SINGLE TASK.**
+- Do not stop until you have committed the fix and verified the feedback loop has passed.
+- Do not leave commented-out code or TODO comments in committed code.
+- **Always use the git-workflow-and-versioning skill for all commits.** Do not commit without invoking the skill.
+- **If blocked:** Leave a detailed comment on the issue stating:
+  - What was attempted
+  - What failed and why
+  - What is needed to proceed (missing context, external dependency, decision needed, etc.)
+  - Concrete next steps
+- **Never close a blocked issue.**
