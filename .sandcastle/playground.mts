@@ -3,8 +3,8 @@ import { sandboxEnv } from "./sandbox-env.mts";
 import { createPr } from "./pr.mts";
 
 // const MAX_ITERATIONS = z.coerce.number().default(1).parse(process.env.MAX_ITERATIONS);
-const BRANCH = z.coerce.string().parse(process.env.BRANCH);
-const BASE_BRANCH = z.string().default("main").parse(process.env.BASE_BRANCH ?? process.env.TARGET_BRANCH);
+const BRANCH = "refactor-update-sandcastle-workflow"
+const BASE_BRANCH = "main"
 
 // console.log(`Running for ${MAX_ITERATIONS} iteration(s)`);
 console.log(`Running for branch ${BRANCH}`);
@@ -25,7 +25,7 @@ if (!BASE_BRANCH) {
 
 try {
 
-    await createPr(sandboxEnv, "", {
+    await createPr(sandboxEnv, "1", {
         current: BRANCH,
         base: BASE_BRANCH
     })

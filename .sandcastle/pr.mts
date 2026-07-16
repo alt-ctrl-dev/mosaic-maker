@@ -3,6 +3,18 @@ import { SandboxEnv } from "./types";
 import * as sandcastle from "@ai-hero/sandcastle";
 import { docker } from "@ai-hero/sandcastle/sandboxes/docker";
 
+const maybeAttachIssueId = (issueId: string, description: string) => {
+    if (issueId === "") {
+        return description
+    }
+    return `
+${description}
+## References
+
+Closes #${issueId}
+`
+}
+
 export const createPr = async (sandboxEnv: SandboxEnv, issueId: string, branch: {
     base?: string; current: string
 }) => {
@@ -31,18 +43,20 @@ export const createPr = async (sandboxEnv: SandboxEnv, issueId: string, branch: 
         maxIterations: 1,
         agent: sandcastle.pi("openrouter/anthropic/claude-haiku-4.5"),
         promptFile: "./.sandcastle/pr-description.md",
-        promptArgs: { BRANCH: branch.current, BASE_BRANCH, ISSUE_ID: issueId },
+        promptArgs: { BRANCH: branch.current, BASE_BRANCH },
         output: sandcastle.Output.string({ tag: "pr-description" }),
     });
 
+    const description = maybeAttachIssueId(issueId, prDescription.output)
+
 
     console.log("\n================ PR Title ================\n", prTitle.output);
-    console.log("\n============= PR Description =============\n", prDescription.output);
+    console.log("\n============= PR Description =============\n", description);
 
     try {
         // Escape quotes in title and body for shell
         const escapedTitle = prTitle.output.replace(/"/g, '\\"');
-        const escapedBody = prDescription.output.replace(/"/g, '\\"');
+        const escapedBody = description.replace(/"/g, '\\"');
 
         execSync(
             `gh pr create --title "${escapedTitle}" --body "${escapedBody}" --base ${BASE_BRANCH} --head ${branch.current}`,

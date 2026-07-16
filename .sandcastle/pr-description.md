@@ -79,17 +79,12 @@ Follow this structure exactly:
 
 ## Changes
 
-- `src/file1.ts`: [Specific change with context]
-- `src/file2.ts`: [Specific change with context]
-- [New files, removed files, etc.]
+[A summary of all the changes]
 
 ## Review notes
 
 [Call out risks, trade-offs, complexity hotspots, or areas reviewers should focus on based on code analysis.]
 
-## References (if {{ISSUE_ID}} is provided)
-
-Closes #{{ISSUE_ID}}
 ```
 
 ## Output
