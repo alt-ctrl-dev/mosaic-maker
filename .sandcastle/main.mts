@@ -25,8 +25,11 @@ import * as sandcastle from "@ai-hero/sandcastle";
 import { docker } from "@ai-hero/sandcastle/sandboxes/docker";
 import { z } from "zod";
 import { sandboxEnv } from "./sandbox-env.mts";
-import { planWork } from "./plan.mts";
+import { createPlanAgent } from "./plan.mts";
 import { createPr } from "./pr.mts";
+import { Issue } from "./types";
+import { createImplmentAgent } from "./implement.mts";
+import { createReviewAgent } from "./review.mts";
 
 // ---------------------------------------------------------------------------
 // Configuration
@@ -54,10 +57,13 @@ const copyToWorktree = ["node_modules"];
 // ---------------------------------------------------------------------------
 // Main loop
 // ---------------------------------------------------------------------------
+const planAgent = createPlanAgent(sandboxEnv)
 
 for (let iteration = 1; iteration <= MAX_ITERATIONS; iteration++) {
   console.log(`\n=== Iteration ${iteration}/${MAX_ITERATIONS} ===\n`);
-  const topIssue = await planWork(sandboxEnv)
+
+  // Plan work and identify the task to work on
+  const topIssue = await planAgent.run()
   // Generate a branch name for this issue.
   const branch = topIssue.branch;
 
@@ -69,37 +75,15 @@ for (let iteration = 1; iteration <= MAX_ITERATIONS; iteration++) {
     hooks,
     copyToWorktree,
   });
+
+  const implementAgent = createImplmentAgent(sandbox, topIssue)
+  const reviewAgent = createReviewAgent(sandbox, branch)
+
   try {
 
-    // -----------------------------------------------------------------------
-    // Phase 2: Implement
-    //
-    // A sonnet agent picks the next open issue, writes the
-    // implementation (using RGR: Red → Green → Repeat → Refactor), and
-    // commits the result.
-    //
-    // The agent signals completion via <promise>COMPLETE</promise> when done.
-    // -----------------------------------------------------------------------
-    // One iteration so each outer pass implements a single issue on its own
-    // branch, then hands it to the reviewer. A higher value lets the agent
-    // drain the whole backlog onto this one branch in a single pass, which
-    // defeats the per-issue review.
-    const implement = await sandbox.run({
-      name: "implementer",
-      maxIterations: 1,
-      agent: sandcastle.pi("openrouter/qwen/qwen3-coder"),
-      promptFile: "./.sandcastle/implement-prompt.md",
-      promptArgs: {
-        ISSUE_ID: topIssue.id,
-        ISSUE_TITLE: topIssue.title,
-        BRANCH: topIssue.branch
-      },
-      completionSignal: "<promise>COMPLETE</promise>"
-    });
+    const commitLength = await implementAgent.run()
 
-    console.log(`Commits: ${implement.commits.length}`);
-
-    if (!implement.commits.length) {
+    if (!commitLength) {
       // No commits means the backlog is empty or every remaining issue is
       // blocked — there is nothing left to implement or review, so stop.
       console.log("Implementation agent made no commits. Stopping.");
@@ -107,25 +91,8 @@ for (let iteration = 1; iteration <= MAX_ITERATIONS; iteration++) {
     }
 
     console.log(`\nImplementation complete on branch: ${branch}`);
-
-    // -----------------------------------------------------------------------
-    // Phase 3: Review
-    //
-    // A second sonnet agent reviews the diff of the branch produced by
-    // Phase 1. It uses the {{BRANCH}} prompt argument to inspect the right
-    // branch, and either approves or makes corrections directly on the branch.
-    // -----------------------------------------------------------------------
-    await sandbox.run({
-      name: "reviewer",
-      maxIterations: 1,
-      agent: sandcastle.pi("openrouter/deepseek/deepseek-v4-pro"),
-      promptFile: "./.sandcastle/review-prompt.md",
-      promptArgs: {
-        BRANCH: branch,
-        TARGET_BRANCH: "main"
-      },
-    });
-
+    
+    await reviewAgent.run()
     console.log("\nReview complete.");
 
     await createPr(sandboxEnv, topIssue.id, { current: topIssue.branch })
@@ -136,3 +103,6 @@ for (let iteration = 1; iteration <= MAX_ITERATIONS; iteration++) {
 }
 
 console.log("\nAll done.");
+
+
+

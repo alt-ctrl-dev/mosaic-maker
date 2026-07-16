@@ -1,17 +1,20 @@
 import * as sandcastle from "@ai-hero/sandcastle";
 import { docker } from "@ai-hero/sandcastle/sandboxes/docker";
 import { z } from "zod";
-import { SandboxEnv } from "./types";
+import { Agent, Issue, SandboxEnv } from "./types";
 
 const planSchema = z.object({
-      issues: z.array(
-        z.object({ id: z.string(), title: z.string(), branch: z.string() }),
-      ),
-    });
+  issues: z.array(
+    z.object({ id: z.string(), title: z.string(), branch: z.string() }),
+  ),
+});
 
-export const planWork = async (sandboxEnv: SandboxEnv) => {
+
+export const createPlanAgent = (sandboxEnv: SandboxEnv): Agent<Issue | never> => {
+const agentName = "planner"
+  const planWork = async (): Promise<Issue | never> => {
     // -------------------------------------------------------------------------
-    // Phase 1: Plan
+    // Phase: Plan
     //
     // The planning agent (opus, for deeper reasoning) reads the open issue list,
     // builds a dependency graph, and selects the issues that can be worked in
@@ -21,7 +24,7 @@ export const planWork = async (sandboxEnv: SandboxEnv) => {
     // -------------------------------------------------------------------------
     const plan = await sandcastle.run({
       sandbox: docker({ env: sandboxEnv }),
-      name: "planner",
+      name: agentName,
       // One iteration is enough: the planner just needs to read and reason,
       // not write code. (Structured output requires maxIterations: 1.)
       maxIterations: 1,
@@ -39,4 +42,11 @@ export const planWork = async (sandboxEnv: SandboxEnv) => {
       throw new Error()
     }
     return plan.output.issues[0];
+  }
+
+  return {
+    run: planWork
+  }
+
 }
+

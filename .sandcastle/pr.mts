@@ -38,7 +38,7 @@ export const createPr = async (sandboxEnv: SandboxEnv, issueId: string, branch: 
         maxIterations: 1,
         agent: sandcastle.pi("openrouter/anthropic/claude-haiku-4.5"),
         promptFile: "./.sandcastle/pr-description.md",
-        promptArgs: { BRANCH: branch.current, BASE_BRANCH: branch.base, ISSUE_ID: issueId },
+        promptArgs: { BRANCH: branch.current, BASE_BRANCH, ISSUE_ID: issueId },
         // Extract and validate the <pr-description> output into a string. Throws
         // StructuredOutputError if the tag is missing, the output is malformed, or
         // validation fails — which aborts the loop.
