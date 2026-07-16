@@ -2,7 +2,6 @@ import { Agent, Issue } from "./types";
 import * as sandcastle from "@ai-hero/sandcastle";
 
 export const createReviewAgent = (sandbox: sandcastle.Sandbox, branch: string): Agent<void> => {
-    const agentName = "implementor"
 
     const run = async () => {
     // -----------------------------------------------------------------------
@@ -19,7 +18,6 @@ export const createReviewAgent = (sandbox: sandcastle.Sandbox, branch: string): 
       promptFile: "./.sandcastle/review-prompt.md",
       promptArgs: {
         BRANCH: branch,
-        TARGET_BRANCH: "main"
       },
     });
     }

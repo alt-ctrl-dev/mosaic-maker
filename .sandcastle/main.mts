@@ -94,8 +94,9 @@ for (let iteration = 1; iteration <= MAX_ITERATIONS; iteration++) {
     
     await reviewAgent.run()
     console.log("\nReview complete.");
-
+    
     await createPr(sandboxEnv, topIssue.id, { current: topIssue.branch })
+    console.log("\nCreated PR.");
 
   } finally {
     await sandbox.close();
