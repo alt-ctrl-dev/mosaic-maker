@@ -4,13 +4,6 @@ import { isSupportedImageFormat, getImageFileError } from "./image-processing";
 /** Minimum recommended tessera size in pixels */
 const MIN_RECOMMENDED_SIZE = 50;
 
-/**
- * Process a collection of uploaded files into tesserae.
- *
- * @param files - Array of File objects to process
- * @param targetSize - The target tessera size in pixels
- * @returns Promise resolving to array of TesseraInfo objects
- */
 export async function processTesserae(
 	files: File[],
 	targetSize: number,
@@ -37,13 +30,6 @@ export async function processTesserae(
 	return tesserae;
 }
 
-/**
- * Process a single file into a tessera.
- *
- * @param file - File object to process
- * @param targetSize - The target tessera size in pixels
- * @returns Promise resolving to TesseraInfo object
- */
 async function processSingleTessera(
 	file: File,
 	targetSize: number,
@@ -76,12 +62,6 @@ async function processSingleTessera(
 	};
 }
 
-/**
- * Load an image from a File object.
- *
- * @param file - File object to load
- * @returns Promise resolving to HTMLImageElement
- */
 function loadImageFromFile(file: File): Promise<HTMLImageElement> {
 	return new Promise((resolve, reject) => {
 		const img = new Image();
@@ -101,12 +81,6 @@ function loadImageFromFile(file: File): Promise<HTMLImageElement> {
 	});
 }
 
-/**
- * Center-crop an image to its largest square.
- *
- * @param img - HTMLImageElement to crop
- * @returns Canvas with the cropped image
- */
 function centerCropToSquare(img: HTMLImageElement): HTMLCanvasElement {
 	const canvas = document.createElement("canvas");
 	const ctx = canvas.getContext("2d");
@@ -126,14 +100,6 @@ function centerCropToSquare(img: HTMLImageElement): HTMLCanvasElement {
 	return canvas;
 }
 
-/**
- * Resize a canvas to target dimensions.
- *
- * @param canvas - Canvas to resize
- * @param width - Target width
- * @param height - Target height
- * @returns New canvas with resized image
- */
 function resizeCanvas(
 	canvas: HTMLCanvasElement,
 	width: number,

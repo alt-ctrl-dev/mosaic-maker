@@ -53,23 +53,6 @@ export interface WorkflowState {
 }
 
 /**
- * Initial workflow state.
- */
-export const INITIAL_WORKFLOW_STATE: WorkflowState = {
-	currentStep: 0,
-	sourceImage: null,
-	requestedTesseraSize: null,
-	adjustedTesseraSize: null,
-	isCoarseGrid: false,
-	hasValidSourceDimensions: false,
-	sourceImageError: null,
-	tesserae: [],
-	validTesseraCount: 0,
-	rejectedTesseraCount: 0,
-	totalTesseraCount: 0,
-};
-
-/**
  * Workflow steps.
  */
 export enum WorkflowStep {
@@ -82,12 +65,22 @@ export enum WorkflowStep {
 }
 
 /**
- * Update workflow state with a new source image.
- *
- * @param state - Current workflow state
- * @param sourceImage - Information about the source image
- * @returns Updated workflow state
+ * Initial workflow state.
  */
+export const INITIAL_WORKFLOW_STATE: WorkflowState = {
+	currentStep: WorkflowStep.CHOOSE_SOURCE_IMAGE,
+	sourceImage: null,
+	requestedTesseraSize: null,
+	adjustedTesseraSize: null,
+	isCoarseGrid: false,
+	hasValidSourceDimensions: false,
+	sourceImageError: null,
+	tesserae: [],
+	validTesseraCount: 0,
+	rejectedTesseraCount: 0,
+	totalTesseraCount: 0,
+};
+
 export function updateWorkflowWithSourceImage(
 	state: WorkflowState,
 	sourceImage: SourceImageInfo,
@@ -117,13 +110,6 @@ export function updateWorkflowWithSourceImage(
 	};
 }
 
-/**
- * Update workflow state when source image processing fails.
- *
- * @param state - Current workflow state
- * @param errorMessage - Error message explaining the failure
- * @returns Updated workflow state
- */
 export function updateWorkflowWithSourceImageError(
 	state: WorkflowState,
 	errorMessage: string,
@@ -136,13 +122,6 @@ export function updateWorkflowWithSourceImageError(
 	};
 }
 
-/**
- * Update workflow state with a tessera size request.
- *
- * @param state - Current workflow state
- * @param requestedSize - The tessera size requested by the user
- * @returns Updated workflow state with adjusted size and validation info
- */
 export function updateWorkflowWithTesseraSize(
 	state: WorkflowState,
 	requestedSize: number,
@@ -182,21 +161,11 @@ export function updateWorkflowWithTesseraSize(
 	};
 }
 
-/**
- * Update workflow state with a collection of uploaded tesserae.
- *
- * @param state - Current workflow state
- * @param tesserae - Array of tessera information
- * @returns Updated workflow state with tesserae information
- */
 export function updateWorkflowWithTesserae(
 	state: WorkflowState,
 	tesserae: TesseraInfo[],
 ): WorkflowState {
-	let validCount = 0;
-	for (const t of tesserae) {
-		if (t.isValid) validCount++;
-	}
+	const validCount = tesserae.filter((t) => t.isValid).length;
 
 	return {
 		...state,
@@ -208,13 +177,6 @@ export function updateWorkflowWithTesserae(
 	};
 }
 
-/**
- * Remove a tessera from the collection.
- *
- * @param state - Current workflow state
- * @param tesseraIndex - Index of the tessera to remove
- * @returns Updated workflow state with tessera removed
- */
 export function updateWorkflowRemoveTessera(
 	state: WorkflowState,
 	tesseraIndex: number,
@@ -223,13 +185,8 @@ export function updateWorkflowRemoveTessera(
 		return state;
 	}
 
-	const newTesserae = [...state.tesserae];
-	newTesserae.splice(tesseraIndex, 1);
-
-	let validCount = 0;
-	for (const t of newTesserae) {
-		if (t.isValid) validCount++;
-	}
+	const newTesserae = state.tesserae.filter((_, i) => i !== tesseraIndex);
+	const validCount = newTesserae.filter((t) => t.isValid).length;
 
 	return {
 		...state,
