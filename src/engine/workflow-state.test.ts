@@ -6,6 +6,12 @@ import {
 	updateWorkflowWithTesseraSize,
 	updateWorkflowWithTesserae,
 	updateWorkflowRemoveTessera,
+	updateWorkflowToGeneratedMode,
+	updateWorkflowToUploadMode,
+	updateWorkflowWithSeed,
+	updateWorkflowWithNewSeed,
+	updateWorkflowWithGeneratedTesseraCount,
+	updateWorkflowWithGeneratedTesserae,
 	WorkflowStep,
 	type TesseraInfo,
 	checkLowVariety,
@@ -386,6 +392,130 @@ describe("workflow-state", () => {
 			// Check that the supplemented tesserae are marked correctly
 			expect(newState.tesserae[1].isSupplemented).toBe(true);
 			expect(newState.tesserae[2].isSupplemented).toBe(true);
+		});
+	});
+	
+	describe("updateWorkflowToGeneratedMode", () => {
+		it("switches to generated mode and sets a seed", () => {
+			const stateWithSource = {
+				...INITIAL_WORKFLOW_STATE,
+				sourceImage: {
+					width: 100,
+					height: 100,
+					orientation: 1,
+				},
+				hasValidSourceDimensions: true,
+				currentStep: WorkflowStep.CHOOSE_TESSERAE,
+			};
+
+			const newState = updateWorkflowToGeneratedMode(stateWithSource);
+
+			expect(newState.useGeneratedTesserae).toBe(true);
+			expect(newState.seed).toBeDefined();
+			expect(newState.currentStep).toBe(WorkflowStep.REVIEW_TESSERAE);
+		});
+
+		it("uses existing seed if available", () => {
+			const stateWithSeed = {
+				...INITIAL_WORKFLOW_STATE,
+				seed: 12345,
+			};
+
+			const newState = updateWorkflowToGeneratedMode(stateWithSeed);
+
+			expect(newState.seed).toBe(12345);
+		});
+	});
+
+	describe("updateWorkflowToUploadMode", () => {
+		it("switches to upload mode", () => {
+			const generatedState = {
+				...INITIAL_WORKFLOW_STATE,
+				useGeneratedTesserae: true,
+				currentStep: WorkflowStep.REVIEW_TESSERAE,
+			};
+
+			const newState = updateWorkflowToUploadMode(generatedState);
+
+			expect(newState.useGeneratedTesserae).toBe(false);
+			expect(newState.currentStep).toBe(WorkflowStep.CHOOSE_TESSERAE);
+		});
+	});
+
+	describe("updateWorkflowWithSeed", () => {
+		it("updates the seed and marks for regeneration", () => {
+			const state = {
+				...INITIAL_WORKFLOW_STATE,
+				seed: 12345,
+			};
+
+			const newState = updateWorkflowWithSeed(state, 67890);
+
+			expect(newState.seed).toBe(67890);
+			expect(newState.needsRegeneration).toBe(true);
+		});
+	});
+
+	describe("updateWorkflowWithNewSeed", () => {
+		it("generates a new seed and marks for regeneration", () => {
+			const state = {
+				...INITIAL_WORKFLOW_STATE,
+				seed: 12345,
+			};
+
+			const newState = updateWorkflowWithNewSeed(state);
+
+			expect(newState.seed).toBeDefined();
+			expect(newState.seed).not.toBe(12345);
+			expect(newState.needsRegeneration).toBe(true);
+		});
+	});
+
+	describe("updateWorkflowWithGeneratedTesseraCount", () => {
+		it("updates the generated tessera count and marks for regeneration", () => {
+			const state = {
+				...INITIAL_WORKFLOW_STATE,
+				generatedTesseraCount: 10,
+			};
+
+			const newState = updateWorkflowWithGeneratedTesseraCount(state, 25);
+
+			expect(newState.generatedTesseraCount).toBe(25);
+			expect(newState.needsRegeneration).toBe(true);
+		});
+	});
+
+	describe("updateWorkflowWithGeneratedTesserae", () => {
+		it("updates state with generated tesserae collection", () => {
+			const tesserae: TesseraInfo[] = [
+				{
+					file: new File([], "test1.jpg"),
+					fileName: "test1.jpg",
+					isValid: true,
+					error: null,
+					isLowResolution: false,
+					previewUrl: "data:image/jpeg;base64,test1",
+				},
+				{
+					file: new File([], "test2.jpg"),
+					fileName: "test2.jpg",
+					isValid: false,
+					error: "Unsupported format",
+					isLowResolution: false,
+					previewUrl: null,
+				},
+			];
+
+			const newState = updateWorkflowWithGeneratedTesserae(
+				INITIAL_WORKFLOW_STATE,
+				tesserae,
+			);
+
+			expect(newState.tesserae).toEqual(tesserae);
+			expect(newState.validTesseraCount).toBe(1);
+			expect(newState.rejectedTesseraCount).toBe(1);
+			expect(newState.totalTesseraCount).toBe(2);
+			expect(newState.needsRegeneration).toBe(false);
 		});
 	});
 });
