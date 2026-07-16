@@ -11,29 +11,29 @@ const MIN_TESSERA_SIZE = 8;
  * @returns The adjusted tessera size or null if no valid size exists above the minimum
  */
 export function calculateAdjustedTesseraSize(
-  requestedSize: number,
-  sourceWidth: number,
-  sourceHeight: number
+	requestedSize: number,
+	sourceWidth: number,
+	sourceHeight: number,
 ): number | null {
-  const maxSize = Math.min(sourceWidth, sourceHeight);
+	const maxSize = Math.min(sourceWidth, sourceHeight);
 
-  let bestSize: number | null = null;
-  let bestDistance = Infinity;
+	let bestSize: number | null = null;
+	let bestDistance = Infinity;
 
-  for (let size = MIN_TESSERA_SIZE; size <= maxSize; size++) {
-    if (sourceWidth % size === 0 && sourceHeight % size === 0) {
-      const distance = Math.abs(requestedSize - size);
-      if (
-        distance < bestDistance ||
-        (distance === bestDistance && size < (bestSize || Infinity))
-      ) {
-        bestSize = size;
-        bestDistance = distance;
-      }
-    }
-  }
+	for (let size = MIN_TESSERA_SIZE; size <= maxSize; size++) {
+		if (sourceWidth % size === 0 && sourceHeight % size === 0) {
+			const distance = Math.abs(requestedSize - size);
+			if (
+				distance < bestDistance ||
+				(distance === bestDistance && size < (bestSize || Infinity))
+			) {
+				bestSize = size;
+				bestDistance = distance;
+			}
+		}
+	}
 
-  return bestSize;
+	return bestSize;
 }
 
 /**
@@ -45,13 +45,13 @@ export function calculateAdjustedTesseraSize(
  * @returns The total number of grid cells
  */
 export function calculateGridCellCount(
-  tesseraSize: number,
-  sourceWidth: number,
-  sourceHeight: number
+	tesseraSize: number,
+	sourceWidth: number,
+	sourceHeight: number,
 ): number {
-  const gridWidth = sourceWidth / tesseraSize;
-  const gridHeight = sourceHeight / tesseraSize;
-  return gridWidth * gridHeight;
+	const gridWidth = sourceWidth / tesseraSize;
+	const gridHeight = sourceHeight / tesseraSize;
+	return gridWidth * gridHeight;
 }
 
 /**
@@ -61,7 +61,7 @@ export function calculateGridCellCount(
  * @returns True if the grid is considered coarse
  */
 export function isCoarseGrid(cellCount: number): boolean {
-  return cellCount < 100;
+	return cellCount < 100;
 }
 
 /**
@@ -72,16 +72,16 @@ export function isCoarseGrid(cellCount: number): boolean {
  * @returns True if there are valid tessera sizes, false otherwise
  */
 export function hasValidTesseraSizes(
-  sourceWidth: number,
-  sourceHeight: number
+	sourceWidth: number,
+	sourceHeight: number,
 ): boolean {
-  const maxSize = Math.min(sourceWidth, sourceHeight);
+	const maxSize = Math.min(sourceWidth, sourceHeight);
 
-  for (let size = MIN_TESSERA_SIZE; size <= maxSize; size++) {
-    if (sourceWidth % size === 0 && sourceHeight % size === 0) {
-      return true;
-    }
-  }
+	for (let size = MIN_TESSERA_SIZE; size <= maxSize; size++) {
+		if (sourceWidth % size === 0 && sourceHeight % size === 0) {
+			return true;
+		}
+	}
 
-  return false;
+	return false;
 }

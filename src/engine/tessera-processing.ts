@@ -12,29 +12,29 @@ const MIN_RECOMMENDED_SIZE = 50;
  * @returns Promise resolving to array of TesseraInfo objects
  */
 export async function processTesserae(
-  files: File[],
-  targetSize: number
+	files: File[],
+	targetSize: number,
 ): Promise<TesseraInfo[]> {
-  const tesserae: TesseraInfo[] = [];
+	const tesserae: TesseraInfo[] = [];
 
-  for (const file of files) {
-    try {
-      const tesseraInfo = await processSingleTessera(file, targetSize);
-      tesserae.push(tesseraInfo);
-    } catch (error) {
-      tesserae.push({
-        file,
-        fileName: file.name,
-        isValid: false,
-        error:
-          error instanceof Error ? error.message : "Unknown error occurred",
-        isLowResolution: false,
-        previewUrl: null,
-      });
-    }
-  }
+	for (const file of files) {
+		try {
+			const tesseraInfo = await processSingleTessera(file, targetSize);
+			tesserae.push(tesseraInfo);
+		} catch (error) {
+			tesserae.push({
+				file,
+				fileName: file.name,
+				isValid: false,
+				error:
+					error instanceof Error ? error.message : "Unknown error occurred",
+				isLowResolution: false,
+				previewUrl: null,
+			});
+		}
+	}
 
-  return tesserae;
+	return tesserae;
 }
 
 /**
@@ -45,35 +45,35 @@ export async function processTesserae(
  * @returns Promise resolving to TesseraInfo object
  */
 async function processSingleTessera(
-  file: File,
-  targetSize: number
+	file: File,
+	targetSize: number,
 ): Promise<TesseraInfo> {
-  if (!isSupportedImageFormat(file)) {
-    return {
-      file,
-      fileName: file.name,
-      isValid: false,
-      error: getImageFileError(file),
-      isLowResolution: false,
-      previewUrl: null,
-    };
-  }
+	if (!isSupportedImageFormat(file)) {
+		return {
+			file,
+			fileName: file.name,
+			isValid: false,
+			error: getImageFileError(file),
+			isLowResolution: false,
+			previewUrl: null,
+		};
+	}
 
-  const img = await loadImageFromFile(file);
-  const croppedCanvas = centerCropToSquare(img);
-  const isLowResolution =
-    Math.min(croppedCanvas.width, croppedCanvas.height) < MIN_RECOMMENDED_SIZE;
-  const resizedCanvas = resizeCanvas(croppedCanvas, targetSize, targetSize);
-  const previewUrl = resizedCanvas.toDataURL("image/png");
+	const img = await loadImageFromFile(file);
+	const croppedCanvas = centerCropToSquare(img);
+	const isLowResolution =
+		Math.min(croppedCanvas.width, croppedCanvas.height) < MIN_RECOMMENDED_SIZE;
+	const resizedCanvas = resizeCanvas(croppedCanvas, targetSize, targetSize);
+	const previewUrl = resizedCanvas.toDataURL("image/png");
 
-  return {
-    file,
-    fileName: file.name,
-    isValid: true,
-    error: null,
-    isLowResolution,
-    previewUrl,
-  };
+	return {
+		file,
+		fileName: file.name,
+		isValid: true,
+		error: null,
+		isLowResolution,
+		previewUrl,
+	};
 }
 
 /**
@@ -83,22 +83,22 @@ async function processSingleTessera(
  * @returns Promise resolving to HTMLImageElement
  */
 function loadImageFromFile(file: File): Promise<HTMLImageElement> {
-  return new Promise((resolve, reject) => {
-    const img = new Image();
-    const url = URL.createObjectURL(file);
+	return new Promise((resolve, reject) => {
+		const img = new Image();
+		const url = URL.createObjectURL(file);
 
-    img.onload = () => {
-      URL.revokeObjectURL(url);
-      resolve(img);
-    };
+		img.onload = () => {
+			URL.revokeObjectURL(url);
+			resolve(img);
+		};
 
-    img.onerror = () => {
-      URL.revokeObjectURL(url);
-      reject(new Error("Failed to load image"));
-    };
+		img.onerror = () => {
+			URL.revokeObjectURL(url);
+			reject(new Error("Failed to load image"));
+		};
 
-    img.src = url;
-  });
+		img.src = url;
+	});
 }
 
 /**
@@ -108,22 +108,22 @@ function loadImageFromFile(file: File): Promise<HTMLImageElement> {
  * @returns Canvas with the cropped image
  */
 function centerCropToSquare(img: HTMLImageElement): HTMLCanvasElement {
-  const canvas = document.createElement("canvas");
-  const ctx = canvas.getContext("2d");
-  if (!ctx) {
-    throw new Error("Failed to get canvas context");
-  }
+	const canvas = document.createElement("canvas");
+	const ctx = canvas.getContext("2d");
+	if (!ctx) {
+		throw new Error("Failed to get canvas context");
+	}
 
-  const size = Math.min(img.width, img.height);
-  canvas.width = size;
-  canvas.height = size;
+	const size = Math.min(img.width, img.height);
+	canvas.width = size;
+	canvas.height = size;
 
-  const x = (img.width - size) / 2;
-  const y = (img.height - size) / 2;
+	const x = (img.width - size) / 2;
+	const y = (img.height - size) / 2;
 
-  ctx.drawImage(img, x, y, size, size, 0, 0, size, size);
+	ctx.drawImage(img, x, y, size, size, 0, 0, size, size);
 
-  return canvas;
+	return canvas;
 }
 
 /**
@@ -135,22 +135,22 @@ function centerCropToSquare(img: HTMLImageElement): HTMLCanvasElement {
  * @returns New canvas with resized image
  */
 function resizeCanvas(
-  canvas: HTMLCanvasElement,
-  width: number,
-  height: number
+	canvas: HTMLCanvasElement,
+	width: number,
+	height: number,
 ): HTMLCanvasElement {
-  const resizedCanvas = document.createElement("canvas");
-  resizedCanvas.width = width;
-  resizedCanvas.height = height;
+	const resizedCanvas = document.createElement("canvas");
+	resizedCanvas.width = width;
+	resizedCanvas.height = height;
 
-  const ctx = resizedCanvas.getContext("2d");
-  if (!ctx) {
-    throw new Error("Failed to get canvas context");
-  }
+	const ctx = resizedCanvas.getContext("2d");
+	if (!ctx) {
+		throw new Error("Failed to get canvas context");
+	}
 
-  ctx.imageSmoothingEnabled = true;
-  ctx.imageSmoothingQuality = "high";
-  ctx.drawImage(canvas, 0, 0, width, height);
+	ctx.imageSmoothingEnabled = true;
+	ctx.imageSmoothingQuality = "high";
+	ctx.drawImage(canvas, 0, 0, width, height);
 
-  return resizedCanvas;
+	return resizedCanvas;
 }
