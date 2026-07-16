@@ -3,6 +3,7 @@ import {
   calculateAdjustedTesseraSize,
   calculateGridCellCount,
   isCoarseGrid,
+  hasValidTesseraSizes,
 } from "./tessera-sizing";
 
 /**
@@ -61,8 +62,18 @@ export function updateWorkflowWithSourceImage(
   state: WorkflowState,
   sourceImage: SourceImageInfo
 ): WorkflowState {
-  // For now, we'll assume the source dimensions are valid
-  // In a real implementation, we might check that they have common divisors above 8
+  const hasValidDimensions = hasValidTesseraSizes(sourceImage.width, sourceImage.height);
+  
+  if (!hasValidDimensions) {
+    return {
+      ...state,
+      sourceImage,
+      hasValidSourceDimensions: false,
+      sourceImageError: "The selected image has no valid tessera sizes (no common divisors above 8 pixels). Please select a different image.",
+      currentStep: WorkflowStep.CHOOSE_SOURCE_IMAGE,
+    };
+  }
+  
   return {
     ...state,
     sourceImage,

@@ -15,37 +15,25 @@ export function calculateAdjustedTesseraSize(
   // Minimum valid tessera size is 8 pixels
   const MIN_TESSERA_SIZE = 8;
 
-  // Find all valid tessera sizes (divisors of both dimensions)
-  const validSizes: number[] = [];
-
   // The maximum possible tessera size is the smaller of the two dimensions
   const maxSize = Math.min(sourceWidth, sourceHeight);
+
+  // Find the valid size closest to the requested size without storing all valid sizes
+  let bestSize: number | null = null;
+  let bestDistance = Infinity;
 
   // Check all possible sizes from minimum up to maximum
   for (let size = MIN_TESSERA_SIZE; size <= maxSize; size++) {
     if (sourceWidth % size === 0 && sourceHeight % size === 0) {
-      validSizes.push(size);
-    }
-  }
-
-  // If no valid sizes exist, return null
-  if (validSizes.length === 0) {
-    return null;
-  }
-
-  // Find the valid size closest to the requested size
-  let bestSize = validSizes[0];
-  let bestDistance = Math.abs(requestedSize - validSizes[0]);
-
-  for (let i = 1; i < validSizes.length; i++) {
-    const distance = Math.abs(requestedSize - validSizes[i]);
-    // If this size is equally close, prefer the smaller size (tie-breaking)
-    if (
-      distance < bestDistance ||
-      (distance === bestDistance && validSizes[i] < bestSize)
-    ) {
-      bestSize = validSizes[i];
-      bestDistance = distance;
+      const distance = Math.abs(requestedSize - size);
+      // If this size is closer, or equally close but smaller (tie-breaking)
+      if (
+        distance < bestDistance ||
+        (distance === bestDistance && size < (bestSize || Infinity))
+      ) {
+        bestSize = size;
+        bestDistance = distance;
+      }
     }
   }
 
@@ -78,4 +66,28 @@ export function calculateGridCellCount(
  */
 export function isCoarseGrid(cellCount: number): boolean {
   return cellCount < 100;
+}
+
+/**
+ * Check if a source image has any valid tessera sizes (divisors of both dimensions that are >= 8).
+ *
+ * @param sourceWidth - The width of the source image in pixels
+ * @param sourceHeight - The height of the source image in pixels
+ * @returns True if there are valid tessera sizes, false otherwise
+ */
+export function hasValidTesseraSizes(sourceWidth: number, sourceHeight: number): boolean {
+  // Minimum valid tessera size is 8 pixels
+  const MIN_TESSERA_SIZE = 8;
+
+  // The maximum possible tessera size is the smaller of the two dimensions
+  const maxSize = Math.min(sourceWidth, sourceHeight);
+
+  // Check if there are any valid sizes from minimum up to maximum
+  for (let size = MIN_TESSERA_SIZE; size <= maxSize; size++) {
+    if (sourceWidth % size === 0 && sourceHeight % size === 0) {
+      return true;
+    }
+  }
+
+  return false;
 }

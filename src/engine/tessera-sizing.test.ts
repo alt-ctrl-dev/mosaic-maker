@@ -3,6 +3,7 @@ import {
   calculateAdjustedTesseraSize,
   calculateGridCellCount,
   isCoarseGrid,
+  hasValidTesseraSizes,
 } from "./tessera-sizing";
 
 describe("tessera-sizing", () => {
@@ -23,6 +24,10 @@ describe("tessera-sizing", () => {
       // 100x100 image, 15 is equidistant from 10 and 20
       // Should choose 10 (smaller)
       expect(calculateAdjustedTesseraSize(15, 100, 100)).toBe(10);
+
+      // 60x60 image, 20 is equidistant from 15 and 30
+      // Should choose 15 (smaller)
+      expect(calculateAdjustedTesseraSize(20, 60, 60)).toBe(15);
     });
 
     it("returns null when no valid sizes exist above minimum", () => {
@@ -70,6 +75,23 @@ describe("tessera-sizing", () => {
     it("returns false for grids with 100 or more cells", () => {
       expect(isCoarseGrid(100)).toBe(false);
       expect(isCoarseGrid(1000)).toBe(false);
+    });
+  });
+
+  describe("hasValidTesseraSizes", () => {
+    it("returns true for images with valid tessera sizes", () => {
+      // 100x100 has divisors: 10, 20, 25, 50, 100 (all above 8)
+      expect(hasValidTesseraSizes(100, 100)).toBe(true);
+    });
+
+    it("returns false for images with no valid tessera sizes", () => {
+      // Prime numbers with no common divisors above 8
+      expect(hasValidTesseraSizes(11, 13)).toBe(false);
+    });
+
+    it("returns true for images with minimum valid tessera size", () => {
+      // 16x16 has divisors: 8, 16 (8 is the minimum)
+      expect(hasValidTesseraSizes(16, 16)).toBe(true);
     });
   });
 });

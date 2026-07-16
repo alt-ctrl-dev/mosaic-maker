@@ -47,6 +47,24 @@ describe("workflow-state", () => {
       expect(newState.sourceImageError).toBeNull();
       expect(newState.currentStep).toBe(WorkflowStep.SET_TESSERA_SIZE);
     });
+
+    it("rejects images with no valid tessera sizes", () => {
+      const sourceImage = {
+        width: 11,
+        height: 13,
+        orientation: 1,
+      };
+
+      const newState = updateWorkflowWithSourceImage(
+        INITIAL_WORKFLOW_STATE,
+        sourceImage
+      );
+
+      expect(newState.sourceImage).toEqual(sourceImage);
+      expect(newState.hasValidSourceDimensions).toBe(false);
+      expect(newState.sourceImageError).toContain("no valid tessera sizes");
+      expect(newState.currentStep).toBe(WorkflowStep.CHOOSE_SOURCE_IMAGE);
+    });
   });
 
   describe("updateWorkflowWithSourceImageError", () => {
