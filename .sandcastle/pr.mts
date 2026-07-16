@@ -10,6 +10,7 @@ const maybeAttachIssueId = (issueId: string, description: string) => {
     }
     return `
 ${description}
+
 ## References
 
 Closes #${issueId}
@@ -20,27 +21,27 @@ export const generatePrDescription = async (sandboxEnv: SandboxEnv, issueId: str
     base?: string; current: string
 }) => {
     const BASE_BRANCH = branch.base ?? "main"
-    const prTitle = await sandcastle.run({
-        sandbox: docker({ env: sandboxEnv }),
-        name: "pr-title-generator",
-        maxIterations: 1,
-        agent: sandcastle.pi("openrouter/anthropic/claude-haiku-4.5"),
-        promptFile: "./.sandcastle/pr-title-prompt.md",
-        promptArgs: { BRANCH: branch.current, BASE_BRANCH, },
-        output: sandcastle.Output.string({ tag: "pr-title" }),
-    });
-
-
-    console.log("\nGenerating PR description...\n");
-    const prDescription = await sandcastle.run({
-        sandbox: docker({ env: sandboxEnv }),
-        name: "pr-description-generator",
-        maxIterations: 1,
-        agent: sandcastle.pi("openrouter/anthropic/claude-haiku-4.5"),
-        promptFile: "./.sandcastle/pr-description-prompt.md",
-        promptArgs: { BRANCH: branch.current, BASE_BRANCH },
-        output: sandcastle.Output.string({ tag: "pr-description" }),
-    });
+    //Parallelize steps
+    const [prTitle, prDescription] = await Promise.all([
+        sandcastle.run({
+            sandbox: docker({ env: sandboxEnv }),
+            name: "pr-title-generator",
+            maxIterations: 1,
+            agent: sandcastle.pi("openrouter/anthropic/claude-haiku-4.5"),
+            promptFile: "./.sandcastle/pr-title-prompt.md",
+            promptArgs: { BRANCH: branch.current, BASE_BRANCH, },
+            output: sandcastle.Output.string({ tag: "pr-title" }),
+        }),
+        sandcastle.run({
+            sandbox: docker({ env: sandboxEnv }),
+            name: "pr-description-generator",
+            maxIterations: 1,
+            agent: sandcastle.pi("openrouter/anthropic/claude-haiku-4.5"),
+            promptFile: "./.sandcastle/pr-description-prompt.md",
+            promptArgs: { BRANCH: branch.current, BASE_BRANCH },
+            output: sandcastle.Output.string({ tag: "pr-description" }),
+        })
+    ]);
 
     const description = maybeAttachIssueId(issueId, prDescription.output)
 
