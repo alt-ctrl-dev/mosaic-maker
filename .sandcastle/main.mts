@@ -52,7 +52,7 @@ if (currentBranch !== "main") {
 
 // Maximum number of planning cycles before stopping when no commits are made.
 // Raise this if your backlog is large; lower it for a quick smoke-test run.
-const MAX_ITERATIONS = z.coerce.number().default(10).parse(process.env.MAX_ITERATIONS);
+const MAX_ITERATIONS = z.coerce.number().default(1).parse(process.env.MAX_ITERATIONS);
 console.log(`Running for ${MAX_ITERATIONS} iteration(s)`);
 
 // Hooks run inside the sandbox before the agent starts each iteration.
