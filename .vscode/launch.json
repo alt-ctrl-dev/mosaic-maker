@@ -1,21 +1,21 @@
 {
-  "version": "0.2.0",
-  "configurations": [
-    {
-      "name": "Launch sandcastle",
-      "request": "launch",
-      "runtimeArgs": ["sandcastle"],
-      "runtimeExecutable": "pnpm",
-      "skipFiles": ["<node_internals>/**"],
-      "type": "node"
-    },
-    {
-      "name": "Launch playground",
-      "request": "launch",
-      "runtimeArgs": ["sandcastle-playground"],
-      "runtimeExecutable": "pnpm",
-      "skipFiles": ["<node_internals>/**"],
-      "type": "node"
-    }
-  ]
+	"version": "0.2.0",
+	"configurations": [
+		{
+			"name": "Launch sandcastle",
+			"request": "launch",
+			"runtimeArgs": ["sandcastle"],
+			"runtimeExecutable": "pnpm",
+			"skipFiles": ["<node_internals>/**"],
+			"type": "node"
+		},
+		{
+			"name": "Launch playground",
+			"request": "launch",
+			"runtimeArgs": ["sandcastle-playground"],
+			"runtimeExecutable": "pnpm",
+			"skipFiles": ["<node_internals>/**"],
+			"type": "node"
+		}
+	]
 }

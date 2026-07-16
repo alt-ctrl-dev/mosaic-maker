@@ -1,12 +1,12 @@
 {
-  "git": {
-    "requireSkillForCommits": "git-workflow-and-versioning",
-    "commitMessage": "Always use git-workflow-and-versioning skill when committing changes in this repository. Invoke with /git-workflow-and-versioning before running git commit."
-  },
-  "skills": {
-    "git-workflow-and-versioning": {
-      "enforced": true,
-      "description": "Required for all git commits in this repository"
-    }
-  }
+	"git": {
+		"requireSkillForCommits": "git-workflow-and-versioning",
+		"commitMessage": "Always use git-workflow-and-versioning skill when committing changes in this repository. Invoke with /git-workflow-and-versioning before running git commit."
+	},
+	"skills": {
+		"git-workflow-and-versioning": {
+			"enforced": true,
+			"description": "Required for all git commits in this repository"
+		}
+	}
 }
