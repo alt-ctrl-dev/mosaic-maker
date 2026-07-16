@@ -10,6 +10,14 @@ Here are the open issues in the repo:
 
 The list above has already been filtered to issues ready for work.
 
+# OPEN PULL REQUESTS
+
+<prs-json>
+
+!`gh pr list --state open --limit 100 --json number,title,body,headRefName,closingIssuesReferences`
+
+</prs-json>
+
 # TASK
 
 Analyze the open issues and build a dependency graph. For each issue, determine whether it **blocks** or **is blocked by** any other open issue.
@@ -28,13 +36,13 @@ For each unblocked issue, assign a branch name using the exact format `sandcastl
 
 Pick issues in this order:
 
-1. **In-progress work** — resume any open issue tagged with the label `in-progress` from the previous iteration
+1. **In-progress work** — resume any open issue tagged with the label `in-progress` from the previous iteration, unless an open pull request already uses its `sandcastle/issue-{id}` branch or references that exact issue number (including through `closingIssuesReferences`)
 2. **Bug fixes** — broken behaviour affecting users
 3. **Tracer bullets** — thin end-to-end slices that prove an approach works
 4. **Polish** — improving existing functionality (error messages, UX, docs)
 5. **Refactors** — internal cleanups with no user-visible change
 
-Always resume in-progress issues before picking a new one. Pick the highest-priority unblocked issue, in order above.
+Before selecting an in-progress issue, check the open pull requests above. Exclude the issue if a pull request already uses its branch or references its exact issue number; do not confuse it with partial number matches (for example, `#42` and `#142`). Then pick the highest-priority unblocked remaining issue, in the order above.
 
 # OUTPUT
 
