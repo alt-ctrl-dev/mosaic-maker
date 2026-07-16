@@ -4,7 +4,10 @@ import {
   updateWorkflowWithSourceImage,
   updateWorkflowWithSourceImageError,
   updateWorkflowWithTesseraSize,
+  updateWorkflowWithTesserae,
+  updateWorkflowRemoveTessera,
   WorkflowStep,
+  type TesseraInfo,
 } from "./workflow-state";
 
 describe("workflow-state", () => {
@@ -26,6 +29,13 @@ describe("workflow-state", () => {
 
     it("has no source image error initially", () => {
       expect(INITIAL_WORKFLOW_STATE.sourceImageError).toBeNull();
+    });
+
+    it("has empty tesserae collection initially", () => {
+      expect(INITIAL_WORKFLOW_STATE.tesserae).toEqual([]);
+      expect(INITIAL_WORKFLOW_STATE.validTesseraCount).toBe(0);
+      expect(INITIAL_WORKFLOW_STATE.rejectedTesseraCount).toBe(0);
+      expect(INITIAL_WORKFLOW_STATE.totalTesseraCount).toBe(0);
     });
   });
 
@@ -141,6 +151,158 @@ describe("workflow-state", () => {
 
       expect(newState.requestedTesseraSize).toBeNull();
       expect(newState.adjustedTesseraSize).toBeNull();
+    });
+
+    it("advances to CHOOSE_TESSERAE step when successful", () => {
+      const stateWithSource = {
+        ...INITIAL_WORKFLOW_STATE,
+        sourceImage: {
+          width: 100,
+          height: 100,
+          orientation: 1,
+        },
+        hasValidSourceDimensions: true,
+      };
+
+      const newState = updateWorkflowWithTesseraSize(stateWithSource, 10);
+
+      expect(newState.currentStep).toBe(WorkflowStep.CHOOSE_TESSERAE);
+    });
+  });
+
+  describe("updateWorkflowWithTesserae", () => {
+    it("updates state with tesserae collection", () => {
+      const tesserae: TesseraInfo[] = [
+        {
+          file: new File([], "test1.jpg"),
+          fileName: "test1.jpg",
+          isValid: true,
+          error: null,
+          isLowResolution: false,
+          previewUrl: "data:image/jpeg;base64,test1",
+        },
+        {
+          file: new File([], "test2.jpg"),
+          fileName: "test2.jpg",
+          isValid: false,
+          error: "Unsupported format",
+          isLowResolution: false,
+          previewUrl: null,
+        },
+      ];
+
+      const newState = updateWorkflowWithTesserae(
+        INITIAL_WORKFLOW_STATE,
+        tesserae
+      );
+
+      expect(newState.tesserae).toEqual(tesserae);
+      expect(newState.validTesseraCount).toBe(1);
+      expect(newState.rejectedTesseraCount).toBe(1);
+      expect(newState.totalTesseraCount).toBe(2);
+      expect(newState.currentStep).toBe(WorkflowStep.REVIEW_TESSERAE);
+    });
+
+    it("handles empty tesserae collection", () => {
+      const newState = updateWorkflowWithTesserae(INITIAL_WORKFLOW_STATE, []);
+
+      expect(newState.tesserae).toEqual([]);
+      expect(newState.validTesseraCount).toBe(0);
+      expect(newState.rejectedTesseraCount).toBe(0);
+      expect(newState.totalTesseraCount).toBe(0);
+      expect(newState.currentStep).toBe(WorkflowStep.REVIEW_TESSERAE);
+    });
+  });
+
+  describe("updateWorkflowRemoveTessera", () => {
+    it("removes a tessera at specified index", () => {
+      const initialState = {
+        ...INITIAL_WORKFLOW_STATE,
+        tesserae: [
+          {
+            file: new File([], "test1.jpg"),
+            fileName: "test1.jpg",
+            isValid: true,
+            error: null,
+            isLowResolution: false,
+            previewUrl: "data:image/jpeg;base64,test1",
+          },
+          {
+            file: new File([], "test2.jpg"),
+            fileName: "test2.jpg",
+            isValid: false,
+            error: "Unsupported format",
+            isLowResolution: false,
+            previewUrl: null,
+          },
+          {
+            file: new File([], "test3.jpg"),
+            fileName: "test3.jpg",
+            isValid: true,
+            error: null,
+            isLowResolution: true,
+            previewUrl: "data:image/jpeg;base64,test3",
+          },
+        ],
+        validTesseraCount: 2,
+        rejectedTesseraCount: 1,
+        totalTesseraCount: 3,
+      };
+
+      const newState = updateWorkflowRemoveTessera(initialState, 1);
+
+      expect(newState.tesserae).toHaveLength(2);
+      expect(newState.tesserae[0].fileName).toBe("test1.jpg");
+      expect(newState.tesserae[1].fileName).toBe("test3.jpg");
+      expect(newState.validTesseraCount).toBe(2);
+      expect(newState.rejectedTesseraCount).toBe(0);
+      expect(newState.totalTesseraCount).toBe(2);
+    });
+
+    it("returns unchanged state for invalid index", () => {
+      const initialState = {
+        ...INITIAL_WORKFLOW_STATE,
+        tesserae: [
+          {
+            file: new File([], "test1.jpg"),
+            fileName: "test1.jpg",
+            isValid: true,
+            error: null,
+            isLowResolution: false,
+            previewUrl: "data:image/jpeg;base64,test1",
+          },
+        ],
+        validTesseraCount: 1,
+        rejectedTesseraCount: 0,
+        totalTesseraCount: 1,
+      };
+
+      const newState = updateWorkflowRemoveTessera(initialState, 5);
+
+      expect(newState).toEqual(initialState);
+    });
+
+    it("returns unchanged state for negative index", () => {
+      const initialState = {
+        ...INITIAL_WORKFLOW_STATE,
+        tesserae: [
+          {
+            file: new File([], "test1.jpg"),
+            fileName: "test1.jpg",
+            isValid: true,
+            error: null,
+            isLowResolution: false,
+            previewUrl: "data:image/jpeg;base64,test1",
+          },
+        ],
+        validTesseraCount: 1,
+        rejectedTesseraCount: 0,
+        totalTesseraCount: 1,
+      };
+
+      const newState = updateWorkflowRemoveTessera(initialState, -1);
+
+      expect(newState).toEqual(initialState);
     });
   });
 });
