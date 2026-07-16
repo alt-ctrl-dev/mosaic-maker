@@ -52,4 +52,4 @@ If you find improvements to make:
 
 If the code is already clean and well-structured, do nothing.
 
-Once complete, output <promise>COMPLETE</promise>.
+Once complete, only output  <promise>COMPLETE</promise>.

@@ -32,6 +32,20 @@ import { createImplmentAgent } from "./implement.mts";
 import { createReviewAgent } from "./review.mts";
 
 // ---------------------------------------------------------------------------
+// Pre-flight checks
+// ---------------------------------------------------------------------------
+
+const { execSync } = require("child_process");
+
+const currentBranch = execSync("git rev-parse --abbrev-ref HEAD", { encoding: "utf-8" }).trim();
+if (currentBranch !== "main") {
+  throw new Error(`SandCastle must run from main branch. Current branch: ${currentBranch}`);
+}
+console.log(`Running from main branch ✓`);
+
+// ---------------------------------------------------------------------------
+
+// ---------------------------------------------------------------------------
 // Configuration
 // ---------------------------------------------------------------------------
 
