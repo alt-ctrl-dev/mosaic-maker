@@ -352,7 +352,6 @@ export function updateWorkflowWithSupplementedTesserae(
 export function updateWorkflowToGeneratedMode(
 	state: WorkflowState,
 ): WorkflowState {
-	// Generate a new seed if one doesn't exist
 	const seed = state.seed ?? Math.floor(Math.random() * 1000000);
 
 	return {
