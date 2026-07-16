@@ -25,10 +25,9 @@ jobs:
         with:
           filters: |
             docs_only:
-              - added|modified:
-                - '*.md'
-                - 'docs/**'
-                - '.github/**/*.md'
+              - added|modified: '*.md'
+              - added|modified: 'docs/**'
+              - added|modified: '.github/**/*.md'
 
   lint:
     runs-on: ubuntu-latest

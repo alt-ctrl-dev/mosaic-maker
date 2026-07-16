@@ -54,4 +54,14 @@ describe("Pull Request Checks Workflow", () => {
     expect(pagesWorkflowContent).not.toContain("pull_request");
     expect(pagesWorkflowContent).toContain("push:");
   });
+
+  it("should have correct paths-filter configuration format", () => {
+    // Check for the correct format with individual added|modified entries
+    expect(workflowContent).toContain("added|modified: '*.md'");
+    expect(workflowContent).toContain("added|modified: 'docs/**'");
+    expect(workflowContent).toContain("added|modified: '.github/**/*.md'");
+    
+    // Should not contain the incorrect nested format
+    expect(workflowContent).not.toContain("added|modified:\n");
+  });
 });
