@@ -58,7 +58,7 @@ export const createPr = async (sandboxEnv: SandboxEnv, issueId: string, branch: 
         const escapedTitle = prTitle.output.replace(/"/g, '\\"');
         const escapedBody = description.replace(/"/g, '\\"');
 
-         // #TODO publish branch
+        // publish branch and push changes
         execSync(
             `git push --set-upstream origin ${branch.current}`,
             { stdio: "inherit" }
