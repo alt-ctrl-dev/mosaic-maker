@@ -95,7 +95,7 @@ jobs:
 
   build:
     runs-on: ubuntu-latest
-    needs: [changes, lint, format, test, typecheck]
+    needs: [lint, format, test, typecheck]
     steps:
       - uses: actions/checkout@v7
       - uses: pnpm/action-setup@v6
