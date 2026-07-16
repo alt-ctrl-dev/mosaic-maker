@@ -4,6 +4,7 @@ import { createPr } from "./pr.mts";
 
 // const MAX_ITERATIONS = z.coerce.number().default(1).parse(process.env.MAX_ITERATIONS);
 const BRANCH = z.coerce.string().parse(process.env.BRANCH);
+const ISSUE_ID = z.coerce.string().parse(process.env.ISSUE_ID);
 const BASE_BRANCH = "main"
 
 // console.log(`Running for ${MAX_ITERATIONS} iteration(s)`);
@@ -25,7 +26,7 @@ if (!BASE_BRANCH) {
 
 try {
 
-    await createPr(sandboxEnv, "1", {
+    await createPr(sandboxEnv, ISSUE_ID, {
         current: BRANCH,
         base: BASE_BRANCH
     })
