@@ -92,4 +92,59 @@ describe("Mosaic Engine", () => {
     expect(result.width).toBe(sourceImage.width);
     expect(result.height).toBe(sourceImage.height);
   });
+
+  it("should validate tessera size inputs", async () => {
+    // Arrange
+    const sourceImage: SourceImageInfo = {
+      width: 16,
+      height: 16,
+      orientation: 1,
+    };
+
+    const tesserae: TesseraInfo[] = [
+      {
+        file: new File([], "test1.jpg", { type: "image/jpeg" }),
+        fileName: "test1.jpg",
+        isValid: true,
+        error: null,
+        isLowResolution: false,
+        previewUrl: "data:image/png;base64,test1",
+      },
+    ];
+
+    // Act & Assert
+    await expect(generateMosaic(sourceImage, tesserae, 0)).rejects.toThrow(
+      "Tessera size must be positive"
+    );
+    await expect(generateMosaic(sourceImage, tesserae, -5)).rejects.toThrow(
+      "Tessera size must be positive"
+    );
+  });
+
+  it("should validate source image dimensions", async () => {
+    // Arrange
+    const sourceImage: SourceImageInfo = {
+      width: 0,
+      height: 0,
+      orientation: 1,
+    };
+
+    const tesserae: TesseraInfo[] = [
+      {
+        file: new File([], "test1.jpg", { type: "image/jpeg" }),
+        fileName: "test1.jpg",
+        isValid: true,
+        error: null,
+        isLowResolution: false,
+        previewUrl: "data:image/png;base64,test1",
+      },
+    ];
+
+    const tesseraSize = 8;
+
+    // Act & Assert
+    await expect(
+      generateMosaic(sourceImage, tesserae, tesseraSize)
+    ).rejects.toThrow("Source image dimensions must be positive");
+  });
 });
