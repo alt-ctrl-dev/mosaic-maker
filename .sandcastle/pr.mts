@@ -65,7 +65,7 @@ export const createPr = async (sandboxEnv: SandboxEnv, issueId: string, branch: 
         );
         // #TODO publish branch
         execSync(
-            `gh pr create --title "${escapedTitle}" --body "${escapedBody}" --base ${BASE_BRANCH} --head ${branch.current}`,
+            `gh pr create --title "${escapedTitle}" --body=$(echo "${escapedBody}") --base ${BASE_BRANCH} --head ${branch.current}`,
             { stdio: "inherit" }
         );
         console.log("Pull request created successfully.");
