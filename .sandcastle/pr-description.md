@@ -87,7 +87,7 @@ Follow this structure exactly:
 
 [Call out risks, trade-offs, complexity hotspots, or areas reviewers should focus on based on code analysis.]
 
-## References
+## References (if {{ISSUE_ID}} is provided)
 
 Closes #{{ISSUE_ID}}
 ```

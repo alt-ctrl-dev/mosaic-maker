@@ -19,7 +19,7 @@ export const createPr = async (sandboxEnv: SandboxEnv, issueId: string, branch: 
         maxIterations: 1,
         agent: sandcastle.pi("openrouter/anthropic/claude-haiku-4.5"),
         promptFile: "./.sandcastle/pr-title.md",
-        promptArgs: { BRANCH: branch.current, BASE_BRANCH, ISSUE_ID: issueId },
+        promptArgs: { BRANCH: branch.current, BASE_BRANCH, },
         output: sandcastle.Output.string({ tag: "pr-title" }),
     });
 
