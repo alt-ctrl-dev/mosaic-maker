@@ -3,7 +3,7 @@ import { sandboxEnv } from "./sandbox-env.mts";
 import { createPr } from "./pr.mts";
 
 // const MAX_ITERATIONS = z.coerce.number().default(1).parse(process.env.MAX_ITERATIONS);
-const BRANCH = "refactor-update-sandcastle-workflow"
+const BRANCH = z.coerce.string().parse(process.env.BRANCH);
 const BASE_BRANCH = "main"
 
 // console.log(`Running for ${MAX_ITERATIONS} iteration(s)`);
