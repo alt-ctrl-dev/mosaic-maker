@@ -7,6 +7,24 @@ import {
 } from "./tessera-sizing";
 
 /**
+ * Information about a tessera that has been processed for the mosaic.
+ */
+export interface TesseraInfo {
+  /** The original file object */
+  file: File;
+  /** The original file name */
+  fileName: string;
+  /** Whether the tessera is valid for use */
+  isValid: boolean;
+  /** Error message if tessera is invalid */
+  error: string | null;
+  /** Whether the tessera has low resolution */
+  isLowResolution: boolean;
+  /** The processed image data URL for preview */
+  previewUrl: string | null;
+}
+
+/**
  * Represents the current state of the mosaic creation workflow.
  */
 export interface WorkflowState {
@@ -24,6 +42,14 @@ export interface WorkflowState {
   hasValidSourceDimensions: boolean;
   /** Error message if source image processing failed */
   sourceImageError: string | null;
+  /** Collection of uploaded tesserae */
+  tesserae: TesseraInfo[];
+  /** Number of valid tesserae */
+  validTesseraCount: number;
+  /** Number of rejected tesserae */
+  rejectedTesseraCount: number;
+  /** Total number of tesserae processed */
+  totalTesseraCount: number;
 }
 
 /**
@@ -37,6 +63,10 @@ export const INITIAL_WORKFLOW_STATE: WorkflowState = {
   isCoarseGrid: false,
   hasValidSourceDimensions: false,
   sourceImageError: null,
+  tesserae: [],
+  validTesseraCount: 0,
+  rejectedTesseraCount: 0,
+  totalTesseraCount: 0,
 };
 
 /**
@@ -148,5 +178,62 @@ export function updateWorkflowWithTesseraSize(
     requestedTesseraSize: requestedSize,
     adjustedTesseraSize: adjustedSize,
     isCoarseGrid: isCoarseGrid(cellCount),
+    currentStep: WorkflowStep.CHOOSE_TESSERAE,
+  };
+}
+
+/**
+ * Update workflow state with a collection of uploaded tesserae.
+ *
+ * @param state - Current workflow state
+ * @param tesserae - Array of tessera information
+ * @returns Updated workflow state with tesserae information
+ */
+export function updateWorkflowWithTesserae(
+  state: WorkflowState,
+  tesserae: TesseraInfo[]
+): WorkflowState {
+  // Calculate counts
+  const validCount = tesserae.filter((t) => t.isValid).length;
+  const rejectedCount = tesserae.filter((t) => !t.isValid).length;
+  
+  return {
+    ...state,
+    tesserae,
+    validTesseraCount: validCount,
+    rejectedTesseraCount: rejectedCount,
+    totalTesseraCount: tesserae.length,
+    currentStep: WorkflowStep.REVIEW_TESSERAE,
+  };
+}
+
+/**
+ * Remove a tessera from the collection.
+ *
+ * @param state - Current workflow state
+ * @param tesseraIndex - Index of the tessera to remove
+ * @returns Updated workflow state with tessera removed
+ */
+export function updateWorkflowRemoveTessera(
+  state: WorkflowState,
+  tesseraIndex: number
+): WorkflowState {
+  if (tesseraIndex < 0 || tesseraIndex >= state.tesserae.length) {
+    return state;
+  }
+
+  const newTesserae = [...state.tesserae];
+  newTesserae.splice(tesseraIndex, 1);
+  
+  // Recalculate counts
+  const validCount = newTesserae.filter((t) => t.isValid).length;
+  const rejectedCount = newTesserae.filter((t) => !t.isValid).length;
+  
+  return {
+    ...state,
+    tesserae: newTesserae,
+    validTesseraCount: validCount,
+    rejectedTesseraCount: rejectedCount,
+    totalTesseraCount: newTesserae.length,
   };
 }
