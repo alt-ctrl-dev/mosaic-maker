@@ -41,6 +41,12 @@ if (currentBranch !== "main") {
   throw new Error(`SandCastle must run from main branch. Current branch: ${currentBranch}`);
 }
 
+// pull latest changes
+execSync(
+  `git pull`,
+  { stdio: "inherit" }
+);
+
 // ---------------------------------------------------------------------------
 
 // ---------------------------------------------------------------------------
@@ -103,10 +109,10 @@ for (let iteration = 1; iteration <= MAX_ITERATIONS; iteration++) {
     }
 
     console.log(`\nImplementation complete on branch: ${branch}`);
-    
+
     await reviewAgent.run()
     console.log("\nReview complete.");
-    
+
     await createPr(sandboxEnv, topIssue.id, { current: topIssue.branch })
     console.log("\nCreated PR.");
 
