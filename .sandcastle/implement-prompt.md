@@ -31,7 +31,7 @@ Decide what to change and why. Keep the change as small as possible.
 # EXECUTION
 
 Mark the task as in progress.
-!gh issue edit $ISSUE_ID --add-label "in-progress" 
+!`gh issue edit $ISSUE_ID --add-label "in-progress"`
 
 If applicable, use RGR to complete the task.
 
@@ -44,10 +44,10 @@ If applicable, use RGR to complete the task.
 
 Before committing, run the following to ensure the code is upto standard.
 
-- `npm run typecheck` 
-- `npm run test`
-- `npm run format`
-- `npm run lint`
+- `pnpm run typecheck` 
+- `pnpm run test`
+- `pnpm run format`
+- `pnpm run lint`
 
 # COMMIT
 
@@ -73,6 +73,7 @@ Once complete, output <promise>COMPLETE</promise>.
 - **ONLY WORK ON A SINGLE TASK.**
 - Do not stop until you have committed the fix and verified the feedback loop has passed.
 - Do not leave commented-out code or TODO comments in committed code.
+- ALWAYS use `pnpm` for all package management and script execution. Never use `npm` or `yarn`.
 - **Always use the git-workflow-and-versioning skill for all commits.** Do not commit without invoking the skill.
 - **If blocked:** Leave a detailed comment on the issue stating:
   - What was attempted
