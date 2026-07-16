@@ -31,7 +31,7 @@ Decide what to change and why. Keep the change as small as possible.
 # EXECUTION
 
 Mark the task as in progress.
-!`gh issue edit $ISSUE_ID --add-label "in-progress"`
+!`gh issue edit {{ISSUE_ID}} --add-label "in-progress"`
 
 If applicable, use RGR to complete the task.
 
