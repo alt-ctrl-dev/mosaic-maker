@@ -61,7 +61,7 @@ Follow this structure exactly:
 ## Code Analysis
 
 ### Key changes
-- [Function/logic changes with before/after intent]
+- [A short summary of function/logic changes with before/after intent]
 - [New patterns or utilities]
 - [Refactoring or consolidation]
 
@@ -71,15 +71,9 @@ Follow this structure exactly:
 - [Architectural decisions or trade-offs]
 - [Complexity or maintainability impact]
 
-## Verification
-
-- [x] Tests pass
-- [x] Typecheck passes
-- [x] Lint and formatting pass
-
 ## Changes
 
-[A summary of all the changes]
+[A short bullet point summary of all the changes]
 
 ## Review notes
 
