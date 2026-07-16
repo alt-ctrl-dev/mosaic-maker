@@ -1,18 +1,27 @@
-import { readFileSync } from "node:fs";
+import { existsSync, readFileSync } from "node:fs";
 import { join } from "node:path";
-import { describe, it, expect } from "vitest";
+import { beforeAll, describe, expect, it } from "vitest";
 
 describe("GitHub Pages Workflow Summary", () => {
-	it("should have deploy job that writes to GITHUB_STEP_SUMMARY", () => {
-		const workflowPath = join(__dirname, "../.github/workflows/pages.yml");
-		const workflowContent = readFileSync(workflowPath, "utf-8");
+	const workflowPath = join(__dirname, "../.github/workflows/pages.yml");
+	let workflowContent: string;
 
-		// Check that the workflow has a deploy job
+	beforeAll(() => {
+		workflowContent = existsSync(workflowPath)
+			? readFileSync(workflowPath, "utf8")
+			: "";
+	});
+
+	it("writes the deployment link to the step summary", () => {
 		expect(workflowContent).toContain("deploy:");
-
-		// Check that the deploy job writes to GITHUB_STEP_SUMMARY after successful deployment
 		expect(workflowContent).toContain("GITHUB_STEP_SUMMARY");
 		expect(workflowContent).toContain("page_url");
 		expect(workflowContent).toContain("Open Mosaic Maker");
+	});
+
+	it("does not use a redundant success() condition on the summary step", () => {
+		expect(workflowContent).not.toContain(
+			"Add deployment link to summary\n        if: success()",
+		);
 	});
 });
