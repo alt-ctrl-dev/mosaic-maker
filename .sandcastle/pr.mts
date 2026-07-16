@@ -1,3 +1,4 @@
+import { execSync } from "child_process";
 import { SandboxEnv } from "./types";
 import * as sandcastle from "@ai-hero/sandcastle";
 import { docker } from "@ai-hero/sandcastle/sandboxes/docker";
@@ -5,7 +6,6 @@ import { docker } from "@ai-hero/sandcastle/sandboxes/docker";
 export const createPr = async (sandboxEnv: SandboxEnv, issueId: string, branch: {
     base?: string; current: string
 }) => {
-
     // -----------------------------------------------------------------------
     // Create Pull Request
     //
@@ -16,15 +16,10 @@ export const createPr = async (sandboxEnv: SandboxEnv, issueId: string, branch: 
     const prTitle = await sandcastle.run({
         sandbox: docker({ env: sandboxEnv }),
         name: "pr-title-generator",
-        // One iteration is enough: the agent just needs to read and reason,
-        // not write code. (Structured output requires maxIterations: 1.)
         maxIterations: 1,
         agent: sandcastle.pi("openrouter/anthropic/claude-haiku-4.5"),
         promptFile: "./.sandcastle/pr-title.md",
         promptArgs: { BRANCH: branch.current, BASE_BRANCH, ISSUE_ID: issueId },
-        // Extract and validate the <plan> output into a string. Throws
-        // StructuredOutputError if the tag is missing, the output is malformed, or
-        // validation fails — which aborts the loop.
         output: sandcastle.Output.string({ tag: "pr-title" }),
     });
 
@@ -33,22 +28,30 @@ export const createPr = async (sandboxEnv: SandboxEnv, issueId: string, branch: 
     const prDescription = await sandcastle.run({
         sandbox: docker({ env: sandboxEnv }),
         name: "pr-description-generator",
-        // One iteration is enough: the agent just needs to read and reason,
-        // not write code. (Structured output requires maxIterations: 1.)
         maxIterations: 1,
         agent: sandcastle.pi("openrouter/anthropic/claude-haiku-4.5"),
         promptFile: "./.sandcastle/pr-description.md",
         promptArgs: { BRANCH: branch.current, BASE_BRANCH, ISSUE_ID: issueId },
-        // Extract and validate the <pr-description> output into a string. Throws
-        // StructuredOutputError if the tag is missing, the output is malformed, or
-        // validation fails — which aborts the loop.
         output: sandcastle.Output.string({ tag: "pr-description" }),
     });
 
 
-    console.log(prTitle.output);
-    console.log(prDescription.output);
+    console.log("\n================ PR Title ================\n", prTitle.output);
+    console.log("\n============= PR Description =============\n", prDescription.output);
 
-    // TODO create PR
-    console.log("Pull request creation complete.");
+    try {
+        // Escape quotes in title and body for shell
+        const escapedTitle = prTitle.output.replace(/"/g, '\\"');
+        const escapedBody = prDescription.output.replace(/"/g, '\\"');
+
+        execSync(
+            `gh pr create --title "${escapedTitle}" --body "${escapedBody}" --base ${BASE_BRANCH} --head ${branch.current}`,
+            { stdio: "inherit" }
+        );
+        console.log("Pull request created successfully.");
+    } catch (error) {
+        const message = error instanceof Error ? error.message : "Unknown error";
+        console.error("Failed to create pull request:", message);
+        throw error;
+    }
 }
