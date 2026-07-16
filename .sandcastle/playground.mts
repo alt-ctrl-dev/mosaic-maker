@@ -3,6 +3,7 @@ import { sandboxEnv } from "./sandbox-env.mts";
 import {  createPr, generatePrDescription } from "./pr.mts";
 import { execSync } from "child_process";
 import fs from 'node:fs';
+import { createPlanAgent } from "./plan.mts";
 
 const currentBranch = execSync("git rev-parse --abbrev-ref HEAD", { encoding: "utf-8" }).trim();
 // const MAX_ITERATIONS = z.coerce.number().default(1).parse(process.env.MAX_ITERATIONS);
@@ -28,6 +29,12 @@ if (!BASE_BRANCH) {
 // }
 
 try {
+
+    const planAgent = createPlanAgent(sandboxEnv)
+
+    const topIssue = await planAgent.run()
+
+    console.log(topIssue)
 
     const branch = {
         current: BRANCH,
