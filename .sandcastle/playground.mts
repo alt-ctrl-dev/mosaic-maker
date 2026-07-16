@@ -1,7 +1,8 @@
 import { z } from "zod";
 import { sandboxEnv } from "./sandbox-env.mts";
-import { createPr } from "./pr.mts";
+import {  createPr, generatePrDescription } from "./pr.mts";
 import { execSync } from "child_process";
+import fs from 'node:fs';
 
 const currentBranch = execSync("git rev-parse --abbrev-ref HEAD", { encoding: "utf-8" }).trim();
 // const MAX_ITERATIONS = z.coerce.number().default(1).parse(process.env.MAX_ITERATIONS);
@@ -28,12 +29,16 @@ if (!BASE_BRANCH) {
 
 try {
 
-    await createPr(sandboxEnv, ISSUE_ID, {
+    const branch = {
         current: BRANCH,
         base: BASE_BRANCH
-    })
+    }
+    const {title, description} = await generatePrDescription(sandboxEnv, ISSUE_ID, branch)
 
-} finally {
+    await createPr(title,description,branch)
+
+} catch(e) {
+    console.error(e)
 }
 
 console.log("\nAll done.");

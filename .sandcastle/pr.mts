@@ -58,7 +58,7 @@ export const createPr = async (title: string, description: string, branch: {
     //
     // Create a pull request for the branch.
     // -----------------------------------------------------------------------
-
+    const prDescriptionFileName = "pr-description.md"
     const BASE_BRANCH = branch.base ?? "main"
     console.log("\n================ PR Title ================\n", title);
     console.log("\n============= PR Description =============\n", description);
@@ -73,18 +73,21 @@ export const createPr = async (title: string, description: string, branch: {
             `git push --set-upstream origin ${branch.current}`,
             { stdio: "inherit" }
         );
-        // #TODO publish branch
-        const prDescriptionFileName = "pr-description.md"
 
-        fs.writeFileSync('pr-description.md', description);
+
+        fs.writeFileSync(prDescriptionFileName, description);
         execSync(
             `gh pr create --title "${escapedTitle}" --body-file=${prDescriptionFileName} --base ${BASE_BRANCH} --head ${branch.current}`,
             { stdio: "inherit" }
         );
+
         console.log("Pull request created successfully.");
     } catch (error) {
         const message = error instanceof Error ? error.message : "Unknown error";
         console.error("Failed to create pull request:", message);
         throw error;
+    }
+    finally {
+        fs.rmSync(prDescriptionFileName)
     }
 }
