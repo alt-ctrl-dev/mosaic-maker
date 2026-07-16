@@ -2,6 +2,7 @@ import { execSync } from "child_process";
 import { SandboxEnv } from "./types";
 import * as sandcastle from "@ai-hero/sandcastle";
 import { docker } from "@ai-hero/sandcastle/sandboxes/docker";
+import fs from 'node:fs';
 
 const maybeAttachIssueId = (issueId: string, description: string) => {
     if (issueId === "") {
@@ -15,22 +16,16 @@ Closes #${issueId}
 `
 }
 
-export const createPr = async (sandboxEnv: SandboxEnv, issueId: string, branch: {
+export const generatePrDescription = async (sandboxEnv: SandboxEnv, issueId: string, branch: {
     base?: string; current: string
 }) => {
-    // -----------------------------------------------------------------------
-    // Create Pull Request
-    //
-    // Create a pull request for the branch.
-    // -----------------------------------------------------------------------
-
     const BASE_BRANCH = branch.base ?? "main"
     const prTitle = await sandcastle.run({
         sandbox: docker({ env: sandboxEnv }),
         name: "pr-title-generator",
         maxIterations: 1,
         agent: sandcastle.pi("openrouter/anthropic/claude-haiku-4.5"),
-        promptFile: "./.sandcastle/pr-title.md",
+        promptFile: "./.sandcastle/pr-title-prompt.md",
         promptArgs: { BRANCH: branch.current, BASE_BRANCH, },
         output: sandcastle.Output.string({ tag: "pr-title" }),
     });
@@ -42,21 +37,36 @@ export const createPr = async (sandboxEnv: SandboxEnv, issueId: string, branch: 
         name: "pr-description-generator",
         maxIterations: 1,
         agent: sandcastle.pi("openrouter/anthropic/claude-haiku-4.5"),
-        promptFile: "./.sandcastle/pr-description.md",
+        promptFile: "./.sandcastle/pr-description-prompt.md",
         promptArgs: { BRANCH: branch.current, BASE_BRANCH },
         output: sandcastle.Output.string({ tag: "pr-description" }),
     });
 
     const description = maybeAttachIssueId(issueId, prDescription.output)
 
+    return {
+        title: prTitle.output,
+        description
+    }
+}
 
-    console.log("\n================ PR Title ================\n", prTitle.output);
+export const createPr = async (title: string, description: string, branch: {
+    base?: string; current: string
+}) => {
+    // -----------------------------------------------------------------------
+    // Create Pull Request
+    //
+    // Create a pull request for the branch.
+    // -----------------------------------------------------------------------
+
+    const BASE_BRANCH = branch.base ?? "main"
+    console.log("\n================ PR Title ================\n", title);
     console.log("\n============= PR Description =============\n", description);
 
     try {
         // Escape quotes in title and body for shell
-        const escapedTitle = prTitle.output.replace(/"/g, '\\"');
-        const escapedBody = description.replace(/"/g, '\\"');
+        const escapedTitle = title.replace(/"/g, '\\"');
+
 
         // publish branch and push changes
         execSync(
@@ -64,8 +74,11 @@ export const createPr = async (sandboxEnv: SandboxEnv, issueId: string, branch: 
             { stdio: "inherit" }
         );
         // #TODO publish branch
+        const prDescriptionFileName = "pr-description.md"
+
+        fs.writeFileSync('pr-description.md', description);
         execSync(
-            `gh pr create --title "${escapedTitle}" --body=$(echo "${escapedBody}") --base ${BASE_BRANCH} --head ${branch.current}`,
+            `gh pr create --title "${escapedTitle}" --body-file=${prDescriptionFileName} --base ${BASE_BRANCH} --head ${branch.current}`,
             { stdio: "inherit" }
         );
         console.log("Pull request created successfully.");
