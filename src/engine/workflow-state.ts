@@ -193,15 +193,16 @@ export function updateWorkflowWithTesserae(
   state: WorkflowState,
   tesserae: TesseraInfo[]
 ): WorkflowState {
-  // Calculate counts
-  const validCount = tesserae.filter((t) => t.isValid).length;
-  const rejectedCount = tesserae.filter((t) => !t.isValid).length;
-  
+  let validCount = 0;
+  for (const t of tesserae) {
+    if (t.isValid) validCount++;
+  }
+
   return {
     ...state,
     tesserae,
     validTesseraCount: validCount,
-    rejectedTesseraCount: rejectedCount,
+    rejectedTesseraCount: tesserae.length - validCount,
     totalTesseraCount: tesserae.length,
     currentStep: WorkflowStep.REVIEW_TESSERAE,
   };
@@ -224,16 +225,17 @@ export function updateWorkflowRemoveTessera(
 
   const newTesserae = [...state.tesserae];
   newTesserae.splice(tesseraIndex, 1);
-  
-  // Recalculate counts
-  const validCount = newTesserae.filter((t) => t.isValid).length;
-  const rejectedCount = newTesserae.filter((t) => !t.isValid).length;
-  
+
+  let validCount = 0;
+  for (const t of newTesserae) {
+    if (t.isValid) validCount++;
+  }
+
   return {
     ...state,
     tesserae: newTesserae,
     validTesseraCount: validCount,
-    rejectedTesseraCount: rejectedCount,
+    rejectedTesseraCount: newTesserae.length - validCount,
     totalTesseraCount: newTesserae.length,
   };
 }

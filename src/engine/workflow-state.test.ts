@@ -191,7 +191,10 @@ describe("workflow-state", () => {
         },
       ];
 
-      const newState = updateWorkflowWithTesserae(INITIAL_WORKFLOW_STATE, tesserae);
+      const newState = updateWorkflowWithTesserae(
+        INITIAL_WORKFLOW_STATE,
+        tesserae
+      );
 
       expect(newState.tesserae).toEqual(tesserae);
       expect(newState.validTesseraCount).toBe(1);

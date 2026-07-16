@@ -22,12 +22,12 @@ export async function processTesserae(
       const tesseraInfo = await processSingleTessera(file, targetSize);
       tesserae.push(tesseraInfo);
     } catch (error) {
-      // If processing fails, create an invalid tessera entry
       tesserae.push({
         file,
         fileName: file.name,
         isValid: false,
-        error: error instanceof Error ? error.message : "Unknown error occurred",
+        error:
+          error instanceof Error ? error.message : "Unknown error occurred",
         isLowResolution: false,
         previewUrl: null,
       });
@@ -48,7 +48,6 @@ async function processSingleTessera(
   file: File,
   targetSize: number
 ): Promise<TesseraInfo> {
-  // Check if file format is supported
   if (!isSupportedImageFormat(file)) {
     return {
       file,
@@ -60,19 +59,11 @@ async function processSingleTessera(
     };
   }
 
-  // Load the image to get dimensions
   const img = await loadImageFromFile(file);
-  
-  // Center-crop to largest square
   const croppedCanvas = centerCropToSquare(img);
-  
-  // Check if resolution is low
-  const isLowResolution = Math.min(croppedCanvas.width, croppedCanvas.height) < MIN_RECOMMENDED_SIZE;
-  
-  // Resize to target size
+  const isLowResolution =
+    Math.min(croppedCanvas.width, croppedCanvas.height) < MIN_RECOMMENDED_SIZE;
   const resizedCanvas = resizeCanvas(croppedCanvas, targetSize, targetSize);
-  
-  // Convert to data URL for preview
   const previewUrl = resizedCanvas.toDataURL("image/png");
 
   return {
@@ -157,7 +148,6 @@ function resizeCanvas(
     throw new Error("Failed to get canvas context");
   }
 
-  // Use drawImage with bicubic interpolation for better quality
   ctx.imageSmoothingEnabled = true;
   ctx.imageSmoothingQuality = "high";
   ctx.drawImage(canvas, 0, 0, width, height);
