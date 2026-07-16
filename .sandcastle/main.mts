@@ -27,9 +27,27 @@ import { z } from "zod";
 import { sandboxEnv } from "./sandbox-env.mts";
 import { createPlanAgent } from "./plan.mts";
 import { createPr } from "./pr.mts";
-import { Issue } from "./types";
 import { createImplmentAgent } from "./implement.mts";
 import { createReviewAgent } from "./review.mts";
+
+// ---------------------------------------------------------------------------
+// Pre-flight checks
+// ---------------------------------------------------------------------------
+
+import { execSync } from "child_process";
+
+const currentBranch = execSync("git rev-parse --abbrev-ref HEAD", { encoding: "utf-8" }).trim();
+if (currentBranch !== "main") {
+  throw new Error(`SandCastle must run from main branch. Current branch: ${currentBranch}`);
+}
+
+// pull latest changes
+execSync(
+  `git pull`,
+  { stdio: "inherit" }
+);
+
+// ---------------------------------------------------------------------------
 
 // ---------------------------------------------------------------------------
 // Configuration
@@ -40,7 +58,7 @@ import { createReviewAgent } from "./review.mts";
 
 // Maximum number of planning cycles before stopping when no commits are made.
 // Raise this if your backlog is large; lower it for a quick smoke-test run.
-const MAX_ITERATIONS = z.coerce.number().default(10).parse(process.env.MAX_ITERATIONS);
+const MAX_ITERATIONS = z.coerce.number().default(1).parse(process.env.MAX_ITERATIONS);
 console.log(`Running for ${MAX_ITERATIONS} iteration(s)`);
 
 // Hooks run inside the sandbox before the agent starts each iteration.
@@ -91,10 +109,10 @@ for (let iteration = 1; iteration <= MAX_ITERATIONS; iteration++) {
     }
 
     console.log(`\nImplementation complete on branch: ${branch}`);
-    
+
     await reviewAgent.run()
     console.log("\nReview complete.");
-    
+
     await createPr(sandboxEnv, topIssue.id, { current: topIssue.branch })
     console.log("\nCreated PR.");
 

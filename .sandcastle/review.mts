@@ -19,6 +19,7 @@ export const createReviewAgent = (sandbox: sandcastle.Sandbox, branch: string): 
       promptArgs: {
         BRANCH: branch,
       },
+      completionSignal:  "<promise>COMPLETE</promise>"
     });
     }
 

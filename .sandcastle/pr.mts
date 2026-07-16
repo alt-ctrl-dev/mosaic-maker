@@ -58,6 +58,12 @@ export const createPr = async (sandboxEnv: SandboxEnv, issueId: string, branch: 
         const escapedTitle = prTitle.output.replace(/"/g, '\\"');
         const escapedBody = description.replace(/"/g, '\\"');
 
+        // publish branch and push changes
+        execSync(
+            `git push --set-upstream origin ${branch.current}`,
+            { stdio: "inherit" }
+        );
+        // #TODO publish branch
         execSync(
             `gh pr create --title "${escapedTitle}" --body "${escapedBody}" --base ${BASE_BRANCH} --head ${branch.current}`,
             { stdio: "inherit" }
