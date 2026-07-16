@@ -26,7 +26,7 @@ import { docker } from "@ai-hero/sandcastle/sandboxes/docker";
 import { z } from "zod";
 import { sandboxEnv } from "./sandbox-env.mts";
 import { createPlanAgent } from "./plan.mts";
-import { createPr } from "./pr.mts";
+import { createPr, generatePrDescription } from "./pr.mts";
 import { createImplmentAgent } from "./implement.mts";
 import { createReviewAgent } from "./review.mts";
 
@@ -113,7 +113,15 @@ for (let iteration = 1; iteration <= MAX_ITERATIONS; iteration++) {
     await reviewAgent.run()
     console.log("\nReview complete.");
 
-    await createPr(sandboxEnv, topIssue.id, { current: topIssue.branch })
+
+
+    const branchDetails = {
+      current: topIssue.branch,
+      base: "main"
+    }
+    const { title, description } = await generatePrDescription(sandboxEnv, topIssue.id, branchDetails)
+
+    await createPr(title, description, branchDetails)
     console.log("\nCreated PR.");
 
   } finally {
