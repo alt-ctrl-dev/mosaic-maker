@@ -1,0 +1,110 @@
+name: Pull Request Checks
+
+on:
+  pull_request:
+    types: [opened, synchronize, reopened, ready_for_review]
+    branches: [main]
+
+permissions:
+  contents: read
+
+concurrency:
+  group: pr-checks-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  changes:
+    if: github.event.pull_request.draft == false
+    runs-on: ubuntu-latest
+    outputs:
+      docs_only: ${{ steps.changes.outputs.docs_only }}
+    steps:
+      - uses: actions/checkout@v7
+      - uses: dorny/paths-filter@v3
+        id: changes
+        with:
+          filters: |
+            docs_only:
+              - added|modified: '*.md'
+              - added|modified: 'docs/**'
+              - added|modified: '.github/**/*.md'
+
+  lint:
+    runs-on: ubuntu-latest
+    needs: changes
+    steps:
+      - uses: actions/checkout@v7
+      - uses: pnpm/action-setup@v6
+      - uses: actions/setup-node@v6
+        with:
+          node-version: 24
+          cache: pnpm
+      - name: Run lint
+        if: needs.changes.outputs.docs_only != 'true'
+        run: |
+          pnpm install --frozen-lockfile
+          pnpm run lint
+
+  format:
+    runs-on: ubuntu-latest
+    needs: changes
+    steps:
+      - uses: actions/checkout@v7
+      - uses: pnpm/action-setup@v6
+      - uses: actions/setup-node@v6
+        with:
+          node-version: 24
+          cache: pnpm
+      - name: Run format
+        if: needs.changes.outputs.docs_only != 'true'
+        run: |
+          pnpm install --frozen-lockfile
+          pnpm run format
+
+  test:
+    runs-on: ubuntu-latest
+    needs: changes
+    steps:
+      - uses: actions/checkout@v7
+      - uses: pnpm/action-setup@v6
+      - uses: actions/setup-node@v6
+        with:
+          node-version: 24
+          cache: pnpm
+      - name: Run tests
+        if: needs.changes.outputs.docs_only != 'true'
+        run: |
+          pnpm install --frozen-lockfile
+          pnpm run test
+
+  typecheck:
+    runs-on: ubuntu-latest
+    needs: changes
+    steps:
+      - uses: actions/checkout@v7
+      - uses: pnpm/action-setup@v6
+      - uses: actions/setup-node@v6
+        with:
+          node-version: 24
+          cache: pnpm
+      - name: Run typecheck
+        if: needs.changes.outputs.docs_only != 'true'
+        run: |
+          pnpm install --frozen-lockfile
+          pnpm run typecheck
+
+  build:
+    runs-on: ubuntu-latest
+    needs: [lint, format, test, typecheck]
+    steps:
+      - uses: actions/checkout@v7
+      - uses: pnpm/action-setup@v6
+      - uses: actions/setup-node@v6
+        with:
+          node-version: 24
+          cache: pnpm
+      - name: Run build
+        if: needs.changes.outputs.docs_only != 'true'
+        run: |
+          pnpm install --frozen-lockfile
+          pnpm run build

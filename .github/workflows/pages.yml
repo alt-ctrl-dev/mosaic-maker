@@ -1,7 +1,6 @@
-name: Check and deploy
+name: Deploy to GitHub Pages
 
 on:
-  pull_request:
   push:
     branches: [main]
 
@@ -15,26 +14,7 @@ concurrency:
   cancel-in-progress: true
 
 jobs:
-  checks:
-    name: ${{ matrix.command }}
-    runs-on: ubuntu-latest
-    strategy:
-      fail-fast: false
-      matrix:
-        command: [lint, format, test, typecheck]
-    steps:
-      - uses: actions/checkout@v7
-      - uses: pnpm/action-setup@v6
-      - uses: actions/setup-node@v6
-        with:
-          node-version: 24
-          cache: pnpm
-      - run: pnpm install --frozen-lockfile
-      - run: pnpm run ${{ matrix.command }}
-
   build:
-    if: github.event_name == 'push'
-    needs: checks
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v7
@@ -51,7 +31,6 @@ jobs:
           path: dist
 
   deploy:
-    if: github.event_name == 'push'
     needs: build
     environment:
       name: github-pages
