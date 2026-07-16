@@ -24,6 +24,18 @@ An issue is **unblocked** if it has zero blocking dependencies on other open iss
 
 For each unblocked issue, assign a branch name using the exact format `sandcastle/issue-{id}` (no slug or other suffix). This must be deterministic so that re-planning the same issue always produces the same branch name and accumulated progress is preserved.
 
+## Priority order
+
+Pick issues in this order:
+
+1. **In-progress work** — resume any open issue tagged with the label `in-progress` from the previous iteration
+2. **Bug fixes** — broken behaviour affecting users
+3. **Tracer bullets** — thin end-to-end slices that prove an approach works
+4. **Polish** — improving existing functionality (error messages, UX, docs)
+5. **Refactors** — internal cleanups with no user-visible change
+
+Always resume in-progress issues before picking a new one. Pick the highest-priority unblocked issue, in order above.
+
 # OUTPUT
 
 Output your plan as a JSON object wrapped in `<plan>` tags:
