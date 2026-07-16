@@ -57,5 +57,6 @@ Once complete, only output  <promise>COMPLETE</promise>.
 # FINAL RULES
 
 - Do not leave commented-out code or TODO comments in committed code.
+- **Never modify `.npmrc` or `pnpm-workspace.yaml`.** These files enforce supply-chain security policies and must not be changed by automated tooling.
 - ALWAYS use `pnpm` for all package management and script execution. Never use `npm` or `yarn`.
 - **Always use the git-workflow-and-versioning skill for all commits.** Do not commit without invoking the skill.
