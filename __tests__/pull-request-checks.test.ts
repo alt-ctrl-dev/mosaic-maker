@@ -62,4 +62,9 @@ describe("Pull Request Checks Workflow", () => {
 
 		expect(workflowContent).not.toContain("added|modified:\n");
 	});
+
+	it("should use paths-filter v4", () => {
+		expect(workflowContent).toContain("dorny/paths-filter@v4");
+		expect(workflowContent).not.toContain("dorny/paths-filter@v3");
+	});
 });
