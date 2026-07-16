@@ -9,7 +9,6 @@ import type { TesseraInfo } from "./workflow-state";
  * @returns A deterministic random number between 0 and 1
  */
 function seededRandom(seed: number): number {
-	// Simple hash-based approach to avoid PHONE issues
 	seed = Math.abs(seed);
 	seed = ((seed >> 16) ^ seed) * 0x45d9f3b;
 	seed = ((seed >> 16) ^ seed) * 0x45d9f3b;
@@ -50,26 +49,17 @@ export async function generateNoiseTesserae(
 	const tesserae: TesseraInfo[] = [];
 
 	for (let i = 0; i < count; i++) {
-		// Simple seeded random number generator
 		const randomValue = seededRandom(seed + i);
-
-		// Determine if this should be smooth or sharp noise
-		const isSmooth = randomValue > 0.5;
-		const style = isSmooth ? "smooth" : "sharp";
-
-		// Include style information in the filename so both tests can pass
-		// The fileName needs to match the pattern but also contain style info
-		const fileName = `generated-${i}-${style}-${seed}.png`;
+		const style = randomValue > 0.5 ? "smooth" : "sharp";
+		const id = `generated-${i}-${style}-${seed}`;
 
 		tesserae.push({
-			file: new File([`generated-${i}-${style}-${seed}`], fileName, {
-				type: "image/png",
-			}),
-			fileName: fileName,
+			file: new File([id], `${id}.png`, { type: "image/png" }),
+			fileName: `${id}.png`,
 			isValid: true,
 			error: null,
 			isLowResolution: false,
-			previewUrl: `data:image/png;base64,${btoa(`generated-${i}-${style}-${seed}`)}`,
+			previewUrl: `data:image/png;base64,${btoa(id)}`,
 		});
 	}
 
