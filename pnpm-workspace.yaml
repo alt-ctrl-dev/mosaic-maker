@@ -21,4 +21,4 @@ strictDepBuilds: true
 # innocent-looking transitive deps.
 blockExoticSubdeps: true
 
-minimumReleaseAge: 0
+minimumReleaseAge: 10080
