@@ -1,0 +1,24 @@
+# npm security best practices
+# Source: https://github.com/lirantal/npm-security-best-practices
+
+# SECURITY: block install scripts by default; explicit allow-list
+# only. Postinstall scripts are a primary malware delivery vector
+# for transitive dependencies. Keep this list small and only
+# enable packages whose postinstall is genuinely required.
+allowBuilds:
+  # Native bundler; postinstall fetches the platform-specific binary.
+  esbuild: true
+
+# SECURITY: fail the install if a dependency wants to run a build
+# script that isn't in the allow-list above. Without this, new
+# postinstall scripts get silently skipped — you'd never know to
+# audit them.
+strictDepBuilds: true
+
+# SECURITY: reject dependencies sourced from git URLs, tarball
+# URLs, or local paths. These bypass registry signing, provenance,
+# and yanking, and have been weaponized to deliver malware through
+# innocent-looking transitive deps.
+blockExoticSubdeps: true
+
+minimumReleaseAge: 10080

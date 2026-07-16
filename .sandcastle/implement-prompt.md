@@ -71,6 +71,7 @@ Once complete, output <promise>COMPLETE</promise>.
 # FINAL RULES
 
 - **ONLY WORK ON A SINGLE TASK.**
+- **Never modify `.npmrc` or `pnpm-workspace.yaml`.** These files enforce supply-chain security policies and must not be changed by automated tooling.
 - Do not stop until you have committed the fix and verified the feedback loop has passed.
 - Do not leave commented-out code or TODO comments in committed code.
 - ALWAYS use `pnpm` for all package management and script execution. Never use `npm` or `yarn`.
