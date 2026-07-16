@@ -60,7 +60,7 @@ describe("Pull Request Checks Workflow", () => {
     expect(workflowContent).toContain("added|modified: '*.md'");
     expect(workflowContent).toContain("added|modified: 'docs/**'");
     expect(workflowContent).toContain("added|modified: '.github/**/*.md'");
-    
+
     // Should not contain the incorrect nested format
     expect(workflowContent).not.toContain("added|modified:\n");
   });
