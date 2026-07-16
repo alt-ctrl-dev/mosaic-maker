@@ -64,7 +64,6 @@ export async function getSourceImageInfo(file: File): Promise<SourceImageInfo> {
       reject(new Error("Failed to load image"));
     };
 
-    // This preserves EXIF orientation automatically in modern browsers
     img.src = url;
   });
 }

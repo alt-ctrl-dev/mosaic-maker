@@ -1,3 +1,6 @@
+/** Minimum tessera size in pixels. */
+const MIN_TESSERA_SIZE = 8;
+
 /**
  * Calculate the nearest valid tessera size that divides both source dimensions evenly.
  * If there's a tie between two equally close valid sizes, choose the smaller one.
@@ -12,21 +15,14 @@ export function calculateAdjustedTesseraSize(
   sourceWidth: number,
   sourceHeight: number
 ): number | null {
-  // Minimum valid tessera size is 8 pixels
-  const MIN_TESSERA_SIZE = 8;
-
-  // The maximum possible tessera size is the smaller of the two dimensions
   const maxSize = Math.min(sourceWidth, sourceHeight);
 
-  // Find the valid size closest to the requested size without storing all valid sizes
   let bestSize: number | null = null;
   let bestDistance = Infinity;
 
-  // Check all possible sizes from minimum up to maximum
   for (let size = MIN_TESSERA_SIZE; size <= maxSize; size++) {
     if (sourceWidth % size === 0 && sourceHeight % size === 0) {
       const distance = Math.abs(requestedSize - size);
-      // If this size is closer, or equally close but smaller (tie-breaking)
       if (
         distance < bestDistance ||
         (distance === bestDistance && size < (bestSize || Infinity))
@@ -75,14 +71,12 @@ export function isCoarseGrid(cellCount: number): boolean {
  * @param sourceHeight - The height of the source image in pixels
  * @returns True if there are valid tessera sizes, false otherwise
  */
-export function hasValidTesseraSizes(sourceWidth: number, sourceHeight: number): boolean {
-  // Minimum valid tessera size is 8 pixels
-  const MIN_TESSERA_SIZE = 8;
-
-  // The maximum possible tessera size is the smaller of the two dimensions
+export function hasValidTesseraSizes(
+  sourceWidth: number,
+  sourceHeight: number
+): boolean {
   const maxSize = Math.min(sourceWidth, sourceHeight);
 
-  // Check if there are any valid sizes from minimum up to maximum
   for (let size = MIN_TESSERA_SIZE; size <= maxSize; size++) {
     if (sourceWidth % size === 0 && sourceHeight % size === 0) {
       return true;

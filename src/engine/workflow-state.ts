@@ -2,8 +2,8 @@ import type { SourceImageInfo } from "./image-processing";
 import {
   calculateAdjustedTesseraSize,
   calculateGridCellCount,
-  isCoarseGrid,
   hasValidTesseraSizes,
+  isCoarseGrid,
 } from "./tessera-sizing";
 
 /**
@@ -11,7 +11,7 @@ import {
  */
 export interface WorkflowState {
   /** The current step in the workflow */
-  currentStep: number;
+  currentStep: WorkflowStep;
   /** Information about the selected source image, if any */
   sourceImage: SourceImageInfo | null;
   /** The tessera size requested by the user */
@@ -43,12 +43,12 @@ export const INITIAL_WORKFLOW_STATE: WorkflowState = {
  * Workflow steps.
  */
 export enum WorkflowStep {
-  CHOOSE_SOURCE_IMAGE = 0,
-  SET_TESSERA_SIZE = 1,
-  CHOOSE_TESSERAE = 2,
-  REVIEW_TESSERAE = 3,
-  GENERATE_AND_PREVIEW = 4,
-  EXPORT_MOSAIC = 5,
+  CHOOSE_SOURCE_IMAGE,
+  SET_TESSERA_SIZE,
+  CHOOSE_TESSERAE,
+  REVIEW_TESSERAE,
+  GENERATE_AND_PREVIEW,
+  EXPORT_MOSAIC,
 }
 
 /**
@@ -62,18 +62,22 @@ export function updateWorkflowWithSourceImage(
   state: WorkflowState,
   sourceImage: SourceImageInfo
 ): WorkflowState {
-  const hasValidDimensions = hasValidTesseraSizes(sourceImage.width, sourceImage.height);
-  
+  const hasValidDimensions = hasValidTesseraSizes(
+    sourceImage.width,
+    sourceImage.height
+  );
+
   if (!hasValidDimensions) {
     return {
       ...state,
       sourceImage,
       hasValidSourceDimensions: false,
-      sourceImageError: "The selected image has no valid tessera sizes (no common divisors above 8 pixels). Please select a different image.",
+      sourceImageError:
+        "The selected image has no valid tessera sizes (no common divisors above 8 pixels). Please select a different image.",
       currentStep: WorkflowStep.CHOOSE_SOURCE_IMAGE,
     };
   }
-  
+
   return {
     ...state,
     sourceImage,

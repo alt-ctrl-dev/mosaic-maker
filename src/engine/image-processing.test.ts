@@ -1,8 +1,8 @@
-import { describe, expect, it, vi, beforeEach, afterEach } from "vitest";
+import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 import {
-  isSupportedImageFormat,
   getImageFileError,
   getSourceImageInfo,
+  isSupportedImageFormat,
 } from "./image-processing";
 
 describe("image-processing", () => {
@@ -40,7 +40,6 @@ describe("image-processing", () => {
     });
 
     it("provides appropriate error for files with no type", () => {
-      // @ts-ignore - intentionally creating a file with no type for testing
       const file = new File([""], "test.jpg");
       expect(getImageFileError(file)).toContain(
         "File type could not be determined"
@@ -54,7 +53,13 @@ describe("image-processing", () => {
   });
 
   describe("getSourceImageInfo", () => {
-    // Mock the global Image class
+    let mockImageInstance: {
+      onload: (() => void) | null;
+      onerror: (() => void) | null;
+      naturalWidth: number;
+      naturalHeight: number;
+    };
+
     class MockImage {
       onload: (() => void) | null = null;
       onerror: (() => void) | null = null;
@@ -63,8 +68,7 @@ describe("image-processing", () => {
       naturalHeight = 0;
 
       constructor() {
-        // Set up a way to trigger onload/onerror from tests
-        (window as any).__mockImage = this;
+        mockImageInstance = this;
       }
     }
 
@@ -74,24 +78,15 @@ describe("image-processing", () => {
 
     afterEach(() => {
       vi.unstubAllGlobals();
-      delete (window as any).__mockImage;
     });
 
     it("extracts image dimensions", async () => {
       const file = new File([""], "test.jpg", { type: "image/jpeg" });
       const promise = getSourceImageInfo(file);
 
-      // Simulate image loading successfully
-      if (!(window as any).__mockImage) {
-        throw new Error("Mock image not found");
-      }
-      const mockImage = (window as any).__mockImage;
-      mockImage.naturalWidth = 800;
-      mockImage.naturalHeight = 600;
-
-      if (mockImage.onload) {
-        mockImage.onload();
-      }
+      mockImageInstance.naturalWidth = 800;
+      mockImageInstance.naturalHeight = 600;
+      mockImageInstance.onload?.();
 
       const info = await promise;
       expect(info.width).toBe(800);
@@ -103,14 +98,7 @@ describe("image-processing", () => {
       const file = new File([""], "test.jpg", { type: "image/jpeg" });
       const promise = getSourceImageInfo(file);
 
-      // Simulate image loading failure
-      if (!(window as any).__mockImage) {
-        throw new Error("Mock image not found");
-      }
-      const mockImage = (window as any).__mockImage;
-      if (mockImage.onerror) {
-        mockImage.onerror();
-      }
+      mockImageInstance.onerror?.();
 
       await expect(promise).rejects.toThrow("Failed to load image");
     });
