@@ -36,16 +36,9 @@ import { createReviewAgent } from "./review.mts";
 
 import { execSync } from "child_process";
 
-const currentBranch = execSync("git rev-parse --abbrev-ref HEAD", { encoding: "utf-8" }).trim();
-if (currentBranch !== "main") {
-  throw new Error(`SandCastle must run from main branch. Current branch: ${currentBranch}`);
-}
 
-// pull latest changes
-execSync(
-  `git pull`,
-  { stdio: "inherit" }
-);
+
+
 
 // ---------------------------------------------------------------------------
 
@@ -79,6 +72,15 @@ const planAgent = createPlanAgent(sandboxEnv)
 
 for (let iteration = 1; iteration <= MAX_ITERATIONS; iteration++) {
   console.log(`\n=== Iteration ${iteration}/${MAX_ITERATIONS} ===\n`);
+  const currentBranch = execSync("git rev-parse --abbrev-ref HEAD", { encoding: "utf-8" }).trim();
+  if (currentBranch !== "main") {
+    throw new Error(`SandCastle must run from main branch. Current branch: ${currentBranch}`);
+  }
+  // pull latest changes
+  execSync(
+    `git pull`,
+    { stdio: "inherit" }
+  );
 
   // Plan work and identify the task to work on
   const topIssue = await planAgent.run()
