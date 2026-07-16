@@ -1,69 +1,69 @@
 :root {
-  --pico-font-size: 100%;
-  --pico-border-radius: 0.75rem;
+	--pico-font-size: 100%;
+	--pico-border-radius: 0.75rem;
 }
 
 body {
-  min-width: 20rem;
+	min-width: 20rem;
 }
 
 header {
-  padding-block: 4rem 2rem;
-  text-align: center;
+	padding-block: 4rem 2rem;
+	text-align: center;
 }
 
 header > p:last-child {
-  max-width: 40rem;
-  margin-inline: auto;
+	max-width: 40rem;
+	margin-inline: auto;
 }
 
 .eyebrow {
-  margin-bottom: 0.5rem;
-  color: var(--pico-primary);
-  font-weight: 700;
-  letter-spacing: 0.08em;
-  text-transform: uppercase;
+	margin-bottom: 0.5rem;
+	color: var(--pico-primary);
+	font-weight: 700;
+	letter-spacing: 0.08em;
+	text-transform: uppercase;
 }
 
 .workflow {
-  display: grid;
-  grid-template-columns: repeat(auto-fit, minmax(min(100%, 18rem), 1fr));
-  gap: 1rem;
-  padding: 0;
-  list-style: none;
+	display: grid;
+	grid-template-columns: repeat(auto-fit, minmax(min(100%, 18rem), 1fr));
+	gap: 1rem;
+	padding: 0;
+	list-style: none;
 }
 
 .workflow article {
-  display: flex;
-  height: 100%;
-  gap: 1rem;
-  margin: 0;
+	display: flex;
+	height: 100%;
+	gap: 1rem;
+	margin: 0;
 }
 
 .workflow h2 {
-  margin-bottom: 0.5rem;
-  font-size: 1.15rem;
+	margin-bottom: 0.5rem;
+	font-size: 1.15rem;
 }
 
 .workflow p {
-  margin: 0;
+	margin: 0;
 }
 
 .step-number {
-  display: grid;
-  flex: 0 0 2.5rem;
-  width: 2.5rem;
-  height: 2.5rem;
-  border-radius: 50%;
-  background: var(--pico-primary-background);
-  color: var(--pico-primary-inverse);
-  font-weight: 700;
-  place-items: center;
+	display: grid;
+	flex: 0 0 2.5rem;
+	width: 2.5rem;
+	height: 2.5rem;
+	border-radius: 50%;
+	background: var(--pico-primary-background);
+	color: var(--pico-primary-inverse);
+	font-weight: 700;
+	place-items: center;
 }
 
 @media (max-width: 576px) {
-  header {
-    padding-block-start: 2rem;
-    text-align: left;
-  }
+	header {
+		padding-block-start: 2rem;
+		text-align: left;
+	}
 }
