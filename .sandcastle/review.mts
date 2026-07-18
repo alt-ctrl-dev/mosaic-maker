@@ -41,26 +41,24 @@ export const createReviewAgent = (sandbox: sandcastle.Sandbox, branch: string): 
       output: sandcastle.Output.string({ tag: "review-result" }),
     });
     
-    // Parse the review result to extract type and feedback
     const reviewOutput = reviewResult.output;
-    
-    // Extract review type and feedback using regex
+
     const typeMatch = reviewOutput.match(/<review-type>(.*?)<\/review-type>/s);
     const feedbackMatch = reviewOutput.match(/<review-feedback>(.*?)<\/review-feedback>/s);
-    
-    const reviewType = typeMatch ? typeMatch[1].trim() as "approve" | "comment" | "request-changes" : "comment";
-    const feedback = feedbackMatch ? feedbackMatch[1].trim() : "No specific feedback provided.";
+
+    const rawType = typeMatch?.[1]?.trim() ?? "";
+    const reviewType = ["approve", "comment", "request-changes"].includes(rawType)
+      ? (rawType as "approve" | "comment" | "request-changes")
+      : "comment";
+    const feedback = feedbackMatch?.[1]?.trim() ?? "No specific feedback provided.";
     
     console.log(`Review type: ${reviewType}`);
     console.log(`Review feedback: ${feedback}`);
     
-    // Find the PR number for this branch
     const prNumber = await findPRForBranch(branch);
-    
+
     if (prNumber) {
-      // Post the review to the PR
       await postPRReview(feedback, prNumber, reviewType);
-      console.log(`Posted ${reviewType} review to PR #${prNumber}`);
     } else {
       console.log(`No open PR found for branch ${branch}. Review feedback:\n${feedback}`);
     }

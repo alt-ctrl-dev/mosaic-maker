@@ -6,32 +6,27 @@ import { execSync } from "child_process";
  * @param prNumber The PR number to post to
  * @param reviewType The type of review: "approve", "comment", or "request-changes"
  */
+const REVIEW_TYPE_FLAGS: Record<string, string> = {
+  approve: "--approve",
+  comment: "--comment",
+  "request-changes": "--request-changes",
+};
+
 export const postPRReview = async (
   feedback: string,
   prNumber: string,
   reviewType: "approve" | "comment" | "request-changes"
 ): Promise<void> => {
-  // Escape quotes in the feedback for shell command
-  const escapedFeedback = feedback.replace(/"/g, '\\"');
-  
-  let command = `gh pr review ${prNumber}`;
-  
-  switch (reviewType) {
-    case "approve":
-      command += ` --approve -b "${escapedFeedback}"`;
-      break;
-    case "comment":
-      command += ` --comment -b "${escapedFeedback}"`;
-      break;
-    case "request-changes":
-      command += ` --request-changes -b "${escapedFeedback}"`;
-      break;
-    default:
-      throw new Error(`Invalid review type: ${reviewType}`);
+  const flag = REVIEW_TYPE_FLAGS[reviewType];
+  if (!flag) {
+    throw new Error(`Invalid review type: ${reviewType}`);
   }
-  
+
   try {
-    execSync(command, { stdio: "inherit" });
+    execSync(`gh pr review ${prNumber} ${flag} -F -`, {
+      stdio: ["pipe", "inherit", "inherit"],
+      input: feedback,
+    });
     console.log(`Successfully posted ${reviewType} review to PR #${prNumber}`);
   } catch (error) {
     const message = error instanceof Error ? error.message : "Unknown error";
@@ -47,13 +42,12 @@ export const postPRReview = async (
  */
 export const findPRForBranch = async (branchName: string): Promise<string | null> => {
   try {
-    // Get the PR number for the branch
     const output = execSync(
       `gh pr list --head ${branchName} --state open --limit 1 --json number --jq '.[0].number'`,
       { encoding: "utf-8" }
     ).trim();
-    
-    return output ? output : null;
+
+    return output || null;
   } catch (error) {
     const message = error instanceof Error ? error.message : "Unknown error";
     console.error(`Failed to find PR for branch ${branchName}:`, message);
