@@ -12,6 +12,7 @@
 		"check": "pnpm run lint && pnpm run format && pnpm run test && pnpm run typecheck",
 		"sandcastle": "pnpx tsx .sandcastle/main.mts",
 		"sandcastle-playground": "pnpx tsx .sandcastle/playground.mts",
+		"sandcastle-pr-creator": "pnpx tsx .sandcastle/pr-creator.mts",
 		"prototype-neighbor-avoidance": "vite --config vite.prototype.config.ts",
 		"prepare": "husky"
 	},
