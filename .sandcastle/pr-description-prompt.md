@@ -48,7 +48,7 @@ The description should:
 5. **Breaking changes** — If applicable:
    - What breaks and why
    - Migration path for users/consumers
-6. **References** — Extract issue numbers from commits and add links to them. Also, if applicable, link the spec or prd
+6. **References** — Only if issue numbers (e.g., `#123`, `org/repo#123`) are present in commit messages: extract them and add links. If none found, omit this section entirely. Do not fabricate, guess, or reference a spec/prd unless explicitly linked in the commits.
 
 ## Template
 

@@ -23,7 +23,23 @@
 			"runtimeArgs": ["sandcastle-pr-creator"],
 			"runtimeExecutable": "pnpm",
 			"skipFiles": ["<node_internals>/**"],
-			"type": "node"
+			"type": "node",
+			"env": {
+				"BRANCH": "${input:branch}",
+				"ISSUE_ID": "${input:issueId}"
+			}
+		}
+	],
+	"inputs": [
+		{
+			"id": "branch",
+			"type": "promptString",
+			"description": "Branch name"
+		},
+		{
+			"id": "issueId",
+			"type": "promptString",
+			"description": "Issue ID (optional)"
 		}
 	]
 }

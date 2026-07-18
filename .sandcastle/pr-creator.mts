@@ -9,7 +9,7 @@ const ISSUE_ID = z.coerce.string().default('').parse(process.env.ISSUE_ID);
 const BASE_BRANCH = "main"
 
 console.log(`Running for branch ${BRANCH}`);
-console.log(`Running for branch ${BASE_BRANCH}`);
+console.log(`Running for base branch ${BASE_BRANCH}`);
 
 if (!BRANCH) {
     throw new Error()
