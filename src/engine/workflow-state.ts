@@ -52,9 +52,6 @@ export interface WorkflowState {
 	totalTesseraCount: number;
 }
 
-/**
- * Workflow steps.
- */
 export enum WorkflowStep {
 	CHOOSE_SOURCE_IMAGE,
 	SET_TESSERA_SIZE,
@@ -64,9 +61,6 @@ export enum WorkflowStep {
 	EXPORT_MOSAIC,
 }
 
-/**
- * Initial workflow state.
- */
 export const INITIAL_WORKFLOW_STATE: WorkflowState = {
 	currentStep: WorkflowStep.CHOOSE_SOURCE_IMAGE,
 	sourceImage: null,
@@ -81,13 +75,6 @@ export const INITIAL_WORKFLOW_STATE: WorkflowState = {
 	totalTesseraCount: 0,
 };
 
-/**
- * Updates the workflow state with a new source image.
- *
- * @param state - The current workflow state
- * @param sourceImage - The source image information
- * @returns The updated workflow state
- */
 export function updateWorkflowWithSourceImage(
 	state: WorkflowState,
 	sourceImage: SourceImageInfo,
@@ -117,13 +104,6 @@ export function updateWorkflowWithSourceImage(
 	};
 }
 
-/**
- * Updates the workflow state with a source image error.
- *
- * @param state - The current workflow state
- * @param errorMessage - The error message to set
- * @returns The updated workflow state
- */
 export function updateWorkflowWithSourceImageError(
 	state: WorkflowState,
 	errorMessage: string,
@@ -136,13 +116,6 @@ export function updateWorkflowWithSourceImageError(
 	};
 }
 
-/**
- * Updates the workflow state with a new tessera size.
- *
- * @param state - The current workflow state
- * @param requestedSize - The requested tessera size
- * @returns The updated workflow state
- */
 export function updateWorkflowWithTesseraSize(
 	state: WorkflowState,
 	requestedSize: number,
@@ -182,13 +155,6 @@ export function updateWorkflowWithTesseraSize(
 	};
 }
 
-/**
- * Updates the workflow state with new tesserae.
- *
- * @param state - The current workflow state
- * @param tesserae - The tesserae to add
- * @returns The updated workflow state
- */
 export function updateWorkflowWithTesserae(
 	state: WorkflowState,
 	tesserae: TesseraInfo[],
@@ -205,13 +171,6 @@ export function updateWorkflowWithTesserae(
 	};
 }
 
-/**
- * Updates the workflow state by removing a tessera at the specified index.
- *
- * @param state - The current workflow state
- * @param tesseraIndex - The index of the tessera to remove
- * @returns The updated workflow state
- */
 export function updateWorkflowRemoveTessera(
 	state: WorkflowState,
 	tesseraIndex: number,
