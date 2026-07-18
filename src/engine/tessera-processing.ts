@@ -1,16 +1,8 @@
 import type { TesseraInfo } from "./workflow-state";
 import { isSupportedImageFormat, getImageFileError } from "./image-processing";
 
-/** Minimum recommended tessera size in pixels */
 const MIN_RECOMMENDED_SIZE = 50;
 
-/**
- * Process a collection of tessera files into TesseraInfo objects.
- *
- * @param files - The tessera files to process
- * @param targetSize - The target size for the tesserae
- * @returns A promise that resolves with an array of processed tessera information
- */
 export async function processTesserae(
 	files: File[],
 	targetSize: number,
