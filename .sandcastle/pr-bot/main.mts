@@ -282,13 +282,6 @@ const processPRComments = async (pr: PR, comments: Comment[]): Promise<boolean> 
 
   console.log(`Found ${unhandledComments.length} unhandled /sandcastle comments`);
 
-  try {
-    execSync(`git fetch origin ${pr.headRefName}`, { stdio: "inherit" });
-  } catch (error) {
-    console.error(`Failed to checkout branch ${pr.headRefName}:`, error);
-    return false;
-  }
-
   let changesMade = false;
 
   for (const comment of unhandledComments) {
