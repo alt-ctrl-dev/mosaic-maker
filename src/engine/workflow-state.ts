@@ -1,3 +1,4 @@
+import type { ExportFormat } from "./export";
 import type { SourceImageInfo } from "./image-processing";
 import type { MosaicResult } from "./mosaic-engine";
 import {
@@ -8,6 +9,16 @@ import {
 } from "./tessera-sizing";
 
 export type { MosaicResult };
+
+/**
+ * Settings for mosaic export.
+ */
+export interface ExportSettings {
+	exportFormat: ExportFormat;
+	exportQuality: number;
+	exportAltText: string;
+	exportBackgroundColor: string;
+}
 
 /**
  * Information about a tessera that has been processed for the mosaic.
@@ -58,7 +69,7 @@ export interface WorkflowState {
 	/** Alternative text for the exported image */
 	exportAltText: string;
 	/** Selected export format */
-	exportFormat: "png" | "jpeg" | "webp";
+	exportFormat: ExportFormat;
 	/** Quality setting for JPEG/WebP exports (0.0 - 1.0) */
 	exportQuality: number;
 	/** Background color for JPEG exports */
@@ -208,15 +219,7 @@ export function updateWorkflowWithMosaicResult(
 
 export function updateWorkflowExportSettings(
 	state: WorkflowState,
-	settings: Partial<
-		Pick<
-			WorkflowState,
-			| "exportAltText"
-			| "exportFormat"
-			| "exportQuality"
-			| "exportBackgroundColor"
-		>
-	>,
+	settings: Partial<ExportSettings>,
 ): WorkflowState {
 	return {
 		...state,

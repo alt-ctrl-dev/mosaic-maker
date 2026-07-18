@@ -38,8 +38,24 @@ const mockImage = {
 } as HTMLImageElement;
 
 describe("Export Engine", () => {
-	it("should export PNG with default settings", async () => {
-		const mosaicDataUrl = "data:image/png;base64,test-mosaic";
+	const mosaicDataUrl = "data:image/png;base64,test-mosaic";
+
+	const expectedResult: Record<string, string> = {
+		png: "data:image/png;base64,mock-png-export",
+		jpeg: "data:image/jpeg;base64,mock-jpeg-export",
+		webp: "data:image/webp;base64,mock-webp-export",
+	};
+
+	it.each([
+		{ format: "png" as const, quality: 0.9 },
+		{ format: "jpeg" as const, quality: 0.9 },
+		{ format: "webp" as const, quality: 0.9 },
+		{ format: "jpeg" as const, quality: 0.8 },
+		{ format: "webp" as const, quality: 0.75 },
+	])("should export $format at quality $quality", async ({
+		format,
+		quality,
+	}) => {
 		const mockCanvasCreator = vi.fn(createMockCanvas);
 		const mockImageLoader = vi.fn().mockResolvedValue(mockImage);
 
@@ -47,99 +63,18 @@ describe("Export Engine", () => {
 			mosaicDataUrl,
 			100,
 			100,
-			"png",
-			0.9,
+			format,
+			quality,
 			mockCanvasCreator,
 			mockImageLoader,
 		);
 
-		expect(result).toBe("data:image/png;base64,mock-png-export");
-		expect(mockCanvasCreator).toHaveBeenCalledWith(100, 100);
-		expect(mockImageLoader).toHaveBeenCalledWith(mosaicDataUrl);
-	});
-
-	it("should export JPEG with default quality", async () => {
-		const mosaicDataUrl = "data:image/png;base64,test-mosaic";
-		const mockCanvasCreator = vi.fn(createMockCanvas);
-		const mockImageLoader = vi.fn().mockResolvedValue(mockImage);
-
-		const result = await exportMosaic(
-			mosaicDataUrl,
-			100,
-			100,
-			"jpeg",
-			0.9,
-			mockCanvasCreator,
-			mockImageLoader,
-		);
-
-		expect(result).toBe("data:image/jpeg;base64,mock-jpeg-export");
-		expect(mockCanvasCreator).toHaveBeenCalledWith(100, 100);
-		expect(mockImageLoader).toHaveBeenCalledWith(mosaicDataUrl);
-	});
-
-	it("should export WebP with default quality", async () => {
-		const mosaicDataUrl = "data:image/png;base64,test-mosaic";
-		const mockCanvasCreator = vi.fn(createMockCanvas);
-		const mockImageLoader = vi.fn().mockResolvedValue(mockImage);
-
-		const result = await exportMosaic(
-			mosaicDataUrl,
-			100,
-			100,
-			"webp",
-			0.9,
-			mockCanvasCreator,
-			mockImageLoader,
-		);
-
-		expect(result).toBe("data:image/webp;base64,mock-webp-export");
-		expect(mockCanvasCreator).toHaveBeenCalledWith(100, 100);
-		expect(mockImageLoader).toHaveBeenCalledWith(mosaicDataUrl);
-	});
-
-	it("should export JPEG with custom quality", async () => {
-		const mosaicDataUrl = "data:image/png;base64,test-mosaic";
-		const mockCanvasCreator = vi.fn(createMockCanvas);
-		const mockImageLoader = vi.fn().mockResolvedValue(mockImage);
-
-		const result = await exportMosaic(
-			mosaicDataUrl,
-			100,
-			100,
-			"jpeg",
-			0.8,
-			mockCanvasCreator,
-			mockImageLoader,
-		);
-
-		expect(result).toBe("data:image/jpeg;base64,mock-jpeg-export");
-		expect(mockCanvasCreator).toHaveBeenCalledWith(100, 100);
-		expect(mockImageLoader).toHaveBeenCalledWith(mosaicDataUrl);
-	});
-
-	it("should export WebP with custom quality", async () => {
-		const mosaicDataUrl = "data:image/png;base64,test-mosaic";
-		const mockCanvasCreator = vi.fn(createMockCanvas);
-		const mockImageLoader = vi.fn().mockResolvedValue(mockImage);
-
-		const result = await exportMosaic(
-			mosaicDataUrl,
-			100,
-			100,
-			"webp",
-			0.75,
-			mockCanvasCreator,
-			mockImageLoader,
-		);
-
-		expect(result).toBe("data:image/webp;base64,mock-webp-export");
+		expect(result).toBe(expectedResult[format]);
 		expect(mockCanvasCreator).toHaveBeenCalledWith(100, 100);
 		expect(mockImageLoader).toHaveBeenCalledWith(mosaicDataUrl);
 	});
 
 	it("should ignore quality parameter for PNG exports", async () => {
-		const mosaicDataUrl = "data:image/png;base64,test-mosaic";
 		const mockCanvasCreator = vi.fn(createMockCanvas);
 		const mockImageLoader = vi.fn().mockResolvedValue(mockImage);
 
