@@ -104,12 +104,32 @@ export function getVarietyRecommendation(gridCellCount: number): number {
 /**
  * Check if a collection has low variety based on valid tessera count vs recommendation.
  */
-export function isLowVarietyCollection(
+export function checkLowVariety(
 	validTesseraCount: number,
 	gridCellCount: number,
 ): boolean {
 	const recommendation = getVarietyRecommendation(gridCellCount);
 	return validTesseraCount < recommendation;
+}
+
+function recalculateVarietyMetrics(
+	state: WorkflowState,
+	validCount: number,
+): { isLowVariety: boolean; varietyRecommendation: number | null } {
+	if (!state.adjustedTesseraSize || !state.sourceImage) {
+		return { isLowVariety: false, varietyRecommendation: null };
+	}
+
+	const gridCellCount = calculateGridCellCount(
+		state.adjustedTesseraSize,
+		state.sourceImage.width,
+		state.sourceImage.height,
+	);
+
+	return {
+		isLowVariety: checkLowVariety(validCount, gridCellCount),
+		varietyRecommendation: getVarietyRecommendation(gridCellCount),
+	};
 }
 
 export function updateWorkflowWithSourceImage(
@@ -197,20 +217,7 @@ export function updateWorkflowWithTesserae(
 	tesserae: TesseraInfo[],
 ): WorkflowState {
 	const validCount = tesserae.filter((t) => t.isValid).length;
-
-	// Calculate variety recommendation and check if collection is low variety
-	let isLowVariety = false;
-	let varietyRecommendation = null;
-
-	if (state.adjustedTesseraSize && state.sourceImage) {
-		const gridCellCount = calculateGridCellCount(
-			state.adjustedTesseraSize,
-			state.sourceImage.width,
-			state.sourceImage.height,
-		);
-		varietyRecommendation = getVarietyRecommendation(gridCellCount);
-		isLowVariety = isLowVarietyCollection(validCount, gridCellCount);
-	}
+	const varietyMetrics = recalculateVarietyMetrics(state, validCount);
 
 	return {
 		...state,
@@ -218,8 +225,8 @@ export function updateWorkflowWithTesserae(
 		validTesseraCount: validCount,
 		rejectedTesseraCount: tesserae.length - validCount,
 		totalTesseraCount: tesserae.length,
-		isLowVarietyCollection: isLowVariety,
-		varietyRecommendation,
+		isLowVarietyCollection: varietyMetrics.isLowVariety,
+		varietyRecommendation: varietyMetrics.varietyRecommendation,
 		currentStep: WorkflowStep.REVIEW_TESSERAE,
 	};
 }
@@ -234,20 +241,7 @@ export function updateWorkflowRemoveTessera(
 
 	const newTesserae = state.tesserae.filter((_, i) => i !== tesseraIndex);
 	const validCount = newTesserae.filter((t) => t.isValid).length;
-
-	// Recalculate variety recommendation and check if collection is low variety
-	let isLowVariety = false;
-	let varietyRecommendation = state.varietyRecommendation;
-
-	if (state.adjustedTesseraSize && state.sourceImage) {
-		const gridCellCount = calculateGridCellCount(
-			state.adjustedTesseraSize,
-			state.sourceImage.width,
-			state.sourceImage.height,
-		);
-		varietyRecommendation = getVarietyRecommendation(gridCellCount);
-		isLowVariety = isLowVarietyCollection(validCount, gridCellCount);
-	}
+	const varietyMetrics = recalculateVarietyMetrics(state, validCount);
 
 	return {
 		...state,
@@ -255,8 +249,8 @@ export function updateWorkflowRemoveTessera(
 		validTesseraCount: validCount,
 		rejectedTesseraCount: newTesserae.length - validCount,
 		totalTesseraCount: newTesserae.length,
-		isLowVarietyCollection: isLowVariety,
-		varietyRecommendation,
+		isLowVarietyCollection: varietyMetrics.isLowVariety,
+		varietyRecommendation: varietyMetrics.varietyRecommendation,
 	};
 }
 
@@ -270,20 +264,7 @@ export function updateWorkflowWithSupplementedTesserae(
 ): WorkflowState {
 	const allTesserae = [...state.tesserae, ...supplementedTesserae];
 	const validCount = allTesserae.filter((t) => t.isValid).length;
-
-	// Recalculate variety recommendation and check if collection is low variety
-	let isLowVariety = false;
-	let varietyRecommendation = state.varietyRecommendation;
-
-	if (state.adjustedTesseraSize && state.sourceImage) {
-		const gridCellCount = calculateGridCellCount(
-			state.adjustedTesseraSize,
-			state.sourceImage.width,
-			state.sourceImage.height,
-		);
-		varietyRecommendation = getVarietyRecommendation(gridCellCount);
-		isLowVariety = isLowVarietyCollection(validCount, gridCellCount);
-	}
+	const varietyMetrics = recalculateVarietyMetrics(state, validCount);
 
 	return {
 		...state,
@@ -291,8 +272,8 @@ export function updateWorkflowWithSupplementedTesserae(
 		validTesseraCount: validCount,
 		rejectedTesseraCount: allTesserae.length - validCount,
 		totalTesseraCount: allTesserae.length,
-		isLowVarietyCollection: isLowVariety,
-		varietyRecommendation,
+		isLowVarietyCollection: varietyMetrics.isLowVariety,
+		varietyRecommendation: varietyMetrics.varietyRecommendation,
 		hasAcceptedSupplementation: true,
 	};
 }

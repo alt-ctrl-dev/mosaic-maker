@@ -8,7 +8,7 @@ import {
 	updateWorkflowRemoveTessera,
 	WorkflowStep,
 	type TesseraInfo,
-	isLowVarietyCollection,
+	checkLowVariety,
 	getVarietyRecommendation,
 	updateWorkflowWithSupplementedTesserae,
 } from "./workflow-state";
@@ -322,18 +322,14 @@ describe("workflow-state", () => {
 		});
 	});
 
-	describe("isLowVarietyCollection", () => {
+	describe("checkLowVariety", () => {
 		it("returns true when valid tesserae count is below 10% recommendation", () => {
-			// Recommendation is 10, collection has 5 valid tesserae
-			expect(isLowVarietyCollection(5, 100)).toBe(true);
+			expect(checkLowVariety(5, 100)).toBe(true);
 		});
 
 		it("returns false when valid tesserae count meets or exceeds 10% recommendation", () => {
-			// Recommendation is 10, collection has 10 valid tesserae
-			expect(isLowVarietyCollection(10, 100)).toBe(false);
-
-			// Recommendation is 10, collection has 15 valid tesserae
-			expect(isLowVarietyCollection(15, 100)).toBe(false);
+			expect(checkLowVariety(10, 100)).toBe(false);
+			expect(checkLowVariety(15, 100)).toBe(false);
 		});
 	});
 
