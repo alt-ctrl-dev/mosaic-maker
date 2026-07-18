@@ -1,10 +1,24 @@
+import type { ExportFormat } from "./export";
 import type { SourceImageInfo } from "./image-processing";
+import type { MosaicResult } from "./mosaic-engine";
 import {
 	calculateAdjustedTesseraSize,
 	calculateGridCellCount,
 	hasValidTesseraSizes,
 	isCoarseGrid,
 } from "./tessera-sizing";
+
+export type { MosaicResult };
+
+/**
+ * Settings for mosaic export.
+ */
+export interface ExportSettings {
+	exportFormat: ExportFormat;
+	exportQuality: number;
+	exportAltText: string;
+	exportBackgroundColor: string;
+}
 
 /**
  * Information about a tessera that has been processed for the mosaic.
@@ -50,6 +64,16 @@ export interface WorkflowState {
 	rejectedTesseraCount: number;
 	/** Total number of tesserae processed */
 	totalTesseraCount: number;
+	/** The generated mosaic result */
+	mosaicResult: MosaicResult | null;
+	/** Alternative text for the exported image */
+	exportAltText: string;
+	/** Selected export format */
+	exportFormat: ExportFormat;
+	/** Quality setting for JPEG/WebP exports (0.0 - 1.0) */
+	exportQuality: number;
+	/** Background color for JPEG exports */
+	exportBackgroundColor: string;
 }
 
 /**
@@ -79,6 +103,11 @@ export const INITIAL_WORKFLOW_STATE: WorkflowState = {
 	validTesseraCount: 0,
 	rejectedTesseraCount: 0,
 	totalTesseraCount: 0,
+	mosaicResult: null,
+	exportAltText: "",
+	exportFormat: "png",
+	exportQuality: 0.9,
+	exportBackgroundColor: "#ffffff",
 };
 
 export function updateWorkflowWithSourceImage(
@@ -174,6 +203,27 @@ export function updateWorkflowWithTesserae(
 		rejectedTesseraCount: tesserae.length - validCount,
 		totalTesseraCount: tesserae.length,
 		currentStep: WorkflowStep.REVIEW_TESSERAE,
+	};
+}
+
+export function updateWorkflowWithMosaicResult(
+	state: WorkflowState,
+	mosaicResult: MosaicResult,
+): WorkflowState {
+	return {
+		...state,
+		mosaicResult,
+		currentStep: WorkflowStep.EXPORT_MOSAIC,
+	};
+}
+
+export function updateWorkflowExportSettings(
+	state: WorkflowState,
+	settings: Partial<ExportSettings>,
+): WorkflowState {
+	return {
+		...state,
+		...settings,
 	};
 }
 

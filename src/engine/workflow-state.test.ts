@@ -1,13 +1,16 @@
 import { describe, expect, it } from "vitest";
 import {
 	INITIAL_WORKFLOW_STATE,
+	type MosaicResult,
+	type TesseraInfo,
+	updateWorkflowExportSettings,
+	updateWorkflowRemoveTessera,
+	updateWorkflowWithMosaicResult,
 	updateWorkflowWithSourceImage,
 	updateWorkflowWithSourceImageError,
-	updateWorkflowWithTesseraSize,
 	updateWorkflowWithTesserae,
-	updateWorkflowRemoveTessera,
+	updateWorkflowWithTesseraSize,
 	WorkflowStep,
-	type TesseraInfo,
 } from "./workflow-state";
 
 describe("workflow-state", () => {
@@ -36,6 +39,17 @@ describe("workflow-state", () => {
 			expect(INITIAL_WORKFLOW_STATE.validTesseraCount).toBe(0);
 			expect(INITIAL_WORKFLOW_STATE.rejectedTesseraCount).toBe(0);
 			expect(INITIAL_WORKFLOW_STATE.totalTesseraCount).toBe(0);
+		});
+
+		it("has no mosaic result initially", () => {
+			expect(INITIAL_WORKFLOW_STATE.mosaicResult).toBeNull();
+		});
+
+		it("has default export settings", () => {
+			expect(INITIAL_WORKFLOW_STATE.exportAltText).toBe("");
+			expect(INITIAL_WORKFLOW_STATE.exportFormat).toBe("png");
+			expect(INITIAL_WORKFLOW_STATE.exportQuality).toBe(0.9);
+			expect(INITIAL_WORKFLOW_STATE.exportBackgroundColor).toBe("#ffffff");
 		});
 	});
 
@@ -303,6 +317,90 @@ describe("workflow-state", () => {
 			const newState = updateWorkflowRemoveTessera(initialState, -1);
 
 			expect(newState).toEqual(initialState);
+		});
+	});
+
+	describe("updateWorkflowWithMosaicResult", () => {
+		it("updates state with mosaic result and advances to export step", () => {
+			const mosaicResult: MosaicResult = {
+				dataUrl: "data:image/png;base64,test-mosaic",
+				width: 100,
+				height: 100,
+			};
+
+			const newState = updateWorkflowWithMosaicResult(
+				INITIAL_WORKFLOW_STATE,
+				mosaicResult,
+			);
+
+			expect(newState.mosaicResult).toEqual(mosaicResult);
+			expect(newState.currentStep).toBe(WorkflowStep.EXPORT_MOSAIC);
+		});
+
+		it("handles mosaic result with progress information", () => {
+			const mosaicResult: MosaicResult = {
+				dataUrl: "data:image/png;base64,test-mosaic",
+				width: 100,
+				height: 100,
+				progress: {
+					percent: 50,
+					message: "Generating mosaic...",
+				},
+			};
+
+			const newState = updateWorkflowWithMosaicResult(
+				INITIAL_WORKFLOW_STATE,
+				mosaicResult,
+			);
+
+			expect(newState.mosaicResult).toEqual(mosaicResult);
+			expect(newState.currentStep).toBe(WorkflowStep.EXPORT_MOSAIC);
+		});
+	});
+
+	describe("updateWorkflowExportSettings", () => {
+		it("updates export alternative text", () => {
+			const newState = updateWorkflowExportSettings(INITIAL_WORKFLOW_STATE, {
+				exportAltText: "A beautiful mosaic of a landscape",
+			});
+
+			expect(newState.exportAltText).toBe("A beautiful mosaic of a landscape");
+		});
+
+		it("updates export format", () => {
+			const newState = updateWorkflowExportSettings(INITIAL_WORKFLOW_STATE, {
+				exportFormat: "jpeg",
+			});
+
+			expect(newState.exportFormat).toBe("jpeg");
+		});
+
+		it("updates export quality", () => {
+			const newState = updateWorkflowExportSettings(INITIAL_WORKFLOW_STATE, {
+				exportQuality: 0.8,
+			});
+
+			expect(newState.exportQuality).toBe(0.8);
+		});
+
+		it("updates export background color", () => {
+			const newState = updateWorkflowExportSettings(INITIAL_WORKFLOW_STATE, {
+				exportBackgroundColor: "#000000",
+			});
+
+			expect(newState.exportBackgroundColor).toBe("#000000");
+		});
+
+		it("updates multiple export settings at once", () => {
+			const newState = updateWorkflowExportSettings(INITIAL_WORKFLOW_STATE, {
+				exportFormat: "webp",
+				exportQuality: 0.75,
+				exportAltText: "A colorful mosaic",
+			});
+
+			expect(newState.exportFormat).toBe("webp");
+			expect(newState.exportQuality).toBe(0.75);
+			expect(newState.exportAltText).toBe("A colorful mosaic");
 		});
 	});
 });
