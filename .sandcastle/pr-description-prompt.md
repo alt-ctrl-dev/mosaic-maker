@@ -29,26 +29,26 @@ Analyze the commits and code changes on this branch and generate a detailed PR b
 The description should:
 
 1. **Summary** — Clear explanation of *what* changed and *why* (2-3 sentences): the high-level intent and the problem it solves
-2. **Changes** — Organized by file/module:
-   - New files or modules (with purpose)
-   - Modified functions or logic (with key intent)
-   - Added/removed dependencies
-   - Configuration or schema changes
-3. **Code Analysis** — Technical insight from the actual diff:
+2. **Code Analysis** — Technical insight from the actual diff:
    - New patterns, utilities, or architectural changes (and why this approach was chosen)
    - Refactoring or consolidation of logic
    - Error handling or validation improvements
    - Performance implications or measurable impact
    - Complexity or maintainability changes
-4. **Review focus areas** — Based on code analysis, call out:
+3. **Review focus areas** — Based on code analysis, call out:
    - Logic complexity hotspots or hard-to-follow code paths
    - Risky edge cases, potential bugs, or assumptions
    - Areas needing thorough testing or manual verification
    - Security or data integrity considerations
+4.  **Changes** — Organized by file/module:
+   - New files or modules (with purpose)
+   - Modified functions or logic (with key intent)
+   - Added/removed dependencies
+   - Configuration or schema changes
 5. **Breaking changes** — If applicable:
    - What breaks and why
    - Migration path for users/consumers
-6. **References** — Extract issue numbers from commits using `Closes #<issue>`
+6. **References** — Extract issue numbers from commits and add links to them. Also, if applicable, link the spec or prd
 
 ## Template
 
@@ -62,6 +62,8 @@ Follow this structure exactly:
 ## Code Analysis
 
 ### Key changes
+
+- [Short and brief summary of key changes. Do not mention which file or how many lines of code]
 - [File/function with specific change and architectural rationale]
 - [New patterns or utilities and when to use them]
 - [Refactoring or consolidation: what was simplified and by how much]
@@ -82,7 +84,7 @@ Review focus areas
 - [Named complexity hotspot: why it's hard to understand and suggestions for review]
 - [Edge case or risky assumption requiring scrutiny]
 - [Testing or manual verification needed]
-</detail>
+</details>
 
 
 <details>
@@ -95,7 +97,7 @@ Changes
   - `functionName()`: [Specific modification and intent]
   - New export: `helperUtil()` [Purpose]
 - **tests/...** [Test coverage for changes]
-</detail>
+</details>
 
 <details>
 <summary>
@@ -104,7 +106,7 @@ Breaking changes
 </strong>
 </summary>
 [If none, omit. If present, list what breaks and supply migration guidance.]
-</detail>
+</details>
 
 ```
 
