@@ -1,5 +1,5 @@
 import { execSync } from "child_process";
-import { SandboxEnv } from "./types";
+import { SandboxEnv } from "../shared/types";
 import * as sandcastle from "@ai-hero/sandcastle";
 import { docker } from "@ai-hero/sandcastle/sandboxes/docker";
 import fs from 'node:fs';
@@ -28,7 +28,7 @@ export const generatePrDescription = async (sandboxEnv: SandboxEnv, issueId: str
             name: "pr-title-generator",
             maxIterations: 1,
             agent: sandcastle.pi("openrouter/anthropic/claude-haiku-4.5"),
-            promptFile: "./.sandcastle/pr-title-prompt.md",
+            promptFile: "./.sandcastle/sandcastle-bot/pr-title-prompt.md",
             promptArgs: { BRANCH: branch.current, BASE_BRANCH, },
             output: sandcastle.Output.string({ tag: "pr-title" }),
         }),
@@ -37,7 +37,7 @@ export const generatePrDescription = async (sandboxEnv: SandboxEnv, issueId: str
             name: "pr-description-generator",
             maxIterations: 1,
             agent: sandcastle.pi("openrouter/anthropic/claude-haiku-4.5"),
-            promptFile: "./.sandcastle/pr-description-prompt.md",
+            promptFile: "./.sandcastle/sandcastle-bot/pr-description-prompt.md",
             promptArgs: { BRANCH: branch.current, BASE_BRANCH },
             output: sandcastle.Output.string({ tag: "pr-description" }),
         })

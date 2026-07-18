@@ -15,7 +15,7 @@ export const createReviewAgent = (sandbox: sandcastle.Sandbox, branch: string): 
       name: "reviewer",
       maxIterations: 1,
       agent: sandcastle.pi("openrouter/deepseek/deepseek-v4-pro"),
-      promptFile: "./.sandcastle/review-prompt.md",
+      promptFile: "./.sandcastle/shared/review-prompt.md",
       promptArgs: {
         BRANCH: branch,
       },

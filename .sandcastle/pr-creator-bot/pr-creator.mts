@@ -1,6 +1,6 @@
 import { z } from "zod";
-import { sandboxEnv } from "./sandbox-env.mts";
-import {  createPr, generatePrDescription } from "./pr.mts";
+import { sandboxEnv } from "../shared/sandbox-env.mts";
+import {  createPr, generatePrDescription } from "../sandcastle-bot/pr.mts";
 import { execSync } from "child_process";
 
 const currentBranch = execSync("git rev-parse --abbrev-ref HEAD", { encoding: "utf-8" }).trim();

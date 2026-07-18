@@ -24,11 +24,11 @@
 import * as sandcastle from "@ai-hero/sandcastle";
 import { docker } from "@ai-hero/sandcastle/sandboxes/docker";
 import { z } from "zod";
-import { sandboxEnv } from "./sandbox-env.mts";
+import { sandboxEnv } from "../shared/sandbox-env.mts";
 import { createPlanAgent } from "./plan.mts";
 import { createPr, generatePrDescription } from "./pr.mts";
 import { createImplmentAgent } from "./implement.mts";
-import { createReviewAgent } from "./review.mts";
+import { createReviewAgent } from "../shared/review.mts";
 
 // ---------------------------------------------------------------------------
 // Pre-flight checks
