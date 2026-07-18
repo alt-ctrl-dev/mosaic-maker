@@ -8,6 +8,9 @@ import {
 	updateWorkflowRemoveTessera,
 	WorkflowStep,
 	type TesseraInfo,
+	checkLowVariety,
+	getVarietyRecommendation,
+	updateWorkflowWithSupplementedTesserae,
 } from "./workflow-state";
 
 describe("workflow-state", () => {
@@ -303,6 +306,86 @@ describe("workflow-state", () => {
 			const newState = updateWorkflowRemoveTessera(initialState, -1);
 
 			expect(newState).toEqual(initialState);
+		});
+	});
+
+	describe("getVarietyRecommendation", () => {
+		it("returns 10% of grid cells capped at 100", () => {
+			// 10x10 grid = 100 cells, 10% = 10 (below cap)
+			expect(getVarietyRecommendation(100)).toBe(10);
+
+			// 50x50 grid = 2500 cells, 10% = 250 (above cap, should be 100)
+			expect(getVarietyRecommendation(2500)).toBe(100);
+
+			// 5x5 grid = 25 cells, 10% = 2.5 (should be 3 when rounded)
+			expect(getVarietyRecommendation(25)).toBe(3);
+		});
+	});
+
+	describe("checkLowVariety", () => {
+		it("returns true when valid tesserae count is below 10% recommendation", () => {
+			expect(checkLowVariety(5, 100)).toBe(true);
+		});
+
+		it("returns false when valid tesserae count meets or exceeds 10% recommendation", () => {
+			expect(checkLowVariety(10, 100)).toBe(false);
+			expect(checkLowVariety(15, 100)).toBe(false);
+		});
+	});
+
+	describe("updateWorkflowWithSupplementedTesserae", () => {
+		it("adds supplemented tesserae to the collection", () => {
+			const initialState = {
+				...INITIAL_WORKFLOW_STATE,
+				tesserae: [
+					{
+						file: new File([], "test1.jpg"),
+						fileName: "test1.jpg",
+						isValid: true,
+						error: null,
+						isLowResolution: false,
+						previewUrl: "data:image/jpeg;base64,test1",
+					},
+				],
+				validTesseraCount: 1,
+				rejectedTesseraCount: 0,
+				totalTesseraCount: 1,
+			};
+
+			const supplementedTesserae: TesseraInfo[] = [
+				{
+					file: new File([], "generated1.jpg"),
+					fileName: "generated1.jpg",
+					isValid: true,
+					error: null,
+					isLowResolution: false,
+					previewUrl: "data:image/jpeg;base64,generated1",
+					isSupplemented: true,
+				},
+				{
+					file: new File([], "generated2.jpg"),
+					fileName: "generated2.jpg",
+					isValid: true,
+					error: null,
+					isLowResolution: false,
+					previewUrl: "data:image/jpeg;base64,generated2",
+					isSupplemented: true,
+				},
+			];
+
+			const newState = updateWorkflowWithSupplementedTesserae(
+				initialState,
+				supplementedTesserae,
+			);
+
+			expect(newState.tesserae).toHaveLength(3);
+			expect(newState.validTesseraCount).toBe(3);
+			expect(newState.rejectedTesseraCount).toBe(0);
+			expect(newState.totalTesseraCount).toBe(3);
+			expect(newState.hasAcceptedSupplementation).toBe(true);
+			// Check that the supplemented tesserae are marked correctly
+			expect(newState.tesserae[1].isSupplemented).toBe(true);
+			expect(newState.tesserae[2].isSupplemented).toBe(true);
 		});
 	});
 });

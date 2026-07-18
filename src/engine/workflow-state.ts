@@ -22,6 +22,8 @@ export interface TesseraInfo {
 	isLowResolution: boolean;
 	/** The processed image data URL for preview */
 	previewUrl: string | null;
+	/** Whether the tessera is supplemented (generated) */
+	isSupplemented?: boolean;
 }
 
 /**
@@ -50,6 +52,12 @@ export interface WorkflowState {
 	rejectedTesseraCount: number;
 	/** Total number of tesserae processed */
 	totalTesseraCount: number;
+	/** Whether the collection has low variety */
+	isLowVarietyCollection: boolean;
+	/** The recommended number of tesserae for good variety */
+	varietyRecommendation: number | null;
+	/** Whether the user has accepted supplementation */
+	hasAcceptedSupplementation: boolean;
 }
 
 /**
@@ -79,7 +87,50 @@ export const INITIAL_WORKFLOW_STATE: WorkflowState = {
 	validTesseraCount: 0,
 	rejectedTesseraCount: 0,
 	totalTesseraCount: 0,
+	isLowVarietyCollection: false,
+	varietyRecommendation: null,
+	hasAcceptedSupplementation: false,
 };
+
+/**
+ * Calculate the recommended number of tesserae for good variety.
+ * 10% of grid cells, capped at 100.
+ */
+export function getVarietyRecommendation(gridCellCount: number): number {
+	const recommendation = Math.max(1, Math.round(gridCellCount * 0.1));
+	return Math.min(recommendation, 100);
+}
+
+/**
+ * Check if a collection has low variety based on valid tessera count vs recommendation.
+ */
+export function checkLowVariety(
+	validTesseraCount: number,
+	gridCellCount: number,
+): boolean {
+	const recommendation = getVarietyRecommendation(gridCellCount);
+	return validTesseraCount < recommendation;
+}
+
+function recalculateVarietyMetrics(
+	state: WorkflowState,
+	validCount: number,
+): { isLowVariety: boolean; varietyRecommendation: number | null } {
+	if (!state.adjustedTesseraSize || !state.sourceImage) {
+		return { isLowVariety: false, varietyRecommendation: null };
+	}
+
+	const gridCellCount = calculateGridCellCount(
+		state.adjustedTesseraSize,
+		state.sourceImage.width,
+		state.sourceImage.height,
+	);
+
+	return {
+		isLowVariety: checkLowVariety(validCount, gridCellCount),
+		varietyRecommendation: getVarietyRecommendation(gridCellCount),
+	};
+}
 
 export function updateWorkflowWithSourceImage(
 	state: WorkflowState,
@@ -166,6 +217,7 @@ export function updateWorkflowWithTesserae(
 	tesserae: TesseraInfo[],
 ): WorkflowState {
 	const validCount = tesserae.filter((t) => t.isValid).length;
+	const varietyMetrics = recalculateVarietyMetrics(state, validCount);
 
 	return {
 		...state,
@@ -173,6 +225,8 @@ export function updateWorkflowWithTesserae(
 		validTesseraCount: validCount,
 		rejectedTesseraCount: tesserae.length - validCount,
 		totalTesseraCount: tesserae.length,
+		isLowVarietyCollection: varietyMetrics.isLowVariety,
+		varietyRecommendation: varietyMetrics.varietyRecommendation,
 		currentStep: WorkflowStep.REVIEW_TESSERAE,
 	};
 }
@@ -187,6 +241,7 @@ export function updateWorkflowRemoveTessera(
 
 	const newTesserae = state.tesserae.filter((_, i) => i !== tesseraIndex);
 	const validCount = newTesserae.filter((t) => t.isValid).length;
+	const varietyMetrics = recalculateVarietyMetrics(state, validCount);
 
 	return {
 		...state,
@@ -194,5 +249,31 @@ export function updateWorkflowRemoveTessera(
 		validTesseraCount: validCount,
 		rejectedTesseraCount: newTesserae.length - validCount,
 		totalTesseraCount: newTesserae.length,
+		isLowVarietyCollection: varietyMetrics.isLowVariety,
+		varietyRecommendation: varietyMetrics.varietyRecommendation,
+	};
+}
+
+/**
+ * Update workflow with supplemented tesserae.
+ * Adds generated tesserae to reach the variety recommendation.
+ */
+export function updateWorkflowWithSupplementedTesserae(
+	state: WorkflowState,
+	supplementedTesserae: TesseraInfo[],
+): WorkflowState {
+	const allTesserae = [...state.tesserae, ...supplementedTesserae];
+	const validCount = allTesserae.filter((t) => t.isValid).length;
+	const varietyMetrics = recalculateVarietyMetrics(state, validCount);
+
+	return {
+		...state,
+		tesserae: allTesserae,
+		validTesseraCount: validCount,
+		rejectedTesseraCount: allTesserae.length - validCount,
+		totalTesseraCount: allTesserae.length,
+		isLowVarietyCollection: varietyMetrics.isLowVariety,
+		varietyRecommendation: varietyMetrics.varietyRecommendation,
+		hasAcceptedSupplementation: true,
 	};
 }
