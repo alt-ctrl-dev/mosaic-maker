@@ -4,8 +4,8 @@ import * as sandcastle from "@ai-hero/sandcastle";
 import { docker } from "@ai-hero/sandcastle/sandboxes/docker";
 import fs from 'node:fs';
 
-const maybeAttachIssueId = (issueId: string, description: string) => {
-    if (issueId === "") {
+const maybeAttachIssueId = (description: string, issueId: string|undefined) => {
+    if (issueId === "" || issueId === undefined) {
         return description
     }
     return `
@@ -43,7 +43,7 @@ export const generatePrDescription = async (sandboxEnv: SandboxEnv, issueId: str
         })
     ]);
 
-    const description = maybeAttachIssueId(issueId, prDescription.output)
+    const description = maybeAttachIssueId(prDescription.output, issueId)
 
     return {
         title: prTitle.output,
