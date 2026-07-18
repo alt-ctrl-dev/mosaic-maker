@@ -182,7 +182,7 @@ const findUnhandledSandcastleComments = (comments: Comment[]): Comment[] => {
 const postComment = async (prNumber: number, body: string, replyTo?: Comment): Promise<void> => {
   const commentFileName = `pr-${prNumber}-comment.md`;
   try {
-    if (replyTo?.isReviewComment && replyTo.reviewCommentId) {
+    if (replyTo?.isReviewComment) {
       // Reply to review comment via API
       const escapedBody = body.replace(/'/g, "'\\''");
       execSync(
