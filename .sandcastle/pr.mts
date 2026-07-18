@@ -70,10 +70,10 @@ export const createPr = async (title: string, description: string, branch: {
 
 
         // publish branch and push changes
-        // execSync(
-        //     `git push --set-upstream origin ${branch.current}`,
-        //     { stdio: "inherit" }
-        // );
+        execSync(
+            `git push --set-upstream origin ${branch.current}`,
+            { stdio: "inherit" }
+        );
 
 
         fs.writeFileSync(prDescriptionFileName, description);
