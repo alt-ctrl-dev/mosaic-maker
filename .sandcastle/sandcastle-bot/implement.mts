@@ -1,4 +1,4 @@
-import { Agent, Issue } from "./types";
+import { Agent, Issue } from "../shared/types";
 import * as sandcastle from "@ai-hero/sandcastle";
 
 export const createImplmentAgent = (sandbox: sandcastle.Sandbox, topIssue: Issue): Agent<number> => {
@@ -22,7 +22,7 @@ export const createImplmentAgent = (sandbox: sandcastle.Sandbox, topIssue: Issue
             name: agentName,
             maxIterations: 1,
             agent: sandcastle.pi("openrouter/qwen/qwen3-coder"),
-            promptFile: "./.sandcastle/implement-prompt.md",
+            promptFile: "./.sandcastle/sandcastle-bot/implement-prompt.md",
             promptArgs: {
                 ISSUE_ID: topIssue.id,
                 ISSUE_TITLE: topIssue.title,
