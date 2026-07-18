@@ -16,6 +16,14 @@
 			"runtimeExecutable": "pnpm",
 			"skipFiles": ["<node_internals>/**"],
 			"type": "node"
+		},
+		{
+			"name": "Create PR",
+			"request": "launch",
+			"runtimeArgs": ["sandcastle-pr-creator"],
+			"runtimeExecutable": "pnpm",
+			"skipFiles": ["<node_internals>/**"],
+			"type": "node"
 		}
 	]
 }
