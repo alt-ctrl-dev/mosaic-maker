@@ -205,6 +205,23 @@ const postComment = async (prNumber: number, body: string, replyTo?: Comment): P
   }
 };
 
+const extractLinkedIssueNumbers = (body: string | null): number[] => {
+  if (!body) return [];
+  const pattern = /(?:close|closes|closed|fix|fixes|fixed|resolve|resolves|resolved)\s+#(\d+)/gi;
+  return [...body.matchAll(pattern)].map(m => parseInt(m[1], 10));
+};
+
+const getIssueContext = (issueNumber: number): string | null => {
+  try {
+    return execSync(
+      `gh issue view ${issueNumber} --json title,body,state`,
+      { encoding: "utf-8" }
+    );
+  } catch {
+    return null;
+  }
+};
+
 const pushBranch = async (branchName: string): Promise<void> => {
   try {
     execSync(
@@ -284,8 +301,12 @@ const processPRComments = async (pr: PR, comments: Comment[]): Promise<boolean> 
       )
     };
 
-    //TODO At this point, the bot should look a the issue to see the work it has alredy completed for additional context
-    // This context should be passed in to the plan agent
+    // Fetch linked issue context for the plan agent
+    const linkedIssueNumbers = extractLinkedIssueNumbers(pr.body);
+    const issueContext = linkedIssueNumbers
+      .map(n => getIssueContext(n))
+      .filter(Boolean)
+      .join("\n");
 
     // Create plan agent to analyze the comment
     const planAgent = await sandcastle.run({
@@ -294,7 +315,10 @@ const processPRComments = async (pr: PR, comments: Comment[]): Promise<boolean> 
       maxIterations: 1,
       agent: sandcastle.pi("openrouter/anthropic/claude-haiku-4.5"),
       promptFile: "./.sandcastle/pr-bot/plan-prompt.md",
-      promptArgs: { THREAD_JSON: JSON.stringify(thread) },
+      promptArgs: {
+        THREAD_JSON: JSON.stringify(thread),
+        ISSUE_CONTEXT: issueContext || "No linked issues found."
+      },
       output: sandcastle.Output.object({ tag: "plan", schema: PLAN_SCHEMA }),
     });
 

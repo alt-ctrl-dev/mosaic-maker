@@ -2,6 +2,14 @@
 
 You are analyzing a GitHub PR comment thread containing a `/sandcastle` command. Your job is to determine what action should be taken.
 
+## LINKED ISSUE CONTEXT
+
+<issue-context>
+{{ISSUE_CONTEXT}}
+</issue-context>
+
+This contains the JSON output of any issues linked in the PR body (e.g., "Closes #123"). Use this to understand the original feature request, bug report, and any prior discussion.
+
 ## COMMENT THREAD DATA
 
 <thread-json>
