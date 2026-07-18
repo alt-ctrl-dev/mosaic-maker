@@ -27,6 +27,7 @@ type Comment = {
   createdAt: string;
   isBotReply: boolean;
   sandcastleCommand?: string;
+  isReviewComment: boolean;
 };
 
 type PR = {
@@ -63,6 +64,32 @@ const PLAN_SCHEMA = z.object({
   questions: z.array(z.string()).optional(),
 });
 
+const ISSUE_COMMENT_SCHEMA = z.object({
+  id: z.string(),
+  author: z.string(),
+  body: z.string(),
+  createdAt: z.string(),
+});
+
+const REVIEW_COMMENT_SCHEMA = z.object({
+  id: z.string(),
+  author: z.string(),
+  body: z.string(),
+  created_at: z.string(),
+});
+
+const ISSUE_OUTPUT_SCHEMA = z.string().transform((s) =>
+  s.split("\n").filter(l => l.trim()).map(l =>
+    ISSUE_COMMENT_SCHEMA.parse(JSON.parse(l))
+  )
+);
+
+const REVIEW_OUTPUT_SCHEMA = z.string().transform((s) =>
+  s.split("\n").filter(l => l.trim()).map(l =>
+    REVIEW_COMMENT_SCHEMA.parse(JSON.parse(l))
+  )
+);
+
 // ---------------------------------------------------------------------------
 // Helper Functions
 // ---------------------------------------------------------------------------
@@ -95,18 +122,36 @@ const getOpenPRs = async (): Promise<PR[]> => {
 
 const getCommentsForPR = async (prNumber: number): Promise<Comment[]> => {
   try {
-    const output = execSync(
+    // Issue-level comments
+    const issueOutput = execSync(
       `gh pr view ${prNumber} --json comments --jq '.comments[] | {id: .id, author: .author.login, body: .body, createdAt: .createdAt}'`,
       { encoding: "utf-8" }
     );
 
-    const comments: Comment[] = output
-      .split("\n")
-      .filter(line => line.trim())
-      .map(line => JSON.parse(line));
+    const rawIssueComments = ISSUE_OUTPUT_SCHEMA.parse(issueOutput);
+    const issueComments: Comment[] = rawIssueComments.map(c => ({
+      ...c,
+      isReviewComment: false,
+      isBotReply: false,
+    }));
 
-    // Process comments to identify bot replies and extract commands
-    return comments.map(comment => ({
+    // Review comments (attached to files/lines)
+    const reviewOutput = execSync(
+      `gh api "repos/:owner/:repo/pulls/${prNumber}/comments" --jq '.[] | {id: (.id | tostring), author: .user.login, body: .body, createdAt: .created_at}'`,
+      { encoding: "utf-8" }
+    );
+
+    const rawReviewComments = REVIEW_OUTPUT_SCHEMA.parse(reviewOutput);
+    const reviewComments: Comment[] = rawReviewComments.map(c => ({
+      ...c,
+      createdAt: c.created_at,
+      isReviewComment: true,
+      isBotReply: false,
+    }));
+
+    const allComments = [...issueComments, ...reviewComments];
+
+    return allComments.map(comment => ({
       ...comment,
       isBotReply: isBotReply(comment),
       sandcastleCommand: extractSandcastleCommand(comment.body)
@@ -134,14 +179,25 @@ const findUnhandledSandcastleComments = (comments: Comment[]): Comment[] => {
   );
 };
 
-const postComment = async (prNumber: number, body: string): Promise<void> => {
+const postComment = async (prNumber: number, body: string, replyTo?: Comment): Promise<void> => {
   const commentFileName = `pr-${prNumber}-comment.md`;
   try {
-    fs.writeFileSync(commentFileName, body);
-    execSync(
-      `gh pr comment ${prNumber} --body-file ${commentFileName}`,
-      { stdio: "inherit" }
-    );
+    if (replyTo?.isReviewComment && replyTo.reviewCommentId) {
+      // Reply to review comment via API
+      const escapedBody = body.replace(/'/g, "'\\''");
+      execSync(
+        `gh api "repos/:owner/:repo/pulls/${prNumber}/comments" -f body='${escapedBody}' -f in_reply_to=${replyTo.id}`,
+        { stdio: "inherit" }
+      );
+    } else {
+      // Reply to issue comment via @mention
+      const replyBody = replyTo ? `@${replyTo.author} ${body}` : body;
+      fs.writeFileSync(commentFileName, replyBody);
+      execSync(
+        `gh pr comment ${prNumber} --body-file ${commentFileName}`,
+        { stdio: "inherit" }
+      );
+    }
   } catch (error) {
     console.error(`Failed to post comment on PR #${prNumber}:`, error);
   } finally {
@@ -211,7 +267,6 @@ const processPRComments = async (pr: PR, comments: Comment[]): Promise<boolean> 
 
   try {
     execSync(`git fetch origin ${pr.headRefName}`, { stdio: "inherit" });
-    execSync(`git checkout ${pr.headRefName}`, { stdio: "inherit" });
   } catch (error) {
     console.error(`Failed to checkout branch ${pr.headRefName}:`, error);
     return false;
@@ -229,6 +284,9 @@ const processPRComments = async (pr: PR, comments: Comment[]): Promise<boolean> 
       )
     };
 
+    //TODO At this point, the bot should look a the issue to see the work it has alredy completed for additional context
+    // This context should be passed in to the plan agent
+
     // Create plan agent to analyze the comment
     const planAgent = await sandcastle.run({
       sandbox: docker({ env: sandboxEnv }),
@@ -245,7 +303,7 @@ const processPRComments = async (pr: PR, comments: Comment[]): Promise<boolean> 
     if (plan.action === "needs-info") {
       const questionsList = plan.questions?.map(q => `- ${q}`).join("\n") || "";
       const response = `${BOT_REPLY_PREFIX}\n\nI need more information to process your request:\n\n${questionsList}`;
-      await postComment(pr.number, response);
+      await postComment(pr.number, response, comment);
     } else if (plan.action === "implement") {
       console.log(`Implementing: ${plan.summary}`);
 
@@ -263,7 +321,7 @@ const processPRComments = async (pr: PR, comments: Comment[]): Promise<boolean> 
         await runReviewAgent(sandboxEnv, pr);
 
         const response = `${BOT_REPLY_PREFIX}\n\nI've implemented the requested change: ${plan.summary}`;
-        await postComment(pr.number, response);
+        await postComment(pr.number, response, comment);
         
         changesMade = true;
       } finally {
