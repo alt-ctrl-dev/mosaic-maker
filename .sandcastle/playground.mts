@@ -30,11 +30,11 @@ if (!BASE_BRANCH) {
 
 try {
 
-    const planAgent = createPlanAgent(sandboxEnv)
+    // const planAgent = createPlanAgent(sandboxEnv)
 
-    const topIssue = await planAgent.run()
+    // const topIssue = await planAgent.run()
 
-    console.log(topIssue)
+    // console.log(topIssue)
 
     const branch = {
         current: BRANCH,
