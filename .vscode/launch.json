@@ -2,7 +2,7 @@
 	"version": "0.2.0",
 	"configurations": [
 		{
-			"name": "Launch sandcastle",
+			"name": "Launch sandcastle-bot",
 			"request": "launch",
 			"runtimeArgs": ["sandcastle"],
 			"runtimeExecutable": "pnpm",
@@ -13,6 +13,14 @@
 			"name": "Launch playground",
 			"request": "launch",
 			"runtimeArgs": ["sandcastle-playground"],
+			"runtimeExecutable": "pnpm",
+			"skipFiles": ["<node_internals>/**"],
+			"type": "node"
+		},
+		{
+			"name": "Launch sandcastle-pr-bot",
+			"request": "launch",
+			"runtimeArgs": ["sandcastle-pr-bot"],
 			"runtimeExecutable": "pnpm",
 			"skipFiles": ["<node_internals>/**"],
 			"type": "node"

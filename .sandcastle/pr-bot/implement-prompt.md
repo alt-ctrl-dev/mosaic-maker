@@ -19,10 +19,11 @@ PR Branch: {{PR_BRANCH}}
 
 Implement the requested change on the PR branch. Follow these steps:
 
-1. **Understand the Request** - Carefully read the change request and context to understand what needs to be implemented
-2. **Make the Changes** - Implement the requested functionality while following project coding standards
-3. **Add Tests** - If appropriate, add or update tests for the new functionality
-4. **Verify Changes** - Run relevant tests and checks to ensure the implementation is correct
+1. **Rebase from Main** - Rebase the PR branch onto the latest `origin/main` before making changes
+2. **Understand the Request** - Carefully read the change request and context to understand what needs to be implemented
+3. **Make the Changes** - Implement the requested functionality while following project coding standards
+4. **Add Tests** - If appropriate, add or update tests for the new functionality
+5. **Verify Changes** - Run relevant tests and checks to ensure the implementation is correct
 
 ## GUIDELINES
 
