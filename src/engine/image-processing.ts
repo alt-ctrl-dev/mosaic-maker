@@ -1,8 +1,20 @@
+/**
+ * Checks if the file is a supported image format.
+ *
+ * @param file - The file to check
+ * @returns True if the file is a supported image format (JPEG, PNG, or WebP), false otherwise
+ */
 export function isSupportedImageFormat(file: File): boolean {
 	const supportedTypes = ["image/jpeg", "image/png", "image/webp"];
 	return supportedTypes.includes(file.type);
 }
 
+/**
+ * Gets an appropriate error message for an invalid image file.
+ *
+ * @param file - The file to get an error message for
+ * @returns A descriptive error message based on the file's validity
+ */
 export function getImageFileError(file: File): string {
 	if (!file.type) {
 		return "File type could not be determined. The file may be corrupted or invalid.";
@@ -27,6 +39,12 @@ export interface SourceImageInfo {
 	orientation: number;
 }
 
+/**
+ * Gets information about a source image from a file.
+ *
+ * @param file - The image file to get information for
+ * @returns A promise that resolves with the source image information
+ */
 export async function getSourceImageInfo(file: File): Promise<SourceImageInfo> {
 	return new Promise((resolve, reject) => {
 		const img = new Image();
