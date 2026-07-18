@@ -52,9 +52,6 @@ export interface WorkflowState {
 	totalTesseraCount: number;
 }
 
-/**
- * Workflow steps.
- */
 export enum WorkflowStep {
 	CHOOSE_SOURCE_IMAGE,
 	SET_TESSERA_SIZE,
@@ -64,9 +61,6 @@ export enum WorkflowStep {
 	EXPORT_MOSAIC,
 }
 
-/**
- * Initial workflow state.
- */
 export const INITIAL_WORKFLOW_STATE: WorkflowState = {
 	currentStep: WorkflowStep.CHOOSE_SOURCE_IMAGE,
 	sourceImage: null,

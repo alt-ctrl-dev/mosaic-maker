@@ -15,9 +15,6 @@ export function getImageFileError(file: File): string {
 	return "The image file could not be processed. It may be corrupted or invalid.";
 }
 
-/**
- * Information about a source image.
- */
 export interface SourceImageInfo {
 	/** The natural width of the image in pixels */
 	width: number;

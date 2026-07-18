@@ -1,4 +1,3 @@
-/** Minimum tessera size in pixels. */
 const MIN_TESSERA_SIZE = 8;
 
 export function calculateAdjustedTesseraSize(
