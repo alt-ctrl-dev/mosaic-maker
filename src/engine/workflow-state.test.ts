@@ -1,19 +1,19 @@
 import { describe, expect, it } from "vitest";
 import {
 	INITIAL_WORKFLOW_STATE,
-	updateWorkflowWithSourceImage,
-	updateWorkflowWithSourceImageError,
-	updateWorkflowWithTesseraSize,
-	updateWorkflowWithTesserae,
+	type MosaicResult,
+	type TesseraInfo,
+	updateWorkflowExportSettings,
 	updateWorkflowRemoveTessera,
 	updateWorkflowWithMosaicResult,
-	updateWorkflowExportSettings,
+	updateWorkflowWithSourceImage,
+	updateWorkflowWithSourceImageError,
+	updateWorkflowWithTesserae,
+	updateWorkflowWithTesseraSize,
 	WorkflowStep,
-	type TesseraInfo,
 	checkLowVariety,
 	getVarietyRecommendation,
 	updateWorkflowWithSupplementedTesserae,
-	type MosaicResult,
 } from "./workflow-state";
 
 describe("workflow-state", () => {

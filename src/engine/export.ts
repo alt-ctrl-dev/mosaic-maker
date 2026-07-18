@@ -1,11 +1,5 @@
-/**
- * Image format types supported for export
- */
 export type ExportFormat = "png" | "jpeg" | "webp";
 
-/**
- * Internal function to create a canvas for testing purposes
- */
 export function createCanvas(width: number, height: number): HTMLCanvasElement {
 	const canvas = document.createElement("canvas");
 	canvas.width = width;
@@ -13,12 +7,6 @@ export function createCanvas(width: number, height: number): HTMLCanvasElement {
 	return canvas;
 }
 
-/**
- * Load an image from a data URL
- *
- * @param dataUrl - The data URL of the image to load
- * @returns Promise resolving to the loaded HTMLImageElement
- */
 export function loadImage(dataUrl: string): Promise<HTMLImageElement> {
 	return new Promise((resolve, reject) => {
 		const img = new Image();
@@ -52,20 +40,16 @@ export async function exportMosaic(
 	) => HTMLCanvasElement = createCanvas,
 	imageLoader: (dataUrl: string) => Promise<HTMLImageElement> = loadImage,
 ): Promise<string> {
-	// Create an off-screen canvas for export
 	const canvas = canvasCreator(width, height);
 	const ctx = canvas.getContext("2d");
 	if (!ctx) {
 		throw new Error("Failed to get canvas context for export");
 	}
 
-	// Load the mosaic image
 	const img = await imageLoader(mosaicDataUrl);
 
-	// Draw the image on the canvas
 	ctx.drawImage(img, 0, 0, width, height);
 
-	// Export based on format
 	switch (format) {
 		case "png":
 			return canvas.toDataURL("image/png");
