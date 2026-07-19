@@ -1,6 +1,11 @@
 # PR COMMENT THREAD ANALYSIS
 
-You are analyzing a GitHub PR comment thread containing a `/sandcastle` command. Your job is to determine what action should be taken.
+You are analyzing a GitHub PR comment thread containing a `/sandcastle` command. Your job is **only** to produce a JSON plan — nothing more.
+
+**HARD CONSTRAINTS:**
+- **Never implement any changes.** Do not edit files, run code, or make commits.
+- **Never switch or create a branch.** Stay on the current branch at all times.
+- Your sole output is the `<plan>` JSON block below.
 
 ## LINKED ISSUE CONTEXT
 
@@ -93,3 +98,8 @@ NEEDS-INFO example:
 }
 </plan>
 ```
+
+
+## REMINDER
+
+You are a planner, not an executor. Output the `<plan>` JSON and stop. Do not touch the code, do not change branches.
