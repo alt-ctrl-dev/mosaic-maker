@@ -1,5 +1,5 @@
 import { describe, expect, it, vi } from "vitest";
-import { exportMosaic } from "./export";
+import { type ExportFormat, exportMosaic } from "./export";
 
 // Create a simple mock canvas for testing
 const mockCanvasContext = {
@@ -40,7 +40,7 @@ const mockImage = {
 describe("Export Engine", () => {
 	const mosaicDataUrl = "data:image/png;base64,test-mosaic";
 
-	const expectedResult: Record<string, string> = {
+	const expectedResult: Record<ExportFormat, string> = {
 		png: "data:image/png;base64,mock-png-export",
 		jpeg: "data:image/jpeg;base64,mock-jpeg-export",
 		webp: "data:image/webp;base64,mock-webp-export",
@@ -94,7 +94,6 @@ describe("Export Engine", () => {
 	});
 
 	it("should throw error for unsupported export format", async () => {
-		const mosaicDataUrl = "data:image/png;base64,test-mosaic";
 		const mockCanvasCreator = vi.fn(createMockCanvas);
 		const mockImageLoader = vi.fn().mockResolvedValue(mockImage);
 
@@ -116,7 +115,6 @@ describe("Export Engine", () => {
 	});
 
 	it("should handle image loading errors", async () => {
-		const mosaicDataUrl = "data:image/png;base64,test-mosaic";
 		const mockCanvasCreator = vi.fn(createMockCanvas);
 		const mockImageLoader = vi
 			.fn()
@@ -136,8 +134,6 @@ describe("Export Engine", () => {
 	});
 
 	it("should handle canvas context errors", async () => {
-		const mosaicDataUrl = "data:image/png;base64,test-mosaic";
-
 		// Mock canvas that returns null context
 		const mockCanvasWithNullContext = {
 			width: 100,
