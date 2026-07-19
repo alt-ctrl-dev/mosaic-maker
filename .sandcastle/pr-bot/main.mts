@@ -28,6 +28,10 @@ type Comment = {
   isBotReply: boolean;
   sandcastleCommand?: string;
   isReviewComment: boolean;
+  /** Review comment file context (empty for issue comments) */
+  file?: string;
+  line?: number;
+  diffHunk?: string;
 };
 
 type PR = {
@@ -78,6 +82,9 @@ const REVIEW_COMMENTS_RESPONSE = z.array(z.object({
   user: z.object({ login: z.string() }),
   body: z.string(),
   created_at: z.string(),
+  path: z.string(),
+  line: z.number().nullable().optional(),
+  diff_hunk: z.string(),
 }));
 
 // ---------------------------------------------------------------------------
@@ -142,6 +149,9 @@ const getCommentsForPR = async (prNumber: number): Promise<Comment[]> => {
       createdAt: c.created_at,
       isReviewComment: true,
       isBotReply: false,
+      file: c.path,
+      line: c.line ?? undefined,
+      diffHunk: c.diff_hunk,
     }));
 
     const allComments = [...issueComments, ...reviewComments];
