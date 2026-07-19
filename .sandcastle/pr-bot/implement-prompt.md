@@ -25,6 +25,8 @@ Implement the requested change on the PR branch. Follow these steps:
 4. **Add Tests** - If appropriate, add or update tests for the new functionality
 5. **Verify Changes** - Run relevant tests and checks to ensure the implementation is correct
 
+**IMPORTANT: All work happens in the sandboxed environment. Never create a new branch on the host. Always use the existing PR branch within the sandbox.**
+
 ## GUIDELINES
 
 ### Implementation
@@ -65,3 +67,4 @@ This will signal that the implementation is complete and the branch can be pushe
   - What is needed to proceed (missing context, external dependency, decision needed, etc.)
   - Concrete next steps
 - **Never close a blocked issue.**
+- **NEVER create a new branch on the host.** All branch operations (checkout, create, rebase) happen exclusively in the sandboxed environment. Use the existing PR branch only.
