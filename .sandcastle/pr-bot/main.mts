@@ -203,7 +203,7 @@ const postComment = async (prNumber: number, body: string, replyTo?: Comment): P
 const extractLinkedIssueNumbers = (body: string | null): number[] => {
   if (!body) return [];
   const pattern = /(?:close|closes|closed|fix|fixes|fixed|resolve|resolves|resolved)\s+#(\d+)/gi;
-  return [...body.matchAll(pattern)].map(m => parseInt(m[1], 10));
+  return [...new Set([...body.matchAll(pattern)].map(m => parseInt(m[1], 10)))];
 };
 
 const getIssueContext = (issueNumber: number): string | null => {
@@ -265,26 +265,24 @@ const runReviewAgent = (sandboxEnv: SandboxEnv, pr: PR) => {
 // ---------------------------------------------------------------------------
 // Main Processing Functions
 // ---------------------------------------------------------------------------
-const processPRComments = async (pr: PR, comments: Comment[]): Promise<boolean> => {
+const processPRComments = async (pr: PR, comments: Comment[]): Promise<void> => {
   console.log(`Processing PR #${pr.number}: ${pr.title}`);
-  
+
   const unhandledComments = findUnhandledSandcastleComments(comments);
-  
+
   if (unhandledComments.length === 0) {
     console.log(`No unhandled /sandcastle comments on PR #${pr.number}`);
-    return false;
+    return;
   }
 
   console.log(`Found ${unhandledComments.length} unhandled /sandcastle comments`);
 
-  let changesMade = false;
-
   for (const comment of unhandledComments) {
     console.log(`Processing comment from ${comment.author}: ${comment.sandcastleCommand}`);
-    
+
     const thread: Thread = {
       pr,
-      comments: comments.filter(c => 
+      comments: comments.filter(c =>
         new Date(c.createdAt) <= new Date(comment.createdAt)
       )
     };
@@ -316,39 +314,36 @@ const processPRComments = async (pr: PR, comments: Comment[]): Promise<boolean> 
       const questionsList = plan.questions?.map(q => `- ${q}`).join("\n") || "";
       const response = `${BOT_REPLY_PREFIX}\n\nI need more information to process your request:\n\n${questionsList}`;
       await postComment(pr.number, response, comment);
-    } else if (plan.action === "implement") {
-      console.log(`Implementing: ${plan.summary}`);
+      return
+    }
 
-      const sandbox = await sandcastle.createSandbox({
-        branch: pr.headRefName,
-        sandbox: docker({ env: sandboxEnv }),
-        hooks: {
-          sandbox: { onSandboxReady: [{ command: "pnpm install" }] },
-        },
-        copyToWorktree: ["node_modules"],
-      });
-      
-      try {
-        await runImplementAgent(sandboxEnv, pr, comment.sandcastleCommand || "", plan.context || "");
-        await runReviewAgent(sandboxEnv, pr);
+    if (plan.action !== "implement") {
+      return;
+    }
 
-        const response = `${BOT_REPLY_PREFIX}\n\nI've implemented the requested change: ${plan.summary}`;
-        await postComment(pr.number, response, comment);
-        
-        changesMade = true;
-      } finally {
-        await sandbox.close();
-      }
+    console.log(`Implementing: ${plan.summary}`);
+
+    const sandbox = await sandcastle.createSandbox({
+      branch: pr.headRefName,
+      sandbox: docker({ env: sandboxEnv }),
+      hooks: {
+        sandbox: { onSandboxReady: [{ command: "pnpm install" }] },
+      },
+      copyToWorktree: ["node_modules"],
+    });
+
+    try {
+      await runImplementAgent(sandboxEnv, pr, comment.sandcastleCommand || "", plan.context || "");
+      await runReviewAgent(sandboxEnv, pr);
+
+      const response = `${BOT_REPLY_PREFIX}\n\nI've implemented the requested change: ${plan.summary}`;
+      await postComment(pr.number, response, comment);
+      await pushBranch(pr.headRefName);
+    } finally {
+      await sandbox.close();
     }
   }
 
-  if (changesMade) {
-    await pushBranch(pr.headRefName);
-  }
-
-  execSync(`git checkout main`, { stdio: "inherit" });
-
-  return true;
 };
 
 // ---------------------------------------------------------------------------
@@ -356,32 +351,26 @@ const processPRComments = async (pr: PR, comments: Comment[]): Promise<boolean> 
 // ---------------------------------------------------------------------------
 async function main() {
   console.log("Starting PR Bot...");
-  
+
   const prs = await getOpenPRs();
-  
+
   if (prs.length === 0) {
     console.log("No open PRs found.");
     return;
   }
 
   console.log(`Found ${prs.length} open PRs`);
-  
-  let processedAny = false;
+
+
 
   for (const pr of prs) {
     const comments = await getCommentsForPR(pr.number);
-    const processed = await processPRComments(pr, comments);
-    
-    if (processed) {
-      processedAny = true;
-    }
+    await processPRComments(pr, comments);
+    console.log(`Finished processing comments for PR #${pr.number}.`);
+
   }
-  
-  if (!processedAny) {
-    console.log("No unhandled /sandcastle comments found.");
-  } else {
-    console.log("Finished processing PR comments.");
-  }
+
+
 }
 
 main().catch(console.error);
