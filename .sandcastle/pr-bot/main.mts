@@ -64,31 +64,21 @@ const PLAN_SCHEMA = z.object({
   questions: z.array(z.string()).optional(),
 });
 
-const ISSUE_COMMENT_SCHEMA = z.object({
-  id: z.string(),
-  author: z.string(),
-  body: z.string(),
-  createdAt: z.string(),
+const ISSUE_COMMENTS_RESPONSE = z.object({
+  comments: z.array(z.object({
+    id: z.string(),
+    author: z.object({ login: z.string() }),
+    body: z.string(),
+    createdAt: z.string(),
+  })),
 });
 
-const REVIEW_COMMENT_SCHEMA = z.object({
-  id: z.string(),
-  author: z.string(),
+const REVIEW_COMMENTS_RESPONSE = z.array(z.object({
+  id: z.number(),
+  user: z.object({ login: z.string() }),
   body: z.string(),
   created_at: z.string(),
-});
-
-const ISSUE_OUTPUT_SCHEMA = z.string().transform((s) =>
-  s.split("\n").filter(l => l.trim()).map(l =>
-    ISSUE_COMMENT_SCHEMA.parse(JSON.parse(l))
-  )
-);
-
-const REVIEW_OUTPUT_SCHEMA = z.string().transform((s) =>
-  s.split("\n").filter(l => l.trim()).map(l =>
-    REVIEW_COMMENT_SCHEMA.parse(JSON.parse(l))
-  )
-);
+}));
 
 // ---------------------------------------------------------------------------
 // Helper Functions
@@ -124,26 +114,31 @@ const getCommentsForPR = async (prNumber: number): Promise<Comment[]> => {
   try {
     // Issue-level comments
     const issueOutput = execSync(
-      `gh pr view ${prNumber} --json comments --jq '.comments[] | {id: .id, author: .author.login, body: .body, createdAt: .createdAt}'`,
+      `gh pr view ${prNumber} --json comments`,
       { encoding: "utf-8" }
     );
 
-    const rawIssueComments = ISSUE_OUTPUT_SCHEMA.parse(issueOutput);
-    const issueComments: Comment[] = rawIssueComments.map(c => ({
-      ...c,
+    const issueResponse = ISSUE_COMMENTS_RESPONSE.parse(JSON.parse(issueOutput));
+    const issueComments: Comment[] = issueResponse.comments.map(c => ({
+      id: c.id,
+      author: c.author.login,
+      body: c.body,
+      createdAt: c.createdAt,
       isReviewComment: false,
       isBotReply: false,
     }));
 
     // Review comments (attached to files/lines)
     const reviewOutput = execSync(
-      `gh api "repos/:owner/:repo/pulls/${prNumber}/comments" --jq '.[] | {id: (.id | tostring), author: .user.login, body: .body, createdAt: .created_at}'`,
+      `gh api "repos/:owner/:repo/pulls/${prNumber}/comments"`,
       { encoding: "utf-8" }
     );
 
-    const rawReviewComments = REVIEW_OUTPUT_SCHEMA.parse(reviewOutput);
+    const rawReviewComments = REVIEW_COMMENTS_RESPONSE.parse(JSON.parse(reviewOutput));
     const reviewComments: Comment[] = rawReviewComments.map(c => ({
-      ...c,
+      id: String(c.id),
+      author: c.user.login,
+      body: c.body,
       createdAt: c.created_at,
       isReviewComment: true,
       isBotReply: false,
@@ -214,7 +209,7 @@ const extractLinkedIssueNumbers = (body: string | null): number[] => {
 const getIssueContext = (issueNumber: number): string | null => {
   try {
     return execSync(
-      `gh issue view ${issueNumber} --json title,body,state`,
+      `gh issue view ${issueNumber} --json title,body,state,comments`,
       { encoding: "utf-8" }
     );
   } catch {
