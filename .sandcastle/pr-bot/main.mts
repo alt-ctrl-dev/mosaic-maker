@@ -92,7 +92,7 @@ const REVIEW_COMMENTS_RESPONSE = z.array(z.object({
 // ---------------------------------------------------------------------------
 
 const hasSandcastleCommand = (comment: Comment): boolean => {
-  return comment.body.includes("/sandcastle");
+  return comment.sandcastleCommand != null;
 };
 
 const isBotReply = (comment: Comment): boolean => {
