@@ -49,3 +49,19 @@ When you are finished implementing the change, output:
 <promise>COMPLETE</promise>
 
 This will signal that the implementation is complete and the branch can be pushed.
+
+# FINAL RULES
+
+- **ONLY WORK ON A SINGLE TASK.**
+- **Never modify `.npmrc` or `pnpm-workspace.yaml`.** These files enforce supply-chain security policies and must not be changed by automated tooling.
+- Do not stop until you have committed the fix and verified the feedback loop has passed.
+- Do not leave commented-out code or TODO comments in committed code.
+- ALWAYS use `pnpm` for all package management and script execution. Never use `npm` or `yarn`.
+- **Always use the git-workflow-and-versioning skill for all commits.** Do not commit without invoking the skill.
+- **NEVER** skip or bypass git hooks
+- **If blocked:** Leave a detailed comment on the issue stating:
+  - What was attempted
+  - What failed and why
+  - What is needed to proceed (missing context, external dependency, decision needed, etc.)
+  - Concrete next steps
+- **Never close a blocked issue.**

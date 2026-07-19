@@ -76,6 +76,7 @@ Once complete, output <promise>COMPLETE</promise>.
 - Do not leave commented-out code or TODO comments in committed code.
 - ALWAYS use `pnpm` for all package management and script execution. Never use `npm` or `yarn`.
 - **Always use the git-workflow-and-versioning skill for all commits.** Do not commit without invoking the skill.
+- **NEVER** skip or bypass git hooks
 - **If blocked:** Leave a detailed comment on the issue stating:
   - What was attempted
   - What failed and why
