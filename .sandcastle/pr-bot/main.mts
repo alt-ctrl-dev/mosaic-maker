@@ -242,11 +242,9 @@ const pushBranch = async (branchName: string): Promise<void> => {
 // Agent Functions
 // ---------------------------------------------------------------------------
 
-const runImplementAgent = (sandboxEnv: SandboxEnv, pr: PR, changeRequest: string, context: string) => {
-  return sandcastle.run({
-    sandbox: docker({ env: sandboxEnv }),
+const runImplementAgent = (sandbox: sandcastle.Sandbox, pr: PR, changeRequest: string, context: string) => {
+  return sandbox.run({
     name: "pr-implement-agent",
-    maxIterations: 1,
     agent: sandcastle.pi("openrouter/qwen/qwen3-coder"),
     promptFile: "./.sandcastle/pr-bot/implement-prompt.md",
     promptArgs: {
@@ -260,11 +258,9 @@ const runImplementAgent = (sandboxEnv: SandboxEnv, pr: PR, changeRequest: string
   });
 };
 
-const runReviewAgent = (sandboxEnv: SandboxEnv, pr: PR) => {
-  return sandcastle.run({
-    sandbox: docker({ env: sandboxEnv }),
+const runReviewAgent = (sandbox: sandcastle.Sandbox, pr: PR) => {
+  return sandbox.run({
     name: "pr-review-agent",
-    maxIterations: 1,
     agent: sandcastle.pi("openrouter/deepseek/deepseek-v4-pro"),
     promptFile: "./.sandcastle/shared/review-prompt.md",
     promptArgs: { BRANCH: pr.headRefName },
@@ -292,6 +288,7 @@ const processPRComments = async (pr: PR, comments: Comment[]): Promise<void> => 
 
     const thread: Thread = {
       pr,
+      //FIGURE OUT why does this filter the comments?
       comments: comments.filter(c =>
         new Date(c.createdAt) <= new Date(comment.createdAt)
       )
@@ -343,8 +340,8 @@ const processPRComments = async (pr: PR, comments: Comment[]): Promise<void> => 
     });
 
     try {
-      await runImplementAgent(sandboxEnv, pr, comment.sandcastleCommand || "", plan.context || "");
-      await runReviewAgent(sandboxEnv, pr);
+      await runImplementAgent(sandbox, pr, comment.sandcastleCommand || "", plan.context || "");
+      await runReviewAgent(sandbox, pr);
 
       const response = `${BOT_REPLY_PREFIX}\n\nI've implemented the requested change: ${plan.summary}`;
       await postComment(pr.number, response, comment);
