@@ -1,10 +1,11 @@
 import { describe, expect, it } from "vitest";
 import { generateNoiseTesseraeFromState } from "./generate-noise-tesserae-helper";
+import { WorkflowStep } from "./workflow-state";
 import type { WorkflowState } from "./workflow-state";
 
 function mockState(overrides: Partial<WorkflowState> = {}): WorkflowState {
 	return {
-		currentStep: 0,
+		currentStep: WorkflowStep.CHOOSE_SOURCE_IMAGE,
 		sourceImage: { width: 100, height: 100, orientation: 1 },
 		requestedTesseraSize: 10,
 		adjustedTesseraSize: 10,

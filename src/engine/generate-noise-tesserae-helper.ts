@@ -5,15 +5,6 @@ import {
 } from "./noise-tessera-generation";
 import { calculateGridCellCount } from "./tessera-sizing";
 
-/**
- * Generate noise tesserae based on the current workflow state.
- * This function calculates the appropriate number of tesserae to generate and uses
- * the workflow state's seed or generates a new one if none exists.
- *
- * @param state - Current workflow state containing source image, tessera size, and generation parameters
- * @returns Promise resolving to an array of generated tesserae
- * @throws Error if source image or adjusted tessera size are not available in the state
- */
 export async function generateNoiseTesseraeFromState(
 	state: WorkflowState,
 ): Promise<TesseraInfo[]> {
