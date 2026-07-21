@@ -74,7 +74,7 @@ export const postComment = async (prNumber: number, body: string, replyTo?: Comm
       // Reply to review comment via API; use file for body to avoid shell escaping
       fs.writeFileSync(commentFileName, body);
       execSync(
-        `gh api "repos/:owner/:repo/pulls/${prNumber}/comments" -F body=@${commentFileName} -f in_reply_to=${replyTo.id}`,
+        `gh api "repos/:owner/:repo/pulls/${prNumber}/comments/${replyTo.id}/replies" -F body=@${commentFileName}`,
         { stdio: "inherit" }
       );
     } else {
