@@ -44,7 +44,7 @@ export interface WorkflowState {
 	hasValidSourceDimensions: boolean;
 	/** Error message if source image processing failed */
 	sourceImageError: string | null;
-	/** Collection of uploaded tesserae */
+	/** Collection of uploaded or generated tesserae */
 	tesserae: TesseraInfo[];
 	/** Number of valid tesserae */
 	validTesseraCount: number;
@@ -58,6 +58,14 @@ export interface WorkflowState {
 	varietyRecommendation: number | null;
 	/** Whether the user has accepted supplementation */
 	hasAcceptedSupplementation: boolean;
+	/** Whether to use generated tesserae instead of uploaded ones */
+	useGeneratedTesserae: boolean;
+	/** Seed for generating reproducible noise tesserae */
+	seed: number | null;
+	/** Number of generated tesserae to create */
+	generatedTesseraCount: number | null;
+	/** Whether the generated tesserae need to be regenerated */
+	needsRegeneration: boolean;
 }
 
 /**
@@ -90,6 +98,10 @@ export const INITIAL_WORKFLOW_STATE: WorkflowState = {
 	isLowVarietyCollection: false,
 	varietyRecommendation: null,
 	hasAcceptedSupplementation: false,
+	useGeneratedTesserae: false,
+	seed: null,
+	generatedTesseraCount: null,
+	needsRegeneration: false,
 };
 
 /**
@@ -275,5 +287,75 @@ export function updateWorkflowWithSupplementedTesserae(
 		isLowVarietyCollection: varietyMetrics.isLowVariety,
 		varietyRecommendation: varietyMetrics.varietyRecommendation,
 		hasAcceptedSupplementation: true,
+	};
+}
+
+export function updateWorkflowToGeneratedMode(
+	state: WorkflowState,
+): WorkflowState {
+	const seed = state.seed ?? Math.floor(Math.random() * 1000000);
+
+	return {
+		...state,
+		useGeneratedTesserae: true,
+		seed: seed,
+		currentStep: WorkflowStep.REVIEW_TESSERAE,
+	};
+}
+
+export function updateWorkflowToUploadMode(
+	state: WorkflowState,
+): WorkflowState {
+	return {
+		...state,
+		useGeneratedTesserae: false,
+		currentStep: WorkflowStep.CHOOSE_TESSERAE,
+	};
+}
+
+export function updateWorkflowWithSeed(
+	state: WorkflowState,
+	seed: number,
+): WorkflowState {
+	return {
+		...state,
+		seed: seed,
+		needsRegeneration: true,
+	};
+}
+
+export function updateWorkflowWithNewSeed(state: WorkflowState): WorkflowState {
+	const newSeed = Math.floor(Math.random() * 1000000);
+	return {
+		...state,
+		seed: newSeed,
+		needsRegeneration: true,
+	};
+}
+
+export function updateWorkflowWithGeneratedTesseraCount(
+	state: WorkflowState,
+	count: number,
+): WorkflowState {
+	return {
+		...state,
+		generatedTesseraCount: count,
+		needsRegeneration: true,
+	};
+}
+
+export function updateWorkflowWithGeneratedTesserae(
+	state: WorkflowState,
+	tesserae: TesseraInfo[],
+): WorkflowState {
+	const validCount = tesserae.filter((t) => t.isValid).length;
+
+	return {
+		...state,
+		tesserae,
+		validTesseraCount: validCount,
+		rejectedTesseraCount: tesserae.length - validCount,
+		totalTesseraCount: tesserae.length,
+		needsRegeneration: false,
 	};
 }
