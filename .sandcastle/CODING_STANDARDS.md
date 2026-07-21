@@ -7,6 +7,12 @@
 - Do not add comments that merely restate what the code makes clear.
 - Use the glossary terms defined in `CONTEXT.md` across code, tests, and specifications. Avoid synonyms that the glossary rejects.
 
+## Documentation
+
+- JSDoc comments should provide semantic context (units, behavior, non-obvious constraints) beyond what descriptive names and type signatures convey.
+- Do not add redundant interface-level JSDoc or constant comments that merely restate what the code already makes clear.
+- Documentation must add information value beyond what the code itself expresses.
+
 ## Type Safety
 
 - Do not bypass type safety with `any` or unchecked assertions.
