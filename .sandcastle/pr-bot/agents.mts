@@ -57,9 +57,13 @@ export const processPRComments = async (pr: PR, comments: Comment[], deps: Deps)
 
     const thread: Thread = {
       pr,
-      comments: comments.filter(c =>
-        new Date(c.createdAt) <= new Date(comment.createdAt)
-      )
+      comments: comments.filter(c => {
+        const beforeOrAt = new Date(c.createdAt) <= new Date(comment.createdAt);
+        if (!beforeOrAt) return false;
+        // issue comments always relevant; review comments only if same file
+        if (!c.isReviewComment) return true;
+        return comment.isReviewComment && c.file === comment.file;
+      })
     };
 
     // Fetch linked issue context for the plan agent
