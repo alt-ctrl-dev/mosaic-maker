@@ -71,10 +71,10 @@ export const postComment = async (prNumber: number, body: string, replyTo?: Comm
   const commentFileName = `pr-${prNumber}-comment.md`;
   try {
     if (replyTo?.isReviewComment) {
-      // Reply to review comment via API
-      const escapedBody = body.replace(/'/g, "'\\''");
+      // Reply to review comment via API; use file for body to avoid shell escaping
+      fs.writeFileSync(commentFileName, body);
       execSync(
-        `gh api "repos/:owner/:repo/pulls/${prNumber}/comments" -f body='${escapedBody}' -f in_reply_to=${replyTo.id}`,
+        `gh api "repos/:owner/:repo/pulls/${prNumber}/comments" -F body=@${commentFileName} -f in_reply_to=${replyTo.id}`,
         { stdio: "inherit" }
       );
     } else {
