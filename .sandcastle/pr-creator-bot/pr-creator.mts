@@ -1,6 +1,6 @@
 import { z } from "zod";
-import { sandboxEnv } from "../shared/sandbox-env.mts";
 import {  createPr, generatePrDescription } from "../sandcastle-bot/pr.mts";
+import { dockerSandbox } from "../shared/docker.mts";
 import { execSync } from "child_process";
 
 const currentBranch = execSync("git rev-parse --abbrev-ref HEAD", { encoding: "utf-8" }).trim();
@@ -24,7 +24,7 @@ try {
         current: BRANCH,
         base: BASE_BRANCH
     }
-    const {title, description} = await generatePrDescription(sandboxEnv, ISSUE_ID, branch)
+    const {title, description} = await generatePrDescription(dockerSandbox, ISSUE_ID, branch)
 
     await createPr(title,description,branch)
 

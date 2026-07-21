@@ -10,6 +10,7 @@
 
 import { getOpenPRs, getCommentsForPR } from "./github.mts";
 import { processPRComments } from "./agents.mts";
+import { dockerSandbox } from "../shared/docker.mts";
 
 async function main() {
   console.log("Starting PR Bot...");
@@ -25,7 +26,7 @@ async function main() {
 
   for (const pr of prs) {
     const comments = await getCommentsForPR(pr.number);
-    await processPRComments(pr, comments);
+    await processPRComments(pr, comments, { dockerSandbox });
     console.log(`Finished processing comments for PR #${pr.number}.`);
   }
 }

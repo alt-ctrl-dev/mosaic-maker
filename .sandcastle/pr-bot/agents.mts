@@ -1,11 +1,14 @@
 import * as sandcastle from "@ai-hero/sandcastle";
-import { docker } from "@ai-hero/sandcastle/sandboxes/docker";
-import { execSync } from "child_process";
-import { sandboxEnv } from "../shared/sandbox-env.mts";
+import type { DockerSandbox } from "../shared/docker.mts";
+import { pushBranch } from "../shared/git.mts";
+import { hooks, copyToWorktree } from "../shared/config.mts";
 import type { Comment, PR, Thread, PlanAction } from "./types.mts";
 import { BOT_REPLY_PREFIX, PLAN_SCHEMA } from "./types.mts";
 import { findUnhandledSandcastleComments } from "./comments.mts";
 import { extractLinkedIssueNumbers, getIssueContext, postComment } from "./github.mts";
+import { createReviewAgent } from "../shared/review.mts";
+
+type Deps = { dockerSandbox: DockerSandbox };
 
 // ---------------------------------------------------------------------------
 // Sandcastle Agents
@@ -28,31 +31,14 @@ const runImplementAgent = (sandbox: sandcastle.Sandbox, pr: PR, changeRequest: s
 };
 
 const runReviewAgent = (sandbox: sandcastle.Sandbox, pr: PR) => {
-  return sandbox.run({
-    name: "pr-review-agent",
-    agent: sandcastle.pi("openrouter/deepseek/deepseek-v4-pro"),
-    promptFile: "./.sandcastle/shared/review-prompt.md",
-    promptArgs: { BRANCH: pr.headRefName },
-    completionSignal: "<promise>COMPLETE</promise>"
-  });
-};
-
-const pushBranch = async (branchName: string): Promise<void> => {
-  try {
-    execSync(
-      `git push --set-upstream origin ${branchName}`,
-      { stdio: "inherit" }
-    );
-  } catch (error) {
-    console.error(`Failed to push branch ${branchName}:`, error);
-  }
+  return createReviewAgent(sandbox, pr.headRefName).run();
 };
 
 // ---------------------------------------------------------------------------
 // Main Processing
 // ---------------------------------------------------------------------------
 
-export const processPRComments = async (pr: PR, comments: Comment[]): Promise<void> => {
+export const processPRComments = async (pr: PR, comments: Comment[], deps: Deps): Promise<void> => {
   console.log(`Processing PR #${pr.number}: ${pr.title}`);
 
   const unhandledComments = findUnhandledSandcastleComments(comments);
@@ -83,7 +69,7 @@ export const processPRComments = async (pr: PR, comments: Comment[]): Promise<vo
 
     // Create plan agent to analyze the comment
     const planAgent = await sandcastle.run({
-      sandbox: docker({ env: sandboxEnv }),
+      sandbox: deps.dockerSandbox,
       name: "pr-plan-agent",
       maxIterations: 1,
       agent: sandcastle.pi("openrouter/anthropic/claude-haiku-4.5"),
@@ -112,11 +98,9 @@ export const processPRComments = async (pr: PR, comments: Comment[]): Promise<vo
 
     const sandbox = await sandcastle.createSandbox({
       branch: pr.headRefName,
-      sandbox: docker({ env: sandboxEnv }),
-      hooks: {
-        sandbox: { onSandboxReady: [{ command: "pnpm install" }] },
-      },
-      copyToWorktree: ["node_modules"],
+      sandbox: deps.dockerSandbox,
+      hooks,
+      copyToWorktree,
     });
 
     try {
