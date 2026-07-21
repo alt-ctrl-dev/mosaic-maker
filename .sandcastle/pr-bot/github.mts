@@ -78,8 +78,10 @@ export const postComment = async (prNumber: number, body: string, replyTo?: Comm
         { stdio: "inherit" }
       );
     } else {
-      // Reply to issue comment via @mention
-      const replyBody = replyTo ? `@${replyTo.author} ${body}` : body;
+      // Reply to issue comment via quote reply
+      const replyBody = replyTo
+        ? `> ${replyTo.body.split('\n').join('\n> ')}\n\n@${replyTo.author} ${body}`
+        : body;
       fs.writeFileSync(commentFileName, replyBody);
       execSync(
         `gh pr comment ${prNumber} --body-file ${commentFileName}`,
