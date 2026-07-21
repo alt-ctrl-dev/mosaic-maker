@@ -7,6 +7,7 @@ import { BOT_REPLY_PREFIX, PLAN_SCHEMA } from "./types.mts";
 import { findUnhandledSandcastleComments } from "./comments.mts";
 import { extractLinkedIssueNumbers, getIssueContext, postComment } from "./github.mts";
 import { createReviewAgent } from "../shared/review.mts";
+import { Agent } from "../shared/types";
 
 type Deps = { dockerSandbox: DockerSandbox };
 
@@ -14,25 +15,26 @@ type Deps = { dockerSandbox: DockerSandbox };
 // Sandcastle Agents
 // ---------------------------------------------------------------------------
 
-const runImplementAgent = (sandbox: sandcastle.Sandbox, pr: PR, changeRequest: string, context: string) => {
-  return sandbox.run({
-    name: "pr-implement-agent",
-    agent: sandcastle.pi("openrouter/qwen/qwen3-coder"),
-    promptFile: "./.sandcastle/pr-bot/implement-prompt.md",
-    promptArgs: {
-      PR_NUMBER: pr.number.toString(),
-      PR_TITLE: pr.title,
-      PR_BRANCH: pr.headRefName,
-      CHANGE_REQUEST: changeRequest,
-      CONTEXT: context
-    },
-    completionSignal: "<promise>COMPLETE</promise>"
-  });
-};
-
-const runReviewAgent = (sandbox: sandcastle.Sandbox, pr: PR) => {
-  return createReviewAgent(sandbox, pr.headRefName).run();
-};
+const createPrImplementorAgent = (sandbox: sandcastle.Sandbox, pr: PR, changeRequest: string, context: string): Agent<void> => {
+  const run = async () => {
+    await sandbox.run({
+      name: "pr-implement-agent",
+      agent: sandcastle.pi("openrouter/qwen/qwen3-coder"),
+      promptFile: "./.sandcastle/pr-bot/implement-prompt.md",
+      promptArgs: {
+        PR_NUMBER: pr.number.toString(),
+        PR_TITLE: pr.title,
+        PR_BRANCH: pr.headRefName,
+        CHANGE_REQUEST: changeRequest,
+        CONTEXT: context
+      },
+      completionSignal: "<promise>COMPLETE</promise>"
+    })
+  }
+  return {
+    run
+  }
+}
 
 // ---------------------------------------------------------------------------
 // Main Processing
@@ -103,9 +105,12 @@ export const processPRComments = async (pr: PR, comments: Comment[], deps: Deps)
       copyToWorktree,
     });
 
+    const prImplementorAgent = createPrImplementorAgent(sandbox, pr, comment.sandcastleCommand || "", plan.context || "");
+
+    const reviewAgent = createReviewAgent(sandbox, pr.headRefName);
     try {
-      await runImplementAgent(sandbox, pr, comment.sandcastleCommand || "", plan.context || "");
-      await runReviewAgent(sandbox, pr);
+      await prImplementorAgent.run()
+      await reviewAgent.run();
 
       const response = `${BOT_REPLY_PREFIX}\n\nI've implemented the requested change: ${plan.summary}`;
       await postComment(pr.number, response, comment);
