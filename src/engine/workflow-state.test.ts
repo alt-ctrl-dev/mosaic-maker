@@ -394,7 +394,7 @@ describe("workflow-state", () => {
 			expect(newState.tesserae[2].isSupplemented).toBe(true);
 		});
 	});
-	
+
 	describe("updateWorkflowToGeneratedMode", () => {
 		it("switches to generated mode and sets a seed", () => {
 			const stateWithSource = {
