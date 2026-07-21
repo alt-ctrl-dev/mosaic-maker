@@ -6,49 +6,26 @@ import {
 	isCoarseGrid,
 } from "./tessera-sizing";
 
-/**
- * Information about a tessera that has been processed for the mosaic.
- */
 export interface TesseraInfo {
-	/** The original file object */
 	file: File;
-	/** The original file name */
 	fileName: string;
-	/** Whether the tessera is valid for use */
 	isValid: boolean;
-	/** Error message if tessera is invalid */
 	error: string | null;
-	/** Whether the tessera has low resolution */
 	isLowResolution: boolean;
-	/** The processed image data URL for preview */
 	previewUrl: string | null;
 }
 
-/**
- * Represents the current state of the mosaic creation workflow.
- */
 export interface WorkflowState {
-	/** The current step in the workflow */
 	currentStep: WorkflowStep;
-	/** Information about the selected source image, if any */
 	sourceImage: SourceImageInfo | null;
-	/** The tessera size requested by the user */
 	requestedTesseraSize: number | null;
-	/** The adjusted tessera size after validation */
 	adjustedTesseraSize: number | null;
-	/** Whether the adjusted tessera size results in a coarse grid */
 	isCoarseGrid: boolean;
-	/** Whether the source image has valid dimensions for tessera sizing */
 	hasValidSourceDimensions: boolean;
-	/** Error message if source image processing failed */
 	sourceImageError: string | null;
-	/** Collection of uploaded tesserae */
 	tesserae: TesseraInfo[];
-	/** Number of valid tesserae */
 	validTesseraCount: number;
-	/** Number of rejected tesserae */
 	rejectedTesseraCount: number;
-	/** Total number of tesserae processed */
 	totalTesseraCount: number;
 }
 
