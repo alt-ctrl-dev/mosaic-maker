@@ -41,13 +41,7 @@ export async function generateMosaic(
 	};
 }
 
-/**
- * Generate a placeholder mosaic for cases where no valid tesserae exist.
- *
- * @param width - Width of the mosaic
- * @param height - Height of the mosaic
- * @returns Data URL of a placeholder image
- */
+/** Generate a placeholder mosaic for cases where no valid tesserae exist. */
 function generatePlaceholderMosaic(width: number, height: number): string {
 	// Create a simple placeholder canvas
 	const canvas = document.createElement("canvas");
