@@ -68,7 +68,7 @@ export const getCommentsForPR = async (prNumber: number): Promise<Comment[]> => 
 };
 
 export const postComment = async (prNumber: number, body: string, replyTo?: Comment): Promise<void> => {
-  const commentFileName = `pr-${prNumber}-comment.md`;
+  const commentFileName = `pr-${prNumber}-comment-${Date.now()}.md`;
   try {
     if (replyTo?.isReviewComment) {
       // Reply to review comment via API; use file for body to avoid shell escaping
