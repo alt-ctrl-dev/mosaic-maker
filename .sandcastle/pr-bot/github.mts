@@ -1,6 +1,6 @@
 import { execSync } from "child_process";
 import fs from "fs";
-import type { Comment, PR } from "./types.mts";
+import type { Comment, PR, Reactions } from "./types.mts";
 import { ISSUE_COMMENTS_RESPONSE, REVIEW_COMMENTS_RESPONSE, BOT_REPLY_PREFIX } from "./types.mts";
 import { extractSandcastleCommand, isBotReply } from "./comments.mts";
 
@@ -17,22 +17,35 @@ export const getOpenPRs = async (): Promise<PR[]> => {
   }
 };
 
+const toReactions = (r: Record<string, number>): Reactions => ({
+  totalCount: r.total_count,
+  plusOne: r["+1"],
+  minusOne: r["-1"],
+  laugh: r.laugh,
+  hooray: r.hooray,
+  confused: r.confused,
+  heart: r.heart,
+  rocket: r.rocket,
+  eyes: r.eyes,
+});
+
 export const getCommentsForPR = async (prNumber: number): Promise<Comment[]> => {
   try {
-    // Issue-level comments
+    // Issue-level comments (REST API includes reactions)
     const issueOutput = execSync(
-      `gh pr view ${prNumber} --json comments`,
+      `gh api "repos/:owner/:repo/issues/${prNumber}/comments"`,
       { encoding: "utf-8" }
     );
 
-    const issueResponse = ISSUE_COMMENTS_RESPONSE.parse(JSON.parse(issueOutput));
-    const issueComments: Comment[] = issueResponse.comments.map(c => ({
-      id: c.id,
-      author: c.author.login,
+    const rawIssueComments = ISSUE_COMMENTS_RESPONSE.parse(JSON.parse(issueOutput));
+    const issueComments: Comment[] = rawIssueComments.map(c => ({
+      id: String(c.id),
+      author: c.user.login,
       body: c.body,
-      createdAt: c.createdAt,
+      createdAt: c.created_at,
       isReviewComment: false,
       isBotReply: false,
+      reactions: toReactions(c.reactions),
     }));
 
     // Review comments (attached to files/lines)
@@ -52,6 +65,7 @@ export const getCommentsForPR = async (prNumber: number): Promise<Comment[]> => 
       file: c.path,
       line: c.line ?? undefined,
       diffHunk: c.diff_hunk,
+      reactions: toReactions(c.reactions),
     }));
 
     const allComments = [...issueComments, ...reviewComments];

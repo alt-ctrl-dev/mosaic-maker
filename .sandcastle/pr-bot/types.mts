@@ -4,6 +4,18 @@ import { z } from "zod";
 // Types
 // ---------------------------------------------------------------------------
 
+export type Reactions = {
+  totalCount: number;
+  plusOne: number;
+  minusOne: number;
+  laugh: number;
+  hooray: number;
+  confused: number;
+  heart: number;
+  rocket: number;
+  eyes: number;
+};
+
 export type Comment = {
   id: string;
   author: string;
@@ -16,6 +28,7 @@ export type Comment = {
   file?: string;
   line?: number;
   diffHunk?: string;
+  reactions: Reactions;
 };
 
 export type PR = {
@@ -56,14 +69,35 @@ export const PLAN_SCHEMA = z.object({
   questions: z.array(z.string()).optional(),
 });
 
-export const ISSUE_COMMENTS_RESPONSE = z.object({
-  comments: z.array(z.object({
-    id: z.string(),
-    author: z.object({ login: z.string() }),
-    body: z.string(),
-    createdAt: z.string(),
-  })),
+const reactionsSchema = z.object({
+  total_count: z.number(),
+  "+1": z.number(),
+  "-1": z.number(),
+  laugh: z.number(),
+  hooray: z.number(),
+  confused: z.number(),
+  heart: z.number(),
+  rocket: z.number(),
+  eyes: z.number(),
 });
+
+export const ISSUE_COMMENTS_RESPONSE = z.array(z.object({
+  id: z.number(),
+  user: z.object({ login: z.string() }),
+  body: z.string(),
+  created_at: z.string(),
+  reactions: reactionsSchema.optional().default({
+    total_count: 0,
+    "+1": 0,
+    "-1": 0,
+    laugh: 0,
+    hooray: 0,
+    confused: 0,
+    heart: 0,
+    rocket: 0,
+    eyes: 0,
+  }),
+}));
 
 export const REVIEW_COMMENTS_RESPONSE = z.array(z.object({
   id: z.number(),
@@ -73,4 +107,15 @@ export const REVIEW_COMMENTS_RESPONSE = z.array(z.object({
   path: z.string(),
   line: z.number().nullable().optional(),
   diff_hunk: z.string(),
+  reactions: reactionsSchema.optional().default({
+    total_count: 0,
+    "+1": 0,
+    "-1": 0,
+    laugh: 0,
+    hooray: 0,
+    confused: 0,
+    heart: 0,
+    rocket: 0,
+    eyes: 0,
+  }),
 }));
