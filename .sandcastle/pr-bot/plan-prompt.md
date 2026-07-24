@@ -28,7 +28,6 @@ This JSON contains:
   - `author`: GitHub username who wrote the comment
   - `body`: Full comment text
   - `createdAt`: ISO timestamp
-  - `isBotReply`: Whether this is a reply from the Sandcastle bot
   - `sandcastleCommand`: The `/sandcastle` command text (if present)
 
 ## YOUR TASK

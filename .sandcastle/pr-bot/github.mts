@@ -1,8 +1,8 @@
 import { execSync } from "child_process";
 import fs from "fs";
 import type { Comment, PR, Reactions } from "./types.mts";
-import { ISSUE_COMMENTS_RESPONSE, REVIEW_COMMENTS_RESPONSE, BOT_REPLY_PREFIX } from "./types.mts";
-import { extractSandcastleCommand, isBotReply } from "./comments.mts";
+import { ISSUE_COMMENTS_RESPONSE, REVIEW_COMMENTS_RESPONSE } from "./types.mts";
+import { extractSandcastleCommand } from "./comments.mts";
 
 export const getOpenPRs = async (): Promise<PR[]> => {
   try {
@@ -44,7 +44,6 @@ export const getCommentsForPR = async (prNumber: number): Promise<Comment[]> => 
       body: c.body,
       createdAt: c.created_at,
       isReviewComment: false,
-      isBotReply: false,
       reactions: toReactions(c.reactions),
     }));
 
@@ -61,7 +60,6 @@ export const getCommentsForPR = async (prNumber: number): Promise<Comment[]> => 
       body: c.body,
       createdAt: c.created_at,
       isReviewComment: true,
-      isBotReply: false,
       file: c.path,
       line: c.line ?? undefined,
       diffHunk: c.diff_hunk,
@@ -72,7 +70,6 @@ export const getCommentsForPR = async (prNumber: number): Promise<Comment[]> => 
 
     return allComments.map(comment => ({
       ...comment,
-      isBotReply: isBotReply(comment),
       sandcastleCommand: extractSandcastleCommand(comment.body)
     }));
   } catch (error) {

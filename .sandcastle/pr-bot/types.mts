@@ -21,7 +21,6 @@ export type Comment = {
   author: string;
   body: string;
   createdAt: string;
-  isBotReply: boolean;
   sandcastleCommand?: string;
   isReviewComment: boolean;
   /** Review comment file context (empty for issue comments) */
