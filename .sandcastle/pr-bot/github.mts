@@ -18,13 +18,6 @@ export const getOpenPRs = async (): Promise<PR[]> => {
 };
 
 const toReactions = (r: Record<string, number>): Reactions => ({
-  totalCount: r.total_count,
-  plusOne: r["+1"],
-  minusOne: r["-1"],
-  laugh: r.laugh,
-  hooray: r.hooray,
-  confused: r.confused,
-  heart: r.heart,
   rocket: r.rocket,
   eyes: r.eyes,
 });

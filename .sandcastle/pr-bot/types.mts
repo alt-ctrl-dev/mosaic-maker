@@ -5,13 +5,6 @@ import { z } from "zod";
 // ---------------------------------------------------------------------------
 
 export type Reactions = {
-  totalCount: number;
-  plusOne: number;
-  minusOne: number;
-  laugh: number;
-  hooray: number;
-  confused: number;
-  heart: number;
   rocket: number;
   eyes: number;
 };
@@ -69,13 +62,6 @@ export const PLAN_SCHEMA = z.object({
 });
 
 const reactionsSchema = z.object({
-  total_count: z.number(),
-  "+1": z.number(),
-  "-1": z.number(),
-  laugh: z.number(),
-  hooray: z.number(),
-  confused: z.number(),
-  heart: z.number(),
   rocket: z.number(),
   eyes: z.number(),
 });
@@ -86,13 +72,6 @@ export const ISSUE_COMMENTS_RESPONSE = z.array(z.object({
   body: z.string(),
   created_at: z.string(),
   reactions: reactionsSchema.optional().default({
-    total_count: 0,
-    "+1": 0,
-    "-1": 0,
-    laugh: 0,
-    hooray: 0,
-    confused: 0,
-    heart: 0,
     rocket: 0,
     eyes: 0,
   }),
@@ -107,13 +86,6 @@ export const REVIEW_COMMENTS_RESPONSE = z.array(z.object({
   line: z.number().nullable().optional(),
   diff_hunk: z.string(),
   reactions: reactionsSchema.optional().default({
-    total_count: 0,
-    "+1": 0,
-    "-1": 0,
-    laugh: 0,
-    hooray: 0,
-    confused: 0,
-    heart: 0,
     rocket: 0,
     eyes: 0,
   }),
