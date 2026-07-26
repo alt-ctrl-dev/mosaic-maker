@@ -2,7 +2,6 @@ import { execSync } from "child_process";
 import fs from "fs";
 import type { Comment, PR, Reactions } from "./types.mts";
 import { ISSUE_COMMENTS_RESPONSE, REVIEW_COMMENTS_RESPONSE } from "./types.mts";
-import { extractSandcastleCommand } from "./comments.mts";
 
 export const getOpenPRs = async (): Promise<PR[]> => {
   try {
@@ -22,7 +21,16 @@ const toReactions = (r: Record<string, number>): Reactions => ({
   eyes: r.eyes,
 });
 
-export const getCommentsForPR = async (prNumber: number): Promise<Comment[]> => {
+const hasSandcastleCommand = (comment: Comment): boolean => {
+  return comment.sandcastleCommand != null;
+};
+
+const extractSandcastleCommand = (commentBody: string): string | undefined => {
+  const match = commentBody.match(/\/sandcastle\s+(.*)/);
+  return match ? match[1] : undefined;
+};
+
+export const getUnresolvedSandcastleCommentsForPR = async (prNumber: number): Promise<Comment[]> => {
   try {
     // Issue-level comments (REST API includes reactions)
     const issueOutput = execSync(
@@ -59,13 +67,14 @@ export const getCommentsForPR = async (prNumber: number): Promise<Comment[]> => 
       reactions: toReactions(c.reactions),
     }));
 
-    const allComments = [...issueComments, ...reviewComments]
-      .filter(c => c.reactions.rocket === 0);
-
-    return allComments.map(comment => ({
+    const allComments = [...issueComments, ...reviewComments].map(comment => ({
       ...comment,
       sandcastleCommand: extractSandcastleCommand(comment.body)
-    }));
+    }))
+      .filter(hasSandcastleCommand)
+      .filter(c => c.reactions.rocket === 0);
+
+    return allComments;
   } catch (error) {
     console.error(`Failed to fetch comments for PR #${prNumber}:`, error);
     return [];

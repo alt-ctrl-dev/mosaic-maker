@@ -8,7 +8,7 @@
 // Or add to package.json:
 //   "scripts": { "sandcastle-pr-bot": "npx tsx .sandcastle/pr-bot/main.mts" }
 
-import { getOpenPRs, getCommentsForPR } from "./github.mts";
+import { getOpenPRs, getUnresolvedSandcastleCommentsForPR } from "./github.mts";
 import { processPRComments } from "./agents.mts";
 import { dockerSandbox } from "../shared/docker.mts";
 
@@ -25,7 +25,7 @@ async function main() {
   console.log(`Found ${prs.length} open PRs`);
 
   for (const pr of prs) {
-    const comments = await getCommentsForPR(pr.number);
+    const comments = await getUnresolvedSandcastleCommentsForPR(pr.number);
     await processPRComments(pr, comments, { dockerSandbox });
     console.log(`Finished processing comments for PR #${pr.number}.`);
   }

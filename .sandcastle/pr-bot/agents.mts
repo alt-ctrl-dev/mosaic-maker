@@ -4,7 +4,6 @@ import { pushBranch } from "../shared/git.mts";
 import { hooks, copyToWorktree } from "../shared/config.mts";
 import type { Comment, PR, Thread, PlanAction } from "./types.mts";
 import { BOT_REPLY_PREFIX, PLAN_SCHEMA } from "./types.mts";
-import { findUnhandledSandcastleComments } from "./comments.mts";
 import { extractLinkedIssueNumbers, getIssueContext, postComment } from "./github.mts";
 import { createReviewAgent } from "../shared/review.mts";
 import { Agent } from "../shared/types";
@@ -40,10 +39,8 @@ const createPrImplementorAgent = (sandbox: sandcastle.Sandbox, pr: PR, changeReq
 // Main Processing
 // ---------------------------------------------------------------------------
 
-export const processPRComments = async (pr: PR, comments: Comment[], deps: Deps): Promise<void> => {
+export const processPRComments = async (pr: PR, unhandledComments: Comment[], deps: Deps): Promise<void> => {
   console.log(`Processing PR #${pr.number}: ${pr.title}`);
-
-  const unhandledComments = findUnhandledSandcastleComments(comments);
 
   if (unhandledComments.length === 0) {
     console.log(`No unhandled /sandcastle comments on PR #${pr.number}`);
@@ -57,13 +54,7 @@ export const processPRComments = async (pr: PR, comments: Comment[], deps: Deps)
 
     const thread: Thread = {
       pr,
-      comments: comments.filter(c => {
-        const beforeOrAt = new Date(c.createdAt) <= new Date(comment.createdAt);
-        if (!beforeOrAt) return false;
-        // issue comments always relevant; review comments only if same file
-        if (!c.isReviewComment) return true;
-        return comment.isReviewComment && c.file === comment.file;
-      })
+      comments: unhandledComments
     };
 
     // Fetch linked issue context for the plan agent
