@@ -66,7 +66,8 @@ export const getCommentsForPR = async (prNumber: number): Promise<Comment[]> => 
       reactions: toReactions(c.reactions),
     }));
 
-    const allComments = [...issueComments, ...reviewComments];
+    const allComments = [...issueComments, ...reviewComments]
+      .filter(c => c.reactions.rocket === 0);
 
     return allComments.map(comment => ({
       ...comment,
