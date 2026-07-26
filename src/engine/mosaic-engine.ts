@@ -43,22 +43,18 @@ export async function generateMosaic(
 
 /** Generate a placeholder mosaic for cases where no valid tesserae exist. */
 function generatePlaceholderMosaic(width: number, height: number): string {
-	// Create a simple placeholder canvas
 	const canvas = document.createElement("canvas");
 	canvas.width = width;
 	canvas.height = height;
 
 	const ctx = canvas.getContext("2d");
 	if (!ctx) {
-		// Fallback if canvas is not available
 		return `data:image/png;base64,placeholder-error-canvas-context-unavailable`;
 	}
 
-	// Fill with a light gray background
 	ctx.fillStyle = "#f0f0f0";
 	ctx.fillRect(0, 0, width, height);
 
-	// Add a simple pattern
 	ctx.fillStyle = "#cccccc";
 	for (let y = 0; y < height; y += 20) {
 		const rowOffset = (y / 20) % 2 === 0 ? 0 : 10;
