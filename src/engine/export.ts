@@ -1,5 +1,12 @@
 export type ExportFormat = "png" | "jpeg" | "webp";
 
+/**
+ * Create an HTML canvas element with specified dimensions.
+ *
+ * @param width - Width of the canvas in pixels
+ * @param height - Height of the canvas in pixels
+ * @returns A new HTMLCanvasElement with the specified dimensions
+ */
 export function createCanvas(width: number, height: number): HTMLCanvasElement {
 	const canvas = document.createElement("canvas");
 	canvas.width = width;
@@ -7,6 +14,12 @@ export function createCanvas(width: number, height: number): HTMLCanvasElement {
 	return canvas;
 }
 
+/**
+ * Load an image from a data URL.
+ *
+ * @param dataUrl - The data URL of the image to load
+ * @returns Promise resolving to the loaded HTMLImageElement
+ */
 export function loadImage(dataUrl: string): Promise<HTMLImageElement> {
 	return new Promise((resolve, reject) => {
 		const img = new Image();
@@ -62,13 +75,8 @@ export async function exportMosaic(
 			return canvas.toDataURL("image/jpeg", quality);
 
 		case "webp":
-			// Check if WebP is supported
-			try {
-				return canvas.toDataURL("image/webp", quality);
-			} catch {
-				// Fallback to PNG if WebP is not supported
-				return canvas.toDataURL("image/png");
-			}
+			// Check if WebP is supported and throw error if not
+			return canvas.toDataURL("image/webp", quality);
 
 		default:
 			throw new Error(`Unsupported export format: ${format}`);

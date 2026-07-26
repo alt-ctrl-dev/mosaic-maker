@@ -156,4 +156,34 @@ describe("Export Engine", () => {
 			),
 		).rejects.toThrow("Failed to get canvas context for export");
 	});
+
+	it("should throw error when WebP is not supported", async () => {
+		// Create a mock canvas that throws for WebP
+		const mockCanvasThatThrowsForWebP = {
+			width: 100,
+			height: 100,
+			getContext: vi.fn(() => mockCanvasContext),
+			toDataURL: vi.fn((type?: string, _quality?: number) => {
+				if (type === "image/webp") {
+					throw new Error("WebP not supported");
+				}
+				return `data:${type || "image/png"};base64,mock-export`;
+			}),
+		} as unknown as HTMLCanvasElement;
+
+		const mockCanvasCreator = vi.fn(() => mockCanvasThatThrowsForWebP);
+		const mockImageLoader = vi.fn().mockResolvedValue(mockImage);
+
+		await expect(
+			exportMosaic(
+				mosaicDataUrl,
+				100,
+				100,
+				"webp",
+				0.9,
+				mockCanvasCreator,
+				mockImageLoader,
+			),
+		).rejects.toThrow("WebP not supported");
+	});
 });

@@ -402,7 +402,7 @@ describe("workflow-state", () => {
 			expect(newState.tesserae[2].isSupplemented).toBe(true);
 		});
 	});
-	
+
 	describe("updateWorkflowWithMosaicResult", () => {
 		it("updates state with mosaic result and advances to export step", () => {
 			const mosaicResult: MosaicResult = {
