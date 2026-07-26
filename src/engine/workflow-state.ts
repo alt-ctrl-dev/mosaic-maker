@@ -72,15 +72,11 @@ export interface WorkflowState {
 	varietyRecommendation: number | null;
 	/** Whether the user has accepted supplementation */
 	hasAcceptedSupplementation: boolean;
-	/** The generated mosaic result */
 	mosaicResult: MosaicResult | null;
-	/** Alternative text for the exported image */
 	exportAltText: string;
-	/** Selected export format */
 	exportFormat: ExportFormat;
 	/** Quality setting for JPEG/WebP exports (0.0 - 1.0) */
 	exportQuality: number;
-	/** Background color for JPEG exports */
 	exportBackgroundColor: string;
 }
 

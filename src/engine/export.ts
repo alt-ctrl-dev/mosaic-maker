@@ -1,12 +1,5 @@
 export type ExportFormat = "png" | "jpeg" | "webp";
 
-/**
- * Create an HTML canvas element with specified dimensions.
- *
- * @param width - Width of the canvas in pixels
- * @param height - Height of the canvas in pixels
- * @returns A new HTMLCanvasElement with the specified dimensions
- */
 export function createCanvas(width: number, height: number): HTMLCanvasElement {
 	const canvas = document.createElement("canvas");
 	canvas.width = width;
@@ -14,12 +7,6 @@ export function createCanvas(width: number, height: number): HTMLCanvasElement {
 	return canvas;
 }
 
-/**
- * Load an image from a data URL.
- *
- * @param dataUrl - The data URL of the image to load
- * @returns Promise resolving to the loaded HTMLImageElement
- */
 export function loadImage(dataUrl: string): Promise<HTMLImageElement> {
 	return new Promise((resolve, reject) => {
 		const img = new Image();
@@ -32,14 +19,9 @@ export function loadImage(dataUrl: string): Promise<HTMLImageElement> {
 /**
  * Export a mosaic to a specific format with optional quality settings.
  *
- * @param mosaicDataUrl - The data URL of the generated mosaic
- * @param width - Width of the mosaic in pixels
- * @param height - Height of the mosaic in pixels
- * @param format - Target format for export
  * @param quality - Quality setting for JPEG/WebP (0.0 - 1.0), ignored for PNG
  * @param canvasCreator - Optional function to create canvas (for testing)
  * @param imageLoader - Optional function to load images (for testing)
- * @returns Promise resolving to the exported image as a data URL
  */
 export async function exportMosaic(
 	mosaicDataUrl: string,
