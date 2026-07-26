@@ -6,6 +6,9 @@ import {
 	isCoarseGrid,
 } from "./tessera-sizing";
 
+/**
+ * Information about a tessera that has been processed for the mosaic.
+ */
 export interface TesseraInfo {
 	file: File;
 	fileName: string;
@@ -17,6 +20,9 @@ export interface TesseraInfo {
 	isSupplemented?: boolean;
 }
 
+/**
+ * Represents the current state of the mosaic creation workflow.
+ */
 export interface WorkflowState {
 	currentStep: WorkflowStep;
 	sourceImage: SourceImageInfo | null;
@@ -37,6 +43,9 @@ export interface WorkflowState {
 	hasAcceptedSupplementation: boolean;
 }
 
+/**
+ * Workflow steps.
+ */
 export enum WorkflowStep {
 	CHOOSE_SOURCE_IMAGE,
 	SET_TESSERA_SIZE,
@@ -46,6 +55,9 @@ export enum WorkflowStep {
 	EXPORT_MOSAIC,
 }
 
+/**
+ * Initial workflow state.
+ */
 export const INITIAL_WORKFLOW_STATE: WorkflowState = {
 	currentStep: WorkflowStep.CHOOSE_SOURCE_IMAGE,
 	sourceImage: null,

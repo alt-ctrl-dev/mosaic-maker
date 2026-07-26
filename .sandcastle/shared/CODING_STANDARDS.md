@@ -9,6 +9,7 @@
 
 ## Documentation
 
+- Every export (function, const, interface, type, enum) must have a preceding JSDoc block with a summary description.
 - JSDoc comments should provide semantic context (units, behavior, non-obvious constraints) beyond what descriptive names and type signatures convey.
 - Do not add redundant interface-level JSDoc or constant comments that merely restate what the code already makes clear.
 - Documentation must add information value beyond what the code itself expresses.
