@@ -61,6 +61,7 @@ This will signal that the implementation is complete and the branch can be pushe
 - ALWAYS use `pnpm` for all package management and script execution. Never use `npm` or `yarn`.
 - **Always use the git-workflow-and-versioning skill for all commits.** Do not commit without invoking the skill.
 - **NEVER** skip or bypass git hooks
+- **NEVER** attempt to push the changes to remote config
 - **If blocked:** Leave a detailed comment on the issue stating:
   - What was attempted
   - What failed and why
