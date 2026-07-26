@@ -85,7 +85,11 @@ export function getVarietyRecommendation(gridCellCount: number): number {
 }
 
 /**
- * Check if a collection has low variety based on valid tessera count vs recommendation.
+ * Check whether the valid tessera count falls below the variety recommendation
+ * (10% of grid cells, capped at 100).
+ *
+ * @returns `true` when {@link validTesseraCount} is less than the recommended
+ *   minimum for the given {@link gridCellCount}.
  */
 export function checkLowVariety(
 	validTesseraCount: number,

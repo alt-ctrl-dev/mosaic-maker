@@ -1,16 +1,35 @@
 import type { SourceImageInfo } from "./image-processing";
 import type { TesseraInfo } from "./workflow-state";
 
+/**
+ * Result of a mosaic generation operation.
+ *
+ * The {@link progress} field is optionally populated during async generation
+ * to report incremental status to the caller.
+ */
 export interface MosaicResult {
+	/** The mosaic image as a PNG data URL */
 	dataUrl: string;
+	/** Width of the mosaic in pixels */
 	width: number;
+	/** Height of the mosaic in pixels */
 	height: number;
+	/** Incremental generation progress, set when available */
 	progress?: {
 		percent: number;
 		message: string;
 	};
 }
 
+/**
+ * Generate a mosaic from a source image and a collection of tesserae.
+ *
+ * Invalid tesserae are filtered out. When no valid tesserae remain, a
+ * placeholder mosaic is returned instead of throwing.
+ *
+ * @throws {Error} if {@link tesseraSize} is not positive or the source image
+ *   dimensions are not positive.
+ */
 export async function generateMosaic(
 	sourceImage: SourceImageInfo,
 	tesserae: TesseraInfo[],
