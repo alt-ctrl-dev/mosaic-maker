@@ -1,14 +1,30 @@
+import { execSync } from "child_process";
 import * as sandcastle from "@ai-hero/sandcastle";
 import type { DockerSandbox } from "../shared/docker.mts";
 import { pushBranch } from "../shared/git.mts";
 import { hooks, copyToWorktree } from "../shared/config.mts";
 import type { Comment, PR, Thread, PlanAction } from "./types.mts";
 import { BOT_REPLY_PREFIX, PLAN_SCHEMA } from "./types.mts";
-import { extractLinkedIssueNumbers, getIssueContext, postComment } from "./github.mts";
+import { getIssueContext, postComment } from "./github.mts";
 import { createReviewAgent } from "../shared/review.mts";
 import { Agent } from "../shared/types";
+import { z } from "zod";
 
 type Deps = { dockerSandbox: DockerSandbox };
+
+
+const extractIssueNumbersFromPR = ( pr: PR): number[] =>{
+  const issueNumberFromBranch = z.coerce.number().parse(pr.headRefName.split("sandcastle/issue-")[1])
+  const issueFromPRDescription = extractLinkedIssueNumbers(pr.body);
+  return [...new Set([...issueFromPRDescription, issueNumberFromBranch])];
+}
+
+const extractLinkedIssueNumbers = (body: string | null): number[] => {
+  if (!body) return [];
+  const pattern = /(?:close|closes|closed|fix|fixes|fixed|resolve|resolves|resolved)\s+#(\d+)/gi;
+  return [...new Set([...body.matchAll(pattern)].map(m => parseInt(m[1], 10)))];
+};
+
 
 // ---------------------------------------------------------------------------
 // Sandcastle Agents
@@ -35,6 +51,13 @@ const createPrImplementorAgent = (sandbox: sandcastle.Sandbox, pr: PR, changeReq
   }
 }
 
+const markCommentAsDone = async (comment: Comment) => {
+  const endpoint = comment.isReviewComment
+    ? `repos/:owner/:repo/pulls/comments/${comment.id}/reactions`
+    : `repos/:owner/:repo/issues/comments/${comment.id}/reactions`;
+  execSync(`gh api "${endpoint}" -f content=rocket`, { stdio: "inherit" });
+}
+
 // ---------------------------------------------------------------------------
 // Main Processing
 // ---------------------------------------------------------------------------
@@ -58,7 +81,7 @@ export const processPRComments = async (pr: PR, unhandledComments: Comment[], de
     };
 
     // Fetch linked issue context for the plan agent
-    const linkedIssueNumbers = extractLinkedIssueNumbers(pr.body);
+    const linkedIssueNumbers = extractIssueNumbersFromPR(pr)
     const issueContext = linkedIssueNumbers
       .map(n => getIssueContext(n))
       .filter(Boolean)
@@ -83,7 +106,11 @@ export const processPRComments = async (pr: PR, unhandledComments: Comment[], de
     if (plan.action === "needs-info") {
       const questionsList = plan.questions?.map(q => `- ${q}`).join("\n") || "";
       const response = `${BOT_REPLY_PREFIX}\n\nI need more information to process your request:\n\n${questionsList}`;
-      await postComment(pr.number, response, comment);
+
+      await Promise.all([
+        postComment(pr.number, response, comment), 
+        markCommentAsDone(comment)
+      ]);
       return
     }
 
@@ -108,7 +135,10 @@ export const processPRComments = async (pr: PR, unhandledComments: Comment[], de
       await reviewAgent.run();
 
       const response = `${BOT_REPLY_PREFIX}\n\nI've implemented the requested change: ${plan.summary}`;
-      await postComment(pr.number, response, comment);
+       await Promise.all([
+        postComment(pr.number, response, comment), 
+        markCommentAsDone(comment)
+      ]);
       await pushBranch(pr.headRefName);
     } finally {
       await sandbox.close();

@@ -84,21 +84,31 @@ export const getUnresolvedSandcastleCommentsForPR = async (prNumber: number): Pr
 export const postComment = async (prNumber: number, body: string, replyTo?: Comment): Promise<void> => {
   const commentFileName = `pr-${prNumber}-comment-${Date.now()}.md`;
   try {
+    let commentId: string | undefined;
     if (replyTo?.isReviewComment) {
-      // Reply to review comment via API; use file for body to avoid shell escaping
       fs.writeFileSync(commentFileName, body);
-      execSync(
+      const result = execSync(
         `gh api "repos/:owner/:repo/pulls/${prNumber}/comments/${replyTo.id}/replies" -F body=@${commentFileName}`,
-        { stdio: "inherit" }
+        { encoding: "utf-8" }
       );
+      commentId = String(JSON.parse(result).id);
     } else {
-      // Reply to issue comment via quote reply
       const replyBody = replyTo
         ? `> ${replyTo.body.split('\n').join('\n> ')}\n\n@${replyTo.author} ${body}`
         : body;
       fs.writeFileSync(commentFileName, replyBody);
+      const result = execSync(
+        `gh api "repos/:owner/:repo/issues/${prNumber}/comments" -F body=@${commentFileName}`,
+        { encoding: "utf-8" }
+      );
+      commentId = String(JSON.parse(result).id);
+    }
+    if (commentId) {
+      const reactionEndpoint = replyTo?.isReviewComment
+        ? `repos/:owner/:repo/pulls/comments/${commentId}/reactions`
+        : `repos/:owner/:repo/issues/comments/${commentId}/reactions`;
       execSync(
-        `gh pr comment ${prNumber} --body-file ${commentFileName}`,
+        `gh api "${reactionEndpoint}" -f content=rocket`,
         { stdio: "inherit" }
       );
     }
@@ -107,12 +117,6 @@ export const postComment = async (prNumber: number, body: string, replyTo?: Comm
   } finally {
     try { fs.rmSync(commentFileName); } catch { /* best effort cleanup */ }
   }
-};
-
-export const extractLinkedIssueNumbers = (body: string | null): number[] => {
-  if (!body) return [];
-  const pattern = /(?:close|closes|closed|fix|fixes|fixed|resolve|resolves|resolved)\s+#(\d+)/gi;
-  return [...new Set([...body.matchAll(pattern)].map(m => parseInt(m[1], 10)))];
 };
 
 export const getIssueContext = (issueNumber: number): string | null => {
