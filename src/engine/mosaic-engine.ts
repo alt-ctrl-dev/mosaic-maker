@@ -23,12 +23,22 @@ export interface MosaicResult {
 
 /**
  * Generate a mosaic from a source image and a collection of tesserae.
+<<<<<<< HEAD
  *
  * Invalid tesserae are filtered out. When no valid tesserae remain, a
  * placeholder mosaic is returned instead of throwing.
  *
  * @throws {Error} if {@link tesseraSize} is not positive or the source image
  *   dimensions are not positive.
+=======
+ * If no valid tesserae are provided, generates a placeholder mosaic.
+ * 
+ * @param sourceImage - Information about the source image
+ * @param tesserae - Array of tesserae to use in the mosaic
+ * @param tesseraSize - The size of each tessera in pixels
+ * @returns A promise that resolves to the generated mosaic result
+ * @throws Error if tessera size is not positive or source dimensions are not positive
+>>>>>>> fc7655b (docs: add JSDoc comments to all functions)
  */
 export async function generateMosaic(
 	sourceImage: SourceImageInfo,
@@ -63,6 +73,14 @@ export async function generateMosaic(
 /**
  * Generate a placeholder mosaic for cases where no valid tesserae exist.
  *
+ * @param width - Width of the mosaic
+ * @param height - Height of the mosaic
+ * @returns Data URL of a placeholder image
+ */
+/**
+ * Generate a placeholder mosaic for cases where no valid tesserae exist.
+ * Creates a simple pattern on a light gray background.
+ * 
  * @param width - Width of the mosaic
  * @param height - Height of the mosaic
  * @returns Data URL of a placeholder image

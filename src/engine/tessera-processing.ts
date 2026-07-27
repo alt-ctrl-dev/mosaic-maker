@@ -4,6 +4,15 @@ import { isSupportedImageFormat, getImageFileError } from "./image-processing";
 /** Minimum recommended tessera size in pixels */
 const MIN_RECOMMENDED_SIZE = 50;
 
+/**
+ * Process a collection of image files into tesserae.
+ * Each file is validated, processed, and converted into a tessera
+ * with appropriate metadata and preview.
+ * 
+ * @param files - Array of image files to process
+ * @param targetSize - The target size for each tessera
+ * @returns A promise that resolves to an array of processed tesserae
+ */
 export async function processTesserae(
 	files: File[],
 	targetSize: number,
@@ -30,6 +39,15 @@ export async function processTesserae(
 	return tesserae;
 }
 
+/**
+ * Process a single image file into a tessera.
+ * Validates the file format, loads the image, crops it to a square,
+ * resizes it to the target size, and generates a preview.
+ * 
+ * @param file - The image file to process
+ * @param targetSize - The target size for the tessera
+ * @returns A promise that resolves to the processed tessera information
+ */
 async function processSingleTessera(
 	file: File,
 	targetSize: number,
@@ -62,6 +80,13 @@ async function processSingleTessera(
 	};
 }
 
+/**
+ * Load an image from a file.
+ * Creates an Image object and loads the file data into it.
+ * 
+ * @param file - The file to load as an image
+ * @returns A promise that resolves to the loaded HTMLImageElement
+ */
 function loadImageFromFile(file: File): Promise<HTMLImageElement> {
 	return new Promise((resolve, reject) => {
 		const img = new Image();
@@ -81,6 +106,12 @@ function loadImageFromFile(file: File): Promise<HTMLImageElement> {
 	});
 }
 
+/**
+ * Crop an image to a square by taking the center portion.
+ * 
+ * @param img - The image to crop
+ * @returns A canvas element containing the cropped square image
+ */
 function centerCropToSquare(img: HTMLImageElement): HTMLCanvasElement {
 	const canvas = document.createElement("canvas");
 	const ctx = canvas.getContext("2d");
@@ -100,6 +131,15 @@ function centerCropToSquare(img: HTMLImageElement): HTMLCanvasElement {
 	return canvas;
 }
 
+/**
+ * Resize a canvas to the specified dimensions.
+ * Uses high-quality image smoothing for better results.
+ * 
+ * @param canvas - The canvas to resize
+ * @param width - The target width
+ * @param height - The target height
+ * @returns A new canvas with the resized image
+ */
 function resizeCanvas(
 	canvas: HTMLCanvasElement,
 	width: number,
