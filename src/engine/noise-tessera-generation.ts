@@ -80,5 +80,3 @@ export async function generateTesseraeUsingNoise(
 
 	return tesserae;
 }
-
-export { generateTesseraeUsingNoise };

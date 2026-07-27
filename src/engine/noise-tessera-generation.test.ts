@@ -130,5 +130,31 @@ describe("noise-tessera-generation", () => {
 			expect(hasSmooth).toBe(true);
 			expect(hasSharp).toBe(true);
 		});
+
+		it("generates tesserae with unique filenames based on index and seed", async () => {
+			const tesserae = await generateTesseraeUsingNoise(
+				mockSourceImage,
+				3,
+				10,
+				12345,
+			);
+
+			expect(tesserae[0].fileName).toBe("generated-0-smooth-12345.png");
+			expect(tesserae[1].fileName).toBe("generated-1-smooth-12345.png");
+			expect(tesserae[2].fileName).toBe("generated-2-smooth-12345.png");
+		});
+
+		it("generates valid tesserae with proper file objects", async () => {
+			const tesserae = await generateTesseraeUsingNoise(
+				mockSourceImage,
+				1,
+				10,
+				12345,
+			);
+
+			expect(tesserae[0].file).toBeInstanceOf(File);
+			expect(tesserae[0].file.type).toBe("image/png");
+			expect(tesserae[0].previewUrl).toMatch(/^data:image\/png;base64,/);
+		});
 	});
 });
