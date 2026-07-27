@@ -408,7 +408,7 @@ describe("workflow-state", () => {
 			expect(newState.tesserae[2].isSupplemented).toBe(true);
 		});
 	});
-
+	
 	describe("updateWorkflowToGeneratedMode", () => {
 		it("switches to generated mode and sets a seed", () => {
 			const stateWithSource = {
@@ -532,7 +532,6 @@ describe("workflow-state", () => {
 			expect(newState.needsRegeneration).toBe(false);
 		});
 	});
-<<<<<<< HEAD
 
 	describe("updateWorkflowWithMosaicResult", () => {
 		it("updates state with mosaic result and advances to export step", () => {
@@ -618,6 +617,3 @@ describe("workflow-state", () => {
 		});
 	});
 });
-=======
-});
->>>>>>> 3dc14b7 (docs: add JSDoc comments to all functions in noise tessera generation modules)

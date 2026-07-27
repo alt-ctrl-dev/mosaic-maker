@@ -85,6 +85,11 @@ export enum WorkflowStep {
 }
 
 /**
+ * Maximum value for seed generation.
+ */
+export const SEED_MAX = 1_000_000;
+
+/**
  * Initial workflow state.
  */
 export const INITIAL_WORKFLOW_STATE: WorkflowState = {
@@ -137,6 +142,14 @@ export function checkLowVariety(
 	return validTesseraCount < recommendation;
 }
 
+/**
+ * Recalculate variety metrics based on the current workflow state and valid tessera count.
+ * Determines if the collection has low variety and calculates the variety recommendation.
+ *
+ * @param state - The current workflow state containing adjusted tessera size and source image
+ * @param validCount - The number of valid tesserae in the collection
+ * @returns An object containing whether the collection has low variety and the variety recommendation
+ */
 function recalculateVarietyMetrics(
 	state: WorkflowState,
 	validCount: number,
@@ -157,6 +170,14 @@ function recalculateVarietyMetrics(
 	};
 }
 
+/**
+ * Update workflow state with a new source image.
+ * Validates the source image dimensions and updates the workflow step accordingly.
+ *
+ * @param state - The current workflow state
+ * @param sourceImage - The new source image information
+ * @returns Updated workflow state with the new source image and appropriate step
+ */
 export function updateWorkflowWithSourceImage(
 	state: WorkflowState,
 	sourceImage: SourceImageInfo,
@@ -186,6 +207,14 @@ export function updateWorkflowWithSourceImage(
 	};
 }
 
+/**
+ * Update workflow state with a source image error.
+ * This is used when source image processing fails.
+ *
+ * @param state - The current workflow state
+ * @param errorMessage - The error message to set
+ * @returns Updated workflow state with the error information
+ */
 export function updateWorkflowWithSourceImageError(
 	state: WorkflowState,
 	errorMessage: string,
@@ -198,6 +227,14 @@ export function updateWorkflowWithSourceImageError(
 	};
 }
 
+/**
+ * Update workflow state with a requested tessera size.
+ * Calculates the adjusted tessera size and determines if the resulting grid is coarse.
+ *
+ * @param state - The current workflow state
+ * @param requestedSize - The tessera size requested by the user
+ * @returns Updated workflow state with adjusted tessera size and grid information
+ */
 export function updateWorkflowWithTesseraSize(
 	state: WorkflowState,
 	requestedSize: number,
@@ -237,6 +274,14 @@ export function updateWorkflowWithTesseraSize(
 	};
 }
 
+/**
+ * Update workflow state with a new collection of tesserae.
+ * Calculates validity counts and variety metrics for the new collection.
+ *
+ * @param state - The current workflow state
+ * @param tesserae - The new collection of tesserae
+ * @returns Updated workflow state with the new tesserae collection and metrics
+ */
 export function updateWorkflowWithTesserae(
 	state: WorkflowState,
 	tesserae: TesseraInfo[],
@@ -256,6 +301,14 @@ export function updateWorkflowWithTesserae(
 	};
 }
 
+/**
+ * Remove a tessera at the specified index from the workflow state.
+ * Updates validity counts and variety metrics after removal.
+ *
+ * @param state - The current workflow state
+ * @param tesseraIndex - The index of the tessera to remove
+ * @returns Updated workflow state with the tessera removed and metrics recalculated
+ */
 export function updateWorkflowRemoveTessera(
 	state: WorkflowState,
 	tesseraIndex: number,
@@ -282,6 +335,10 @@ export function updateWorkflowRemoveTessera(
 /**
  * Update workflow with supplemented tesserae.
  * Adds generated tesserae to reach the variety recommendation.
+ *
+ * @param state - The current workflow state
+ * @param supplementedTesserae - The tesserae to add to the collection
+ * @returns Updated workflow state with supplemented tesserae and metrics recalculated
  */
 export function updateWorkflowWithSupplementedTesserae(
 	state: WorkflowState,
@@ -303,10 +360,17 @@ export function updateWorkflowWithSupplementedTesserae(
 	};
 }
 
+/**
+ * Update workflow to use generated tesserae mode.
+ * This switches the workflow to use algorithmically generated tesserae instead of uploaded ones.
+ * 
+ * @param state - The current workflow state
+ * @returns Updated workflow state with generated tesserae mode enabled
+ */
 export function updateWorkflowToGeneratedMode(
 	state: WorkflowState,
 ): WorkflowState {
-	const seed = state.seed ?? Math.floor(Math.random() * 1000000);
+	const seed = state.seed ?? Math.floor(Math.random() * SEED_MAX);
 
 	return {
 		...state,
@@ -316,6 +380,13 @@ export function updateWorkflowToGeneratedMode(
 	};
 }
 
+/**
+ * Update workflow to use uploaded tesserae mode.
+ * This switches the workflow back to using uploaded tesserae instead of generated ones.
+ * 
+ * @param state - The current workflow state
+ * @returns Updated workflow state with uploaded tesserae mode enabled
+ */
 export function updateWorkflowToUploadMode(
 	state: WorkflowState,
 ): WorkflowState {
@@ -326,6 +397,14 @@ export function updateWorkflowToUploadMode(
 	};
 }
 
+/**
+ * Update workflow with a specific seed for noise tesserae generation.
+ * This will trigger regeneration of tesserae with the new seed.
+ * 
+ * @param state - The current workflow state
+ * @param seed - The seed value for noise generation
+ * @returns Updated workflow state with new seed and regeneration flag set
+ */
 export function updateWorkflowWithSeed(
 	state: WorkflowState,
 	seed: number,
@@ -337,8 +416,15 @@ export function updateWorkflowWithSeed(
 	};
 }
 
+/**
+ * Update workflow with a new random seed for noise tesserae generation.
+ * This generates a new random seed and triggers regeneration of tesserae.
+ * 
+ * @param state - The current workflow state
+ * @returns Updated workflow state with new random seed and regeneration flag set
+ */
 export function updateWorkflowWithNewSeed(state: WorkflowState): WorkflowState {
-	const newSeed = Math.floor(Math.random() * 1000000);
+	const newSeed = Math.floor(Math.random() * SEED_MAX);
 	return {
 		...state,
 		seed: newSeed,
@@ -346,6 +432,14 @@ export function updateWorkflowWithNewSeed(state: WorkflowState): WorkflowState {
 	};
 }
 
+/**
+ * Update workflow with a specific count of tesserae to generate.
+ * This will trigger regeneration of tesserae with the new count.
+ * 
+ * @param state - The current workflow state
+ * @param count - The number of tesserae to generate
+ * @returns Updated workflow state with new tessera count and regeneration flag set
+ */
 export function updateWorkflowWithGeneratedTesseraCount(
 	state: WorkflowState,
 	count: number,
@@ -357,6 +451,14 @@ export function updateWorkflowWithGeneratedTesseraCount(
 	};
 }
 
+/**
+ * Update workflow with newly generated tesserae.
+ * This replaces the current tessera collection with the new generated ones.
+ * 
+ * @param state - The current workflow state
+ * @param tesserae - The newly generated tesserae collection
+ * @returns Updated workflow state with new tesserae and regeneration flag cleared
+ */
 export function updateWorkflowWithGeneratedTesserae(
 	state: WorkflowState,
 	tesserae: TesseraInfo[],
@@ -372,8 +474,15 @@ export function updateWorkflowWithGeneratedTesserae(
 		needsRegeneration: false,
 	};
 }
-<<<<<<< HEAD
 
+/**
+ * Update workflow state with a mosaic result.
+ * This transitions the workflow to the export step.
+ *
+ * @param state - The current workflow state
+ * @param mosaicResult - The generated mosaic result
+ * @returns Updated workflow state with mosaic result and export step
+ */
 export function updateWorkflowWithMosaicResult(
 	state: WorkflowState,
 	mosaicResult: MosaicResult,
@@ -385,6 +494,14 @@ export function updateWorkflowWithMosaicResult(
 	};
 }
 
+/**
+ * Update workflow state with export settings.
+ * This updates the export configuration in the workflow state.
+ *
+ * @param state - The current workflow state
+ * @param settings - Partial export settings to update
+ * @returns Updated workflow state with new export settings
+ */
 export function updateWorkflowExportSettings(
 	state: WorkflowState,
 	settings: Partial<ExportSettings>,
@@ -394,5 +511,3 @@ export function updateWorkflowExportSettings(
 		...settings,
 	};
 }
-=======
->>>>>>> 3dc14b7 (docs: add JSDoc comments to all functions in noise tessera generation modules)
