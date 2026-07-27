@@ -8,12 +8,6 @@ import {
 	isCoarseGrid,
 } from "./tessera-sizing";
 
-<<<<<<< HEAD
-=======
-/** Upper bound (exclusive) for random seed values in noise tessera generation. */
-export const SEED_MAX = 1_000_000;
-
->>>>>>> bca97d8 (refactor: add missing JSDoc, fix import order, remove redundant comments)
 export type { MosaicResult };
 
 /**
@@ -309,47 +303,6 @@ export function updateWorkflowWithTesserae(
 }
 
 /**
-<<<<<<< HEAD
-=======
- * Update workflow state with a mosaic result.
- * Updates the workflow with the generated mosaic and advances to the export step.
- *
- * @param state - The current workflow state
- * @param mosaicResult - The generated mosaic result
- * @returns Updated workflow state with the mosaic result and export step
- */
-export function updateWorkflowWithMosaicResult(
-	state: WorkflowState,
-	mosaicResult: MosaicResult,
-): WorkflowState {
-	return {
-		...state,
-		mosaicResult,
-		currentStep: WorkflowStep.EXPORT_MOSAIC,
-	};
-}
-
-/**
- * Update workflow state with export settings.
- * Applies a partial update — only the fields present in {@link settings}
- * are changed; all other state fields remain untouched.
- *
- * @param state - The current workflow state
- * @param settings - The export settings to update (partial)
- * @returns Updated workflow state with the new export settings applied
- */
-export function updateWorkflowExportSettings(
-	state: WorkflowState,
-	settings: Partial<ExportSettings>,
-): WorkflowState {
-	return {
-		...state,
-		...settings,
-	};
-}
-
-/**
->>>>>>> 61a6abc (refactor: improve JSDoc consistency across engine modules)
  * Remove a tessera at the specified index from the workflow state.
  * Updates validity counts and variety metrics after removal.
  *
@@ -518,15 +471,14 @@ export function updateWorkflowWithGeneratedTesserae(
 		needsRegeneration: false,
 	};
 }
-<<<<<<< HEAD
 
 /**
  * Update workflow state with a mosaic result.
- * This transitions the workflow to the export step.
+ * Updates the workflow with the generated mosaic and advances to the export step.
  *
  * @param state - The current workflow state
  * @param mosaicResult - The generated mosaic result
- * @returns Updated workflow state with mosaic result and export step
+ * @returns Updated workflow state with the mosaic result and export step
  */
 export function updateWorkflowWithMosaicResult(
 	state: WorkflowState,
@@ -541,11 +493,12 @@ export function updateWorkflowWithMosaicResult(
 
 /**
  * Update workflow state with export settings.
- * This updates the export configuration in the workflow state.
+ * Applies a partial update — only the fields present in {@link settings}
+ * are changed; all other state fields remain untouched.
  *
  * @param state - The current workflow state
- * @param settings - Partial export settings to update
- * @returns Updated workflow state with new export settings
+ * @param settings - The export settings to update (partial)
+ * @returns Updated workflow state with the new export settings applied
  */
 export function updateWorkflowExportSettings(
 	state: WorkflowState,
@@ -556,5 +509,3 @@ export function updateWorkflowExportSettings(
 		...settings,
 	};
 }
-=======
->>>>>>> 409e03a (fix: format files and update workflow state with export functionality)

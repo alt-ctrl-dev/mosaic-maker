@@ -20,10 +20,18 @@ describe("generateNoiseTesseraeFromState", () => {
 			validTesseraCount: 0,
 			rejectedTesseraCount: 0,
 			totalTesseraCount: 0,
+			isLowVarietyCollection: false,
+			varietyRecommendation: null,
+			hasAcceptedSupplementation: false,
 			useGeneratedTesserae: true,
 			seed: 12345,
 			generatedTesseraCount: null,
 			needsRegeneration: false,
+			mosaicResult: null,
+			exportAltText: "",
+			exportFormat: "png",
+			exportQuality: 0.9,
+			exportBackgroundColor: "#ffffff",
 		};
 
 		const tesserae = await generateNoiseTesseraeFromState(mockState);
@@ -50,10 +58,18 @@ describe("generateNoiseTesseraeFromState", () => {
 			validTesseraCount: 0,
 			rejectedTesseraCount: 0,
 			totalTesseraCount: 0,
+			isLowVarietyCollection: false,
+			varietyRecommendation: null,
+			hasAcceptedSupplementation: false,
 			useGeneratedTesserae: true,
 			seed: 12345,
 			generatedTesseraCount: 5,
 			needsRegeneration: false,
+			mosaicResult: null,
+			exportAltText: "",
+			exportFormat: "png",
+			exportQuality: 0.9,
+			exportBackgroundColor: "#ffffff",
 		};
 
 		const tesserae = await generateNoiseTesseraeFromState(mockState);
@@ -75,10 +91,18 @@ describe("generateNoiseTesseraeFromState", () => {
 			validTesseraCount: 0,
 			rejectedTesseraCount: 0,
 			totalTesseraCount: 0,
+			isLowVarietyCollection: false,
+			varietyRecommendation: null,
+			hasAcceptedSupplementation: false,
 			useGeneratedTesserae: true,
 			seed: 12345,
 			generatedTesseraCount: null,
 			needsRegeneration: false,
+			mosaicResult: null,
+			exportAltText: "",
+			exportFormat: "png",
+			exportQuality: 0.9,
+			exportBackgroundColor: "#ffffff",
 		};
 
 		await expect(generateNoiseTesseraeFromState(mockState)).rejects.toThrow(
@@ -103,10 +127,18 @@ describe("generateNoiseTesseraeFromState", () => {
 			validTesseraCount: 0,
 			rejectedTesseraCount: 0,
 			totalTesseraCount: 0,
+			isLowVarietyCollection: false,
+			varietyRecommendation: null,
+			hasAcceptedSupplementation: false,
 			useGeneratedTesserae: true,
 			seed: 12345,
 			generatedTesseraCount: null,
 			needsRegeneration: false,
+			mosaicResult: null,
+			exportAltText: "",
+			exportFormat: "png",
+			exportQuality: 0.9,
+			exportBackgroundColor: "#ffffff",
 		};
 
 		await expect(generateNoiseTesseraeFromState(mockState)).rejects.toThrow(

@@ -36,7 +36,12 @@ describe("noise-tessera-generation", () => {
 			};
 
 			// Test with negative seed - should not throw
-			const tesserae = await generateTesseraeUsingNoise(mockSourceImage, 1, 10, -12345);
+			const tesserae = await generateTesseraeUsingNoise(
+				mockSourceImage,
+				1,
+				10,
+				-12345,
+			);
 			expect(tesserae).toHaveLength(1);
 			expect(tesserae[0].isValid).toBe(true);
 		});
@@ -49,7 +54,12 @@ describe("noise-tessera-generation", () => {
 			};
 
 			// Test with very large seed - should not throw
-			const tesserae = await generateTesseraeUsingNoise(mockSourceImage, 1, 10, 999999999);
+			const tesserae = await generateTesseraeUsingNoise(
+				mockSourceImage,
+				1,
+				10,
+				999999999,
+			);
 			expect(tesserae).toHaveLength(1);
 			expect(tesserae[0].isValid).toBe(true);
 		});
