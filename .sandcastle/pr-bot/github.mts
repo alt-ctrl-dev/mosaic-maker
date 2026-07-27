@@ -1,7 +1,7 @@
 import { execSync } from "child_process";
 import fs from "fs";
 import type { Comment, PR, Reactions } from "./types.mts";
-import { ISSUE_COMMENTS_RESPONSE, REVIEW_COMMENTS_RESPONSE } from "./types.mts";
+import { ISSUE_COMMENTS_RESPONSE, REVIEW_COMMENTS_GRAPHQL, REVIEW_COMMENTS_RESPONSE } from "./types.mts";
 
 export const getOpenPRs = async (): Promise<PR[]> => {
   try {
@@ -47,6 +47,7 @@ const getUnresolvedReviewComments = (prNumber: number) => {
         pageInfo { hasNextPage endCursor }
         nodes {
           isResolved
+          isOutdated
           comments(first: 10) {
             nodes { databaseId }
           }
@@ -59,7 +60,7 @@ const getUnresolvedReviewComments = (prNumber: number) => {
       encoding: 'utf8',
       input: JSON.stringify({ query }),
     });
-    const gqlData = JSON.parse(gqlOutput);
+    const gqlData = REVIEW_COMMENTS_GRAPHQL.parse(JSON.parse(gqlOutput));
     const threads = gqlData.data.repository.pullRequest.reviewThreads;
     for (const t of threads.nodes) {
       for (const c of t.comments.nodes) {

@@ -77,6 +77,44 @@ export const ISSUE_COMMENTS_RESPONSE = z.array(z.object({
   }),
 }));
 
+const CommentsNodeSchema = z.object({
+  databaseId: z.number(),
+});
+
+const PageInfoSchema = z.object({
+  hasNextPage: z.boolean(),
+  endCursor: z.string(),
+});
+
+const CommentsSchema = z.object({
+  nodes: z.array(CommentsNodeSchema),
+});
+
+const ReviewThreadsNodeSchema = z.object({
+  isResolved: z.boolean(),
+  isOutdated: z.boolean(),
+  comments: CommentsSchema,
+});
+
+const ReviewThreadsSchema = z.object({
+  pageInfo: PageInfoSchema,
+  nodes: z.array(ReviewThreadsNodeSchema),
+});
+
+const PullRequestSchema = z.object({
+  reviewThreads: ReviewThreadsSchema,
+});
+
+const RepositorySchema = z.object({
+  pullRequest: PullRequestSchema,
+});
+
+export const REVIEW_COMMENTS_GRAPHQL = z.object({
+  data: z.object({
+    repository: RepositorySchema,
+  }),
+});
+
 export const REVIEW_COMMENTS_RESPONSE = z.array(z.object({
   id: z.number(),
   user: z.object({ login: z.string() }),
