@@ -1,4 +1,6 @@
+import type { ExportFormat } from "./export";
 import type { SourceImageInfo } from "./image-processing";
+import type { MosaicResult } from "./mosaic-engine";
 import {
 	calculateAdjustedTesseraSize,
 	calculateGridCellCount,
@@ -6,21 +8,27 @@ import {
 	isCoarseGrid,
 } from "./tessera-sizing";
 
+export type { MosaicResult };
+
+/**
+ * Settings for mosaic export.
+ */
+export interface ExportSettings {
+	exportFormat: ExportFormat;
+	exportQuality: number;
+	exportAltText: string;
+	exportBackgroundColor: string;
+}
+
 /**
  * Information about a tessera that has been processed for the mosaic.
  */
 export interface TesseraInfo {
-	/** The original file object */
 	file: File;
-	/** The original file name */
 	fileName: string;
-	/** Whether the tessera is valid for use */
 	isValid: boolean;
-	/** Error message if tessera is invalid */
 	error: string | null;
-	/** Whether the tessera has low resolution */
 	isLowResolution: boolean;
-	/** The processed image data URL for preview */
 	previewUrl: string | null;
 	/** Whether the tessera is supplemented (generated) */
 	isSupplemented?: boolean;
@@ -30,27 +38,16 @@ export interface TesseraInfo {
  * Represents the current state of the mosaic creation workflow.
  */
 export interface WorkflowState {
-	/** The current step in the workflow */
 	currentStep: WorkflowStep;
-	/** Information about the selected source image, if any */
 	sourceImage: SourceImageInfo | null;
-	/** The tessera size requested by the user */
 	requestedTesseraSize: number | null;
-	/** The adjusted tessera size after validation */
 	adjustedTesseraSize: number | null;
-	/** Whether the adjusted tessera size results in a coarse grid */
 	isCoarseGrid: boolean;
-	/** Whether the source image has valid dimensions for tessera sizing */
 	hasValidSourceDimensions: boolean;
-	/** Error message if source image processing failed */
 	sourceImageError: string | null;
-	/** Collection of uploaded tesserae */
 	tesserae: TesseraInfo[];
-	/** Number of valid tesserae */
 	validTesseraCount: number;
-	/** Number of rejected tesserae */
 	rejectedTesseraCount: number;
-	/** Total number of tesserae processed */
 	totalTesseraCount: number;
 	/** Whether the collection has low variety */
 	isLowVarietyCollection: boolean;
@@ -58,6 +55,12 @@ export interface WorkflowState {
 	varietyRecommendation: number | null;
 	/** Whether the user has accepted supplementation */
 	hasAcceptedSupplementation: boolean;
+	mosaicResult: MosaicResult | null;
+	exportAltText: string;
+	exportFormat: ExportFormat;
+	/** Quality setting for JPEG/WebP exports (0.0 - 1.0) */
+	exportQuality: number;
+	exportBackgroundColor: string;
 }
 
 /**
@@ -90,6 +93,11 @@ export const INITIAL_WORKFLOW_STATE: WorkflowState = {
 	isLowVarietyCollection: false,
 	varietyRecommendation: null,
 	hasAcceptedSupplementation: false,
+	mosaicResult: null,
+	exportAltText: "",
+	exportFormat: "png",
+	exportQuality: 0.9,
+	exportBackgroundColor: "#ffffff",
 };
 
 /**
@@ -102,7 +110,11 @@ export function getVarietyRecommendation(gridCellCount: number): number {
 }
 
 /**
- * Check if a collection has low variety based on valid tessera count vs recommendation.
+ * Check whether the valid tessera count falls below the variety recommendation
+ * (10% of grid cells, capped at 100).
+ *
+ * @returns `true` when {@link validTesseraCount} is less than the recommended
+ *   minimum for the given {@link gridCellCount}.
  */
 export function checkLowVariety(
 	validTesseraCount: number,
@@ -228,6 +240,27 @@ export function updateWorkflowWithTesserae(
 		isLowVarietyCollection: varietyMetrics.isLowVariety,
 		varietyRecommendation: varietyMetrics.varietyRecommendation,
 		currentStep: WorkflowStep.REVIEW_TESSERAE,
+	};
+}
+
+export function updateWorkflowWithMosaicResult(
+	state: WorkflowState,
+	mosaicResult: MosaicResult,
+): WorkflowState {
+	return {
+		...state,
+		mosaicResult,
+		currentStep: WorkflowStep.EXPORT_MOSAIC,
+	};
+}
+
+export function updateWorkflowExportSettings(
+	state: WorkflowState,
+	settings: Partial<ExportSettings>,
+): WorkflowState {
+	return {
+		...state,
+		...settings,
 	};
 }
 

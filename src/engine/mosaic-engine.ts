@@ -1,16 +1,35 @@
 import type { SourceImageInfo } from "./image-processing";
 import type { TesseraInfo } from "./workflow-state";
 
+/**
+ * Result of a mosaic generation operation.
+ *
+ * The {@link progress} field is optionally populated during async generation
+ * to report incremental status to the caller.
+ */
 export interface MosaicResult {
+	/** The mosaic image as a PNG data URL */
 	dataUrl: string;
+	/** Width of the mosaic in pixels */
 	width: number;
+	/** Height of the mosaic in pixels */
 	height: number;
+	/** Incremental generation progress, set when available */
 	progress?: {
 		percent: number;
 		message: string;
 	};
 }
 
+/**
+ * Generate a mosaic from a source image and a collection of tesserae.
+ *
+ * Invalid tesserae are filtered out. When no valid tesserae remain, a
+ * placeholder mosaic is returned instead of throwing.
+ *
+ * @throws {Error} if {@link tesseraSize} is not positive or the source image
+ *   dimensions are not positive.
+ */
 export async function generateMosaic(
 	sourceImage: SourceImageInfo,
 	tesserae: TesseraInfo[],
@@ -49,22 +68,18 @@ export async function generateMosaic(
  * @returns Data URL of a placeholder image
  */
 function generatePlaceholderMosaic(width: number, height: number): string {
-	// Create a simple placeholder canvas
 	const canvas = document.createElement("canvas");
 	canvas.width = width;
 	canvas.height = height;
 
 	const ctx = canvas.getContext("2d");
 	if (!ctx) {
-		// Fallback if canvas is not available
 		return `data:image/png;base64,placeholder-error-canvas-context-unavailable`;
 	}
 
-	// Fill with a light gray background
 	ctx.fillStyle = "#f0f0f0";
 	ctx.fillRect(0, 0, width, height);
 
-	// Add a simple pattern
 	ctx.fillStyle = "#cccccc";
 	for (let y = 0; y < height; y += 20) {
 		const rowOffset = (y / 20) % 2 === 0 ? 0 : 10;
