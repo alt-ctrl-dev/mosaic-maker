@@ -8,6 +8,12 @@ import {
 	isCoarseGrid,
 } from "./tessera-sizing";
 
+<<<<<<< HEAD
+=======
+/** Upper bound (exclusive) for random seed values in noise tessera generation. */
+export const SEED_MAX = 1_000_000;
+
+>>>>>>> bca97d8 (refactor: add missing JSDoc, fix import order, remove redundant comments)
 export type { MosaicResult };
 
 /**

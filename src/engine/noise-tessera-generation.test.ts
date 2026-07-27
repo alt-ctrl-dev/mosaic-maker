@@ -1,9 +1,9 @@
 import { describe, expect, it } from "vitest";
-import {
-	generateNoiseTesserae,
-	calculateRecommendedTesseraCount,
-} from "./noise-tessera-generation";
 import type { SourceImageInfo } from "./image-processing";
+import {
+	calculateRecommendedTesseraCount,
+	generateNoiseTesserae,
+} from "./noise-tessera-generation";
 
 describe("noise-tessera-generation", () => {
 	describe("calculateRecommendedTesseraCount", () => {

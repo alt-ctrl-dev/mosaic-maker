@@ -1,7 +1,7 @@
 import { describe, expect, it } from "vitest";
 import { generateNoiseTesseraeFromState } from "./generate-noise-tesserae-helper";
-import { WorkflowStep } from "./workflow-state";
 import type { WorkflowState } from "./workflow-state";
+import { WorkflowStep } from "./workflow-state";
 
 function mockState(overrides: Partial<WorkflowState> = {}): WorkflowState {
 	return {

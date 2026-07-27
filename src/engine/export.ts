@@ -1,5 +1,12 @@
+/** Supported mosaic export formats. */
 export type ExportFormat = "png" | "jpeg" | "webp";
 
+/**
+ * Create an HTML canvas element with the specified dimensions.
+ *
+ * @param width - Canvas width in pixels
+ * @param height - Canvas height in pixels
+ */
 export function createCanvas(width: number, height: number): HTMLCanvasElement {
 	const canvas = document.createElement("canvas");
 	canvas.width = width;
@@ -7,6 +14,12 @@ export function createCanvas(width: number, height: number): HTMLCanvasElement {
 	return canvas;
 }
 
+/**
+ * Load an image from a data URL.
+ *
+ * @param dataUrl - The data URL of the image to load
+ * @returns A promise that resolves to the loaded image, or rejects on failure
+ */
 export function loadImage(dataUrl: string): Promise<HTMLImageElement> {
 	return new Promise((resolve, reject) => {
 		const img = new Image();
@@ -17,11 +30,17 @@ export function loadImage(dataUrl: string): Promise<HTMLImageElement> {
 }
 
 /**
- * Export a mosaic to a specific format with optional quality settings.
+ * Export a mosaic to the specified format.
+ * For JPEG exports, transparency is composited over a white background.
  *
+ * @param mosaicDataUrl - The mosaic data URL to export
+ * @param width - Mosaic width in pixels
+ * @param height - Mosaic height in pixels
+ * @param format - The desired output format
  * @param quality - Quality setting for JPEG/WebP (0.0 - 1.0), ignored for PNG
- * @param canvasCreator - Optional function to create canvas (for testing)
- * @param imageLoader - Optional function to load images (for testing)
+ * @param canvasCreator - Optional factory for creating canvas elements (for testing)
+ * @param imageLoader - Optional image loading function (for testing)
+ * @throws Error if the canvas context is unavailable or the format is unsupported
  */
 export async function exportMosaic(
 	mosaicDataUrl: string,
@@ -57,7 +76,6 @@ export async function exportMosaic(
 			return canvas.toDataURL("image/jpeg", quality);
 
 		case "webp":
-			// Check if WebP is supported and throw error if not
 			return canvas.toDataURL("image/webp", quality);
 
 		default:

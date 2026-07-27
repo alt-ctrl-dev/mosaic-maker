@@ -1,5 +1,5 @@
+import { getImageFileError, isSupportedImageFormat } from "./image-processing";
 import type { TesseraInfo } from "./workflow-state";
-import { isSupportedImageFormat, getImageFileError } from "./image-processing";
 
 /** Minimum recommended tessera size in pixels */
 const MIN_RECOMMENDED_SIZE = 50;
