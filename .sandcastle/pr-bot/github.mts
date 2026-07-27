@@ -35,6 +35,7 @@ const getUnresolvedReviewComments = (prNumber: number) => {
   const [owner, repo] = result.split('\n');
 
   const unresolvedIds = new Map<number, boolean>();
+  const outdatedIds = new Map<number, boolean>();
   let cursor: string | null = null;
   let hasNextPage = true;
 
@@ -65,6 +66,7 @@ const getUnresolvedReviewComments = (prNumber: number) => {
     for (const t of threads.nodes) {
       for (const c of t.comments.nodes) {
           unresolvedIds.set(c.databaseId, t.isResolved);
+          outdatedIds.set(c.databaseId, t.isOutdated);
         }
     }
     hasNextPage = threads.pageInfo.hasNextPage;
@@ -80,6 +82,7 @@ const getUnresolvedReviewComments = (prNumber: number) => {
   const rawReviewComments = REVIEW_COMMENTS_RESPONSE.parse(JSON.parse(reviewOutput));
   const reviewComments: Comment[] = rawReviewComments
     .filter(c => !unresolvedIds.get(c.id))
+    .filter(c => !outdatedIds.get(c.id))
     .map(c => ({
       id: String(c.id),
       author: c.user.login,
