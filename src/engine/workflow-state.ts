@@ -431,11 +431,7 @@ export function updateWorkflowWithSeed(
  */
 export function updateWorkflowWithNewSeed(state: WorkflowState): WorkflowState {
 	const newSeed = Math.floor(Math.random() * SEED_MAX);
-	return {
-		...state,
-		seed: newSeed,
-		needsRegeneration: true,
-	};
+	return updateWorkflowWithSeed(state, newSeed);
 }
 
 /**
