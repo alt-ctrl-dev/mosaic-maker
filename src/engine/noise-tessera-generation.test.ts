@@ -1,9 +1,9 @@
 import { describe, expect, it } from "vitest";
-import type { SourceImageInfo } from "./image-processing";
 import {
+	generateTesseraeUsingNoise,
 	calculateRecommendedTesseraCount,
-	generateNoiseTesserae,
 } from "./noise-tessera-generation";
+import type { SourceImageInfo } from "./image-processing";
 
 describe("noise-tessera-generation", () => {
 	describe("calculateRecommendedTesseraCount", () => {
@@ -36,7 +36,7 @@ describe("noise-tessera-generation", () => {
 			};
 
 			// Test with negative seed - should not throw
-			const tesserae = await generateNoiseTesserae(mockSourceImage, 1, 10, -12345);
+			const tesserae = await generateTesseraeUsingNoise(mockSourceImage, 1, 10, -12345);
 			expect(tesserae).toHaveLength(1);
 			expect(tesserae[0].isValid).toBe(true);
 		});
@@ -49,13 +49,13 @@ describe("noise-tessera-generation", () => {
 			};
 
 			// Test with very large seed - should not throw
-			const tesserae = await generateNoiseTesserae(mockSourceImage, 1, 10, 999999999);
+			const tesserae = await generateTesseraeUsingNoise(mockSourceImage, 1, 10, 999999999);
 			expect(tesserae).toHaveLength(1);
 			expect(tesserae[0].isValid).toBe(true);
 		});
 	});
 
-	describe("generateNoiseTesserae", () => {
+	describe("generateTesseraeUsingNoise", () => {
 		const mockSourceImage: SourceImageInfo = {
 			width: 100,
 			height: 100,
@@ -63,7 +63,7 @@ describe("noise-tessera-generation", () => {
 		};
 
 		it("generates the requested number of tesserae", async () => {
-			const tesserae = await generateNoiseTesserae(
+			const tesserae = await generateTesseraeUsingNoise(
 				mockSourceImage,
 				10,
 				10,
@@ -82,13 +82,13 @@ describe("noise-tessera-generation", () => {
 		});
 
 		it("produces deterministic results with the same seed", async () => {
-			const tesserae1 = await generateNoiseTesserae(
+			const tesserae1 = await generateTesseraeUsingNoise(
 				mockSourceImage,
 				5,
 				10,
 				12345,
 			);
-			const tesserae2 = await generateNoiseTesserae(
+			const tesserae2 = await generateTesseraeUsingNoise(
 				mockSourceImage,
 				5,
 				10,
@@ -99,13 +99,13 @@ describe("noise-tessera-generation", () => {
 		});
 
 		it("produces different results with different seeds", async () => {
-			const tesserae1 = await generateNoiseTesserae(
+			const tesserae1 = await generateTesseraeUsingNoise(
 				mockSourceImage,
 				5,
 				10,
 				12345,
 			);
-			const tesserae2 = await generateNoiseTesserae(
+			const tesserae2 = await generateTesseraeUsingNoise(
 				mockSourceImage,
 				5,
 				10,
@@ -116,7 +116,7 @@ describe("noise-tessera-generation", () => {
 		});
 
 		it("assigns tesserae with either smooth or sharp noise styles", async () => {
-			const tesserae = await generateNoiseTesserae(
+			const tesserae = await generateTesseraeUsingNoise(
 				mockSourceImage,
 				20,
 				10,

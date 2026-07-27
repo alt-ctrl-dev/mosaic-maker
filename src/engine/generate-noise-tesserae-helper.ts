@@ -1,7 +1,7 @@
 import type { TesseraInfo, WorkflowState } from "./workflow-state";
 import {
 	calculateRecommendedTesseraCount,
-	generateNoiseTesserae,
+	generateTesseraeUsingNoise,
 } from "./noise-tessera-generation";
 import { calculateGridCellCount } from "./tessera-sizing";
 import { SEED_MAX } from "./workflow-state";
@@ -48,7 +48,7 @@ export async function generateNoiseTesseraeFromState(
 	const seed = state.seed ?? Math.floor(Math.random() * SEED_MAX);
 
 	// Generate the tesserae
-	return generateNoiseTesserae(
+	return generateTesseraeUsingNoise(
 		state.sourceImage,
 		tesseraCount,
 		state.adjustedTesseraSize,

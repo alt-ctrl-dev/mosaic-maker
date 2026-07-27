@@ -2,7 +2,6 @@ import type { SourceImageInfo } from "./image-processing";
 import type { TesseraInfo } from "./workflow-state";
 
 /**
-<<<<<<< HEAD
  * Maximum value for seed generation.
  */
 export const SEED_MAX = 1_000_000;
@@ -13,13 +12,6 @@ export const SEED_MAX = 1_000_000;
  *
  * @param seed - The seed value used to generate the random number
  * @returns A deterministic random number between 0 and 1
-=======
- * Generate a deterministic pseudo-random number based on a seed.
- * Uses a hash function to ensure consistent results for the same seed.
- *
- * @param seed - The seed value to generate the random number from
- * @returns A pseudo-random number between 0 and 1
->>>>>>> fc7655b (docs: add JSDoc comments to all functions)
  */
 function seededRandom(seed: number): number {
 	// Simple hash-based approach to avoid PHONE issues
@@ -45,7 +37,6 @@ export function calculateRecommendedTesseraCount(
 }
 
 /**
-<<<<<<< HEAD
  * Generate noise-based tesserae for the mosaic.
  * Creates deterministic noise patterns based on the provided seed for reproducible results.
  *
@@ -54,19 +45,8 @@ export function calculateRecommendedTesseraCount(
  * @param _size - The size of each tessera in pixels (unused in current implementation)
  * @param seed - The seed value for deterministic noise generation
  * @returns Promise resolving to an array of generated tesserae
-=======
- * Generate a collection of noise-based tesserae with deterministic patterns.
- * Each tessera is generated with either a "smooth" or "sharp" noise style
- * based on the seeded random value.
- *
- * @param _sourceImage - The source image information (unused in this implementation)
- * @param count - The number of tesserae to generate
- * @param _size - The requested tessera size (unused in this implementation)
- * @param seed - The seed value for deterministic generation
- * @returns A promise that resolves to an array of generated tesserae
->>>>>>> fc7655b (docs: add JSDoc comments to all functions)
  */
-export async function generateNoiseTesserae(
+export async function generateTesseraeUsingNoise(
 	_sourceImage: SourceImageInfo,
 	count: number,
 	_size: number,
@@ -100,3 +80,5 @@ export async function generateNoiseTesserae(
 
 	return tesserae;
 }
+
+export { generateTesseraeUsingNoise };
