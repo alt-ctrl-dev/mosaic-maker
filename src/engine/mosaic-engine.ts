@@ -23,22 +23,14 @@ export interface MosaicResult {
 
 /**
  * Generate a mosaic from a source image and a collection of tesserae.
-<<<<<<< HEAD
- *
- * Invalid tesserae are filtered out. When no valid tesserae remain, a
- * placeholder mosaic is returned instead of throwing.
- *
- * @throws {Error} if {@link tesseraSize} is not positive or the source image
- *   dimensions are not positive.
-=======
- * If no valid tesserae are provided, generates a placeholder mosaic.
+ * Invalid tesserae are filtered out. When no valid tesserae remain,
+ * a placeholder mosaic is returned.
  *
  * @param sourceImage - Information about the source image
  * @param tesserae - Array of tesserae to use in the mosaic
  * @param tesseraSize - The size of each tessera in pixels
  * @returns A promise that resolves to the generated mosaic result
  * @throws Error if tessera size is not positive or source dimensions are not positive
->>>>>>> fc7655b (docs: add JSDoc comments to all functions)
  */
 export async function generateMosaic(
 	sourceImage: SourceImageInfo,
@@ -85,7 +77,7 @@ function generatePlaceholderMosaic(width: number, height: number): string {
 
 	const ctx = canvas.getContext("2d");
 	if (!ctx) {
-		return `data:image/png;base64,placeholder-error-canvas-context-unavailable`;
+		return "data:image/png;base64,placeholder-error-canvas-context-unavailable";
 	}
 
 	ctx.fillStyle = "#f0f0f0";

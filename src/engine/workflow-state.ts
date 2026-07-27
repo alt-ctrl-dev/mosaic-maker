@@ -50,19 +50,15 @@ export interface WorkflowState {
 	validTesseraCount: number;
 	rejectedTesseraCount: number;
 	totalTesseraCount: number;
-	/** Whether the collection has low variety */
 	isLowVarietyCollection: boolean;
 	/** The recommended number of tesserae for good variety */
 	varietyRecommendation: number | null;
-	/** Whether the user has accepted supplementation */
 	hasAcceptedSupplementation: boolean;
 	/** Whether to use generated tesserae instead of uploaded ones */
 	useGeneratedTesserae: boolean;
 	/** Seed for generating reproducible noise tesserae */
 	seed: number | null;
-	/** Number of generated tesserae to create */
 	generatedTesseraCount: number | null;
-	/** Whether the generated tesserae need to be regenerated */
 	needsRegeneration: boolean;
 	/** The generated mosaic result, set after mosaic generation completes */
 	mosaicResult: MosaicResult | null;

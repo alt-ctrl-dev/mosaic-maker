@@ -18,36 +18,27 @@ import { SEED_MAX } from "./workflow-state";
 export async function generateNoiseTesseraeFromState(
 	state: WorkflowState,
 ): Promise<TesseraInfo[]> {
-	// Validate that we have the required information
 	if (!state.sourceImage || !state.adjustedTesseraSize) {
 		throw new Error("Source image and adjusted tessera size are required");
 	}
 
-	// Calculate grid cell count
 	const gridCellCount = calculateGridCellCount(
 		state.adjustedTesseraSize,
 		state.sourceImage.width,
 		state.sourceImage.height,
 	);
 
-	// Determine the number of tesserae to generate
 	let tesseraCount: number;
 	if (state.generatedTesseraCount !== null) {
-		// Use the explicitly set count
 		tesseraCount = state.generatedTesseraCount;
 	} else {
-		// Use the recommended count
 		tesseraCount = calculateRecommendedTesseraCount(gridCellCount);
 	}
 
-	// Validate count is within bounds (1 to grid cell count)
-	const maxCount = gridCellCount;
-	tesseraCount = Math.max(1, Math.min(tesseraCount, maxCount));
+	tesseraCount = Math.max(1, Math.min(tesseraCount, gridCellCount));
 
-	// Get the seed, generate one if not available
 	const seed = state.seed ?? Math.floor(Math.random() * SEED_MAX);
 
-	// Generate the tesserae
 	return generateTesseraeUsingNoise(
 		state.sourceImage,
 		tesseraCount,
