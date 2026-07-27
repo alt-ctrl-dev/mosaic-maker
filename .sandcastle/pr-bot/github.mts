@@ -21,14 +21,8 @@ const toReactions = (r: Record<string, number>): Reactions => ({
   eyes: r.eyes,
 });
 
-const hasSandcastleCommand = (comment: Comment): boolean => {
-  return comment.sandcastleCommand != null;
-};
-
-const extractSandcastleCommand = (commentBody: string): string | undefined => {
-  const match = commentBody.match(/\/sandcastle\s+(.*)/);
-  return match ? match[1] : undefined;
-};
+const hasSandcastle = (body: string): boolean =>
+  /\/sandcastle/.test(body);
 
 const getUnresolvedReviewComments = (prNumber: number) => {
   const result = execSync('gh repo view --json owner,name --jq ".owner.login,.name"', { encoding: 'utf8' }).trim();
@@ -118,12 +112,12 @@ export const getUnresolvedSandcastleCommentsForPR = async (prNumber: number): Pr
 
     
     const reviewComments = getUnresolvedReviewComments(prNumber)
-    const allComments = [...issueComments, ...reviewComments].map(comment => ({
-      ...comment,
-      sandcastleCommand: extractSandcastleCommand(comment.body)
-    }))
-      .filter(hasSandcastleCommand)
-      .filter(c => c.reactions.rocket === 0);
+    const allComments = [...issueComments, ...reviewComments]
+      .filter(c => c.reactions.rocket === 0)
+      .filter(c => hasSandcastle(c.body))
+      .map(comment => ({
+        ...comment,
+      }));
 
     return allComments;
   } catch (error) {
