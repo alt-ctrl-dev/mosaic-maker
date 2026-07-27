@@ -32,7 +32,7 @@ export interface MosaicResult {
  *   dimensions are not positive.
 =======
  * If no valid tesserae are provided, generates a placeholder mosaic.
- * 
+ *
  * @param sourceImage - Information about the source image
  * @param tesserae - Array of tesserae to use in the mosaic
  * @param tesseraSize - The size of each tessera in pixels
@@ -72,15 +72,8 @@ export async function generateMosaic(
 
 /**
  * Generate a placeholder mosaic for cases where no valid tesserae exist.
- *
- * @param width - Width of the mosaic
- * @param height - Height of the mosaic
- * @returns Data URL of a placeholder image
- */
-/**
- * Generate a placeholder mosaic for cases where no valid tesserae exist.
  * Creates a simple pattern on a light gray background.
- * 
+ *
  * @param width - Width of the mosaic
  * @param height - Height of the mosaic
  * @returns Data URL of a placeholder image

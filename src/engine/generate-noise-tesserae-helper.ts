@@ -20,7 +20,7 @@ import { SEED_MAX } from "./workflow-state";
  * Calculates the appropriate number of tesserae to generate based on the
  * grid cell count and state parameters, then generates them with a
  * deterministic seed.
- * 
+ *
  * @param state - The current workflow state containing source image,
  *                tessera size, and generation parameters
  * @returns A promise that resolves to an array of generated tesserae

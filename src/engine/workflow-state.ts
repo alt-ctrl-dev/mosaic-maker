@@ -375,7 +375,7 @@ export function updateWorkflowToGeneratedMode(
 	return {
 		...state,
 		useGeneratedTesserae: true,
-		seed: seed,
+		seed,
 		currentStep: WorkflowStep.REVIEW_TESSERAE,
 	};
 }
@@ -411,7 +411,7 @@ export function updateWorkflowWithSeed(
 ): WorkflowState {
 	return {
 		...state,
-		seed: seed,
+		seed,
 		needsRegeneration: true,
 	};
 }

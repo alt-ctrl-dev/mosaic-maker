@@ -16,7 +16,7 @@ export const SEED_MAX = 1_000_000;
 =======
  * Generate a deterministic pseudo-random number based on a seed.
  * Uses a hash function to ensure consistent results for the same seed.
- * 
+ *
  * @param seed - The seed value to generate the random number from
  * @returns A pseudo-random number between 0 and 1
 >>>>>>> fc7655b (docs: add JSDoc comments to all functions)
@@ -58,7 +58,7 @@ export function calculateRecommendedTesseraCount(
  * Generate a collection of noise-based tesserae with deterministic patterns.
  * Each tessera is generated with either a "smooth" or "sharp" noise style
  * based on the seeded random value.
- * 
+ *
  * @param _sourceImage - The source image information (unused in this implementation)
  * @param count - The number of tesserae to generate
  * @param _size - The requested tessera size (unused in this implementation)
