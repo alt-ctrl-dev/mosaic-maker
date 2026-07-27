@@ -23,6 +23,11 @@ function mockState(overrides: Partial<WorkflowState> = {}): WorkflowState {
 		seed: 12345,
 		generatedTesseraCount: null,
 		needsRegeneration: false,
+		mosaicResult: null,
+		exportAltText: "",
+		exportFormat: "png",
+		exportQuality: 0.9,
+		exportBackgroundColor: "#ffffff",
 		...overrides,
 	};
 }
