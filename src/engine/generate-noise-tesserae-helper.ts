@@ -47,7 +47,10 @@ export async function generateNoiseTesseraeFromState(
 	// Get the seed, generate one if not available
 	const seed = state.seed ?? Math.floor(Math.random() * SEED_MAX);
 
+<<<<<<< HEAD
 	// Generate the tesserae
+=======
+>>>>>>> 718280a (refactor: update generateNoiseTesserae references to use generateTesseraeUsingNoise)
 	return generateTesseraeUsingNoise(
 		state.sourceImage,
 		tesseraCount,
