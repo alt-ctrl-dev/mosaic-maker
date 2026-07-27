@@ -70,6 +70,7 @@ export interface WorkflowState {
 	generatedTesseraCount: number | null;
 	/** Whether the generated tesserae need to be regenerated */
 	needsRegeneration: boolean;
+	/** The generated mosaic result, set after mosaic generation completes */
 	mosaicResult: MosaicResult | null;
 	exportAltText: string;
 	exportFormat: ExportFormat;
@@ -308,6 +309,47 @@ export function updateWorkflowWithTesserae(
 }
 
 /**
+<<<<<<< HEAD
+=======
+ * Update workflow state with a mosaic result.
+ * Updates the workflow with the generated mosaic and advances to the export step.
+ *
+ * @param state - The current workflow state
+ * @param mosaicResult - The generated mosaic result
+ * @returns Updated workflow state with the mosaic result and export step
+ */
+export function updateWorkflowWithMosaicResult(
+	state: WorkflowState,
+	mosaicResult: MosaicResult,
+): WorkflowState {
+	return {
+		...state,
+		mosaicResult,
+		currentStep: WorkflowStep.EXPORT_MOSAIC,
+	};
+}
+
+/**
+ * Update workflow state with export settings.
+ * Applies a partial update — only the fields present in {@link settings}
+ * are changed; all other state fields remain untouched.
+ *
+ * @param state - The current workflow state
+ * @param settings - The export settings to update (partial)
+ * @returns Updated workflow state with the new export settings applied
+ */
+export function updateWorkflowExportSettings(
+	state: WorkflowState,
+	settings: Partial<ExportSettings>,
+): WorkflowState {
+	return {
+		...state,
+		...settings,
+	};
+}
+
+/**
+>>>>>>> 61a6abc (refactor: improve JSDoc consistency across engine modules)
  * Remove a tessera at the specified index from the workflow state.
  * Updates validity counts and variety metrics after removal.
  *

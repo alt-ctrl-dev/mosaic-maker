@@ -23,11 +23,19 @@ function seededRandom(seed: number): number {
 }
 
 /**
+<<<<<<< HEAD
  * Calculate the recommended number of tesserae to generate based on grid cell count.
  * The recommendation is 10% of the total grid cells, with a minimum of 1 and a maximum of 100.
  *
  * @param gridCellCount - The total number of cells in the mosaic grid
  * @returns The recommended number of tesserae to generate
+=======
+ * Calculate the recommended number of tesserae for the given grid cell count.
+ * Returns 10% of grid cells, capped at 100, with a minimum of 1.
+ *
+ * @param gridCellCount - The total number of grid cells in the mosaic
+ * @returns The recommended tessera count
+>>>>>>> 61a6abc (refactor: improve JSDoc consistency across engine modules)
  */
 export function calculateRecommendedTesseraCount(
 	gridCellCount: number,
