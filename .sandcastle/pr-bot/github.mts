@@ -30,6 +30,70 @@ const extractSandcastleCommand = (commentBody: string): string | undefined => {
   return match ? match[1] : undefined;
 };
 
+const getUnresolvedReviewComments = (prNumber: number) => {
+  const result = execSync('gh repo view --json owner,name --jq ".owner.login,.name"', { encoding: 'utf8' }).trim();
+  const [owner, repo] = result.split('\n');
+
+  const unresolvedIds = new Map<number, boolean>();
+  let cursor: string | null = null;
+  let hasNextPage = true;
+
+  while (hasNextPage) {
+    const cursorArg = cursor ? `, after: "${cursor}"` : '';
+    const query = `query {
+  repository(owner: "${owner}", name: "${repo}") {
+    pullRequest(number: ${prNumber}) {
+      reviewThreads(first: 100${cursorArg}) {
+        pageInfo { hasNextPage endCursor }
+        nodes {
+          isResolved
+          comments(first: 10) {
+            nodes { databaseId }
+          }
+        }
+      }
+    }
+  }
+}`;
+    const gqlOutput = execSync('gh api graphql --input -', {
+      encoding: 'utf8',
+      input: JSON.stringify({ query }),
+    });
+    const gqlData = JSON.parse(gqlOutput);
+    const threads = gqlData.data.repository.pullRequest.reviewThreads;
+    for (const t of threads.nodes) {
+      for (const c of t.comments.nodes) {
+          unresolvedIds.set(c.databaseId, t.isResolved);
+        }
+    }
+    hasNextPage = threads.pageInfo.hasNextPage;
+    cursor = threads.pageInfo.endCursor;
+  }
+
+  // Review comments (attached to files/lines)
+  const reviewOutput = execSync(
+    `gh api "repos/:owner/:repo/pulls/${prNumber}/comments"`,
+    { encoding: "utf-8" }
+  );
+
+  const rawReviewComments = REVIEW_COMMENTS_RESPONSE.parse(JSON.parse(reviewOutput));
+  const reviewComments: Comment[] = rawReviewComments
+    .filter(c => !unresolvedIds.get(c.id))
+    .map(c => ({
+      id: String(c.id),
+      author: c.user.login,
+      body: c.body,
+      createdAt: c.created_at,
+      isReviewComment: true,
+      file: c.path,
+      line: c.line ?? undefined,
+      diffHunk: c.diff_hunk,
+      reactions: toReactions(c.reactions),
+    }));
+
+  return reviewComments
+}
+
 export const getUnresolvedSandcastleCommentsForPR = async (prNumber: number): Promise<Comment[]> => {
   try {
     // Issue-level comments (REST API includes reactions)
@@ -48,25 +112,8 @@ export const getUnresolvedSandcastleCommentsForPR = async (prNumber: number): Pr
       reactions: toReactions(c.reactions),
     }));
 
-    // Review comments (attached to files/lines)
-    const reviewOutput = execSync(
-      `gh api "repos/:owner/:repo/pulls/${prNumber}/comments"`,
-      { encoding: "utf-8" }
-    );
-
-    const rawReviewComments = REVIEW_COMMENTS_RESPONSE.parse(JSON.parse(reviewOutput));
-    const reviewComments: Comment[] = rawReviewComments.map(c => ({
-      id: String(c.id),
-      author: c.user.login,
-      body: c.body,
-      createdAt: c.created_at,
-      isReviewComment: true,
-      file: c.path,
-      line: c.line ?? undefined,
-      diffHunk: c.diff_hunk,
-      reactions: toReactions(c.reactions),
-    }));
-
+    
+    const reviewComments = getUnresolvedReviewComments(prNumber)
     const allComments = [...issueComments, ...reviewComments].map(comment => ({
       ...comment,
       sandcastleCommand: extractSandcastleCommand(comment.body)
