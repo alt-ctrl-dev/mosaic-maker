@@ -1,10 +1,24 @@
+import type { ExportFormat } from "./export";
 import type { SourceImageInfo } from "./image-processing";
+import type { MosaicResult } from "./mosaic-engine";
 import {
 	calculateAdjustedTesseraSize,
 	calculateGridCellCount,
 	hasValidTesseraSizes,
 	isCoarseGrid,
 } from "./tessera-sizing";
+
+export type { MosaicResult };
+
+/**
+ * Settings for mosaic export.
+ */
+export interface ExportSettings {
+	exportFormat: ExportFormat;
+	exportQuality: number;
+	exportAltText: string;
+	exportBackgroundColor: string;
+}
 
 /**
  * Information about a tessera that has been processed for the mosaic.
@@ -41,6 +55,12 @@ export interface WorkflowState {
 	varietyRecommendation: number | null;
 	/** Whether the user has accepted supplementation */
 	hasAcceptedSupplementation: boolean;
+	mosaicResult: MosaicResult | null;
+	exportAltText: string;
+	exportFormat: ExportFormat;
+	/** Quality setting for JPEG/WebP exports (0.0 - 1.0) */
+	exportQuality: number;
+	exportBackgroundColor: string;
 }
 
 /**
@@ -73,6 +93,11 @@ export const INITIAL_WORKFLOW_STATE: WorkflowState = {
 	isLowVarietyCollection: false,
 	varietyRecommendation: null,
 	hasAcceptedSupplementation: false,
+	mosaicResult: null,
+	exportAltText: "",
+	exportFormat: "png",
+	exportQuality: 0.9,
+	exportBackgroundColor: "#ffffff",
 };
 
 /**
@@ -215,6 +240,27 @@ export function updateWorkflowWithTesserae(
 		isLowVarietyCollection: varietyMetrics.isLowVariety,
 		varietyRecommendation: varietyMetrics.varietyRecommendation,
 		currentStep: WorkflowStep.REVIEW_TESSERAE,
+	};
+}
+
+export function updateWorkflowWithMosaicResult(
+	state: WorkflowState,
+	mosaicResult: MosaicResult,
+): WorkflowState {
+	return {
+		...state,
+		mosaicResult,
+		currentStep: WorkflowStep.EXPORT_MOSAIC,
+	};
+}
+
+export function updateWorkflowExportSettings(
+	state: WorkflowState,
+	settings: Partial<ExportSettings>,
+): WorkflowState {
+	return {
+		...state,
+		...settings,
 	};
 }
 
