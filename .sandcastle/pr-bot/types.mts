@@ -1,13 +1,19 @@
 import { z } from "zod";
 
 // ---------------------------------------------------------------------------
+// Schemas
+// ---------------------------------------------------------------------------
+
+const reactionsSchema = z.object({
+  rocket: z.number(),
+  eyes: z.number(),
+});
+
+// ---------------------------------------------------------------------------
 // Types
 // ---------------------------------------------------------------------------
 
-export type Reactions = {
-  rocket: number;
-  eyes: number;
-};
+export type Reactions = z.infer<typeof reactionsSchema>;
 
 export type Comment = {
   id: string;
@@ -35,15 +41,6 @@ export type Thread = {
   comments: Comment[];
 };
 
-export type PlanAction = {
-  action: "implement";
-  summary: string;
-  context: string;
-} | {
-  action: "needs-info";
-  questions: string[];
-};
-
 // ---------------------------------------------------------------------------
 // Configuration
 // ---------------------------------------------------------------------------
@@ -61,10 +58,7 @@ export const PLAN_SCHEMA = z.object({
   questions: z.array(z.string()).optional(),
 });
 
-const reactionsSchema = z.object({
-  rocket: z.number(),
-  eyes: z.number(),
-});
+export type PlanAction = z.infer<typeof PLAN_SCHEMA>;
 
 export const ISSUE_COMMENTS_RESPONSE = z.array(z.object({
   id: z.number(),
@@ -77,41 +71,27 @@ export const ISSUE_COMMENTS_RESPONSE = z.array(z.object({
   }),
 }));
 
-const CommentsNodeSchema = z.object({
-  databaseId: z.number(),
-});
-
-const PageInfoSchema = z.object({
-  hasNextPage: z.boolean(),
-  endCursor: z.string(),
-});
-
-const CommentsSchema = z.object({
-  nodes: z.array(CommentsNodeSchema),
-});
-
-const ReviewThreadsNodeSchema = z.object({
-  isResolved: z.boolean(),
-  isOutdated: z.boolean(),
-  comments: CommentsSchema,
-});
-
-const ReviewThreadsSchema = z.object({
-  pageInfo: PageInfoSchema,
-  nodes: z.array(ReviewThreadsNodeSchema),
-});
-
-const PullRequestSchema = z.object({
-  reviewThreads: ReviewThreadsSchema,
-});
-
-const RepositorySchema = z.object({
-  pullRequest: PullRequestSchema,
-});
-
 export const REVIEW_COMMENTS_GRAPHQL = z.object({
   data: z.object({
-    repository: RepositorySchema,
+    repository: z.object({
+      pullRequest: z.object({
+        reviewThreads: z.object({
+          pageInfo: z.object({
+            hasNextPage: z.boolean(),
+            endCursor: z.string(),
+          }),
+          nodes: z.array(z.object({
+            isResolved: z.boolean(),
+            isOutdated: z.boolean(),
+            comments: z.object({
+              nodes: z.array(z.object({
+                databaseId: z.number(),
+              })),
+            }),
+          })),
+        }),
+      }),
+    }),
   }),
 });
 
