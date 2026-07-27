@@ -363,7 +363,7 @@ export function updateWorkflowWithSupplementedTesserae(
 /**
  * Update workflow to use generated tesserae mode.
  * This switches the workflow to use algorithmically generated tesserae instead of uploaded ones.
- * 
+ *
  * @param state - The current workflow state
  * @returns Updated workflow state with generated tesserae mode enabled
  */
@@ -383,7 +383,7 @@ export function updateWorkflowToGeneratedMode(
 /**
  * Update workflow to use uploaded tesserae mode.
  * This switches the workflow back to using uploaded tesserae instead of generated ones.
- * 
+ *
  * @param state - The current workflow state
  * @returns Updated workflow state with uploaded tesserae mode enabled
  */
@@ -400,7 +400,7 @@ export function updateWorkflowToUploadMode(
 /**
  * Update workflow with a specific seed for noise tesserae generation.
  * This will trigger regeneration of tesserae with the new seed.
- * 
+ *
  * @param state - The current workflow state
  * @param seed - The seed value for noise generation
  * @returns Updated workflow state with new seed and regeneration flag set
@@ -419,7 +419,7 @@ export function updateWorkflowWithSeed(
 /**
  * Update workflow with a new random seed for noise tesserae generation.
  * This generates a new random seed and triggers regeneration of tesserae.
- * 
+ *
  * @param state - The current workflow state
  * @returns Updated workflow state with new random seed and regeneration flag set
  */
@@ -435,7 +435,7 @@ export function updateWorkflowWithNewSeed(state: WorkflowState): WorkflowState {
 /**
  * Update workflow with a specific count of tesserae to generate.
  * This will trigger regeneration of tesserae with the new count.
- * 
+ *
  * @param state - The current workflow state
  * @param count - The number of tesserae to generate
  * @returns Updated workflow state with new tessera count and regeneration flag set
@@ -454,7 +454,7 @@ export function updateWorkflowWithGeneratedTesseraCount(
 /**
  * Update workflow with newly generated tesserae.
  * This replaces the current tessera collection with the new generated ones.
- * 
+ *
  * @param state - The current workflow state
  * @param tesserae - The newly generated tesserae collection
  * @returns Updated workflow state with new tesserae and regeneration flag cleared
@@ -474,6 +474,7 @@ export function updateWorkflowWithGeneratedTesserae(
 		needsRegeneration: false,
 	};
 }
+<<<<<<< HEAD
 
 /**
  * Update workflow state with a mosaic result.
@@ -511,3 +512,5 @@ export function updateWorkflowExportSettings(
 		...settings,
 	};
 }
+=======
+>>>>>>> 409e03a (fix: format files and update workflow state with export functionality)
