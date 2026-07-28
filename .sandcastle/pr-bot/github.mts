@@ -96,7 +96,7 @@ const getUnresolvedReviewComments = (prNumber: number): Comment[] => {
   return comments;
 }
 
-export const getUnresolvedSandcastleCommentsForPR = async (prNumber: number): Promise<Comment[]> => {
+const getUnresolvedPrComments = (prNumber:number) =>{
   try {
     // Issue-level comments (REST API includes reactions)
     const issueOutput = execSync(
@@ -113,8 +113,16 @@ export const getUnresolvedSandcastleCommentsForPR = async (prNumber: number): Pr
       isReviewComment: false,
       reactions: toReactions(c.reactions),
     }));
+    return issueComments
+  } catch (error) {
+    console.error("getUnresolvedPrComments failed",error)
+    return []
+  }
+}
 
-    
+export const getUnresolvedSandcastleCommentsForPR = async (prNumber: number): Promise<Comment[]> => {
+  try {
+    const issueComments = getUnresolvedPrComments(prNumber)
     const reviewComments = getUnresolvedReviewComments(prNumber);
     const allComments = [...issueComments, ...reviewComments]
       .filter(c => c.reactions.rocket === 0)
