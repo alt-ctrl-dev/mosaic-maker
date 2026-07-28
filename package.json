@@ -14,6 +14,7 @@
 		"sandcastle-playground": "pnpx tsx .sandcastle/playground.mts",
 		"sandcastle-pr-creator": "pnpx tsx .sandcastle/pr-creator-bot/pr-creator.mts",
 		"sandcastle-pr-bot": "pnpx tsx .sandcastle/pr-bot/main.mts",
+		"sandcastle-cleanup": "pnpx tsx .sandcastle/cleanup-bot/main.mts",
 		"prototype-neighbor-avoidance": "vite --config vite.prototype.config.ts",
 		"prepare": "husky"
 	},
