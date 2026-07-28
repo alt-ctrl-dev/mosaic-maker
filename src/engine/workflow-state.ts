@@ -505,3 +505,125 @@ export function updateWorkflowExportSettings(
 		...settings,
 	};
 }
+
+/**
+ * Update workflow state when replacing the source image.
+ * Preserves uploaded tessera files but resets the requested/adjusted size,
+ * seed, mosaic, and the generation flag, returning to tessera sizing.
+ *
+ * @param state - The current workflow state
+ * @param sourceImage - The new source image information
+ * @returns Updated workflow state with preserved uploads but reset derived state
+ */
+export function updateWorkflowOnSourceReplacement(
+	state: WorkflowState,
+	sourceImage: SourceImageInfo,
+): WorkflowState {
+	const hasValidDimensions = hasValidTesseraSizes(
+		sourceImage.width,
+		sourceImage.height,
+	);
+
+	return {
+		...state,
+		sourceImage,
+		hasValidSourceDimensions: hasValidDimensions,
+		sourceImageError: hasValidDimensions
+			? null
+			: "The selected image has no valid tessera sizes (no common divisors above 8 pixels). Please select a different image.",
+		currentStep: hasValidDimensions
+			? WorkflowStep.SET_TESSERA_SIZE
+			: WorkflowStep.CHOOSE_SOURCE_IMAGE,
+		requestedTesseraSize: null,
+		adjustedTesseraSize: null,
+		isCoarseGrid: false,
+		seed: null,
+		mosaicResult: null,
+		needsRegeneration: false,
+	};
+}
+
+/**
+ * Update workflow state when tessera size changes.
+ * Preserves uploads and seed, flags for tesserae regeneration when in generated
+ * mode, recalculates grid metrics, and discards the old mosaic.
+ *
+ * @param state - The current workflow state
+ * @param requestedSize - The new requested tessera size
+ * @returns Updated workflow state with recalculated metrics
+ */
+export function updateWorkflowOnTesseraSizeChange(
+	state: WorkflowState,
+	requestedSize: number,
+): WorkflowState {
+	if (!state.sourceImage || !state.hasValidSourceDimensions) {
+		return state;
+	}
+
+	const adjustedSize = calculateAdjustedTesseraSize(
+		requestedSize,
+		state.sourceImage.width,
+		state.sourceImage.height,
+	);
+
+	if (adjustedSize === null) {
+		return {
+			...state,
+			requestedTesseraSize: requestedSize,
+			adjustedTesseraSize: null,
+			isCoarseGrid: false,
+			mosaicResult: null,
+			needsRegeneration: true,
+		};
+	}
+
+	const cellCount = calculateGridCellCount(
+		adjustedSize,
+		state.sourceImage.width,
+		state.sourceImage.height,
+	);
+
+	return {
+		...state,
+		requestedTesseraSize: requestedSize,
+		adjustedTesseraSize: adjustedSize,
+		isCoarseGrid: isCoarseGrid(cellCount),
+		mosaicResult: null,
+		needsRegeneration: state.useGeneratedTesserae,
+	};
+}
+
+/**
+ * Update workflow state on cancellation or failure.
+ * Preserves source, tesserae, and settings and discards incomplete output.
+ *
+ * @param state - The current workflow state
+ * @returns Updated workflow state with incomplete output discarded
+ */
+export function updateWorkflowOnCancellationOrFailure(
+	state: WorkflowState,
+): WorkflowState {
+	return {
+		...state,
+		mosaicResult: null,
+		needsRegeneration: false,
+	};
+}
+
+/**
+ * Update workflow state on regeneration.
+ * Replaces the previous mosaic result rather than retaining a history.
+ *
+ * @param state - The current workflow state
+ * @param mosaicResult - The new mosaic result
+ * @returns Updated workflow state with new mosaic result
+ */
+export function updateWorkflowOnRegeneration(
+	state: WorkflowState,
+	mosaicResult: MosaicResult,
+): WorkflowState {
+	return {
+		...state,
+		mosaicResult,
+	};
+}
