@@ -6,6 +6,10 @@ import {
 	type MosaicResult,
 	type TesseraInfo,
 	updateWorkflowExportSettings,
+	updateWorkflowOnCancellationOrFailure,
+	updateWorkflowOnRegeneration,
+	updateWorkflowOnSourceReplacement,
+	updateWorkflowOnTesseraSizeChange,
 	updateWorkflowRemoveTessera,
 	updateWorkflowToGeneratedMode,
 	updateWorkflowToUploadMode,
@@ -614,6 +618,279 @@ describe("workflow-state", () => {
 			expect(newState.exportFormat).toBe("webp");
 			expect(newState.exportQuality).toBe(0.75);
 			expect(newState.exportAltText).toBe("A colorful mosaic");
+		});
+	});
+
+	describe("updateWorkflowOnSourceReplacement", () => {
+		it("preserves tesserae but resets derived state on valid source replacement", () => {
+			const initialState = {
+				...INITIAL_WORKFLOW_STATE,
+				sourceImage: {
+					width: 100,
+					height: 100,
+					orientation: 1,
+				},
+				hasValidSourceDimensions: true,
+				requestedTesseraSize: 10,
+				adjustedTesseraSize: 10,
+				isCoarseGrid: false,
+				tesserae: [
+					{
+						file: new File([], "test1.jpg"),
+						fileName: "test1.jpg",
+						isValid: true,
+						error: null,
+						isLowResolution: false,
+						previewUrl: "data:image/jpeg;base64,test1",
+					},
+				],
+				validTesseraCount: 1,
+				seed: 12345,
+				mosaicResult: {
+					dataUrl: "data:image/png;base64,test-mosaic",
+					width: 100,
+					height: 100,
+				},
+				currentStep: WorkflowStep.REVIEW_TESSERAE,
+			};
+
+			const newSourceImage = {
+				width: 200,
+				height: 200,
+				orientation: 1,
+			};
+
+			const newState = updateWorkflowOnSourceReplacement(
+				initialState,
+				newSourceImage,
+			);
+
+			// Should preserve tesserae
+			expect(newState.tesserae).toEqual(initialState.tesserae);
+			expect(newState.validTesseraCount).toBe(1);
+
+			// Should reset derived state
+			expect(newState.requestedTesseraSize).toBeNull();
+			expect(newState.adjustedTesseraSize).toBeNull();
+			expect(newState.isCoarseGrid).toBe(false);
+			expect(newState.seed).toBeNull();
+			expect(newState.mosaicResult).toBeNull();
+			expect(newState.needsRegeneration).toBe(false);
+
+			// Should update source and step
+			expect(newState.sourceImage).toEqual(newSourceImage);
+			expect(newState.hasValidSourceDimensions).toBe(true);
+			expect(newState.sourceImageError).toBeNull();
+			expect(newState.currentStep).toBe(WorkflowStep.SET_TESSERA_SIZE);
+		});
+
+		it("handles invalid source replacement", () => {
+			const initialState = {
+				...INITIAL_WORKFLOW_STATE,
+				sourceImage: {
+					width: 100,
+					height: 100,
+					orientation: 1,
+				},
+				hasValidSourceDimensions: true,
+				requestedTesseraSize: 10,
+				adjustedTesseraSize: 10,
+				tesserae: [
+					{
+						file: new File([], "test1.jpg"),
+						fileName: "test1.jpg",
+						isValid: true,
+						error: null,
+						isLowResolution: false,
+						previewUrl: "data:image/jpeg;base64,test1",
+					},
+				],
+				validTesseraCount: 1,
+				seed: 12345,
+				mosaicResult: {
+					dataUrl: "data:image/png;base64,test-mosaic",
+					width: 100,
+					height: 100,
+				},
+				currentStep: WorkflowStep.REVIEW_TESSERAE,
+			};
+
+			const invalidSourceImage = {
+				width: 11,
+				height: 13,
+				orientation: 1,
+			};
+
+			const newState = updateWorkflowOnSourceReplacement(
+				initialState,
+				invalidSourceImage,
+			);
+
+			// Should preserve tesserae
+			expect(newState.tesserae).toEqual(initialState.tesserae);
+			expect(newState.validTesseraCount).toBe(1);
+
+			// Should reset derived state
+			expect(newState.requestedTesseraSize).toBeNull();
+			expect(newState.adjustedTesseraSize).toBeNull();
+			expect(newState.isCoarseGrid).toBe(false);
+			expect(newState.seed).toBeNull();
+			expect(newState.mosaicResult).toBeNull();
+			expect(newState.needsRegeneration).toBe(false);
+
+			// Should update source with error
+			expect(newState.sourceImage).toEqual(invalidSourceImage);
+			expect(newState.hasValidSourceDimensions).toBe(false);
+			expect(newState.sourceImageError).toContain("no valid tessera sizes");
+			expect(newState.currentStep).toBe(WorkflowStep.CHOOSE_SOURCE_IMAGE);
+		});
+	});
+
+	describe("updateWorkflowOnTesseraSizeChange", () => {
+		it("preserves state and discards mosaic on tessera size change", () => {
+			const initialState = {
+				...INITIAL_WORKFLOW_STATE,
+				sourceImage: {
+					width: 100,
+					height: 100,
+					orientation: 1,
+				},
+				hasValidSourceDimensions: true,
+				requestedTesseraSize: 10,
+				adjustedTesseraSize: 10,
+				tesserae: [
+					{
+						file: new File([], "test1.jpg"),
+						fileName: "test1.jpg",
+						isValid: true,
+						error: null,
+						isLowResolution: false,
+						previewUrl: "data:image/jpeg;base64,test1",
+					},
+				],
+				validTesseraCount: 1,
+				seed: 12345,
+				mosaicResult: {
+					dataUrl: "data:image/png;base64,test-mosaic",
+					width: 100,
+					height: 100,
+				},
+				useGeneratedTesserae: false,
+				currentStep: WorkflowStep.REVIEW_TESSERAE,
+			};
+
+			const newState = updateWorkflowOnTesseraSizeChange(initialState, 15);
+
+			// Should preserve tesserae and seed
+			expect(newState.tesserae).toEqual(initialState.tesserae);
+			expect(newState.validTesseraCount).toBe(1);
+			expect(newState.seed).toBe(12345);
+
+			// Should update size and discard mosaic
+			expect(newState.requestedTesseraSize).toBe(15);
+			expect(newState.adjustedTesseraSize).toBe(10); // 10 is closer to 15 than 20
+			expect(newState.mosaicResult).toBeNull();
+			expect(newState.needsRegeneration).toBe(false); // Not using generated mode
+		});
+
+		it("triggers regeneration when using generated tesserae", () => {
+			const initialState = {
+				...INITIAL_WORKFLOW_STATE,
+				sourceImage: {
+					width: 100,
+					height: 100,
+					orientation: 1,
+				},
+				hasValidSourceDimensions: true,
+				useGeneratedTesserae: true,
+				seed: 12345,
+			};
+
+			const newState = updateWorkflowOnTesseraSizeChange(initialState, 15);
+
+			// Should trigger regeneration for generated tesserae
+			expect(newState.needsRegeneration).toBe(true);
+		});
+
+		it("does nothing when source image is not valid", () => {
+			const newState = updateWorkflowOnTesseraSizeChange(
+				INITIAL_WORKFLOW_STATE,
+				10,
+			);
+
+			expect(newState).toEqual(INITIAL_WORKFLOW_STATE);
+		});
+	});
+
+	describe("updateWorkflowOnCancellationOrFailure", () => {
+		it("preserves valid state and discards incomplete output", () => {
+			const initialState = {
+				...INITIAL_WORKFLOW_STATE,
+				sourceImage: {
+					width: 100,
+					height: 100,
+					orientation: 1,
+				},
+				tesserae: [
+					{
+						file: new File([], "test1.jpg"),
+						fileName: "test1.jpg",
+						isValid: true,
+						error: null,
+						isLowResolution: false,
+						previewUrl: "data:image/jpeg;base64,test1",
+					},
+				],
+				validTesseraCount: 1,
+				mosaicResult: {
+					dataUrl: "data:image/png;base64,test-mosaic",
+					width: 100,
+					height: 100,
+				},
+				needsRegeneration: true,
+				currentStep: WorkflowStep.GENERATE_AND_PREVIEW,
+			};
+
+			const newState = updateWorkflowOnCancellationOrFailure(initialState);
+
+			// Should preserve valid state
+			expect(newState.sourceImage).toEqual(initialState.sourceImage);
+			expect(newState.tesserae).toEqual(initialState.tesserae);
+			expect(newState.validTesseraCount).toBe(1);
+
+			// Should discard incomplete output
+			expect(newState.mosaicResult).toBeNull();
+			expect(newState.needsRegeneration).toBe(false);
+		});
+	});
+
+	describe("updateWorkflowOnRegeneration", () => {
+		it("replaces previous mosaic result", () => {
+			const initialState = {
+				...INITIAL_WORKFLOW_STATE,
+				mosaicResult: {
+					dataUrl: "data:image/png;base64,old-mosaic",
+					width: 100,
+					height: 100,
+				},
+			};
+
+			const newMosaicResult: MosaicResult = {
+				dataUrl: "data:image/png;base64,new-mosaic",
+				width: 200,
+				height: 200,
+			};
+
+			const newState = updateWorkflowOnRegeneration(
+				initialState,
+				newMosaicResult,
+			);
+
+			// Should replace mosaic result
+			expect(newState.mosaicResult).toEqual(newMosaicResult);
+
+			// Should preserve other state
+			expect(newState.currentStep).toBe(initialState.currentStep);
 		});
 	});
 });
