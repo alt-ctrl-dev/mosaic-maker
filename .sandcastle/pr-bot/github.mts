@@ -1,7 +1,7 @@
 import { execSync } from "child_process";
 import fs from "fs";
 import type { Comment, PR, Reactions } from "./types.mts";
-import { ISSUE_COMMENTS_RESPONSE, REVIEW_COMMENTS_GRAPHQL, REVIEW_COMMENTS_RESPONSE } from "./types.mts";
+import { ISSUE_COMMENTS_RESPONSE, REVIEW_THREADS_GRAPHQL } from "./types.mts";
 
 export const getOpenPRs = async (): Promise<PR[]> => {
   try {
@@ -24,12 +24,16 @@ const toReactions = (r: Record<string, number>): Reactions => ({
 const hasSandcastle = (body: string): boolean =>
   /\/sandcastle/.test(body);
 
-const getUnresolvedReviewComments = (prNumber: number) => {
+const fromReactionGroups = (groups: Array<{ content: string; users: { totalCount: number } }>): Reactions => ({
+  rocket: groups.find(g => g.content === 'ROCKET')?.users.totalCount ?? 0,
+  eyes: groups.find(g => g.content === 'EYES')?.users.totalCount ?? 0,
+});
+
+const getUnresolvedReviewComments = (prNumber: number): Comment[] => {
   const result = execSync('gh repo view --json owner,name --jq ".owner.login,.name"', { encoding: 'utf8' }).trim();
   const [owner, repo] = result.split('\n');
 
-  const unresolvedIds = new Map<number, boolean>();
-  const outdatedIds = new Map<number, boolean>();
+  const comments: Comment[] = [];
   let cursor: string | null = null;
   let hasNextPage = true;
 
@@ -43,8 +47,20 @@ const getUnresolvedReviewComments = (prNumber: number) => {
         nodes {
           isResolved
           isOutdated
-          comments(first: 10) {
-            nodes { databaseId }
+          comments(first: 50) {
+            nodes {
+              databaseId
+              body
+              author { login }
+              createdAt
+              path
+              originalPosition
+              diffHunk
+              reactionGroups {
+                content
+                users { totalCount }
+              }
+            }
           }
         }
       }
@@ -55,41 +71,29 @@ const getUnresolvedReviewComments = (prNumber: number) => {
       encoding: 'utf8',
       input: JSON.stringify({ query }),
     });
-    const gqlData = REVIEW_COMMENTS_GRAPHQL.parse(JSON.parse(gqlOutput));
+    const gqlData = REVIEW_THREADS_GRAPHQL.parse(JSON.parse(gqlOutput));
     const threads = gqlData.data.repository.pullRequest.reviewThreads;
     for (const t of threads.nodes) {
+      if (t.isResolved || t.isOutdated) continue;
       for (const c of t.comments.nodes) {
-          unresolvedIds.set(c.databaseId, t.isResolved);
-          outdatedIds.set(c.databaseId, t.isOutdated);
-        }
+        comments.push({
+          id: String(c.databaseId),
+          author: c.author.login,
+          body: c.body,
+          createdAt: c.createdAt,
+          isReviewComment: true,
+          file: c.path,
+          line: c.originalPosition ?? undefined,
+          diffHunk: c.diffHunk,
+          reactions: fromReactionGroups(c.reactionGroups),
+        });
+      }
     }
     hasNextPage = threads.pageInfo.hasNextPage;
     cursor = threads.pageInfo.endCursor;
   }
 
-  // Review comments (attached to files/lines)
-  const reviewOutput = execSync(
-    `gh api "repos/:owner/:repo/pulls/${prNumber}/comments"`,
-    { encoding: "utf-8" }
-  );
-
-  const rawReviewComments = REVIEW_COMMENTS_RESPONSE.parse(JSON.parse(reviewOutput));
-  const reviewComments: Comment[] = rawReviewComments
-    .filter(c => !unresolvedIds.get(c.id))
-    .filter(c => !outdatedIds.get(c.id))
-    .map(c => ({
-      id: String(c.id),
-      author: c.user.login,
-      body: c.body,
-      createdAt: c.created_at,
-      isReviewComment: true,
-      file: c.path,
-      line: c.line ?? undefined,
-      diffHunk: c.diff_hunk,
-      reactions: toReactions(c.reactions),
-    }));
-
-  return reviewComments
+  return comments;
 }
 
 export const getUnresolvedSandcastleCommentsForPR = async (prNumber: number): Promise<Comment[]> => {
@@ -111,13 +115,10 @@ export const getUnresolvedSandcastleCommentsForPR = async (prNumber: number): Pr
     }));
 
     
-    const reviewComments = getUnresolvedReviewComments(prNumber)
+    const reviewComments = getUnresolvedReviewComments(prNumber);
     const allComments = [...issueComments, ...reviewComments]
       .filter(c => c.reactions.rocket === 0)
-      .filter(c => hasSandcastle(c.body))
-      .map(comment => ({
-        ...comment,
-      }));
+      .filter(c => hasSandcastle(c.body));
 
     return allComments;
   } catch (error) {

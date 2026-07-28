@@ -71,14 +71,14 @@ export const ISSUE_COMMENTS_RESPONSE = z.array(z.object({
   }),
 }));
 
-export const REVIEW_COMMENTS_GRAPHQL = z.object({
+export const REVIEW_THREADS_GRAPHQL = z.object({
   data: z.object({
     repository: z.object({
       pullRequest: z.object({
         reviewThreads: z.object({
           pageInfo: z.object({
             hasNextPage: z.boolean(),
-            endCursor: z.string(),
+            endCursor: z.string().nullable(),
           }),
           nodes: z.array(z.object({
             isResolved: z.boolean(),
@@ -86,6 +86,16 @@ export const REVIEW_COMMENTS_GRAPHQL = z.object({
             comments: z.object({
               nodes: z.array(z.object({
                 databaseId: z.number(),
+                body: z.string(),
+                author: z.object({ login: z.string() }),
+                createdAt: z.string(),
+                path: z.string(),
+                originalPosition: z.number().nullable().optional(),
+                diffHunk: z.string(),
+                reactionGroups: z.array(z.object({
+                  content: z.string(),
+                  users: z.object({ totalCount: z.number() }),
+                })),
               })),
             }),
           })),
@@ -94,17 +104,3 @@ export const REVIEW_COMMENTS_GRAPHQL = z.object({
     }),
   }),
 });
-
-export const REVIEW_COMMENTS_RESPONSE = z.array(z.object({
-  id: z.number(),
-  user: z.object({ login: z.string() }),
-  body: z.string(),
-  created_at: z.string(),
-  path: z.string(),
-  line: z.number().nullable().optional(),
-  diff_hunk: z.string(),
-  reactions: reactionsSchema.optional().default({
-    rocket: 0,
-    eyes: 0,
-  }),
-}));
