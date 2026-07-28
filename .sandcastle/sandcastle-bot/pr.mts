@@ -1,7 +1,7 @@
 import { execSync } from "child_process";
-import { SandboxEnv } from "../shared/types";
 import * as sandcastle from "@ai-hero/sandcastle";
-import { docker } from "@ai-hero/sandcastle/sandboxes/docker";
+import type { DockerSandbox } from "../shared/docker.mts";
+import { pushBranch } from "../shared/git.mts";
 import fs from 'node:fs';
 
 const maybeAttachIssueId = (description: string, issueId: string|undefined) => {
@@ -17,14 +17,14 @@ Closes #${issueId}
 `
 }
 
-export const generatePrDescription = async (sandboxEnv: SandboxEnv, issueId: string, branch: {
+export const generatePrDescription = async (dockerSandbox: DockerSandbox, issueId: string, branch: {
     base?: string; current: string
 }) => {
     const BASE_BRANCH = branch.base ?? "main"
     //Parallelize steps
     const [prTitle, prDescription] = await Promise.all([
         sandcastle.run({
-            sandbox: docker({ env: sandboxEnv }),
+            sandbox: dockerSandbox,
             name: "pr-title-generator",
             maxIterations: 1,
             agent: sandcastle.pi("openrouter/anthropic/claude-haiku-4.5"),
@@ -33,7 +33,7 @@ export const generatePrDescription = async (sandboxEnv: SandboxEnv, issueId: str
             output: sandcastle.Output.string({ tag: "pr-title" }),
         }),
         sandcastle.run({
-            sandbox: docker({ env: sandboxEnv }),
+            sandbox: dockerSandbox,
             name: "pr-description-generator",
             maxIterations: 1,
             agent: sandcastle.pi("openrouter/anthropic/claude-haiku-4.5"),
@@ -69,12 +69,7 @@ export const createPr = async (title: string, description: string, branch: {
         const escapedTitle = title.replace(/"/g, '\\"');
 
 
-        // publish branch and push changes
-        execSync(
-            `git push --set-upstream origin ${branch.current}`,
-            { stdio: "inherit" }
-        );
-
+        await pushBranch(branch.current);
 
         fs.writeFileSync(prDescriptionFileName, description);
         execSync(

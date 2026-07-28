@@ -25,6 +25,8 @@ Implement the requested change on the PR branch. Follow these steps:
 4. **Add Tests** - If appropriate, add or update tests for the new functionality
 5. **Verify Changes** - Run relevant tests and checks to ensure the implementation is correct
 
+**IMPORTANT: All work happens in the sandboxed environment. Never create a new branch on the host. Always use the existing PR branch within the sandbox.**
+
 ## GUIDELINES
 
 ### Implementation
@@ -49,3 +51,21 @@ When you are finished implementing the change, output:
 <promise>COMPLETE</promise>
 
 This will signal that the implementation is complete and the branch can be pushed.
+
+# FINAL RULES
+
+- **ONLY WORK ON A SINGLE TASK.**
+- **Never modify `.npmrc` or `pnpm-workspace.yaml`.** These files enforce supply-chain security policies and must not be changed by automated tooling.
+- Do not stop until you have committed the fix and verified the feedback loop has passed.
+- Do not leave commented-out code or TODO comments in committed code.
+- ALWAYS use `pnpm` for all package management and script execution. Never use `npm` or `yarn`.
+- **Always use the git-workflow-and-versioning skill for all commits.** Do not commit without invoking the skill.
+- **NEVER** skip or bypass git hooks
+- **NEVER** attempt to push the changes to remote config
+- **If blocked:** Leave a detailed comment on the issue stating:
+  - What was attempted
+  - What failed and why
+  - What is needed to proceed (missing context, external dependency, decision needed, etc.)
+  - Concrete next steps
+- **Never close a blocked issue.**
+- **NEVER create a new branch on the host.** All branch operations (checkout, create, rebase) happen exclusively in the sandboxed environment. Use the existing PR branch only.

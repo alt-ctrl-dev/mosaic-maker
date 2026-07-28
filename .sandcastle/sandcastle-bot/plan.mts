@@ -1,7 +1,7 @@
 import * as sandcastle from "@ai-hero/sandcastle";
-import { docker } from "@ai-hero/sandcastle/sandboxes/docker";
 import { z } from "zod";
-import { Agent, Issue, SandboxEnv } from "../shared/types";
+import { Agent, Issue } from "../shared/types";
+import type { DockerSandbox } from "../shared/docker.mts";
 
 const planSchema = z.object({
   issues: z.array(
@@ -10,7 +10,7 @@ const planSchema = z.object({
 });
 
 
-export const createPlanAgent = (sandboxEnv: SandboxEnv): Agent<Issue | never> => {
+export const createPlanAgent = (dockerSandbox: DockerSandbox): Agent<Issue | never> => {
 const agentName = "planner"
   const planWork = async (): Promise<Issue | never> => {
     // -------------------------------------------------------------------------
@@ -23,7 +23,7 @@ const agentName = "planner"
     // It outputs a <plan> JSON block — Output.object parses and validates it.
     // -------------------------------------------------------------------------
     const plan = await sandcastle.run({
-      sandbox: docker({ env: sandboxEnv }),
+      sandbox: dockerSandbox,
       name: agentName,
       // One iteration is enough: the planner just needs to read and reason,
       // not write code. (Structured output requires maxIterations: 1.)

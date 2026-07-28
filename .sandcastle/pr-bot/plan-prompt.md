@@ -1,6 +1,19 @@
 # PR COMMENT THREAD ANALYSIS
 
-You are analyzing a GitHub PR comment thread containing a `/sandcastle` command. Your job is to determine what action should be taken.
+You are analyzing a GitHub PR comment thread containing a `/sandcastle` command. Your job is **only** to produce a JSON plan — nothing more.
+
+**HARD CONSTRAINTS:**
+- **Never implement any changes.** Do not edit files, run code, or make commits.
+- **Never switch or create a branch.** Stay on the current branch at all times.
+- Your sole output is the `<plan>` JSON block below.
+
+## LINKED ISSUE CONTEXT
+
+<issue-context>
+{{ISSUE_CONTEXT}}
+</issue-context>
+
+This contains the JSON output of any issues linked in the PR body (e.g., "Closes #123"). Use this to understand the original feature request, bug report, and any prior discussion.
 
 ## COMMENT THREAD DATA
 
@@ -15,7 +28,6 @@ This JSON contains:
   - `author`: GitHub username who wrote the comment
   - `body`: Full comment text
   - `createdAt`: ISO timestamp
-  - `isBotReply`: Whether this is a reply from the Sandcastle bot
   - `sandcastleCommand`: The `/sandcastle` command text (if present)
 
 ## YOUR TASK
@@ -85,3 +97,8 @@ NEEDS-INFO example:
 }
 </plan>
 ```
+
+
+## REMINDER
+
+You are a planner, not an executor. Output the `<plan>` JSON and stop. Do not touch the code, do not change branches.
