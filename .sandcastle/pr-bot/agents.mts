@@ -13,13 +13,15 @@ import { z } from "zod";
 type Deps = { dockerSandbox: DockerSandbox };
 
 
-const extractIssueNumbersFromPR = ( pr: PR): number[] =>{
-  const issueNumberFromBranch = z.coerce.number().parse(pr.headRefName.split("sandcastle/issue-")[1])
-  const issueFromPRDescription = extractLinkedIssueNumbers(pr.body);
+const extractIssueNumbersFromPR = (pr: PR): number[] => {
+  const issueFromPRDescription = extractLinkedIssueNumbersFromPrDescription(pr.body);
+  const match = pr.headRefName.match(/sandcastle\/issue-(\d+)/);
+  if (!match) return issueFromPRDescription;
+  const issueNumberFromBranch = parseInt(match[1], 10);
   return [...new Set([...issueFromPRDescription, issueNumberFromBranch])];
 }
 
-const extractLinkedIssueNumbers = (body: string | null): number[] => {
+const extractLinkedIssueNumbersFromPrDescription = (body: string | null): number[] => {
   if (!body) return [];
   const pattern = /(?:close|closes|closed|fix|fixes|fixed|resolve|resolves|resolved)\s+#(\d+)/gi;
   return [...new Set([...body.matchAll(pattern)].map(m => parseInt(m[1], 10)))];
