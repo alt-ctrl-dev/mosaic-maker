@@ -1,6 +1,6 @@
 import { describe, expect, it } from "vitest";
-import { generateMosaic } from "./mosaic-engine";
 import type { SourceImageInfo } from "./image-processing";
+import { generateMosaic } from "./mosaic-engine";
 import type { TesseraInfo } from "./workflow-state";
 
 function makeTessera(overrides: Partial<TesseraInfo> = {}): TesseraInfo {

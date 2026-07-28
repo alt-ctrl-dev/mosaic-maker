@@ -104,7 +104,7 @@ describe("Export Engine", () => {
 	it("should throw error for unsupported export format", async () => {
 		const { canvasCreator, imageLoader } = setupStandardMocks();
 
-		const callExport = () =>
+		await expect(
 			exportMosaic(
 				mosaicDataUrl,
 				100,
@@ -114,11 +114,8 @@ describe("Export Engine", () => {
 				0.9,
 				canvasCreator,
 				imageLoader,
-			);
-
-		await expect(callExport()).rejects.toThrow(
-			"Unsupported export format: bmp",
-		);
+			),
+		).rejects.toThrow("Unsupported export format: bmp");
 	});
 
 	it("should handle image loading errors", async () => {
