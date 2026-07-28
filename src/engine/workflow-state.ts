@@ -508,8 +508,8 @@ export function updateWorkflowExportSettings(
 
 /**
  * Update workflow state when replacing the source image.
- * Preserves uploaded tessera files but resets adjusted size, generated tesserae,
- * seed, mosaic, and export preview, returning to tessera sizing.
+ * Preserves uploaded tessera files but resets the requested/adjusted size,
+ * seed, mosaic, and the generation flag, returning to tessera sizing.
  *
  * @param state - The current workflow state
  * @param sourceImage - The new source image information
@@ -524,31 +524,16 @@ export function updateWorkflowOnSourceReplacement(
 		sourceImage.height,
 	);
 
-	if (!hasValidDimensions) {
-		return {
-			...state,
-			sourceImage,
-			hasValidSourceDimensions: false,
-			sourceImageError:
-				"The selected image has no valid tessera sizes (no common divisors above 8 pixels). Please select a different image.",
-			currentStep: WorkflowStep.CHOOSE_SOURCE_IMAGE,
-			// Reset derived state
-			requestedTesseraSize: null,
-			adjustedTesseraSize: null,
-			isCoarseGrid: false,
-			seed: null,
-			mosaicResult: null,
-			needsRegeneration: false,
-		};
-	}
-
 	return {
 		...state,
 		sourceImage,
-		hasValidSourceDimensions: true,
-		sourceImageError: null,
-		currentStep: WorkflowStep.SET_TESSERA_SIZE,
-		// Reset derived state that depends on the source image
+		hasValidSourceDimensions: hasValidDimensions,
+		sourceImageError: hasValidDimensions
+			? null
+			: "The selected image has no valid tessera sizes (no common divisors above 8 pixels). Please select a different image.",
+		currentStep: hasValidDimensions
+			? WorkflowStep.SET_TESSERA_SIZE
+			: WorkflowStep.CHOOSE_SOURCE_IMAGE,
 		requestedTesseraSize: null,
 		adjustedTesseraSize: null,
 		isCoarseGrid: false,
@@ -560,12 +545,12 @@ export function updateWorkflowOnSourceReplacement(
 
 /**
  * Update workflow state when tessera size changes.
- * Preserves uploads and seed, regenerates noise tesserae, recalculates variety guidance,
- * and discards the old mosaic.
+ * Preserves uploads and seed, flags for tesserae regeneration when in generated
+ * mode, recalculates grid metrics, and discards the old mosaic.
  *
  * @param state - The current workflow state
  * @param requestedSize - The new requested tessera size
- * @returns Updated workflow state with regenerated tesserae and recalculated metrics
+ * @returns Updated workflow state with recalculated metrics
  */
 export function updateWorkflowOnTesseraSizeChange(
 	state: WorkflowState,
@@ -582,14 +567,13 @@ export function updateWorkflowOnTesseraSizeChange(
 	);
 
 	if (adjustedSize === null) {
-		// This should not happen if hasValidSourceDimensions is true
 		return {
 			...state,
 			requestedTesseraSize: requestedSize,
 			adjustedTesseraSize: null,
 			isCoarseGrid: false,
 			mosaicResult: null,
-			needsRegeneration: true, // Regenerate tesserae
+			needsRegeneration: true,
 		};
 	}
 
@@ -599,16 +583,13 @@ export function updateWorkflowOnTesseraSizeChange(
 		state.sourceImage.height,
 	);
 
-	// If we're using generated tesserae, we need to regenerate them
-	const needsRegeneration = state.useGeneratedTesserae;
-
 	return {
 		...state,
 		requestedTesseraSize: requestedSize,
 		adjustedTesseraSize: adjustedSize,
 		isCoarseGrid: isCoarseGrid(cellCount),
-		mosaicResult: null, // Discard old mosaic
-		needsRegeneration, // Regenerate tesserae if using generated mode
+		mosaicResult: null,
+		needsRegeneration: state.useGeneratedTesserae,
 	};
 }
 
@@ -624,7 +605,6 @@ export function updateWorkflowOnCancellationOrFailure(
 ): WorkflowState {
 	return {
 		...state,
-		// Discard incomplete output and processing state
 		mosaicResult: null,
 		needsRegeneration: false,
 	};
@@ -632,7 +612,7 @@ export function updateWorkflowOnCancellationOrFailure(
 
 /**
  * Update workflow state on regeneration.
- * Replaces the previous completed full-resolution mosaic rather than retaining a history.
+ * Replaces the previous mosaic result rather than retaining a history.
  *
  * @param state - The current workflow state
  * @param mosaicResult - The new mosaic result
@@ -645,6 +625,5 @@ export function updateWorkflowOnRegeneration(
 	return {
 		...state,
 		mosaicResult,
-		// No history retention - just replace the previous result
 	};
 }
