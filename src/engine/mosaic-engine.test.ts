@@ -15,34 +15,33 @@ function makeTessera(overrides: Partial<TesseraInfo> = {}): TesseraInfo {
 	};
 }
 
-const mockCanvasContext = {
-	drawImage: vi.fn(),
-	fillStyle: "",
-	fillRect: vi.fn(),
-	globalCompositeOperation: "",
-	globalAlpha: 1,
-	createLinearGradient: vi.fn(() => ({
-		addColorStop: vi.fn(),
-	})),
-	getImageData: vi.fn(() => ({
-		data: new Array(36)
-			.fill(0)
-			.map((_, i) => (i % 4 === 3 ? 255 : Math.floor(i / 4) % 256)), // RGBA data
-	})),
-	clearRect: vi.fn(),
-};
+function createMockContext() {
+	return {
+		drawImage: vi.fn(),
+		fillStyle: "",
+		fillRect: vi.fn(),
+		globalCompositeOperation: "",
+		globalAlpha: 1,
+		createLinearGradient: vi.fn(() => ({
+			addColorStop: vi.fn(),
+		})),
+		getImageData: vi.fn(() => ({
+			data: new Array(36)
+				.fill(0)
+				.map((_, i) => (i % 4 === 3 ? 255 : Math.floor(i / 4) % 256)),
+		})),
+	};
+}
 
 function createMockCanvas(width: number, height: number): HTMLCanvasElement {
-	const canvas = {
+	return {
 		width,
 		height,
-		getContext: vi.fn(() => mockCanvasContext),
+		getContext: vi.fn(() => createMockContext()),
 		toDataURL: vi.fn(
 			() => `data:image/png;base64,mock-mosaic-${width}x${height}`,
 		),
 	} as unknown as HTMLCanvasElement;
-
-	return canvas;
 }
 
 describe("Mosaic Engine", () => {

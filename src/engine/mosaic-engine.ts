@@ -1,3 +1,4 @@
+import { createCanvas } from "./export";
 import type { SourceImageInfo } from "./image-processing";
 import type { TesseraInfo } from "./workflow-state";
 
@@ -45,26 +46,10 @@ interface ProcessedTessera {
 	colorGrid: ColorGrid;
 }
 
-/**
- * RGB color representation
- */
 interface RGB {
 	r: number;
 	g: number;
 	b: number;
-}
-
-/**
- * Create an HTML canvas element with the specified dimensions.
- *
- * @param width - Canvas width in pixels
- * @param height - Canvas height in pixels
- */
-export function createCanvas(width: number, height: number): HTMLCanvasElement {
-	const canvas = document.createElement("canvas");
-	canvas.width = width;
-	canvas.height = height;
-	return canvas;
 }
 
 /** Width and height of the spatial color grid used for matching. */
@@ -188,9 +173,8 @@ function generatePlaceholderMosaic(
 }
 
 /**
- * Create a canvas filled with gradient pattern to represent the source image.
- * When source image loading is implemented, this will load the actual image
- * from SourceImageInfo instead of generating a synthetic gradient.
+ * Create a canvas filled with a gradient that stands in for the source image
+ * until actual source-image loading is implemented.
  */
 async function createCanvasFromSource(
 	sourceImage: SourceImageInfo,
@@ -218,7 +202,9 @@ async function createCanvasFromSource(
 }
 
 /**
- * Extract a 3x3 color grid from a tessera preview URL
+ * Produce a {@link COLOR_GRID_SIZE}&times;{@link COLOR_GRID_SIZE} color grid
+ * for a tessera. Currently generates a synthetic grid rather than extracting
+ * colors from the preview image.
  */
 async function extractColorGrid(
 	previewUrl: string | null,
@@ -533,9 +519,8 @@ async function extractSourceCellGrid(
 }
 
 /**
- * Create a canvas rendering for a tessera.
- * When preview image loading is implemented, this will draw the actual
- * tessera image; for now it fills a solid color derived from the file name.
+ * Render a tessera onto a canvas. Draws a solid color derived from the file
+ * name; actual preview-image loading is not yet implemented.
  */
 async function createTesseraImage(
 	tessera: TesseraInfo,

@@ -47,7 +47,6 @@ const TINT_MIN = 96;
 /** Range above {@link TINT_MIN} for noise tint channels, yielding values in [96, 255]. */
 const TINT_RANGE = 160;
 
-/** RGB tint applied to noise, derived from the source image and seed. */
 interface TintColor {
 	r: number;
 	g: number;
@@ -125,7 +124,12 @@ function sourceTintColor(
  * interpolates a coarser grid for softer transitions. Both are tinted with a
  * color sampled deterministically from the source image.
  *
+ * @param sourceImage - The source image used to derive the tint color
+ * @param size - Width and height of the noise pattern in pixels
+ * @param seed - Deterministic seed for noise generation
+ * @param isSmooth - Whether to use smooth (interpolated) or sharp (per-pixel) noise
  * @param canvasCreator - Factory for creating canvas elements (overridable for testing)
+ * @returns A PNG data URL for the rendered noise pattern
  * @throws Error if the canvas 2D context is unavailable
  */
 function generateNoisePattern(
