@@ -79,14 +79,12 @@ describe("noise-tessera-generation", () => {
 
 	describe("seededRandom", () => {
 		it("handles negative seeds correctly", async () => {
-			// Test with negative seed - should not throw
 			const tesserae = await generate(1, 10, -12345);
 			expect(tesserae).toHaveLength(1);
 			expect(tesserae[0].isValid).toBe(true);
 		});
 
 		it("handles very large seeds correctly", async () => {
-			// Test with very large seed - should not throw
 			const tesserae = await generate(1, 10, 999999999);
 			expect(tesserae).toHaveLength(1);
 			expect(tesserae[0].isValid).toBe(true);
@@ -119,15 +117,12 @@ describe("noise-tessera-generation", () => {
 			);
 			const decoded = atob(base64);
 
-			// One byte per RGBA channel for every pixel of the size x size canvas.
 			expect(decoded.length).toBe(size * size * 4);
 
-			// Alpha channel of every pixel is fully opaque.
 			for (let i = 3; i < decoded.length; i += 4) {
 				expect(decoded.charCodeAt(i)).toBe(255);
 			}
 
-			// Noise varies across pixels rather than a single flat color.
 			const redChannels = new Set<number>();
 			for (let i = 0; i < decoded.length; i += 4) {
 				redChannels.add(decoded.charCodeAt(i));

@@ -101,7 +101,6 @@ describe("generateNoiseTesseraeFromState", () => {
 			createFakeCanvas,
 		);
 
-		// Should generate exactly 5 tesserae
 		expect(tesserae).toHaveLength(5);
 	});
 

@@ -38,6 +38,15 @@ const Y_HASH_PRIME = 19349663;
 /** Grid cell width in pixels used when interpolating smooth value noise. */
 const SMOOTH_CELL_SIZE = 4;
 
+/**
+ * Minimum brightness for noise tint channels (0-255).
+ * Keeps pixels from becoming so dark that the pattern is invisible.
+ */
+const TINT_MIN = 96;
+
+/** Range above {@link TINT_MIN} for noise tint channels, yielding values in [96, 255]. */
+const TINT_RANGE = 160;
+
 /** RGB tint applied to noise, derived from the source image and seed. */
 interface TintColor {
 	r: number;
@@ -103,26 +112,20 @@ function sourceTintColor(
 	const base =
 		sourceImage.width * 31 + sourceImage.height * 17 + sourceImage.orientation;
 	return {
-		r: 96 + Math.floor(seededRandom(base + seed) * 160),
-		g: 96 + Math.floor(seededRandom(base + seed + 1) * 160),
-		b: 96 + Math.floor(seededRandom(base + seed + 2) * 160),
+		r: TINT_MIN + Math.floor(seededRandom(base + seed) * TINT_RANGE),
+		g: TINT_MIN + Math.floor(seededRandom(base + seed + 1) * TINT_RANGE),
+		b: TINT_MIN + Math.floor(seededRandom(base + seed + 2) * TINT_RANGE),
 	};
 }
 
 /**
- * Generate a deterministic noise pattern as a PNG data URL.
+ * Render a noise pattern to a canvas and export it as a PNG data URL.
  *
- * Fills a canvas of the target size with per-pixel noise tinted by a color
- * sampled from the source image, then exports the pixels as a PNG data URL.
- * Sharp noise uses independent per-pixel values; smooth noise interpolates a
- * coarser grid for softer transitions.
+ * Sharp noise uses independent per-pixel values; smooth noise bilinearly
+ * interpolates a coarser grid for softer transitions. Both are tinted with a
+ * color sampled deterministically from the source image.
  *
- * @param sourceImage - The source image used to derive the tint color
- * @param size - The size of the tessera in pixels
- * @param seed - The seed for deterministic noise generation
- * @param isSmooth - Whether to generate smooth (blended) or sharp (pixel) noise
  * @param canvasCreator - Factory for creating canvas elements (overridable for testing)
- * @returns A PNG data URL containing the rendered noise pixels
  * @throws Error if the canvas 2D context is unavailable
  */
 function generateNoisePattern(
@@ -161,16 +164,12 @@ function generateNoisePattern(
 /**
  * Generate noise-based tesserae for the mosaic.
  *
- * Each tessera is a real PNG rendered on a canvas: seeded noise pixels tinted
- * with a color sampled from the source image. Generation is deterministic, so
- * the same seed and source image always yield identical tesserae.
+ * Each tessera is a real PNG rendered on a canvas with seeded noise pixels
+ * tinted with a color sampled from the source image. Generation is
+ * deterministic — the same seed and source image always yield identical
+ * tesserae.
  *
- * @param sourceImage - The source image the tesserae are generated for
- * @param count - The number of tesserae to generate
- * @param size - The size of each tessera in pixels
- * @param seed - The seed value for deterministic noise generation
  * @param canvasCreator - Factory for creating canvas elements (overridable for testing)
- * @returns Promise resolving to an array of generated tesserae
  */
 export async function generateTesseraeUsingNoise(
 	sourceImage: SourceImageInfo,
