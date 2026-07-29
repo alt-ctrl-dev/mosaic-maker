@@ -1,3 +1,4 @@
+import { createCanvas } from "./export";
 import type { TesseraInfo, WorkflowState } from "./workflow-state";
 import {
 	calculateRecommendedTesseraCount,
@@ -12,11 +13,16 @@ import { SEED_MAX } from "./workflow-state";
  * the workflow state's seed or generates a new one if none exists.
  *
  * @param state - Current workflow state containing source image, tessera size, and generation parameters
+ * @param canvasCreator - Factory for creating canvas elements (overridable for testing)
  * @returns Promise resolving to an array of generated tesserae
  * @throws Error if source image or adjusted tessera size are not available in the state
  */
 export async function generateNoiseTesseraeFromState(
 	state: WorkflowState,
+	canvasCreator: (
+		width: number,
+		height: number,
+	) => HTMLCanvasElement = createCanvas,
 ): Promise<TesseraInfo[]> {
 	if (!state.sourceImage || !state.adjustedTesseraSize) {
 		throw new Error("Source image and adjusted tessera size are required");
@@ -44,5 +50,6 @@ export async function generateNoiseTesseraeFromState(
 		tesseraCount,
 		state.adjustedTesseraSize,
 		seed,
+		canvasCreator,
 	);
 }
