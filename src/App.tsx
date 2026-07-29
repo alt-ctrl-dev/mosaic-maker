@@ -45,15 +45,10 @@ export function App() {
 						{stages.map(([title, description], index) => {
 							const isCurrent = workflowState.currentStep === index;
 							return (
-								<li
-									aria-current={isCurrent ? "step" : undefined}
-									key={title}
-									className={isCurrent ? "current" : ""}
-								>
+								<li aria-current={isCurrent ? "step" : undefined} key={title}>
 									<WorkflowStep
 										title={title}
 										description={description}
-										isCurrent={isCurrent}
 										stepNumber={index + 1}
 									>
 										{renderStepContent(index)}

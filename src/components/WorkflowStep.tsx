@@ -7,8 +7,6 @@ export interface WorkflowStepProps {
 	title: string;
 	/** Description of what the user should do in this step. */
 	description: string;
-	/** Whether this is the currently active workflow step. */
-	isCurrent?: boolean;
 	/** 1-based position in the workflow. */
 	stepNumber: number;
 	/** Step-specific content rendered below the header. */
@@ -21,14 +19,13 @@ export interface WorkflowStepProps {
 export function WorkflowStep({
 	title,
 	description,
-	isCurrent = false,
 	stepNumber,
 	children,
 }: WorkflowStepProps) {
 	const headingId = useId();
 
 	return (
-		<article className={isCurrent ? "current-step" : ""}>
+		<article>
 			<header>
 				<span className="step-number" aria-hidden="true">
 					{stepNumber}

@@ -1,5 +1,5 @@
 import type React from "react";
-import { useCallback, useState } from "react";
+import { useCallback, useEffect, useState } from "react";
 import { getSourceImageInfo } from "../engine/image-processing";
 import type { SourceImageInfo } from "../engine/image-processing";
 import type { WorkflowState } from "../engine/workflow-state";
@@ -29,6 +29,14 @@ export function SourceImageSelection({
 		width: number;
 		height: number;
 	} | null>(null);
+
+	useEffect(() => {
+		return () => {
+			if (previewUrl) {
+				URL.revokeObjectURL(previewUrl);
+			}
+		};
+	}, [previewUrl]);
 
 	const handleFileChange = useCallback(
 		async (files: FileList | null) => {
