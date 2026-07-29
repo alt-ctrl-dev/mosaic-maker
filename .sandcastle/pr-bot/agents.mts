@@ -36,7 +36,7 @@ const createPrImplementorAgent = (sandbox: sandcastle.Sandbox, pr: PR, changeReq
   const run = async () => {
     await sandbox.run({
       name: "pr-implement-agent",
-      agent: sandcastle.pi("openrouter/qwen/qwen3-coder"),
+      agent: sandcastle.pi("openrouter/anthropic/claude-opus-4.8"),
       promptFile: "./.sandcastle/pr-bot/implement-prompt.md",
       promptArgs: {
         PR_NUMBER: pr.number.toString(),
@@ -57,7 +57,7 @@ const markCommentAsDone = async (comment: Comment) => {
   const endpoint = comment.isReviewComment
     ? `repos/:owner/:repo/pulls/comments/${comment.id}/reactions`
     : `repos/:owner/:repo/issues/comments/${comment.id}/reactions`;
-  execSync(`gh api "${endpoint}" -f content=rocket`, { stdio: "inherit" });
+  execSync(`gh api "${endpoint}" -f content=rocket`, { encoding: "utf-8" });
 }
 
 // ---------------------------------------------------------------------------
@@ -134,8 +134,12 @@ export const processPRComments = async (pr: PR, unhandledComments: Comment[], de
     const reviewAgent = createReviewAgent(sandbox, pr.headRefName);
     try {
       await prImplementorAgent.run()
+      console.log("Sleeping for 5 before review...")
+      await sleep(5)
       await reviewAgent.run();
-
+      
+      console.log("Sleeping for 5 post comment...")
+      await sleep(5)
       const response = `${BOT_REPLY_PREFIX}\n\nI've implemented the requested change: ${plan.summary}`;
        await Promise.all([
         postComment(pr.number, response, comment), 
@@ -147,3 +151,9 @@ export const processPRComments = async (pr: PR, unhandledComments: Comment[], de
     }
   }
 };
+
+function sleep(timeInSeconds: number) {
+  return new Promise((r)=>{
+    setTimeout(r, timeInSeconds * 1000)
+  })
+}
