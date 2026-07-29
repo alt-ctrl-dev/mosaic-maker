@@ -1,23 +1,11 @@
-import { useCallback, useState } from "react";
 import { WorkflowStep } from "./components/WorkflowStep";
 import { SourceImageSelection } from "./components/SourceImageSelection";
 import { TesseraSizeSelection } from "./components/TesseraSizeSelection";
 import { TesseraUpload } from "./components/TesseraUpload";
 import { GeneratedTesserae } from "./components/GeneratedTesserae";
 import { TesseraReview } from "./components/TesseraReview";
-import {
-	INITIAL_WORKFLOW_STATE,
-	WorkflowStep as WorkflowStepEnum,
-	type TesseraInfo,
-	type WorkflowState,
-	updateWorkflowRemoveTessera,
-	updateWorkflowWithGeneratedTesserae,
-	updateWorkflowWithSourceImage,
-	updateWorkflowWithSourceImageError,
-	updateWorkflowWithTesseraSize,
-	updateWorkflowWithTesserae,
-} from "./engine/workflow-state";
-import type { SourceImageInfo } from "./engine/image-processing";
+import { WorkflowStep as WorkflowStepEnum } from "./engine/workflow-state";
+import { useWorkflowReducer } from "./hooks/useWorkflowReducer";
 
 const stages = [
 	["Choose source image", "Select a JPEG, PNG, or WebP image."],
@@ -35,39 +23,7 @@ const DEFAULT_TESSERA_SIZE = 16;
  * Root application component for the Mosaic Maker workflow.
  */
 export function App() {
-	const [workflowState, setWorkflowState] = useState<WorkflowState>(
-		INITIAL_WORKFLOW_STATE,
-	);
-
-	const handleSourceSelected = useCallback((sourceImage: SourceImageInfo) => {
-		setWorkflowState((prev) =>
-			updateWorkflowWithSourceImage(prev, sourceImage),
-		);
-	}, []);
-
-	const handleSourceError = useCallback((errorMessage: string) => {
-		setWorkflowState((prev) =>
-			updateWorkflowWithSourceImageError(prev, errorMessage),
-		);
-	}, []);
-
-	const handleSizeSelected = useCallback((size: number) => {
-		setWorkflowState((prev) => updateWorkflowWithTesseraSize(prev, size));
-	}, []);
-
-	const handleTesseraeProcessed = useCallback((tesserae: TesseraInfo[]) => {
-		setWorkflowState((prev) => updateWorkflowWithTesserae(prev, tesserae));
-	}, []);
-
-	const handleTesseraeGenerated = useCallback((tesserae: TesseraInfo[]) => {
-		setWorkflowState((prev) =>
-			updateWorkflowWithGeneratedTesserae(prev, tesserae),
-		);
-	}, []);
-
-	const handleRemoveTessera = useCallback((index: number) => {
-		setWorkflowState((prev) => updateWorkflowRemoveTessera(prev, index));
-	}, []);
+	const [workflowState, dispatch] = useWorkflowReducer();
 
 	const resolvedTesseraSize =
 		workflowState.adjustedTesseraSize ?? DEFAULT_TESSERA_SIZE;
@@ -116,15 +72,19 @@ export function App() {
 			case WorkflowStepEnum.CHOOSE_SOURCE_IMAGE:
 				return (
 					<SourceImageSelection
-						onSourceSelected={handleSourceSelected}
-						onSourceError={handleSourceError}
+						onSourceSelected={(sourceImage) =>
+							dispatch({ type: "sourceSelected", sourceImage })
+						}
+						onSourceError={(errorMessage) =>
+							dispatch({ type: "sourceError", errorMessage })
+						}
 						initialState={workflowState}
 					/>
 				);
 			case WorkflowStepEnum.SET_TESSERA_SIZE:
 				return (
 					<TesseraSizeSelection
-						onSizeSelected={handleSizeSelected}
+						onSizeSelected={(size) => dispatch({ type: "sizeSelected", size })}
 						initialState={workflowState}
 					/>
 				);
@@ -132,14 +92,18 @@ export function App() {
 				if (workflowState.useGeneratedTesserae) {
 					return (
 						<GeneratedTesserae
-							onTesseraeGenerated={handleTesseraeGenerated}
+							onTesseraeGenerated={(tesserae) =>
+								dispatch({ type: "tesseraeGenerated", tesserae })
+							}
 							initialState={workflowState}
 						/>
 					);
 				}
 				return (
 					<TesseraUpload
-						onTesseraeProcessed={handleTesseraeProcessed}
+						onTesseraeProcessed={(tesserae) =>
+							dispatch({ type: "tesseraeProcessed", tesserae })
+						}
 						adjustedTesseraSize={resolvedTesseraSize}
 					/>
 				);
@@ -147,7 +111,9 @@ export function App() {
 				return (
 					<TesseraReview
 						tesserae={workflowState.tesserae}
-						onRemoveTessera={handleRemoveTessera}
+						onRemoveTessera={(index) =>
+							dispatch({ type: "removeTessera", index })
+						}
 						isLowVariety={workflowState.isLowVarietyCollection}
 						varietyRecommendation={workflowState.varietyRecommendation}
 						hasAcceptedSupplementation={
