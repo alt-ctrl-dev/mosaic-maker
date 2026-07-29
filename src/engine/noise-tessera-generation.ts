@@ -33,6 +33,19 @@ export function calculateRecommendedTesseraCount(
 /**
  * Generate a deterministic noise pattern as a data URL.
  *
+ * This function creates a synthetic data URL that represents a noise pattern.
+ * Rather than generating actual pixel data, it encodes pattern metadata to
+ * ensure deterministic, reproducible results. The metadata includes:
+ * - Pattern type (smooth or sharp)
+ * - Size dimensions
+ * - Seed value for deterministic generation
+ * - 10 random components for visual variation
+ *
+ * The parts are concatenated and base64-encoded to create a structurally valid
+ * data URL, where the base64 payload contains the synthetic pattern metadata
+ * rather than actual pixel data. The 'data:image/png;base64,' prefix makes it
+ * compatible with standard image loading mechanisms in browsers.
+ *
  * @param size - The size of the tessera in pixels
  * @param seed - The seed for deterministic noise generation
  * @param isSmooth - Whether to generate smooth (blended) or sharp (pixel) noise
@@ -56,6 +69,10 @@ function generateNoisePattern(
 /**
  * Generate noise-based tesserae for the mosaic.
  * Creates deterministic noise patterns based on the provided seed for reproducible results.
+ *
+ * This function generates synthetic tesserae with deterministic noise patterns rather than
+ * actual image data. Each tessera contains a data URL that encodes pattern metadata
+ * (see generateNoisePattern for details).
  *
  * @param _sourceImage - The source image information (reserved for future use)
  * @param count - The number of tesserae to generate
