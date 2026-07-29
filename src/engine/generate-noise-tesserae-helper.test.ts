@@ -2,6 +2,27 @@ import { describe, expect, it } from "vitest";
 import { generateNoiseTesseraeFromState } from "./generate-noise-tesserae-helper";
 import type { WorkflowState } from "./workflow-state";
 
+/**
+ * Minimal in-memory canvas stub, since jsdom does not implement a 2D context.
+ */
+function createFakeCanvas(width: number, height: number): HTMLCanvasElement {
+	const context = {
+		createImageData: (w: number, h: number) => ({
+			width: w,
+			height: h,
+			data: new Uint8ClampedArray(w * h * 4),
+		}),
+		putImageData: () => {},
+	};
+
+	return {
+		width,
+		height,
+		getContext: () => context,
+		toDataURL: () => "data:image/png;base64,",
+	} as unknown as HTMLCanvasElement;
+}
+
 describe("generateNoiseTesseraeFromState", () => {
 	it("generates tesserae based on workflow state", async () => {
 		const mockState: WorkflowState = {
@@ -34,7 +55,10 @@ describe("generateNoiseTesseraeFromState", () => {
 			exportBackgroundColor: "#ffffff",
 		};
 
-		const tesserae = await generateNoiseTesseraeFromState(mockState);
+		const tesserae = await generateNoiseTesseraeFromState(
+			mockState,
+			createFakeCanvas,
+		);
 
 		// Should generate the recommended count (10% of 100 cells = 10, capped at 100 = 10)
 		expect(tesserae).toHaveLength(10);
@@ -72,9 +96,11 @@ describe("generateNoiseTesseraeFromState", () => {
 			exportBackgroundColor: "#ffffff",
 		};
 
-		const tesserae = await generateNoiseTesseraeFromState(mockState);
+		const tesserae = await generateNoiseTesseraeFromState(
+			mockState,
+			createFakeCanvas,
+		);
 
-		// Should generate exactly 5 tesserae
 		expect(tesserae).toHaveLength(5);
 	});
 

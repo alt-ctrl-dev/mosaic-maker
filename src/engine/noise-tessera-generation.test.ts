@@ -5,6 +5,56 @@ import {
 } from "./noise-tessera-generation";
 import type { SourceImageInfo } from "./image-processing";
 
+/**
+ * Create a lightweight in-memory canvas whose `toDataURL` encodes the pixel
+ * bytes written via `putImageData`, so tests can assert on the rendered output.
+ * jsdom does not implement a real 2D canvas context.
+ */
+function createFakeCanvas(width: number, height: number): HTMLCanvasElement {
+	let stored: Uint8ClampedArray | null = null;
+
+	const context = {
+		createImageData: (w: number, h: number) => ({
+			width: w,
+			height: h,
+			data: new Uint8ClampedArray(w * h * 4),
+		}),
+		putImageData: (imageData: { data: Uint8ClampedArray }) => {
+			stored = imageData.data.slice();
+		},
+	};
+
+	return {
+		width,
+		height,
+		getContext: () => context,
+		toDataURL: () => {
+			const bytes = stored ?? new Uint8ClampedArray(0);
+			let binary = "";
+			for (let i = 0; i < bytes.length; i++) {
+				binary += String.fromCharCode(bytes[i]);
+			}
+			return `data:image/png;base64,${btoa(binary)}`;
+		},
+	} as unknown as HTMLCanvasElement;
+}
+
+const mockSourceImage: SourceImageInfo = {
+	width: 100,
+	height: 100,
+	orientation: 1,
+};
+
+function generate(count: number, size: number, seed: number) {
+	return generateTesseraeUsingNoise(
+		mockSourceImage,
+		count,
+		size,
+		seed,
+		createFakeCanvas,
+	);
+}
+
 describe("noise-tessera-generation", () => {
 	describe("calculateRecommendedTesseraCount", () => {
 		it("returns 10% of grid cells capped at 100", () => {
@@ -29,56 +79,21 @@ describe("noise-tessera-generation", () => {
 
 	describe("seededRandom", () => {
 		it("handles negative seeds correctly", async () => {
-			const mockSourceImage: SourceImageInfo = {
-				width: 100,
-				height: 100,
-				orientation: 1,
-			};
-
-			// Test with negative seed - should not throw
-			const tesserae = await generateTesseraeUsingNoise(
-				mockSourceImage,
-				1,
-				10,
-				-12345,
-			);
+			const tesserae = await generate(1, 10, -12345);
 			expect(tesserae).toHaveLength(1);
 			expect(tesserae[0].isValid).toBe(true);
 		});
 
 		it("handles very large seeds correctly", async () => {
-			const mockSourceImage: SourceImageInfo = {
-				width: 100,
-				height: 100,
-				orientation: 1,
-			};
-
-			// Test with very large seed - should not throw
-			const tesserae = await generateTesseraeUsingNoise(
-				mockSourceImage,
-				1,
-				10,
-				999999999,
-			);
+			const tesserae = await generate(1, 10, 999999999);
 			expect(tesserae).toHaveLength(1);
 			expect(tesserae[0].isValid).toBe(true);
 		});
 	});
 
 	describe("generateTesseraeUsingNoise", () => {
-		const mockSourceImage: SourceImageInfo = {
-			width: 100,
-			height: 100,
-			orientation: 1,
-		};
-
 		it("generates the requested number of tesserae", async () => {
-			const tesserae = await generateTesseraeUsingNoise(
-				mockSourceImage,
-				10,
-				10,
-				12345,
-			);
+			const tesserae = await generate(10, 10, 12345);
 
 			expect(tesserae).toHaveLength(10);
 			tesserae.forEach((tessera) => {
@@ -91,47 +106,48 @@ describe("noise-tessera-generation", () => {
 			});
 		});
 
-		it("produces deterministic results with the same seed", async () => {
-			const tesserae1 = await generateTesseraeUsingNoise(
-				mockSourceImage,
-				5,
-				10,
-				12345,
-			);
-			const tesserae2 = await generateTesseraeUsingNoise(
-				mockSourceImage,
-				5,
-				10,
-				12345,
-			);
+		it("renders real PNG pixel data rather than encoded metadata", async () => {
+			const size = 8;
+			const [tessera] = await generate(1, size, 12345);
 
-			expect(tesserae1).toEqual(tesserae2);
+			expect(tessera.previewUrl).not.toBeNull();
+			const base64 = (tessera.previewUrl ?? "").replace(
+				/^data:image\/png;base64,/,
+				"",
+			);
+			const decoded = atob(base64);
+
+			expect(decoded.length).toBe(size * size * 4);
+
+			for (let i = 3; i < decoded.length; i += 4) {
+				expect(decoded.charCodeAt(i)).toBe(255);
+			}
+
+			const redChannels = new Set<number>();
+			for (let i = 0; i < decoded.length; i += 4) {
+				redChannels.add(decoded.charCodeAt(i));
+			}
+			expect(redChannels.size).toBeGreaterThan(1);
 		});
 
-		it("produces different results with different seeds", async () => {
-			const tesserae1 = await generateTesseraeUsingNoise(
-				mockSourceImage,
-				5,
-				10,
-				12345,
-			);
-			const tesserae2 = await generateTesseraeUsingNoise(
-				mockSourceImage,
-				5,
-				10,
-				54321,
-			);
+		it("produces deterministic results with the same seed", async () => {
+			const tesserae1 = await generate(5, 10, 12345);
+			const tesserae2 = await generate(5, 10, 12345);
 
-			expect(tesserae1).not.toEqual(tesserae2);
+			expect(tesserae1.map((t) => t.previewUrl)).toEqual(
+				tesserae2.map((t) => t.previewUrl),
+			);
+		});
+
+		it("produces different pixel data with different seeds", async () => {
+			const [tessera1] = await generate(1, 10, 12345);
+			const [tessera2] = await generate(1, 10, 54321);
+
+			expect(tessera1.previewUrl).not.toBe(tessera2.previewUrl);
 		});
 
 		it("assigns tesserae with either smooth or sharp noise styles", async () => {
-			const tesserae = await generateTesseraeUsingNoise(
-				mockSourceImage,
-				20,
-				10,
-				12345,
-			);
+			const tesserae = await generate(20, 10, 12345);
 
 			// Should have both smooth and sharp styles
 			const hasSmooth = tesserae.some((t) => t.fileName.includes("-smooth-"));
@@ -142,12 +158,7 @@ describe("noise-tessera-generation", () => {
 		});
 
 		it("generates tesserae with unique filenames based on index and seed", async () => {
-			const tesserae = await generateTesseraeUsingNoise(
-				mockSourceImage,
-				3,
-				10,
-				12345,
-			);
+			const tesserae = await generate(3, 10, 12345);
 
 			expect(tesserae[0].fileName).toBe("generated-0-smooth-12345.png");
 			expect(tesserae[1].fileName).toBe("generated-1-smooth-12345.png");
@@ -155,12 +166,7 @@ describe("noise-tessera-generation", () => {
 		});
 
 		it("generates valid tesserae with proper file objects", async () => {
-			const tesserae = await generateTesseraeUsingNoise(
-				mockSourceImage,
-				1,
-				10,
-				12345,
-			);
+			const tesserae = await generate(1, 10, 12345);
 
 			expect(tesserae[0].file).toBeInstanceOf(File);
 			expect(tesserae[0].file.type).toBe("image/png");
