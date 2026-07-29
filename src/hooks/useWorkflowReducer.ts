@@ -1,0 +1,69 @@
+import { type Dispatch, useReducer } from "react";
+import type { SourceImageInfo } from "../engine/image-processing";
+import {
+	INITIAL_WORKFLOW_STATE,
+	type TesseraInfo,
+	type WorkflowState,
+	updateWorkflowRemoveTessera,
+	updateWorkflowWithGeneratedTesserae,
+	updateWorkflowWithSourceImage,
+	updateWorkflowWithSourceImageError,
+	updateWorkflowWithTesseraSize,
+	updateWorkflowWithTesserae,
+} from "../engine/workflow-state";
+
+/**
+ * Actions that drive workflow state transitions. Each action mirrors a user
+ * interaction from a workflow step and carries the payload needed to apply the
+ * corresponding {@link WorkflowState} transition.
+ */
+export type WorkflowAction =
+	| { type: "sourceSelected"; sourceImage: SourceImageInfo }
+	| { type: "sourceError"; errorMessage: string }
+	| { type: "sizeSelected"; size: number }
+	| { type: "tesseraeProcessed"; tesserae: TesseraInfo[] }
+	| { type: "tesseraeGenerated"; tesserae: TesseraInfo[] }
+	| { type: "removeTessera"; index: number };
+
+/**
+ * Reduce the workflow state for a dispatched {@link WorkflowAction}.
+ * Delegates each action to the matching pure `updateWorkflow*` transition so
+ * the reducer stays a thin routing layer over the workflow-state module.
+ *
+ * @param state - The current workflow state
+ * @param action - The action describing the workflow transition to apply
+ * @returns The next workflow state
+ */
+export function workflowReducer(
+	state: WorkflowState,
+	action: WorkflowAction,
+): WorkflowState {
+	switch (action.type) {
+		case "sourceSelected":
+			return updateWorkflowWithSourceImage(state, action.sourceImage);
+		case "sourceError":
+			return updateWorkflowWithSourceImageError(state, action.errorMessage);
+		case "sizeSelected":
+			return updateWorkflowWithTesseraSize(state, action.size);
+		case "tesseraeProcessed":
+			return updateWorkflowWithTesserae(state, action.tesserae);
+		case "tesseraeGenerated":
+			return updateWorkflowWithGeneratedTesserae(state, action.tesserae);
+		case "removeTessera":
+			return updateWorkflowRemoveTessera(state, action.index);
+	}
+}
+
+/**
+ * React hook that manages {@link WorkflowState} with {@link workflowReducer}.
+ *
+ * @param initialState - The starting workflow state, defaulting to
+ *   {@link INITIAL_WORKFLOW_STATE}
+ * @returns A tuple of the current workflow state and a dispatch function for
+ *   {@link WorkflowAction} values
+ */
+export function useWorkflowReducer(
+	initialState: WorkflowState = INITIAL_WORKFLOW_STATE,
+): [WorkflowState, Dispatch<WorkflowAction>] {
+	return useReducer(workflowReducer, initialState);
+}
