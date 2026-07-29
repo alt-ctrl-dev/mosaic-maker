@@ -4,6 +4,8 @@ import { TesseraSizeSelection } from "./components/TesseraSizeSelection";
 import { TesseraUpload } from "./components/TesseraUpload";
 import { GeneratedTesserae } from "./components/GeneratedTesserae";
 import { TesseraReview } from "./components/TesseraReview";
+import { GenerateAndPreview } from "./components/GenerateAndPreview";
+import { ExportMosaic } from "./components/ExportMosaic";
 import { WorkflowStep as WorkflowStepEnum } from "./engine/workflow-state";
 import { useWorkflowReducer } from "./hooks/useWorkflowReducer";
 
@@ -116,6 +118,10 @@ export function App() {
 						}
 					/>
 				);
+			case WorkflowStepEnum.GENERATE_AND_PREVIEW:
+				return <GenerateAndPreview state={workflowState} dispatch={dispatch} />;
+			case WorkflowStepEnum.EXPORT_MOSAIC:
+				return <ExportMosaic state={workflowState} dispatch={dispatch} />;
 			default:
 				return <div>Step {stepIndex + 1} content coming soon</div>;
 		}

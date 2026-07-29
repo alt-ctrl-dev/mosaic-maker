@@ -1,11 +1,16 @@
 import { type Dispatch, useReducer } from "react";
 import type { SourceImageInfo } from "../engine/image-processing";
+import type { MosaicResult } from "../engine/mosaic-engine";
 import {
 	INITIAL_WORKFLOW_STATE,
+	type ExportSettings,
 	type TesseraInfo,
 	type WorkflowState,
+	updateWorkflowExportSettings,
+	updateWorkflowOnCancellationOrFailure,
 	updateWorkflowRemoveTessera,
 	updateWorkflowWithGeneratedTesserae,
+	updateWorkflowWithMosaicResult,
 	updateWorkflowWithSourceImage,
 	updateWorkflowWithSourceImageError,
 	updateWorkflowWithTesseraSize,
@@ -23,7 +28,10 @@ export type WorkflowAction =
 	| { type: "sizeSelected"; size: number }
 	| { type: "tesseraeProcessed"; tesserae: TesseraInfo[] }
 	| { type: "tesseraeGenerated"; tesserae: TesseraInfo[] }
-	| { type: "removeTessera"; index: number };
+	| { type: "removeTessera"; index: number }
+	| { type: "mosaicGenerated"; mosaicResult: MosaicResult }
+	| { type: "generationCancelledOrFailed" }
+	| { type: "exportSettingsChanged"; settings: Partial<ExportSettings> };
 
 /**
  * Reduce the workflow state for a dispatched {@link WorkflowAction}.
@@ -51,6 +59,12 @@ export function workflowReducer(
 			return updateWorkflowWithGeneratedTesserae(state, action.tesserae);
 		case "removeTessera":
 			return updateWorkflowRemoveTessera(state, action.index);
+		case "mosaicGenerated":
+			return updateWorkflowWithMosaicResult(state, action.mosaicResult);
+		case "generationCancelledOrFailed":
+			return updateWorkflowOnCancellationOrFailure(state);
+		case "exportSettingsChanged":
+			return updateWorkflowExportSettings(state, action.settings);
 	}
 }
 
