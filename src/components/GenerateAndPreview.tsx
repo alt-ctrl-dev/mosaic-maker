@@ -33,7 +33,6 @@ export function GenerateAndPreview({
 		},
 	);
 
-	// Add beforeunload listener when generation is active
 	useEffect(() => {
 		if (isGenerating) {
 			window.addEventListener("beforeunload", beforeUnloadRef.current);
@@ -61,21 +60,16 @@ export function GenerateAndPreview({
 		abortControllerRef.current = new AbortController();
 
 		try {
-			// In a real implementation, we would pass the abort signal to generateMosaic
 			const result = await generateMosaic(
 				state.sourceImage,
 				state.tesserae,
 				state.adjustedTesseraSize,
 			);
 
-			// Set progress to simulate completion
 			setProgress({ percent: 100, message: "Mosaic generated successfully" });
-
-			// Create a preview URL (scaled down for display)
 			setPreviewUrl(result.dataUrl);
 			setPreviewDimensions({ width: result.width, height: result.height });
 
-			// Update workflow with the result
 			dispatch({ type: "mosaicGenerated", mosaicResult: result });
 		} catch (err) {
 			const errorMessage =
@@ -112,9 +106,8 @@ export function GenerateAndPreview({
 						type="button"
 						onClick={handleGenerate}
 						disabled={!canGenerate || isGenerating}
-						aria-busy={isGenerating}
 					>
-						{isGenerating ? "Generating..." : "Generate Mosaic"}
+						Generate Mosaic
 					</button>
 
 					{!canGenerate && (

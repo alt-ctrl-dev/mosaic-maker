@@ -1,4 +1,4 @@
-import { useState, useEffect } from "react";
+import { useState } from "react";
 import type { WorkflowState, ExportSettings } from "../engine/workflow-state";
 import { exportMosaic } from "../engine/export";
 import type { WorkflowAction } from "../hooks/useWorkflowReducer";
@@ -11,17 +11,6 @@ interface ExportMosaicProps {
 export function ExportMosaic({ state, dispatch }: ExportMosaicProps) {
 	const [isExporting, setIsExporting] = useState(false);
 	const [error, setError] = useState<string | null>(null);
-	const [downloadUrl, setDownloadUrl] = useState<string | null>(null);
-
-	// Clean up download URL when component unmounts
-	useEffect(() => {
-		return () => {
-			if (downloadUrl) {
-				URL.revokeObjectURL(downloadUrl);
-			}
-		};
-	}, [downloadUrl]);
-
 	const handleExportSettingsChange = (settings: Partial<ExportSettings>) => {
 		dispatch({ type: "exportSettingsChanged", settings });
 	};
@@ -44,15 +33,12 @@ export function ExportMosaic({ state, dispatch }: ExportMosaicProps) {
 				state.exportQuality,
 			);
 
-			// Create a download link and trigger download
 			const link = document.createElement("a");
 			link.href = exportedDataUrl;
 			link.download = `mosaic.${state.exportFormat}`;
 			document.body.appendChild(link);
 			link.click();
 			document.body.removeChild(link);
-
-			setDownloadUrl(exportedDataUrl);
 		} catch (err) {
 			const errorMessage =
 				err instanceof Error ? err.message : "Unknown error occurred";
