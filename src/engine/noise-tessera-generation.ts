@@ -32,7 +32,6 @@ export function calculateRecommendedTesseraCount(
 
 /**
  * Generate a deterministic noise pattern as a data URL.
- * This creates a mock data URL that represents either smooth or sharp noise.
  *
  * @param size - The size of the tessera in pixels
  * @param seed - The seed for deterministic noise generation
@@ -44,25 +43,21 @@ function generateNoisePattern(
 	seed: number,
 	isSmooth: boolean,
 ): string {
-	// Create a deterministic base64 string based on parameters
-	// In a real implementation, this would be an actual canvas-generated image
 	const prefix = isSmooth ? "smooth" : "sharp";
-	const content = `${prefix}-noise-${size}x${size}-seed-${seed}`;
+	const parts = [`${prefix}-noise-${size}x${size}-seed-${seed}`];
 
-	// Create a longer, more realistic-looking base64 string
-	let result = content;
 	for (let i = 0; i < 10; i++) {
-		result += `-${Math.floor(seededRandom(seed + i) * 1000)}`;
+		parts.push(`${Math.floor(seededRandom(seed + i) * 1000)}`);
 	}
 
-	return `data:image/png;base64,${btoa(result)}`;
+	return `data:image/png;base64,${btoa(parts.join("-"))}`;
 }
 
 /**
  * Generate noise-based tesserae for the mosaic.
  * Creates deterministic noise patterns based on the provided seed for reproducible results.
  *
- * @param _sourceImage - The source image information (used for dimensions and color sampling simulation)
+ * @param _sourceImage - The source image information (reserved for future use)
  * @param count - The number of tesserae to generate
  * @param size - The size of each tessera in pixels
  * @param seed - The seed value for deterministic noise generation
@@ -77,14 +72,9 @@ export async function generateTesseraeUsingNoise(
 	const tesserae: TesseraInfo[] = [];
 
 	for (let i = 0; i < count; i++) {
-		// Determine if this tessera should be smooth or sharp
 		const isSmooth = seededRandom(seed + i) > 0.5;
 		const style = isSmooth ? "smooth" : "sharp";
-
-		// Generate the noise pattern as a data URL
 		const previewUrl = generateNoisePattern(size, seed + i, isSmooth);
-
-		// Create file content
 		const fileName = `generated-${i}-${style}-${seed}.png`;
 
 		tesserae.push({
