@@ -1,0 +1,80 @@
+import type { TesseraInfo } from "../engine/workflow-state";
+
+interface TesseraReviewProps {
+	tesserae: TesseraInfo[];
+	onRemoveTessera: (index: number) => void;
+	onAcceptSupplementation?: () => void;
+	isLowVariety?: boolean;
+	varietyRecommendation?: number | null;
+	hasAcceptedSupplementation?: boolean;
+}
+
+export function TesseraReview({
+	tesserae,
+	onRemoveTessera,
+	onAcceptSupplementation,
+	isLowVariety = false,
+	varietyRecommendation = null,
+	hasAcceptedSupplementation = false,
+}: TesseraReviewProps) {
+	const validCount = tesserae.filter((t) => t.isValid).length;
+	const rejectedCount = tesserae.length - validCount;
+
+	return (
+		<div className="tessera-review">
+			<div className="tesserae-info">
+				<p>
+					Valid: {validCount} | Rejected: {rejectedCount} | Total:{" "}
+					{tesserae.length}
+				</p>
+
+				{isLowVariety && varietyRecommendation && (
+					<div className="warning-message" role="alert">
+						<p>
+							Low variety: You have {validCount} tesserae, but{" "}
+							{varietyRecommendation} are recommended.
+						</p>
+						{onAcceptSupplementation && !hasAcceptedSupplementation && (
+							<button type="button" onClick={onAcceptSupplementation}>
+								Add Generated Tesserae
+							</button>
+						)}
+					</div>
+				)}
+			</div>
+
+			<div className="tesserae-grid">
+				{tesserae.map((tessera, index) => (
+					<div
+						key={tessera.fileName}
+						className={`tessera-item ${tessera.isValid ? "" : "invalid"} ${tessera.isSupplemented ? "supplemented" : ""}`}
+					>
+						{tessera.previewUrl && (
+							<img
+								src={tessera.previewUrl}
+								alt={tessera.fileName}
+								style={{ width: "100px", height: "100px", objectFit: "cover" }}
+							/>
+						)}
+						<div className="tessera-details">
+							<span className="tessera-name">{tessera.fileName}</span>
+							{!tessera.isValid && tessera.error && (
+								<span className="tessera-error">{tessera.error}</span>
+							)}
+							{tessera.isSupplemented && (
+								<span className="supplemented-label">Supplemented</span>
+							)}
+						</div>
+						<button
+							type="button"
+							onClick={() => onRemoveTessera(index)}
+							aria-label={`Remove ${tessera.fileName}`}
+						>
+							Remove
+						</button>
+					</div>
+				))}
+			</div>
+		</div>
+	);
+}
