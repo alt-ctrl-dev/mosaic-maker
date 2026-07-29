@@ -56,6 +56,7 @@ describe("image-processing", () => {
 		let mockImageInstance: {
 			onload: (() => void) | null;
 			onerror: (() => void) | null;
+			src: string;
 			naturalWidth: number;
 			naturalHeight: number;
 		};
@@ -84,6 +85,9 @@ describe("image-processing", () => {
 			const file = new File([""], "test.jpg", { type: "image/jpeg" });
 			const promise = getSourceImageInfo(file);
 
+			// Wait a bit for the async file.arrayBuffer() to complete
+			await new Promise((resolve) => setTimeout(resolve, 10));
+
 			mockImageInstance.naturalWidth = 800;
 			mockImageInstance.naturalHeight = 600;
 			mockImageInstance.onload?.();
@@ -98,9 +102,49 @@ describe("image-processing", () => {
 			const file = new File([""], "test.jpg", { type: "image/jpeg" });
 			const promise = getSourceImageInfo(file);
 
+			// Wait a bit for the async file.arrayBuffer() to complete
+			await new Promise((resolve) => setTimeout(resolve, 10));
+
 			mockImageInstance.onerror?.();
 
 			await expect(promise).rejects.toThrow("Failed to load image");
+		});
+
+		it("extracts EXIF orientation when available", async () => {
+			// Mock arrayBuffer method to return a JPEG with EXIF orientation
+			const mockArrayBuffer = vi.fn().mockResolvedValue(new ArrayBuffer(0));
+			const file = new File([""], "test.jpg", { type: "image/jpeg" });
+			Object.defineProperty(file, "arrayBuffer", { value: mockArrayBuffer });
+
+			const promise = getSourceImageInfo(file);
+
+			// Wait a bit for the async file.arrayBuffer() to complete
+			await new Promise((resolve) => setTimeout(resolve, 10));
+
+			mockImageInstance.naturalWidth = 800;
+			mockImageInstance.naturalHeight = 600;
+			mockImageInstance.onload?.();
+
+			const info = await promise;
+			expect(info.width).toBe(800);
+			expect(info.height).toBe(600);
+			expect(info.orientation).toBe(1); // Should default to 1 if no EXIF
+			expect(mockArrayBuffer).toHaveBeenCalled();
+		});
+
+		it("handles PNG files without attempting EXIF parsing", async () => {
+			const file = new File([""], "test.png", { type: "image/png" });
+			const promise = getSourceImageInfo(file);
+
+			// For PNG files, we should not attempt arrayBuffer()
+			mockImageInstance.naturalWidth = 400;
+			mockImageInstance.naturalHeight = 300;
+			mockImageInstance.onload?.();
+
+			const info = await promise;
+			expect(info.width).toBe(400);
+			expect(info.height).toBe(300);
+			expect(info.orientation).toBe(1);
 		});
 	});
 });
