@@ -30,36 +30,30 @@ export function calculateRecommendedTesseraCount(
 	return Math.min(recommended, 100);
 }
 
+/** Number of random components used to generate the noise pattern identifier. */
+const NOISE_COMPONENT_COUNT = 10;
+
 /**
- * Generate a deterministic noise pattern as a data URL.
+ * Generate a deterministic noise pattern identifier as a data URL.
  *
- * This function creates a synthetic data URL that represents a noise pattern.
- * Rather than generating actual pixel data, it encodes pattern metadata to
- * ensure deterministic, reproducible results. The metadata includes:
- * - Pattern type (smooth or sharp)
- * - Size dimensions
- * - Seed value for deterministic generation
- * - 10 random components for visual variation
- *
- * The parts are concatenated and base64-encoded to create a structurally valid
- * data URL, where the base64 payload contains the synthetic pattern metadata
- * rather than actual pixel data. The 'data:image/png;base64,' prefix makes it
- * compatible with standard image loading mechanisms in browsers.
+ * Encodes pattern metadata (type, size, seed, random components) into a
+ * synthetic data URL to ensure deterministic, reproducible results across
+ * tesserae without requiring actual pixel data.
  *
  * @param size - The size of the tessera in pixels
  * @param seed - The seed for deterministic noise generation
  * @param isSmooth - Whether to generate smooth (blended) or sharp (pixel) noise
- * @returns A data URL representing the noise pattern
+ * @returns A data URL encoding the noise pattern metadata
  */
 function generateNoisePattern(
 	size: number,
 	seed: number,
 	isSmooth: boolean,
 ): string {
-	const prefix = isSmooth ? "smooth" : "sharp";
-	const parts = [`${prefix}-noise-${size}x${size}-seed-${seed}`];
+	const style = isSmooth ? "smooth" : "sharp";
+	const parts = [`${style}-noise-${size}x${size}-seed-${seed}`];
 
-	for (let i = 0; i < 10; i++) {
+	for (let i = 0; i < NOISE_COMPONENT_COUNT; i++) {
 		parts.push(`${Math.floor(seededRandom(seed + i) * 1000)}`);
 	}
 
@@ -68,11 +62,9 @@ function generateNoisePattern(
 
 /**
  * Generate noise-based tesserae for the mosaic.
- * Creates deterministic noise patterns based on the provided seed for reproducible results.
  *
- * This function generates synthetic tesserae with deterministic noise patterns rather than
- * actual image data. Each tessera contains a data URL that encodes pattern metadata
- * (see generateNoisePattern for details).
+ * Each tessera contains a synthetic data URL encoding deterministic noise pattern
+ * metadata rather than actual image data, ensuring reproducible results for a given seed.
  *
  * @param _sourceImage - The source image information (reserved for future use)
  * @param count - The number of tesserae to generate
@@ -89,9 +81,10 @@ export async function generateTesseraeUsingNoise(
 	const tesserae: TesseraInfo[] = [];
 
 	for (let i = 0; i < count; i++) {
-		const isSmooth = seededRandom(seed + i) > 0.5;
+		const localSeed = seed + i;
+		const isSmooth = seededRandom(localSeed) > 0.5;
+		const previewUrl = generateNoisePattern(size, localSeed, isSmooth);
 		const style = isSmooth ? "smooth" : "sharp";
-		const previewUrl = generateNoisePattern(size, seed + i, isSmooth);
 		const fileName = `generated-${i}-${style}-${seed}.png`;
 
 		tesserae.push({
