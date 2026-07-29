@@ -4,6 +4,8 @@ import { TesseraSizeSelection } from "./components/TesseraSizeSelection";
 import { TesseraUpload } from "./components/TesseraUpload";
 import { GeneratedTesserae } from "./components/GeneratedTesserae";
 import { TesseraReview } from "./components/TesseraReview";
+import { GenerateAndPreview } from "./components/GenerateAndPreview";
+import { ExportMosaic } from "./components/ExportMosaic";
 import { WorkflowStep as WorkflowStepEnum } from "./engine/workflow-state";
 import { useWorkflowReducer } from "./hooks/useWorkflowReducer";
 
@@ -27,40 +29,6 @@ export function App() {
 
 	const resolvedTesseraSize =
 		workflowState.adjustedTesseraSize ?? DEFAULT_TESSERA_SIZE;
-
-	return (
-		<>
-			<header className="container">
-				<p className="eyebrow">Private, in-browser image making</p>
-				<h1>Mosaic Maker</h1>
-				<p>
-					Turn a source image into a full-resolution photomosaic. Your source
-					image and tesserae stay on this device.
-				</p>
-			</header>
-
-			<main className="container">
-				<nav aria-label="Mosaic workflow">
-					<ol className="workflow">
-						{stages.map(([title, description], index) => {
-							const isCurrent = workflowState.currentStep === index;
-							return (
-								<li aria-current={isCurrent ? "step" : undefined} key={title}>
-									<WorkflowStep
-										title={title}
-										description={description}
-										stepNumber={index + 1}
-									>
-										{renderStepContent(index)}
-									</WorkflowStep>
-								</li>
-							);
-						})}
-					</ol>
-				</nav>
-			</main>
-		</>
-	);
 
 	function renderStepContent(stepIndex: number) {
 		switch (stepIndex) {
@@ -116,8 +84,46 @@ export function App() {
 						}
 					/>
 				);
+			case WorkflowStepEnum.GENERATE_AND_PREVIEW:
+				return <GenerateAndPreview state={workflowState} dispatch={dispatch} />;
+			case WorkflowStepEnum.EXPORT_MOSAIC:
+				return <ExportMosaic state={workflowState} dispatch={dispatch} />;
 			default:
 				return <div>Step {stepIndex + 1} content coming soon</div>;
 		}
 	}
+
+	return (
+		<>
+			<header className="container">
+				<p className="eyebrow">Private, in-browser image making</p>
+				<h1>Mosaic Maker</h1>
+				<p>
+					Turn a source image into a full-resolution photomosaic. Your source
+					image and tesserae stay on this device.
+				</p>
+			</header>
+
+			<main className="container">
+				<nav aria-label="Mosaic workflow">
+					<ol className="workflow">
+						{stages.map(([title, description], index) => {
+							const isCurrent = workflowState.currentStep === index;
+							return (
+								<li aria-current={isCurrent ? "step" : undefined} key={title}>
+									<WorkflowStep
+										title={title}
+										description={description}
+										stepNumber={index + 1}
+									>
+										{renderStepContent(index)}
+									</WorkflowStep>
+								</li>
+							);
+						})}
+					</ol>
+				</nav>
+			</main>
+		</>
+	);
 }

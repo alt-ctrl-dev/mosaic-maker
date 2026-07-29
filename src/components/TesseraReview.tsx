@@ -58,7 +58,13 @@ export function TesseraReview({
 				{tesserae.map((tessera, index) => (
 					<div
 						key={tessera.fileName}
-						className={`tessera-item ${tessera.isValid ? "" : "invalid"} ${tessera.isSupplemented ? "supplemented" : ""}`}
+						className={[
+							"tessera-item",
+							!tessera.isValid && "invalid",
+							tessera.isSupplemented && "supplemented",
+						]
+							.filter(Boolean)
+							.join(" ")}
 					>
 						{tessera.previewUrl && (
 							<img
