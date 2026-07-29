@@ -95,6 +95,9 @@ export function App() {
 
 	return (
 		<>
+			<a href="#main-content" className="skip-link">
+				Skip to main content
+			</a>
 			<header className="container">
 				<p className="eyebrow">Private, in-browser image making</p>
 				<h1>Mosaic Maker</h1>
@@ -104,7 +107,7 @@ export function App() {
 				</p>
 			</header>
 
-			<main className="container">
+			<main id="main-content" className="container">
 				<nav aria-label="Mosaic workflow">
 					<ol className="workflow">
 						{stages.map(([title, description], index) => {
