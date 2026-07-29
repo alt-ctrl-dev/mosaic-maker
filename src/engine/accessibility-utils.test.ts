@@ -2,8 +2,10 @@
  * Tests for accessibility utilities.
  */
 
-import { describe, it, expect, beforeEach, vi } from "vitest";
+import { describe, it, expect, beforeEach, afterEach, vi } from "vitest";
 import {
+	moveFocus,
+	trapFocus,
 	getFocusableElements,
 	announce,
 	prefersReducedMotion,
@@ -15,106 +17,117 @@ import {
 } from "./accessibility-utils";
 
 describe("Focus functions", () => {
-	it("should handle empty container", () => {
+	it("returns an empty array from an empty container", () => {
 		const container = document.createElement("div");
-		const focusable = getFocusableElements(container);
-		expect(focusable).toHaveLength(0);
+		expect(getFocusableElements(container)).toHaveLength(0);
 	});
 
-	// Note: Focus testing in JSDOM is limited due to lack of full browser implementation
-	// These tests validate the logic rather than full browser behavior
+	it("moveFocus returns null for an empty container", () => {
+		const container = document.createElement("div");
+		expect(moveFocus(container, null)).toBeNull();
+	});
+
+	it("trapFocus ignores non-Tab key events", () => {
+		const container = document.createElement("div");
+		const event = new KeyboardEvent("keydown", {
+			key: "Enter",
+			bubbles: true,
+		});
+		const preventDefault = vi.spyOn(event, "preventDefault");
+
+		trapFocus(container, event);
+		expect(preventDefault).not.toHaveBeenCalled();
+	});
 });
 
 describe("ScreenReaderAnnouncer", () => {
 	beforeEach(() => {
-		// Clear any existing live regions
 		const existingRegions = document.querySelectorAll("[aria-live]");
 		existingRegions.forEach((region) => {
-			if (region.parentNode) {
-				region.parentNode.removeChild(region);
-			}
+			region.remove();
 		});
 	});
 
-	it("should create and use a live region", () => {
+	it("creates and populates a live region", () => {
 		announce("Test message");
 
 		const liveRegion = document.querySelector('[aria-live="polite"]');
 		expect(liveRegion).toBeTruthy();
-		// We can't easily test the text content in this environment
+		// The full announce cycle involves a setTimeout we cannot await.
 	});
 });
 
 describe("ReducedMotion", () => {
-	it("should detect reduced motion preference", () => {
-		// Mock the matchMedia function
-		const mockMatchMedia = vi.fn().mockImplementation((query) => ({
-			matches: query === "(prefers-reduced-motion: reduce)",
-		}));
-		vi.stubGlobal("matchMedia", mockMatchMedia);
-
-		expect(prefersReducedMotion()).toBe(true);
-
-		// Restore original matchMedia
+	afterEach(() => {
 		vi.unstubAllGlobals();
 	});
 
-	it("should apply reduced motion class", () => {
+	it("detects reduced motion preference", () => {
+		vi.stubGlobal(
+			"matchMedia",
+			vi.fn().mockImplementation((query: string) => ({
+				matches: query === "(prefers-reduced-motion: reduce)",
+			})),
+		);
+
+		expect(prefersReducedMotion()).toBe(true);
+	});
+
+	it("applies the reduced-motion class when preferred", () => {
 		const element = document.createElement("div");
 
-		// Mock the matchMedia function to return true
-		const mockMatchMedia = vi.fn().mockImplementation((query) => ({
-			matches: query === "(prefers-reduced-motion: reduce)",
-		}));
-		vi.stubGlobal("matchMedia", mockMatchMedia);
+		vi.stubGlobal(
+			"matchMedia",
+			vi.fn().mockImplementation((query: string) => ({
+				matches: query === "(prefers-reduced-motion: reduce)",
+			})),
+		);
 
 		applyReducedMotionClass(element);
 		expect(element.classList.contains("reduced-motion")).toBe(true);
-
-		// Restore original matchMedia
-		vi.unstubAllGlobals();
 	});
 
-	it("should not apply reduced motion class when not preferred", () => {
+	it("does not apply the reduced-motion class when not preferred", () => {
 		const element = document.createElement("div");
 
-		// Mock the matchMedia function to return false
-		const mockMatchMedia = vi.fn().mockImplementation(() => ({
-			matches: false,
-		}));
-		vi.stubGlobal("matchMedia", mockMatchMedia);
+		vi.stubGlobal(
+			"matchMedia",
+			vi.fn().mockImplementation(() => ({
+				matches: false,
+			})),
+		);
 
 		applyReducedMotionClass(element);
 		expect(element.classList.contains("reduced-motion")).toBe(false);
-
-		// Restore original matchMedia
-		vi.unstubAllGlobals();
 	});
 });
 
 describe("KeyboardUtils", () => {
-	it("should detect Enter key", () => {
-		const event = new KeyboardEvent("keydown", { key: "Enter" });
-		expect(isEnterKey(event)).toBe(true);
+	it("detects Enter key", () => {
+		expect(isEnterKey(new KeyboardEvent("keydown", { key: "Enter" }))).toBe(
+			true,
+		);
 	});
 
-	it("should detect Space key", () => {
-		const event = new KeyboardEvent("keydown", { key: " " });
-		expect(isSpaceKey(event)).toBe(true);
+	it("detects Space key", () => {
+		expect(isSpaceKey(new KeyboardEvent("keydown", { key: " " }))).toBe(true);
 	});
 
-	it("should detect Escape key", () => {
-		const event = new KeyboardEvent("keydown", { key: "Escape" });
-		expect(isEscapeKey(event)).toBe(true);
+	it("detects Escape key", () => {
+		expect(isEscapeKey(new KeyboardEvent("keydown", { key: "Escape" }))).toBe(
+			true,
+		);
 	});
 
-	it("should detect activation keys", () => {
-		const enterEvent = new KeyboardEvent("keydown", { key: "Enter" });
-		const spaceEvent = new KeyboardEvent("keydown", { key: " " });
-		const escapeEvent = new KeyboardEvent("keydown", { key: "Escape" });
-
-		expect(isActivationKey(enterEvent)).toBe(true);
-		expect(isActivationKey(spaceEvent)).toBe(true);
-		expect(isActivationKey(escapeEvent)).toBe(false);
+	it("detects activation keys (Enter and Space but not Escape)", () => {
+		expect(
+			isActivationKey(new KeyboardEvent("keydown", { key: "Enter" })),
+		).toBe(true);
+		expect(isActivationKey(new KeyboardEvent("keydown", { key: " " }))).toBe(
+			true,
+		);
+		expect(
+			isActivationKey(new KeyboardEvent("keydown", { key: "Escape" })),
+		).toBe(false);
 	});
 });
