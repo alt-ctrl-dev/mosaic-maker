@@ -46,9 +46,7 @@ describe("extractEXIFOrientation", () => {
 		expect(orientation).toBeNull();
 	});
 
-	it("extracts orientation from JPEG with EXIF", () => {
-		// Test with a known good EXIF buffer (simplified)
-		// This test just verifies that our function doesn't crash and handles basic cases
+	it("handles incomplete EXIF data without crashing", () => {
 		const jpegData = new Uint8Array([
 			0xff,
 			0xd8, // SOI
@@ -72,8 +70,7 @@ describe("extractEXIFOrientation", () => {
 			jpegData.byteOffset + jpegData.byteLength,
 		);
 
-		// Should not crash and should return null for incomplete EXIF data
 		const orientation = extractEXIFOrientation(arrayBuffer);
-		expect(orientation).toBeNull(); // Incomplete data should return null
+		expect(orientation).toBeNull();
 	});
 });

@@ -144,7 +144,7 @@ describe("image-processing", () => {
 			const info = await promise;
 			expect(info.width).toBe(400);
 			expect(info.height).toBe(300);
-			expect(info.orientation).toBe(1); // Always 1 for PNG
+			expect(info.orientation).toBe(1);
 		});
 	});
 });
