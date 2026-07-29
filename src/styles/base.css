@@ -24,6 +24,34 @@ body {
 	border: 0;
 }
 
+/* Skip to main content link */
+.skip-link {
+	/* Visually hidden by default */
+	position: absolute;
+	top: -40px;
+	left: 6px;
+	z-index: 1000;
+	padding: 8px 12px;
+	background: var(--pico-primary);
+	color: var(--pico-primary-inverse);
+	text-decoration: none;
+	border-radius: var(--pico-border-radius);
+	transition: none;
+}
+
+.skip-link:focus {
+	top: 6px;
+}
+
+/* Reduced motion support */
+@media (prefers-reduced-motion: reduce) {
+	* {
+		animation-duration: 0.01ms;
+		animation-iteration-count: 1;
+		transition-duration: 0.01ms;
+	}
+}
+
 /* Shared alert / error message styles */
 .error-message,
 .warning-message {
