@@ -76,7 +76,9 @@ describe("Mosaic Engine", () => {
 		expect(result).toBeDefined();
 		expect(result.width).toBe(sourceImage.width);
 		expect(result.height).toBe(sourceImage.height);
-		expect(result.dataUrl).toMatch(/^data:image\/png;base64,/);
+		// Mosaic generation is deterministic: identical inputs must always
+		// produce byte-for-byte identical output.
+		expect(result.dataUrl).toBe("data:image/png;base64,mock-mosaic-16x16");
 	});
 
 	it("should handle empty tesserae collection", async () => {
@@ -193,8 +195,9 @@ describe("Mosaic Engine", () => {
 		expect(result).toBeDefined();
 		expect(result.width).toBe(sourceImage.width);
 		expect(result.height).toBe(sourceImage.height);
-		// Should generate a real mosaic, not a placeholder when valid tesserae exist
-		expect(result.dataUrl).toMatch(/^data:image\/png;base64,/);
+		// Should generate a real mosaic, not a placeholder when valid tesserae
+		// exist, and do so deterministically for identical inputs.
+		expect(result.dataUrl).toBe("data:image/png;base64,mock-mosaic-16x16");
 		expect(result.dataUrl).not.toContain("placeholder");
 	});
 
@@ -230,7 +233,9 @@ describe("Mosaic Engine", () => {
 		expect(result).toBeDefined();
 		expect(result.width).toBe(sourceImage.width);
 		expect(result.height).toBe(sourceImage.height);
-		expect(result.dataUrl).toMatch(/^data:image\/png;base64,/);
+		// Mosaic generation is deterministic: identical inputs must always
+		// produce byte-for-byte identical output.
+		expect(result.dataUrl).toBe("data:image/png;base64,mock-mosaic-4x4");
 		// Should generate a real mosaic, not a placeholder
 		expect(result.dataUrl).not.toContain("placeholder");
 	});
