@@ -61,6 +61,40 @@ header > p:last-child {
 	place-items: center;
 }
 
+/* Reduced motion support */
+@media (prefers-reduced-motion: reduce) {
+	* {
+		animation-duration: 0.01ms;
+		animation-iteration-count: 1;
+		transition-duration: 0.01ms;
+	}
+}
+
+/* Focus visibility */
+:focus-visible {
+	outline: 2px solid var(--pico-primary);
+	outline-offset: 2px;
+}
+
+/* Skip to main content link */
+.skip-link {
+	/* Visually hidden by default */
+	position: absolute;
+	top: -40px;
+	left: 6px;
+	z-index: 1000;
+	padding: 8px 12px;
+	background: var(--pico-primary);
+	color: var(--pico-primary-inverse);
+	text-decoration: none;
+	border-radius: var(--pico-border-radius);
+	transition: none;
+}
+
+.skip-link:focus {
+	top: 6px;
+}
+
 @media (max-width: 576px) {
 	header {
 		padding-block-start: 2rem;
