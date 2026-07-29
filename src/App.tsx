@@ -30,40 +30,6 @@ export function App() {
 	const resolvedTesseraSize =
 		workflowState.adjustedTesseraSize ?? DEFAULT_TESSERA_SIZE;
 
-	return (
-		<>
-			<header className="container">
-				<p className="eyebrow">Private, in-browser image making</p>
-				<h1>Mosaic Maker</h1>
-				<p>
-					Turn a source image into a full-resolution photomosaic. Your source
-					image and tesserae stay on this device.
-				</p>
-			</header>
-
-			<main className="container">
-				<nav aria-label="Mosaic workflow">
-					<ol className="workflow">
-						{stages.map(([title, description], index) => {
-							const isCurrent = workflowState.currentStep === index;
-							return (
-								<li aria-current={isCurrent ? "step" : undefined} key={title}>
-									<WorkflowStep
-										title={title}
-										description={description}
-										stepNumber={index + 1}
-									>
-										{renderStepContent(index)}
-									</WorkflowStep>
-								</li>
-							);
-						})}
-					</ol>
-				</nav>
-			</main>
-		</>
-	);
-
 	function renderStepContent(stepIndex: number) {
 		switch (stepIndex) {
 			case WorkflowStepEnum.CHOOSE_SOURCE_IMAGE:
@@ -126,4 +92,38 @@ export function App() {
 				return <div>Step {stepIndex + 1} content coming soon</div>;
 		}
 	}
+
+	return (
+		<>
+			<header className="container">
+				<p className="eyebrow">Private, in-browser image making</p>
+				<h1>Mosaic Maker</h1>
+				<p>
+					Turn a source image into a full-resolution photomosaic. Your source
+					image and tesserae stay on this device.
+				</p>
+			</header>
+
+			<main className="container">
+				<nav aria-label="Mosaic workflow">
+					<ol className="workflow">
+						{stages.map(([title, description], index) => {
+							const isCurrent = workflowState.currentStep === index;
+							return (
+								<li aria-current={isCurrent ? "step" : undefined} key={title}>
+									<WorkflowStep
+										title={title}
+										description={description}
+										stepNumber={index + 1}
+									>
+										{renderStepContent(index)}
+									</WorkflowStep>
+								</li>
+							);
+						})}
+					</ol>
+				</nav>
+			</main>
+		</>
+	);
 }

@@ -3,11 +3,25 @@ import type { WorkflowState } from "../engine/workflow-state";
 import { generateMosaic } from "../engine/mosaic-engine";
 import type { WorkflowAction } from "../hooks/useWorkflowReducer";
 
+/** Props for {@link GenerateAndPreview}. */
 interface GenerateAndPreviewProps {
+	/** Current workflow state, used for source image, tesserae, and tessera size. */
 	state: WorkflowState;
+	/** Dispatches workflow actions for mosaic generation results and cancellations. */
 	dispatch: (action: WorkflowAction) => void;
 }
 
+function onBeforeUnload(event: BeforeUnloadEvent) {
+	event.preventDefault();
+	event.returnValue =
+		"Generation is in progress. Are you sure you want to leave?";
+}
+
+/**
+ * Mosaic generation step that orchestrates the async generation,
+ * shows a progress indicator with cancel support, and displays the
+ * generated mosaic preview.
+ */
 export function GenerateAndPreview({
 	state,
 	dispatch,
@@ -24,14 +38,7 @@ export function GenerateAndPreview({
 		height: number;
 	} | null>(null);
 
-	const abortControllerRef = useRef<AbortController | null>(null);
-	const beforeUnloadRef = useRef<(event: BeforeUnloadEvent) => void>(
-		(event) => {
-			event.preventDefault();
-			event.returnValue =
-				"Generation is in progress. Are you sure you want to leave?";
-		},
-	);
+	const beforeUnloadRef = useRef(onBeforeUnload);
 
 	useEffect(() => {
 		if (isGenerating) {
@@ -57,8 +64,6 @@ export function GenerateAndPreview({
 		setPreviewUrl(null);
 		setPreviewDimensions(null);
 
-		abortControllerRef.current = new AbortController();
-
 		try {
 			const result = await generateMosaic(
 				state.sourceImage,
@@ -78,15 +83,10 @@ export function GenerateAndPreview({
 			dispatch({ type: "generationCancelledOrFailed" });
 		} finally {
 			setIsGenerating(false);
-			abortControllerRef.current = null;
 		}
 	};
 
 	const handleCancel = () => {
-		if (abortControllerRef.current) {
-			abortControllerRef.current.abort();
-			abortControllerRef.current = null;
-		}
 		setIsGenerating(false);
 		setError(null);
 		setProgress(null);

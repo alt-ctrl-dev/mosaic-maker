@@ -1,13 +1,27 @@
 import { useState } from "react";
-import type { WorkflowState, ExportSettings } from "../engine/workflow-state";
+import type { ExportFormat } from "../engine/export";
 import { exportMosaic } from "../engine/export";
+import type { WorkflowState, ExportSettings } from "../engine/workflow-state";
 import type { WorkflowAction } from "../hooks/useWorkflowReducer";
 
+/** Props for {@link ExportMosaic}. */
 interface ExportMosaicProps {
+	/** Current workflow state, used for mosaic result and export settings. */
 	state: WorkflowState;
+	/** Dispatches workflow actions for export settings changes. */
 	dispatch: (action: WorkflowAction) => void;
 }
 
+const EXPORT_FORMATS: ReadonlyArray<ExportFormat> = ["png", "jpeg", "webp"];
+
+function isExportFormat(value: string): value is ExportFormat {
+	return EXPORT_FORMATS.includes(value as ExportFormat);
+}
+
+/**
+ * Export step that lets the user configure format, quality, and alt text,
+ * preview the mosaic, and trigger a file download.
+ */
 export function ExportMosaic({ state, dispatch }: ExportMosaicProps) {
 	const [isExporting, setIsExporting] = useState(false);
 	const [error, setError] = useState<string | null>(null);
@@ -58,11 +72,12 @@ export function ExportMosaic({ state, dispatch }: ExportMosaicProps) {
 							<select
 								id="export-format"
 								value={state.exportFormat}
-								onChange={(e) =>
-									handleExportSettingsChange({
-										exportFormat: e.target.value as "png" | "jpeg" | "webp",
-									})
-								}
+								onChange={(e) => {
+									const value = e.target.value;
+									if (isExportFormat(value)) {
+										handleExportSettingsChange({ exportFormat: value });
+									}
+								}}
 								disabled={isExporting}
 							>
 								<option value="png">PNG</option>
