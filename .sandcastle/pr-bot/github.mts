@@ -145,7 +145,11 @@ export const postComment = async (prNumber: number, body: string, replyTo?: Comm
         `gh api "repos/:owner/:repo/pulls/${prNumber}/comments/${replyTo.id}/replies" -F body=@${commentFileName}`,
         { encoding: "utf-8" }
       );
-      commentId = String(JSON.parse(result).id);
+      const parsed = JSON.parse(result);
+      if (!parsed || !parsed.id) {
+        throw new Error(`gh api returned unexpected: ${result.slice(0, 200)}`);
+      }
+      commentId = String(parsed.id);
     } else {
       const replyBody = replyTo
         ? `> ${replyTo.body.split('\n').join('\n> ')}\n\n@${replyTo.author} ${body}`
@@ -155,7 +159,11 @@ export const postComment = async (prNumber: number, body: string, replyTo?: Comm
         `gh api "repos/:owner/:repo/issues/${prNumber}/comments" -F body=@${commentFileName}`,
         { encoding: "utf-8" }
       );
-      commentId = String(JSON.parse(result).id);
+      const parsed = JSON.parse(result);
+      if (!parsed || !parsed.id) {
+        throw new Error(`gh api returned unexpected: ${result.slice(0, 200)}`);
+      }
+      commentId = String(parsed.id);
     }
     if (commentId) {
       const reactionEndpoint = replyTo?.isReviewComment
@@ -163,7 +171,7 @@ export const postComment = async (prNumber: number, body: string, replyTo?: Comm
         : `repos/:owner/:repo/issues/comments/${commentId}/reactions`;
       execSync(
         `gh api "${reactionEndpoint}" -f content=rocket`,
-        { stdio: "inherit" }
+        { encoding: "utf-8" }
       );
     }
   } catch (error) {
