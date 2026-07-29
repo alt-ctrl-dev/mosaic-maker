@@ -1,20 +1,29 @@
 import { useState, useEffect } from "react";
 import { generateNoiseTesseraeFromState } from "../engine/generate-noise-tesserae-helper";
-import type { WorkflowState, TesseraInfo } from "../engine/workflow-state";
+import {
+	SEED_MAX,
+	type WorkflowState,
+	type TesseraInfo,
+} from "../engine/workflow-state";
 
+/** Props for {@link GeneratedTesserae}. */
 interface GeneratedTesseraeProps {
+	/** Called with the generated tesserae when generation completes. */
 	onTesseraeGenerated: (tesserae: TesseraInfo[]) => void;
+	/** Current workflow state, used for seed and count defaults. */
 	initialState: WorkflowState;
-	adjustedTesseraSize: number;
 }
 
+/**
+ * Controls for generating procedural noise-based tesserae.
+ */
 export function GeneratedTesserae({
 	onTesseraeGenerated,
 	initialState,
 }: GeneratedTesseraeProps) {
 	const [isGenerating, setIsGenerating] = useState(false);
 	const [seed, setSeed] = useState<number>(
-		initialState.seed ?? Math.floor(Math.random() * 1000000),
+		initialState.seed ?? Math.floor(Math.random() * SEED_MAX),
 	);
 	const [count, setCount] = useState<number>(
 		initialState.generatedTesseraCount ?? 20,
@@ -32,7 +41,6 @@ export function GeneratedTesserae({
 	const handleGenerate = async () => {
 		setIsGenerating(true);
 		try {
-			// Create a temporary state object with the needed values
 			const tempState = {
 				...initialState,
 				seed,
@@ -43,14 +51,13 @@ export function GeneratedTesserae({
 			onTesseraeGenerated(tesserae);
 		} catch (error) {
 			console.error("Error generating tesserae:", error);
-			// In a real implementation, we would show an error message to the user
 		} finally {
 			setIsGenerating(false);
 		}
 	};
 
 	const handleNewSeed = () => {
-		setSeed(Math.floor(Math.random() * 1000000));
+		setSeed(Math.floor(Math.random() * SEED_MAX));
 	};
 
 	return (

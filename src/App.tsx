@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useCallback, useState } from "react";
 import { WorkflowStep } from "./components/WorkflowStep";
 import { SourceImageSelection } from "./components/SourceImageSelection";
 import { TesseraSizeSelection } from "./components/TesseraSizeSelection";
@@ -8,10 +8,16 @@ import { TesseraReview } from "./components/TesseraReview";
 import {
 	INITIAL_WORKFLOW_STATE,
 	WorkflowStep as WorkflowStepEnum,
+	type TesseraInfo,
 	type WorkflowState,
+	updateWorkflowRemoveTessera,
+	updateWorkflowWithGeneratedTesserae,
+	updateWorkflowWithSourceImage,
+	updateWorkflowWithSourceImageError,
+	updateWorkflowWithTesseraSize,
+	updateWorkflowWithTesserae,
 } from "./engine/workflow-state";
 import type { SourceImageInfo } from "./engine/image-processing";
-import type { TesseraInfo } from "./engine/workflow-state";
 
 const stages = [
 	["Choose source image", "Select a JPEG, PNG, or WebP image."],
@@ -22,70 +28,49 @@ const stages = [
 	["Export mosaic", "Download the full-resolution mosaic."],
 ] as const;
 
+/** Fallback tessera size when no adjusted size has been calculated yet. */
+const DEFAULT_TESSERA_SIZE = 16;
+
+/**
+ * Root application component for the Mosaic Maker workflow.
+ */
 export function App() {
 	const [workflowState, setWorkflowState] = useState<WorkflowState>(
 		INITIAL_WORKFLOW_STATE,
 	);
 
-	const handleSourceSelected = (sourceImage: SourceImageInfo) => {
-		// In a real implementation, we would use the workflow state update functions
-		setWorkflowState((prev) => ({
-			...prev,
-			sourceImage,
-			hasValidSourceDimensions: true,
-			sourceImageError: null,
-			currentStep: WorkflowStepEnum.SET_TESSERA_SIZE,
-		}));
-	};
+	const handleSourceSelected = useCallback((sourceImage: SourceImageInfo) => {
+		setWorkflowState((prev) =>
+			updateWorkflowWithSourceImage(prev, sourceImage),
+		);
+	}, []);
 
-	const handleSourceError = (errorMessage: string) => {
-		setWorkflowState((prev) => ({
-			...prev,
-			sourceImage: null,
-			hasValidSourceDimensions: false,
-			sourceImageError: errorMessage,
-		}));
-	};
+	const handleSourceError = useCallback((errorMessage: string) => {
+		setWorkflowState((prev) =>
+			updateWorkflowWithSourceImageError(prev, errorMessage),
+		);
+	}, []);
 
-	const handleSizeSelected = (size: number) => {
-		setWorkflowState((prev) => ({
-			...prev,
-			requestedTesseraSize: size,
-			adjustedTesseraSize: size, // Simplified for now
-			currentStep: WorkflowStepEnum.CHOOSE_TESSERAE,
-		}));
-	};
+	const handleSizeSelected = useCallback((size: number) => {
+		setWorkflowState((prev) => updateWorkflowWithTesseraSize(prev, size));
+	}, []);
 
-	const handleTesseraeProcessed = (tesserae: TesseraInfo[]) => {
-		setWorkflowState((prev) => ({
-			...prev,
-			tesserae,
-			validTesseraCount: tesserae.filter((t) => t.isValid).length,
-			rejectedTesseraCount:
-				tesserae.length - tesserae.filter((t) => t.isValid).length,
-			totalTesseraCount: tesserae.length,
-			currentStep: WorkflowStepEnum.REVIEW_TESSERAE,
-		}));
-	};
+	const handleTesseraeProcessed = useCallback((tesserae: TesseraInfo[]) => {
+		setWorkflowState((prev) => updateWorkflowWithTesserae(prev, tesserae));
+	}, []);
 
-	const handleTesseraeGenerated = (tesserae: TesseraInfo[]) => {
-		handleTesseraeProcessed(tesserae);
-	};
+	const handleTesseraeGenerated = useCallback((tesserae: TesseraInfo[]) => {
+		setWorkflowState((prev) =>
+			updateWorkflowWithGeneratedTesserae(prev, tesserae),
+		);
+	}, []);
 
-	const handleRemoveTessera = (index: number) => {
-		setWorkflowState((prev) => {
-			const newTesserae = [...prev.tesserae];
-			newTesserae.splice(index, 1);
-			return {
-				...prev,
-				tesserae: newTesserae,
-				validTesseraCount: newTesserae.filter((t) => t.isValid).length,
-				rejectedTesseraCount:
-					newTesserae.length - newTesserae.filter((t) => t.isValid).length,
-				totalTesseraCount: newTesserae.length,
-			};
-		});
-	};
+	const handleRemoveTessera = useCallback((index: number) => {
+		setWorkflowState((prev) => updateWorkflowRemoveTessera(prev, index));
+	}, []);
+
+	const resolvedTesseraSize =
+		workflowState.adjustedTesseraSize ?? DEFAULT_TESSERA_SIZE;
 
 	return (
 		<>
@@ -101,24 +86,25 @@ export function App() {
 			<main className="container">
 				<nav aria-label="Mosaic workflow">
 					<ol className="workflow">
-						{stages.map(([title, description], index) => (
-							<li
-								aria-current={
-									workflowState.currentStep === index ? "step" : undefined
-								}
-								key={title}
-								className={workflowState.currentStep === index ? "current" : ""}
-							>
-								<WorkflowStep
-									title={title}
-									description={description}
-									isCurrent={workflowState.currentStep === index}
-									stepNumber={index + 1}
+						{stages.map(([title, description], index) => {
+							const isCurrent = workflowState.currentStep === index;
+							return (
+								<li
+									aria-current={isCurrent ? "step" : undefined}
+									key={title}
+									className={isCurrent ? "current" : ""}
 								>
-									{renderStepContent(index)}
-								</WorkflowStep>
-							</li>
-						))}
+									<WorkflowStep
+										title={title}
+										description={description}
+										isCurrent={isCurrent}
+										stepNumber={index + 1}
+									>
+										{renderStepContent(index)}
+									</WorkflowStep>
+								</li>
+							);
+						})}
 					</ol>
 				</nav>
 			</main>
@@ -143,16 +129,18 @@ export function App() {
 					/>
 				);
 			case WorkflowStepEnum.CHOOSE_TESSERAE:
-				return workflowState.useGeneratedTesserae ? (
-					<GeneratedTesserae
-						onTesseraeGenerated={handleTesseraeGenerated}
-						initialState={workflowState}
-						adjustedTesseraSize={workflowState.adjustedTesseraSize || 16}
-					/>
-				) : (
+				if (workflowState.useGeneratedTesserae) {
+					return (
+						<GeneratedTesserae
+							onTesseraeGenerated={handleTesseraeGenerated}
+							initialState={workflowState}
+						/>
+					);
+				}
+				return (
 					<TesseraUpload
 						onTesseraeProcessed={handleTesseraeProcessed}
-						adjustedTesseraSize={workflowState.adjustedTesseraSize || 16}
+						adjustedTesseraSize={resolvedTesseraSize}
 					/>
 				);
 			case WorkflowStepEnum.REVIEW_TESSERAE:
@@ -168,11 +156,7 @@ export function App() {
 					/>
 				);
 			default:
-				return (
-					<div>
-						Step {stepIndex + 1} content will be implemented in a future task
-					</div>
-				);
+				return <div>Step {stepIndex + 1} content coming soon</div>;
 		}
 	}
 }

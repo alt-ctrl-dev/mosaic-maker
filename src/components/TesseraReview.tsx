@@ -1,14 +1,25 @@
 import type { TesseraInfo } from "../engine/workflow-state";
 
+/** Props for {@link TesseraReview}. */
 interface TesseraReviewProps {
+	/** Tesserae to display in the review grid. */
 	tesserae: TesseraInfo[];
+	/** Called when the user removes a tessera at the given index. */
 	onRemoveTessera: (index: number) => void;
+	/** Called when the user accepts supplementing with generated tesserae. */
 	onAcceptSupplementation?: () => void;
+	/** Whether the collection has low variety. */
 	isLowVariety?: boolean;
+	/** Recommended number of tesserae for adequate variety. */
 	varietyRecommendation?: number | null;
+	/** Whether the user has already accepted supplementation. */
 	hasAcceptedSupplementation?: boolean;
 }
 
+/**
+ * Displays the tessera collection for review with validity stats,
+ * variety warnings, and per-tessera removal.
+ */
 export function TesseraReview({
 	tesserae,
 	onRemoveTessera,

@@ -3,11 +3,17 @@ import { useCallback, useState } from "react";
 import type { TesseraInfo } from "../engine/workflow-state";
 import { processTesserae } from "../engine/tessera-processing";
 
+/** Props for {@link TesseraUpload}. */
 interface TesseraUploadProps {
+	/** Called with the processed tesserae when upload completes. */
 	onTesseraeProcessed: (tesserae: TesseraInfo[]) => void;
+	/** Tessera pixel size to validate uploaded images against. */
 	adjustedTesseraSize: number;
 }
 
+/**
+ * Drop zone and file input for uploading tessera images.
+ */
 export function TesseraUpload({
 	onTesseraeProcessed,
 	adjustedTesseraSize,
@@ -18,7 +24,6 @@ export function TesseraUpload({
 		async (files: FileList | null) => {
 			if (!files || files.length === 0) return;
 
-			// Convert FileList to File[]
 			const filesArray = Array.from(files);
 
 			setIsProcessing(true);
@@ -27,7 +32,6 @@ export function TesseraUpload({
 				onTesseraeProcessed(tesserae);
 			} catch (error) {
 				console.error("Error processing tesserae:", error);
-				// In a real implementation, we would show an error message to the user
 			} finally {
 				setIsProcessing(false);
 			}
@@ -50,8 +54,9 @@ export function TesseraUpload({
 	);
 
 	return (
-		<div
+		<section
 			className="tessera-upload"
+			role="region"
 			onDragOver={handleDragOver}
 			onDrop={handleDrop}
 		>
@@ -69,6 +74,6 @@ export function TesseraUpload({
 			{isProcessing && (
 				<div className="processing-indicator">Processing tesserae...</div>
 			)}
-		</div>
+		</section>
 	);
 }

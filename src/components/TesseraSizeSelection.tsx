@@ -7,11 +7,18 @@ import {
 	calculateGridCellCount,
 } from "../engine/tessera-sizing";
 
+/** Props for {@link TesseraSizeSelection}. */
 interface TesseraSizeSelectionProps {
+	/** Called when the user confirms a tessera size. */
 	onSizeSelected: (size: number) => void;
+	/** Current workflow state, used for source image dimensions. */
 	initialState: WorkflowState;
 }
 
+/**
+ * Lets the user pick a tessera pixel size and shows the adjusted size,
+ * grid cell count, and any coarse-grid warning.
+ */
 export function TesseraSizeSelection({
 	onSizeSelected,
 	initialState,

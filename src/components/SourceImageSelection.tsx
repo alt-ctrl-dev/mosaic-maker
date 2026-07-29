@@ -4,12 +4,20 @@ import { getSourceImageInfo } from "../engine/image-processing";
 import type { SourceImageInfo } from "../engine/image-processing";
 import type { WorkflowState } from "../engine/workflow-state";
 
+/** Props for {@link SourceImageSelection}. */
 interface SourceImageSelectionProps {
+	/** Called when a valid source image is selected and processed. */
 	onSourceSelected: (sourceImage: SourceImageInfo) => void;
+	/** Called when source image selection or processing fails. */
 	onSourceError: (errorMessage: string) => void;
+	/** Current workflow state, used to display persisted errors. */
 	initialState: WorkflowState;
 }
 
+/**
+ * Drop zone and file input for selecting the source image.
+ * Validates file type, extracts dimensions, and shows a preview.
+ */
 export function SourceImageSelection({
 	onSourceSelected,
 	onSourceError,
@@ -39,7 +47,6 @@ export function SourceImageSelection({
 				const sourceImage = await getSourceImageInfo(file);
 				onSourceSelected(sourceImage);
 
-				// Create preview
 				const url = URL.createObjectURL(file);
 				setPreviewUrl(url);
 				setImageDimensions({
