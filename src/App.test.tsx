@@ -11,14 +11,13 @@ describe("Mosaic Maker workflow", () => {
 		const workflow = screen.getByRole("complementary", {
 			name: "Workflow steps",
 		});
-		const stages = within(workflow)
-			.getAllByRole("button")
-			.map((button) => {
-				const titleSpan = within(button).getByText(
-					/Choose|Set|Review|Generate|Export/,
-				);
-				return titleSpan.textContent?.trim() || "";
-			});
+		const buttons = within(workflow).getAllByRole("button");
+		const stages = buttons.map(
+			(button) =>
+				within(button).getByText(
+					/^(Choose source image|Set tessera size|Choose tesserae|Review tesserae|Generate and preview|Export mosaic)$/,
+				).textContent ?? "",
+		);
 
 		expect(stages).toEqual([
 			"Choose source image",

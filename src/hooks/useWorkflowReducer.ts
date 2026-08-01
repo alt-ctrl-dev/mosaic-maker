@@ -3,6 +3,7 @@ import type { SourceImageInfo } from "../engine/image-processing";
 import type { MosaicResult } from "../engine/mosaic-engine";
 import {
 	INITIAL_WORKFLOW_STATE,
+	WorkflowStep,
 	type ExportSettings,
 	type TesseraInfo,
 	type WorkflowState,
@@ -66,8 +67,11 @@ export function workflowReducer(
 			return updateWorkflowOnCancellationOrFailure(state);
 		case "exportSettingsChanged":
 			return updateWorkflowExportSettings(state, action.settings);
-		case "goToStep":
-			return { ...state, currentStep: action.step };
+		case "goToStep": {
+			const stepCount = Object.keys(WorkflowStep).length / 2;
+			const clamped = Math.max(0, Math.min(action.step, stepCount - 1));
+			return { ...state, currentStep: clamped };
+		}
 	}
 }
 

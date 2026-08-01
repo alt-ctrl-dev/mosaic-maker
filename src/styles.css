@@ -25,14 +25,12 @@ header > p:last-child {
 	text-transform: uppercase;
 }
 
-/* Workflow Container */
 .workflow-container {
 	display: flex;
 	gap: 2rem;
 	margin-top: 2rem;
 }
 
-/* Sidebar Styles */
 .workflow-sidebar {
 	flex: 0 0 14rem;
 	border-right: 1px solid var(--pico-muted-border-color);
@@ -94,7 +92,6 @@ header > p:last-child {
 	font-weight: 500;
 }
 
-/* Canvas Styles */
 .workflow-canvas {
 	flex: 1;
 	display: flex;
@@ -119,7 +116,6 @@ header > p:last-child {
 	font-size: 0.9rem;
 }
 
-/* Mobile Styles */
 @media (max-width: 768px) {
 	.workflow-container {
 		flex-direction: column;

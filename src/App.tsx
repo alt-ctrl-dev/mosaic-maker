@@ -9,12 +9,12 @@ import { WorkflowStep as WorkflowStepEnum } from "./engine/workflow-state";
 import { useWorkflowReducer } from "./hooks/useWorkflowReducer";
 
 const stages = [
-	["Choose source image", "Select a JPEG, PNG, or WebP image."],
-	["Set tessera size", "Choose the square size of each tessera."],
-	["Choose tesserae", "Upload tesserae or create generated tesserae."],
-	["Review tesserae", "Check the collection before building the mosaic."],
-	["Generate and preview", "Build the mosaic and inspect the result."],
-	["Export mosaic", "Download the full-resolution mosaic."],
+	"Choose source image",
+	"Set tessera size",
+	"Choose tesserae",
+	"Review tesserae",
+	"Generate and preview",
+	"Export mosaic",
 ] as const;
 
 /** Fallback tessera size when no adjusted size has been calculated yet. */
@@ -106,7 +106,7 @@ export function App() {
 			<main className="workflow-container">
 				<aside className="workflow-sidebar" aria-label="Workflow steps">
 					<ol>
-						{stages.map(([title], index) => {
+						{stages.map((title, index) => {
 							const isCurrent = workflowState.currentStep === index;
 							const isCompleted = index < workflowState.currentStep;
 							return (
