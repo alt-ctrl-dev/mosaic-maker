@@ -469,6 +469,21 @@ export function updateWorkflowWithGeneratedTesserae(
 }
 
 /**
+ * Advance the workflow from the review step to the generate-and-preview step.
+ *
+ * @param state - The current workflow state
+ * @returns Updated workflow state advanced to the generate-and-preview step
+ */
+export function updateWorkflowAdvanceFromReview(
+	state: WorkflowState,
+): WorkflowState {
+	return {
+		...state,
+		currentStep: WorkflowStep.GENERATE_AND_PREVIEW,
+	};
+}
+
+/**
  * Update workflow state with a mosaic result.
  * Updates the workflow with the generated mosaic and advances to the export step.
  *

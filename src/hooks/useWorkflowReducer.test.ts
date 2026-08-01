@@ -97,4 +97,12 @@ describe("workflowReducer", () => {
 		expect(next.totalTesseraCount).toBe(1);
 		expect(next.validTesseraCount).toBe(0);
 	});
+
+	it("advances from review to generate-and-preview on an advanceFromReview action", () => {
+		const next = workflowReducer(INITIAL_WORKFLOW_STATE, {
+			type: "advanceFromReview",
+		});
+
+		expect(next.currentStep).toBe(WorkflowStep.GENERATE_AND_PREVIEW);
+	});
 });
