@@ -7,6 +7,7 @@ import {
 	type ExportSettings,
 	type TesseraInfo,
 	type WorkflowState,
+	updateWorkflowAdvanceFromReview,
 	updateWorkflowExportSettings,
 	updateWorkflowOnCancellationOrFailure,
 	updateWorkflowRemoveTessera,
@@ -74,7 +75,7 @@ export function workflowReducer(
 			return { ...state, currentStep: clamped };
 		}
 		case "advanceFromReview":
-			return { ...state, currentStep: WorkflowStep.GENERATE_AND_PREVIEW };
+			return updateWorkflowAdvanceFromReview(state);
 	}
 }
 

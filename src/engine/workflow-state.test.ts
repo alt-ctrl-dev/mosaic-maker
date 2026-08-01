@@ -5,6 +5,7 @@ import {
 	INITIAL_WORKFLOW_STATE,
 	type MosaicResult,
 	type TesseraInfo,
+	updateWorkflowAdvanceFromReview,
 	updateWorkflowExportSettings,
 	updateWorkflowOnCancellationOrFailure,
 	updateWorkflowOnRegeneration,
@@ -861,6 +862,39 @@ describe("workflow-state", () => {
 			// Should discard incomplete output
 			expect(newState.mosaicResult).toBeNull();
 			expect(newState.needsRegeneration).toBe(false);
+		});
+	});
+
+	describe("updateWorkflowAdvanceFromReview", () => {
+		it("advances from the review step to the generate-and-preview step", () => {
+			const result = updateWorkflowAdvanceFromReview(INITIAL_WORKFLOW_STATE);
+			expect(result.currentStep).toBe(WorkflowStep.GENERATE_AND_PREVIEW);
+		});
+
+		it("preserves all other state fields", () => {
+			const initialState = {
+				...INITIAL_WORKFLOW_STATE,
+				currentStep: WorkflowStep.REVIEW_TESSERAE,
+				sourceImage: { width: 100, height: 100, orientation: 1 },
+				tesserae: [
+					{
+						file: new File([], "test.jpg"),
+						fileName: "test.jpg",
+						isValid: true,
+						error: null,
+						isLowResolution: false,
+						previewUrl: null,
+					},
+				],
+				validTesseraCount: 1,
+			};
+
+			const result = updateWorkflowAdvanceFromReview(initialState);
+
+			expect(result.sourceImage).toEqual(initialState.sourceImage);
+			expect(result.tesserae).toEqual(initialState.tesserae);
+			expect(result.validTesseraCount).toBe(1);
+			expect(result.mosaicResult).toBeNull();
 		});
 	});
 
