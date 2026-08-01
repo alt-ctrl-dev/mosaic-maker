@@ -15,3 +15,7 @@ Use the default five-role triage vocabulary. See `docs/agents/triage-labels.md`.
 ### Domain docs
 
 This repository uses a single-context domain documentation layout. See `docs/agents/domain.md`.
+
+### Cleanup Bot
+
+The cleanup bot automatically removes local Git branches that are associated with closed GitHub issues or pull requests. See `.sandcastle/cleanup-bot/README.md` for details.
