@@ -152,6 +152,287 @@ header > p:last-child {
 	}
 }
 
+/* Source Image Selection Styles */
+.source-image-selection .drop-zone {
+	width: 100%;
+	height: 200px;
+	border: 2px dashed var(--pico-muted-border-color);
+	border-radius: var(--pico-border-radius);
+	display: flex;
+	align-items: center;
+	justify-content: center;
+	text-align: center;
+	background-color: var(--pico-background-color);
+	transition: all 0.2s ease;
+	cursor: pointer;
+	position: relative;
+}
+
+.source-image-selection .drop-zone:hover,
+.source-image-selection .drop-zone[aria-dropeffect="move"] {
+	border-color: var(--pico-primary);
+	background-color: var(--pico-primary-background);
+}
+
+.source-image-selection .drop-zone .file-input {
+	position: absolute;
+	width: 100%;
+	height: 100%;
+	opacity: 0;
+	cursor: pointer;
+}
+
+.source-image-selection .image-preview {
+	margin-top: 1rem;
+}
+
+.source-image-selection .preview-image {
+	max-width: 100%;
+	height: auto;
+	border-radius: var(--pico-border-radius);
+	box-shadow: var(--pico-box-shadow);
+}
+
+.source-image-selection .processing-indicator {
+	margin-top: 1rem;
+	padding: 1rem;
+	background-color: var(--pico-contrast-background);
+	color: var(--pico-contrast-color);
+	border-radius: var(--pico-border-radius);
+	text-align: center;
+}
+
+/* Tessera Upload Styles */
+.tessera-upload .drop-zone {
+	width: 100%;
+	height: 200px;
+	border: 2px dashed var(--pico-muted-border-color);
+	border-radius: var(--pico-border-radius);
+	display: flex;
+	align-items: center;
+	justify-content: center;
+	text-align: center;
+	background-color: var(--pico-background-color);
+	transition: all 0.2s ease;
+	cursor: pointer;
+	position: relative;
+}
+
+.tessera-upload .drop-zone:hover,
+.tessera-upload .drop-zone[aria-dropeffect="move"] {
+	border-color: var(--pico-primary);
+	background-color: var(--pico-primary-background);
+}
+
+.tessera-upload .drop-zone .file-input {
+	position: absolute;
+	width: 100%;
+	height: 100%;
+	opacity: 0;
+	cursor: pointer;
+}
+
+.tessera-upload[aria-busy="true"] .drop-zone {
+	border-color: var(--pico-primary);
+	background-color: var(--pico-primary-background);
+}
+
+/* Generated Tesserae Styles */
+.generated-tesserae .control-group {
+	margin-bottom: 1.5rem;
+	border: 1px solid var(--pico-muted-border-color);
+	border-radius: var(--pico-border-radius);
+	padding: 1rem;
+}
+
+.generated-tesserae .seed-control,
+.generated-tesserae .count-control {
+	margin-bottom: 1rem;
+}
+
+.generated-tesserae .seed-control label,
+.generated-tesserae .count-control label {
+	display: block;
+	margin-bottom: 0.5rem;
+	font-weight: bold;
+}
+
+.generated-tesserae .input-group {
+	display: flex;
+	gap: 0.5rem;
+	align-items: center;
+}
+
+.generated-tesserae .input-group input {
+	flex: 1;
+}
+
+.generated-tesserae .generation-info {
+	margin-top: 1rem;
+	padding: 0.5rem;
+	background-color: var(--pico-contrast-background);
+	color: var(--pico-contrast-color);
+	border-radius: var(--pico-border-radius);
+	font-size: 0.9em;
+}
+
+/* Tessera Review Styles */
+.tessera-review .warning.alert {
+	margin: 1rem 0;
+	padding: 1rem;
+	border-radius: var(--pico-border-radius);
+}
+
+.tessera-review .tesserae-grid {
+	display: grid;
+	grid-template-columns: repeat(auto-fill, minmax(150px, 1fr));
+	gap: 1rem;
+	margin-top: 1rem;
+}
+
+.tessera-review .tessera-item {
+	padding: 0.75rem;
+	border-radius: var(--pico-border-radius);
+	box-shadow: var(--pico-box-shadow);
+	transition: transform 0.2s ease;
+}
+
+.tessera-review .tessera-item:hover {
+	transform: translateY(-2px);
+}
+
+.tessera-review .tessera-item.invalid {
+	border: 2px solid var(--pico-danger-background);
+	background-color: var(--pico-danger-background);
+}
+
+.tessera-review .tessera-item.supplemented {
+	border: 2px solid var(--pico-success-background);
+}
+
+.tessera-review .tessera-preview {
+	width: 100%;
+	height: 100px;
+	object-fit: cover;
+	border-radius: calc(var(--pico-border-radius) / 2);
+	margin-bottom: 0.5rem;
+}
+
+.tessera-review .tessera-details {
+	font-size: 0.85em;
+}
+
+.tessera-review .tessera-name {
+	font-weight: bold;
+	display: block;
+	margin-bottom: 0.25rem;
+}
+
+.tessera-review .tessera-error {
+	display: block;
+	margin: 0.25rem 0;
+	font-size: 0.8em;
+}
+
+.tessera-review .supplemented-label {
+	font-size: 0.7em;
+	font-weight: bold;
+	padding: 0.1rem 0.3rem;
+	border-radius: calc(var(--pico-border-radius) / 2);
+}
+
+/* Generate and Preview Styles */
+.generate-preview-step .preview-container {
+	margin: 1rem 0;
+	text-align: center;
+}
+
+.generate-preview-step .mosaic-preview {
+	max-width: 100%;
+	max-height: 70vh;
+	width: auto;
+	height: auto;
+	border-radius: var(--pico-border-radius);
+	box-shadow: var(--pico-box-shadow);
+}
+
+.generate-preview-step .generation-progress[aria-busy="true"] {
+	margin: 1rem 0;
+	padding: 1rem;
+	background-color: var(--pico-contrast-background);
+	color: var(--pico-contrast-color);
+	border-radius: var(--pico-border-radius);
+	text-align: center;
+}
+
+.generate-preview-step progress {
+	width: 100%;
+	margin: 0.5rem 0;
+}
+
+.generate-preview-step .spinner {
+	width: 2rem;
+	height: 2rem;
+	border: 3px solid var(--pico-contrast-background);
+	border-top: 3px solid var(--pico-primary);
+	border-radius: 50%;
+	animation: spin 1s linear infinite;
+	margin: 0 auto 1rem;
+}
+
+@keyframes spin {
+	0% {
+		transform: rotate(0deg);
+	}
+	100% {
+		transform: rotate(360deg);
+	}
+}
+
+/* Export Mosaic Styles */
+.export-mosaic-step .setting-group {
+	margin-bottom: 1.5rem;
+}
+
+.export-mosaic-step .setting-group legend {
+	font-weight: bold;
+	margin-bottom: 0.5rem;
+}
+
+.export-mosaic-step .input-group {
+	margin-bottom: 1rem;
+}
+
+.export-mosaic-step .input-group label {
+	display: block;
+	margin-bottom: 0.5rem;
+}
+
+.export-mosaic-step .export-preview {
+	margin: 2rem 0;
+	text-align: center;
+}
+
+.export-mosaic-step .mosaic-preview {
+	max-width: 100%;
+	max-height: 400px;
+	width: auto;
+	height: auto;
+	border-radius: var(--pico-border-radius);
+	box-shadow: var(--pico-box-shadow);
+}
+
+.export-mosaic-step .hint.muted {
+	color: var(--pico-muted-color);
+	font-size: 0.9em;
+}
+
+.export-mosaic-step .error-message.alert {
+	margin-top: 1rem;
+	padding: 1rem;
+	border-radius: var(--pico-border-radius);
+}
+
 @media (max-width: 576px) {
 	header {
 		padding-block-start: 2rem;

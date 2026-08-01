@@ -94,18 +94,19 @@ export function SourceImageSelection({
 				type="button"
 				onDragOver={handleDragOver}
 				onDrop={handleDrop}
-				style={{ width: "100%", height: "200px", border: "2px dashed #ccc" }}
+				className={`drop-zone ${isProcessing ? "aria-busy" : ""}`}
 				aria-label="Drop images here or click to select"
 			>
 				<p>Drop images here or click below</p>
+				<input
+					type="file"
+					accept="image/jpeg,image/png,image/webp"
+					onChange={(e) => handleFileChange(e.target.files)}
+					disabled={isProcessing}
+					aria-label="Select source image"
+					className="file-input"
+				/>
 			</button>
-			<input
-				type="file"
-				accept="image/jpeg,image/png,image/webp"
-				onChange={(e) => handleFileChange(e.target.files)}
-				disabled={isProcessing}
-				aria-label="Select source image"
-			/>
 
 			{initialState.sourceImageError && (
 				<div className="error-message" role="alert">
@@ -115,11 +116,7 @@ export function SourceImageSelection({
 
 			{previewUrl && imageDimensions && (
 				<div className="image-preview">
-					<img
-						src={previewUrl}
-						alt="Source"
-						style={{ maxWidth: "100%", height: "auto" }}
-					/>
+					<img src={previewUrl} alt="Source" className="preview-image" />
 					<p>
 						Dimensions: {imageDimensions.width} × {imageDimensions.height}{" "}
 						pixels
@@ -128,7 +125,9 @@ export function SourceImageSelection({
 			)}
 
 			{isProcessing && (
-				<div className="processing-indicator">Processing image...</div>
+				<div className="processing-indicator" aria-busy="true">
+					Processing image...
+				</div>
 			)}
 		</div>
 	);
