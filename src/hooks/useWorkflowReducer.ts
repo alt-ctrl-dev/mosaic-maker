@@ -31,7 +31,8 @@ export type WorkflowAction =
 	| { type: "removeTessera"; index: number }
 	| { type: "mosaicGenerated"; mosaicResult: MosaicResult }
 	| { type: "generationCancelledOrFailed" }
-	| { type: "exportSettingsChanged"; settings: Partial<ExportSettings> };
+	| { type: "exportSettingsChanged"; settings: Partial<ExportSettings> }
+	| { type: "goToStep"; step: number };
 
 /**
  * Reduce the workflow state for a dispatched {@link WorkflowAction}.
@@ -65,6 +66,8 @@ export function workflowReducer(
 			return updateWorkflowOnCancellationOrFailure(state);
 		case "exportSettingsChanged":
 			return updateWorkflowExportSettings(state, action.settings);
+		case "goToStep":
+			return { ...state, currentStep: action.step };
 	}
 }
 

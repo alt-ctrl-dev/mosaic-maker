@@ -1,4 +1,3 @@
-import { WorkflowStep } from "./components/WorkflowStep";
 import { SourceImageSelection } from "./components/SourceImageSelection";
 import { TesseraSizeSelection } from "./components/TesseraSizeSelection";
 import { TesseraUpload } from "./components/TesseraUpload";
@@ -104,25 +103,66 @@ export function App() {
 				</p>
 			</header>
 
-			<main className="container">
-				<nav aria-label="Mosaic workflow">
-					<ol className="workflow">
-						{stages.map(([title, description], index) => {
+			<main className="workflow-container">
+				<aside className="workflow-sidebar" aria-label="Workflow steps">
+					<ol>
+						{stages.map(([title], index) => {
 							const isCurrent = workflowState.currentStep === index;
+							const isCompleted = index < workflowState.currentStep;
 							return (
-								<li aria-current={isCurrent ? "step" : undefined} key={title}>
-									<WorkflowStep
-										title={title}
-										description={description}
-										stepNumber={index + 1}
+								<li key={title}>
+									<button
+										type="button"
+										className={`workflow-step-button ${isCurrent ? "current" : ""} ${isCompleted ? "completed" : ""}`}
+										aria-current={isCurrent ? "step" : undefined}
+										onClick={() => dispatch({ type: "goToStep", step: index })}
 									>
-										{renderStepContent(index)}
-									</WorkflowStep>
+										<span className="step-indicator">
+											{isCompleted ? <span>✓</span> : <span>{index + 1}</span>}
+										</span>
+										<span className="step-title">{title}</span>
+									</button>
 								</li>
 							);
 						})}
 					</ol>
-				</nav>
+				</aside>
+
+				<div className="workflow-canvas">
+					<div className="workflow-content">
+						{renderStepContent(workflowState.currentStep)}
+					</div>
+
+					<div className="workflow-navigation">
+						<button
+							type="button"
+							onClick={() =>
+								dispatch({
+									type: "goToStep",
+									step: workflowState.currentStep - 1,
+								})
+							}
+							disabled={workflowState.currentStep === 0}
+						>
+							← Back
+						</button>
+						<span className="workflow-step-counter">
+							Step {workflowState.currentStep + 1} of {stages.length}
+						</span>
+						<button
+							type="button"
+							onClick={() =>
+								dispatch({
+									type: "goToStep",
+									step: workflowState.currentStep + 1,
+								})
+							}
+							disabled={workflowState.currentStep === stages.length - 1}
+						>
+							Next →
+						</button>
+					</div>
+				</div>
 			</main>
 		</>
 	);

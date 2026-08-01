@@ -8,12 +8,17 @@ describe("Mosaic Maker workflow", () => {
 	it("presents all six stages in order", () => {
 		render(<App />);
 
-		const workflow = screen.getByRole("navigation", {
-			name: "Mosaic workflow",
+		const workflow = screen.getByRole("complementary", {
+			name: "Workflow steps",
 		});
 		const stages = within(workflow)
-			.getAllByRole("heading", { level: 2 })
-			.map((stage) => stage.textContent);
+			.getAllByRole("button")
+			.map((button) => {
+				const titleSpan = within(button).getByText(
+					/Choose|Set|Review|Generate|Export/,
+				);
+				return titleSpan.textContent?.trim() || "";
+			});
 
 		expect(stages).toEqual([
 			"Choose source image",
