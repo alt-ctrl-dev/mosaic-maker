@@ -81,7 +81,6 @@ export function ExportMosaic({ state, dispatch }: ExportMosaicProps) {
 										}
 									}}
 									disabled={isExporting}
-									className="format-select"
 								>
 									<option value="png">PNG</option>
 									<option value="jpeg">JPEG</option>
@@ -111,7 +110,6 @@ export function ExportMosaic({ state, dispatch }: ExportMosaicProps) {
 											})
 										}
 										disabled={isExporting}
-										className="quality-slider"
 									/>
 								</div>
 							</fieldset>
@@ -132,7 +130,6 @@ export function ExportMosaic({ state, dispatch }: ExportMosaicProps) {
 											})
 										}
 										disabled={isExporting}
-										className="background-color"
 									/>
 								</div>
 							</fieldset>
@@ -155,7 +152,6 @@ export function ExportMosaic({ state, dispatch }: ExportMosaicProps) {
 									placeholder="Describe the mosaic for accessibility..."
 									rows={3}
 									disabled={isExporting}
-									className="alt-text-input"
 								/>
 								<small className="hint muted">
 									Note: Downloaded image files do not carry alt text. Add

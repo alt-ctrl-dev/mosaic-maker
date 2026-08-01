@@ -142,7 +142,7 @@ export function GenerateAndPreview({
 						</div>
 					) : (
 						<div className="progress-indicator">
-							<div className="spinner" role="status" aria-label="Loading"></div>
+							<div className="spinner" aria-hidden="true"></div>
 							<p>Processing...</p>
 						</div>
 					)}

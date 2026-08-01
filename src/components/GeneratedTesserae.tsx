@@ -102,14 +102,6 @@ export function GeneratedTesserae({
 			>
 				{isGenerating ? "Generating..." : "Generate Tesserae"}
 			</button>
-
-			{isGenerating && (
-				<div className="generation-info">
-					<p>
-						Seed: {seed}, Count: {count}
-					</p>
-				</div>
-			)}
 		</div>
 	);
 }

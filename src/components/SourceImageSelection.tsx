@@ -94,7 +94,7 @@ export function SourceImageSelection({
 				type="button"
 				onDragOver={handleDragOver}
 				onDrop={handleDrop}
-				className={`drop-zone ${isProcessing ? "aria-busy" : ""}`}
+				className="drop-zone"
 				aria-label="Drop images here or click to select"
 			>
 				<p>Drop images here or click below</p>

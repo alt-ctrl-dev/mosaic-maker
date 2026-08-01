@@ -152,57 +152,8 @@ header > p:last-child {
 	}
 }
 
-/* Source Image Selection Styles */
-.source-image-selection .drop-zone {
-	width: 100%;
-	height: 200px;
-	border: 2px dashed var(--pico-muted-border-color);
-	border-radius: var(--pico-border-radius);
-	display: flex;
-	align-items: center;
-	justify-content: center;
-	text-align: center;
-	background-color: var(--pico-background-color);
-	transition: all 0.2s ease;
-	cursor: pointer;
-	position: relative;
-}
-
-.source-image-selection .drop-zone:hover,
-.source-image-selection .drop-zone[aria-dropeffect="move"] {
-	border-color: var(--pico-primary);
-	background-color: var(--pico-primary-background);
-}
-
-.source-image-selection .drop-zone .file-input {
-	position: absolute;
-	width: 100%;
-	height: 100%;
-	opacity: 0;
-	cursor: pointer;
-}
-
-.source-image-selection .image-preview {
-	margin-top: 1rem;
-}
-
-.source-image-selection .preview-image {
-	max-width: 100%;
-	height: auto;
-	border-radius: var(--pico-border-radius);
-	box-shadow: var(--pico-box-shadow);
-}
-
-.source-image-selection .processing-indicator {
-	margin-top: 1rem;
-	padding: 1rem;
-	background-color: var(--pico-contrast-background);
-	color: var(--pico-contrast-color);
-	border-radius: var(--pico-border-radius);
-	text-align: center;
-}
-
-/* Tessera Upload Styles */
+/* Source Image Selection & Tessera Upload shared drop-zone */
+.source-image-selection .drop-zone,
 .tessera-upload .drop-zone {
 	width: 100%;
 	height: 200px;
@@ -218,12 +169,20 @@ header > p:last-child {
 	position: relative;
 }
 
+.source-image-selection .drop-zone:hover,
+.source-image-selection .drop-zone[aria-dropeffect="move"],
 .tessera-upload .drop-zone:hover,
 .tessera-upload .drop-zone[aria-dropeffect="move"] {
 	border-color: var(--pico-primary);
 	background-color: var(--pico-primary-background);
 }
 
+.tessera-upload[aria-busy="true"] .drop-zone {
+	border-color: var(--pico-primary);
+	background-color: var(--pico-primary-background);
+}
+
+.source-image-selection .drop-zone .file-input,
 .tessera-upload .drop-zone .file-input {
 	position: absolute;
 	width: 100%;
@@ -232,9 +191,27 @@ header > p:last-child {
 	cursor: pointer;
 }
 
-.tessera-upload[aria-busy="true"] .drop-zone {
-	border-color: var(--pico-primary);
-	background-color: var(--pico-primary-background);
+/* Source Image Selection specific */
+.source-image-selection .image-preview {
+	margin-top: 1rem;
+}
+
+.source-image-selection .preview-image {
+	max-width: 100%;
+	height: auto;
+	border-radius: var(--pico-border-radius);
+	box-shadow: var(--pico-box-shadow);
+}
+
+/* Shared processing indicator */
+.source-image-selection .processing-indicator,
+.tessera-upload .processing-indicator {
+	margin-top: 1rem;
+	padding: 1rem;
+	background-color: var(--pico-contrast-background);
+	color: var(--pico-contrast-color);
+	border-radius: var(--pico-border-radius);
+	text-align: center;
 }
 
 /* Generated Tesserae Styles */
