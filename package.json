@@ -13,7 +13,8 @@
 		"sandcastle": "pnpx tsx .sandcastle/sandcastle-bot/main.mts",
 		"sandcastle-playground": "pnpx tsx .sandcastle/playground.mts",
 		"sandcastle-pr-creator": "pnpx tsx .sandcastle/pr-creator-bot/pr-creator.mts",
-		"sandcastle-pr-bot": "pnpx tsx .sandcastle/pr-bot/main.mts",
+		"sandcastle-pr-bot": "pnpx tsx --env-file=.sandcastle/.env .sandcastle/pr-bot/main.mts",
+		"sandcastle-build-image": "pnpx @ai-hero/sandcastle docker build-image",
 		"sandcastle-cleanup": "pnpx tsx .sandcastle/cleanup-bot/main.mts",
 		"prototype-neighbor-avoidance": "vite --config vite.prototype.config.ts",
 		"prepare": "husky"
