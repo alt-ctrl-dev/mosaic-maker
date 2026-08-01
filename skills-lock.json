@@ -7,6 +7,18 @@
 			"skillPath": "skills/engineering/ask-matt/SKILL.md",
 			"computedHash": "cacd2e77c8c0b456133a60be07493dd091ace65f52b02f90cbb8f75de15989f5"
 		},
+		"caveman": {
+			"source": "JuliusBrussee/caveman",
+			"sourceType": "github",
+			"skillPath": "skills/caveman/SKILL.md",
+			"computedHash": "d18cdf73a5f5c496d681a43a6846336b110223bdffa6817b8992529c57f1a815"
+		},
+		"caveman-commit": {
+			"source": "JuliusBrussee/caveman",
+			"sourceType": "github",
+			"skillPath": "skills/caveman-commit/SKILL.md",
+			"computedHash": "790a4eeace0be35c6691faf923518ba5bd50f1f1305d1101d09dd4971be94e00"
+		},
 		"claude-handoff": {
 			"source": "mattpocock/skills",
 			"sourceType": "github",
