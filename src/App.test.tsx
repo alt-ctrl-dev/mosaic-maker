@@ -8,12 +8,16 @@ describe("Mosaic Maker workflow", () => {
 	it("presents all six stages in order", () => {
 		render(<App />);
 
-		const workflow = screen.getByRole("navigation", {
-			name: "Mosaic workflow",
+		const workflow = screen.getByRole("complementary", {
+			name: "Workflow steps",
 		});
-		const stages = within(workflow)
-			.getAllByRole("heading", { level: 2 })
-			.map((stage) => stage.textContent);
+		const buttons = within(workflow).getAllByRole("button");
+		const stages = buttons.map(
+			(button) =>
+				within(button).getByText(
+					/^(Choose source image|Set tessera size|Choose tesserae|Review tesserae|Generate and preview|Export mosaic)$/,
+				).textContent ?? "",
+		);
 
 		expect(stages).toEqual([
 			"Choose source image",

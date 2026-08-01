@@ -25,40 +25,131 @@ header > p:last-child {
 	text-transform: uppercase;
 }
 
-.workflow {
-	display: grid;
-	grid-template-columns: repeat(auto-fit, minmax(min(100%, 18rem), 1fr));
-	gap: 1rem;
-	padding: 0;
-	list-style: none;
-}
-
-.workflow article {
+.workflow-container {
 	display: flex;
-	height: 100%;
-	gap: 1rem;
+	gap: 2rem;
+	margin-top: 2rem;
+}
+
+.workflow-sidebar {
+	flex: 0 0 14rem;
+	border-right: 1px solid var(--pico-muted-border-color);
+	padding-right: 1rem;
+}
+
+.workflow-sidebar ol {
+	list-style: none;
+	padding: 0;
 	margin: 0;
 }
 
-.workflow h2 {
+.workflow-step-button {
+	display: flex;
+	align-items: center;
+	width: 100%;
+	text-align: left;
+	padding: 0.75rem 1rem;
 	margin-bottom: 0.5rem;
-	font-size: 1.15rem;
+	background: transparent;
+	border: none;
+	border-radius: var(--pico-border-radius);
+	cursor: pointer;
+	color: var(--pico-color);
+	transition: background-color 0.2s;
 }
 
-.workflow p {
-	margin: 0;
+.workflow-step-button:hover {
+	background-color: var(--pico-dropdown-hover-background-color);
 }
 
-.step-number {
-	display: grid;
-	flex: 0 0 2.5rem;
-	width: 2.5rem;
-	height: 2.5rem;
-	border-radius: 50%;
-	background: var(--pico-primary-background);
+.workflow-step-button.current {
+	background-color: var(--pico-primary);
 	color: var(--pico-primary-inverse);
-	font-weight: 700;
-	place-items: center;
+}
+
+.workflow-step-button.completed {
+	opacity: 0.55;
+}
+
+.step-indicator {
+	display: inline-flex;
+	align-items: center;
+	justify-content: center;
+	width: 1.75rem;
+	height: 1.75rem;
+	border-radius: 50%;
+	margin-right: 0.75rem;
+	font-weight: bold;
+	flex-shrink: 0;
+}
+
+.workflow-step-button.current .step-indicator {
+	background-color: var(--pico-primary-inverse);
+	color: var(--pico-primary);
+}
+
+.step-title {
+	font-weight: 500;
+}
+
+.workflow-canvas {
+	flex: 1;
+	display: flex;
+	flex-direction: column;
+}
+
+.workflow-content {
+	flex: 1;
+}
+
+.workflow-navigation {
+	display: flex;
+	justify-content: space-between;
+	align-items: center;
+	margin-top: 2rem;
+	padding-top: 1rem;
+	border-top: 1px solid var(--pico-muted-border-color);
+}
+
+.workflow-step-counter {
+	color: var(--pico-muted-color);
+	font-size: 0.9rem;
+}
+
+@media (max-width: 768px) {
+	.workflow-container {
+		flex-direction: column;
+	}
+
+	.workflow-sidebar {
+		border-right: none;
+		border-bottom: 1px solid var(--pico-muted-border-color);
+		padding-right: 0;
+		padding-bottom: 1rem;
+	}
+
+	.workflow-sidebar ol {
+		display: flex;
+		flex-wrap: wrap;
+		gap: 0.5rem;
+	}
+
+	.workflow-step-button {
+		flex-direction: column;
+		align-items: center;
+		text-align: center;
+		padding: 0.5rem;
+		margin-bottom: 0;
+	}
+
+	.step-indicator {
+		margin-right: 0;
+		margin-bottom: 0.25rem;
+	}
+
+	.step-title {
+		font-size: 0.8rem;
+	}
 }
 
 @media (max-width: 576px) {
