@@ -2,7 +2,7 @@ import { execSync } from "child_process";
 import { existsSync, readdirSync, unlinkSync } from "fs";
 import { join, resolve } from "path";
 
-const SANDBCASTLE_BRANCH_PATTERN = /^sandcastle\/issue-(\d+)$/;
+const SANDCASTLE_BRANCH_PATTERN = /^sandcastle\/issue-(\d+)$/;
 
 const WORKTREES_DIR = resolve(process.cwd(), ".sandcastle/worktrees");
 
@@ -11,6 +11,25 @@ const LOGS_DIR = resolve(process.cwd(), ".sandcastle/logs");
 type ClosedPR = { number: number; headRefName: string; state: string };
 
 type ClosedIssue = { number: number; title: string; state: string };
+
+const isClosedPRArray = (value: unknown): value is ClosedPR[] =>
+  Array.isArray(value) &&
+  value.every(
+    (item): item is ClosedPR =>
+      item !== null &&
+      typeof item === "object" &&
+      typeof (item as Record<string, unknown>).number === "number" &&
+      typeof (item as Record<string, unknown>).headRefName === "string",
+  );
+
+const isClosedIssueArray = (value: unknown): value is ClosedIssue[] =>
+  Array.isArray(value) &&
+  value.every(
+    (item): item is ClosedIssue =>
+      item !== null &&
+      typeof item === "object" &&
+      typeof (item as Record<string, unknown>).number === "number",
+  );
 
 /**
  * A worktree registered with git, as reported by `git worktree list`.
@@ -26,7 +45,12 @@ const getClosedPRs = (): ClosedPR[] => {
       `gh pr list --state closed --limit 100 --json number,headRefName,state`,
       { encoding: "utf-8" },
     );
-    return JSON.parse(output) as ClosedPR[];
+    const parsed = JSON.parse(output);
+    if (!isClosedPRArray(parsed)) {
+      console.error("Unexpected response shape from gh pr list");
+      return [];
+    }
+    return parsed;
   } catch (error) {
     console.error("Failed to fetch closed PRs:", error);
     return [];
@@ -39,7 +63,12 @@ const getClosedIssues = (): ClosedIssue[] => {
       `gh issue list --state closed --limit 50 --json number,title,state`,
       { encoding: "utf-8" },
     );
-    return JSON.parse(output) as ClosedIssue[];
+    const parsed = JSON.parse(output);
+    if (!isClosedIssueArray(parsed)) {
+      console.error("Unexpected response shape from gh issue list");
+      return [];
+    }
+    return parsed;
   } catch (error) {
     console.error("Failed to fetch closed issues:", error);
     return [];
@@ -49,10 +78,11 @@ const getClosedIssues = (): ClosedIssue[] => {
 const getLocalBranches = (): string[] => {
   try {
     const output = execSync("git branch --format='%(refname:short)'", { encoding: "utf-8" });
-    return output
-      .trim()
-      .split("\n")
-      .map((branch) => branch.trim());
+    const trimmed = output.trim();
+    if (trimmed === "") {
+      return [];
+    }
+    return trimmed.split("\n").map((branch) => branch.trim());
   } catch (error) {
     console.error("Failed to fetch local branches:", error);
     return [];
@@ -95,7 +125,7 @@ export const parseWorktreePorcelain = (output: string): RegisteredWorktree[] => 
  * Lists worktrees registered with git by running `git worktree list --porcelain`.
  *
  * The main worktree is included; callers that only care about issue worktrees
- * should match against {@link WORKTREES_DIR}.
+ * should filter paths under `.sandcastle/worktrees`.
  */
 const getRegisteredWorktrees = (): RegisteredWorktree[] => {
   try {
@@ -107,12 +137,6 @@ const getRegisteredWorktrees = (): RegisteredWorktree[] => {
   }
 };
 
-/**
- * Removes a git-registered worktree at the given path.
- *
- * Uses `--force` so worktrees with uncommitted changes or locks are still
- * removed, since the associated issue/PR is already closed.
- */
 const removeWorktree = (worktreePath: string): boolean => {
   try {
     execSync(`git worktree remove --force ${JSON.stringify(worktreePath)}`, { stdio: "inherit" });
@@ -124,6 +148,12 @@ const removeWorktree = (worktreePath: string): boolean => {
   }
 };
 
+/**
+ * Force-deletes a local branch with `git branch -D`.
+ *
+ * -D is used (instead of -d) so branches that are not fully merged are still
+ * removed, since the associated issue/PR is already closed.
+ */
 const deleteLocalBranch = (branchName: string): boolean => {
   try {
     execSync(`git branch -D ${branchName}`, { stdio: "inherit" });
@@ -170,10 +200,10 @@ const deleteIssueLogs = (issueNumber: number): number => {
 
 /**
  * Extracts the issue number from a sandcastle branch name.
- * Returns null if the branch does not match the {@link SANDBCASTLE_BRANCH_PATTERN}.
+ * Returns null if the branch does not match the `sandcastle/issue-{number}` pattern.
  */
 export const extractIssueNumberFromBranch = (branchName: string): number | null => {
-  const match = branchName.match(SANDBCASTLE_BRANCH_PATTERN);
+  const match = branchName.match(SANDCASTLE_BRANCH_PATTERN);
   return match ? parseInt(match[1], 10) : null;
 };
 
@@ -210,7 +240,7 @@ const warnAboutOrphanedWorktrees = (registeredPaths: Set<string>): void => {
  * along with the git worktree and log files tied to closed sandcastle issues.
  *
  * Matches branches by exact PR head ref name, or by extracting the issue number
- * from sandcastle-style branch names ({@link SANDBCASTLE_BRANCH_PATTERN}).
+ * from sandcastle-style branch names.
  * Preserves the `main` branch and remote-tracking branches (`origin/*`).
  *
  * For a closed `sandcastle/issue-N` branch this also removes its registered
