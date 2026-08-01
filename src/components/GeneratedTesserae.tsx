@@ -62,32 +62,44 @@ export function GeneratedTesserae({
 
 	return (
 		<div className="generated-tesserae">
-			<div className="seed-control">
-				<label htmlFor="seed">Seed:</label>
-				<input
-					id="seed"
-					type="number"
-					value={seed}
-					onChange={(e) => setSeed(Number(e.target.value))}
-				/>
-				<button type="button" onClick={handleNewSeed}>
-					New Seed
-				</button>
-			</div>
+			<fieldset className="control-group">
+				<legend>Generation Settings</legend>
+				<div className="seed-control">
+					<label htmlFor="seed">Seed:</label>
+					<div className="input-group">
+						<input
+							id="seed"
+							type="number"
+							value={seed}
+							onChange={(e) => setSeed(Number(e.target.value))}
+							aria-label="Seed value for generation"
+						/>
+						<button type="button" onClick={handleNewSeed}>
+							New Seed
+						</button>
+					</div>
+				</div>
 
-			<div className="count-control">
-				<label htmlFor="count">Number of tesserae:</label>
-				<input
-					id="count"
-					type="number"
-					min="1"
-					max="1000"
-					value={count}
-					onChange={(e) => setCount(Number(e.target.value))}
-				/>
-			</div>
+				<div className="count-control">
+					<label htmlFor="count">Number of tesserae:</label>
+					<input
+						id="count"
+						type="number"
+						min="1"
+						max="1000"
+						value={count}
+						onChange={(e) => setCount(Number(e.target.value))}
+						aria-label="Number of tesserae to generate"
+					/>
+				</div>
+			</fieldset>
 
-			<button type="button" onClick={handleGenerate} disabled={isGenerating}>
+			<button
+				type="button"
+				onClick={handleGenerate}
+				disabled={isGenerating}
+				aria-busy={isGenerating}
+			>
 				{isGenerating ? "Generating..." : "Generate Tesserae"}
 			</button>
 		</div>

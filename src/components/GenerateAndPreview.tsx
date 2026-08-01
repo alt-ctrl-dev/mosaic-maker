@@ -106,6 +106,7 @@ export function GenerateAndPreview({
 						type="button"
 						onClick={handleGenerate}
 						disabled={!canGenerate || isGenerating}
+						aria-busy={isGenerating}
 					>
 						Generate Mosaic
 					</button>
@@ -126,35 +127,26 @@ export function GenerateAndPreview({
 			)}
 
 			{isGenerating && (
-				<div className="generation-progress">
+				<div className="generation-progress" aria-busy="true">
 					<h3>Generating Mosaic...</h3>
 					{progress ? (
 						<div className="progress-info">
-							<div
-								className="progress-bar"
-								role="progressbar"
-								aria-valuenow={progress.percent}
-								aria-valuemin={0}
-								aria-valuemax={100}
+							<progress
+								value={progress.percent}
+								max="100"
+								aria-label="Generation progress"
 							>
-								<div
-									className="progress-fill"
-									style={{ width: `${progress.percent}%` }}
-								></div>
-							</div>
+								{progress.percent}%
+							</progress>
 							<p className="progress-text">{progress.message}</p>
 						</div>
 					) : (
 						<div className="progress-indicator">
-							<div className="spinner"></div>
+							<div className="spinner" aria-hidden="true"></div>
 							<p>Processing...</p>
 						</div>
 					)}
-					<button
-						type="button"
-						onClick={handleCancel}
-						className="cancel-button"
-					>
+					<button type="button" onClick={handleCancel} className="outline">
 						Cancel
 					</button>
 				</div>
@@ -168,12 +160,6 @@ export function GenerateAndPreview({
 							src={previewUrl}
 							alt="Generated mosaic preview"
 							className="mosaic-preview"
-							style={{
-								maxWidth: "100%",
-								maxHeight: "70vh",
-								width: "auto",
-								height: "auto",
-							}}
 						/>
 					</div>
 					<p className="preview-info">
