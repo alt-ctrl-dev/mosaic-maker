@@ -8,6 +8,8 @@ interface TesseraReviewProps {
 	onRemoveTessera: (index: number) => void;
 	/** Called when the user accepts supplementing with generated tesserae. */
 	onAcceptSupplementation?: () => void;
+	/** Called when the user wants to continue to the next step. */
+	onContinue?: () => void;
 	/** Whether the collection has low variety. */
 	isLowVariety?: boolean;
 	/** Recommended number of tesserae for adequate variety. */
@@ -24,6 +26,7 @@ export function TesseraReview({
 	tesserae,
 	onRemoveTessera,
 	onAcceptSupplementation,
+	onContinue,
 	isLowVariety = false,
 	varietyRecommendation = null,
 	hasAcceptedSupplementation = false,
@@ -92,6 +95,19 @@ export function TesseraReview({
 					</div>
 				))}
 			</div>
+
+			{onContinue && (
+				<div className="tessera-review-actions">
+					<button
+						type="button"
+						onClick={onContinue}
+						disabled={validCount === 0}
+						className="primary"
+					>
+						Continue to Generate
+					</button>
+				</div>
+			)}
 		</div>
 	);
 }

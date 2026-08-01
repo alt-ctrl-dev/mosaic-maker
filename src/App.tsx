@@ -76,6 +76,7 @@ export function App() {
 						onRemoveTessera={(index) =>
 							dispatch({ type: "removeTessera", index })
 						}
+						onContinue={() => dispatch({ type: "advanceFromReview" })}
 						isLowVariety={workflowState.isLowVarietyCollection}
 						varietyRecommendation={workflowState.varietyRecommendation}
 						hasAcceptedSupplementation={

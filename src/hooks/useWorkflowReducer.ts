@@ -33,7 +33,8 @@ export type WorkflowAction =
 	| { type: "mosaicGenerated"; mosaicResult: MosaicResult }
 	| { type: "generationCancelledOrFailed" }
 	| { type: "exportSettingsChanged"; settings: Partial<ExportSettings> }
-	| { type: "goToStep"; step: number };
+	| { type: "goToStep"; step: number }
+	| { type: "advanceFromReview" };
 
 /**
  * Reduce the workflow state for a dispatched {@link WorkflowAction}.
@@ -72,6 +73,8 @@ export function workflowReducer(
 			const clamped = Math.max(0, Math.min(action.step, stepCount - 1));
 			return { ...state, currentStep: clamped };
 		}
+		case "advanceFromReview":
+			return { ...state, currentStep: WorkflowStep.GENERATE_AND_PREVIEW };
 	}
 }
 
