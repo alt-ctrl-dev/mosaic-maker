@@ -14,6 +14,9 @@ const LOGS_DIR = resolve(process.cwd(), ".sandcastle/logs");
  */
 export type RegisteredWorktree = { path: string; branch: string | null };
 
+/**
+ * Returns all local Git branch names (short refs).
+ */
 const getLocalBranches = (): string[] => {
   try {
     const output = execSync("git branch --format='%(refname:short)'", { encoding: "utf-8" });
@@ -39,15 +42,16 @@ const isIssueClosed = (issueNumber: number): boolean => {
   try {
     const output = execSync(`gh issue view ${issueNumber} --json state`, { encoding: "utf-8" });
     const parsed: unknown = JSON.parse(output);
-    if (
-      parsed === null ||
-      typeof parsed !== "object" ||
-      typeof (parsed as Record<string, unknown>).state !== "string"
-    ) {
+    if (parsed === null || typeof parsed !== "object") {
       console.error(`Unexpected response shape from gh issue view ${issueNumber}`);
       return false;
     }
-    return (parsed as { state: string }).state === "CLOSED";
+    const state = (parsed as Record<string, unknown>).state;
+    if (typeof state !== "string") {
+      console.error(`Unexpected response shape from gh issue view ${issueNumber}`);
+      return false;
+    }
+    return state === "CLOSED";
   } catch (error) {
     console.error(`Failed to query issue #${issueNumber}:`, error);
     return false;
@@ -113,9 +117,8 @@ export const parseWorktreePorcelain = (output: string): RegisteredWorktree[] => 
 };
 
 /**
- * Finds the path of the git worktree that has the given branch checked out, or
- * null when no registered worktree matches. Runs `git worktree list` on demand
- * for a single branch rather than precomputing a branch-to-worktree map.
+ * Returns the path of the git worktree that has the given branch checked out,
+ * or null when no registered worktree matches.
  */
 const findWorktreeForBranch = (branch: string): string | null => {
   try {
@@ -128,6 +131,9 @@ const findWorktreeForBranch = (branch: string): string | null => {
   }
 };
 
+/**
+ * Removes a git worktree at the given path with `git worktree remove --force`.
+ */
 const removeWorktree = (worktreePath: string): boolean => {
   try {
     execSync(`git worktree remove --force ${JSON.stringify(worktreePath)}`, { stdio: "inherit" });
@@ -199,10 +205,8 @@ export const extractIssueNumberFromBranch = (branchName: string): number | null 
 };
 
 /**
- * Removes the worktree, logs, and the branch itself for a single branch that
- * has been determined to be cleanable. Worktree and log removal are performed
- * on demand here rather than precomputed. Returns true when the branch was
- * deleted.
+ * Removes the worktree, logs, and branch for a single cleanable branch.
+ * Returns true when the branch was deleted.
  */
 const cleanupBranch = (branch: string, issueNumber: number | null): boolean => {
   const worktreePath = findWorktreeForBranch(branch);
@@ -218,13 +222,21 @@ const cleanupBranch = (branch: string, issueNumber: number | null): boolean => {
 };
 
 /**
+ * Returns true when a branch should be cleaned up.
+ *
+ * `sandcastle/issue-N` branches are cleanable when issue N is closed; other
+ * branches are cleanable when they are the head ref of a merged pull request.
+ */
+const isBranchCleanable = (branch: string, issueNumber: number | null): boolean => {
+  if (issueNumber !== null) {
+    return isIssueClosed(issueNumber);
+  }
+  return hasMergedPR(branch);
+};
+
+/**
  * Removes local branches whose associated GitHub PRs or issues are closed,
  * along with the git worktree and log files tied to closed sandcastle issues.
- *
- * Iterates local branches and queries GitHub per-branch: `sandcastle/issue-N`
- * branches are cleaned when issue N is closed; other branches are cleaned when
- * they are the head ref of a merged pull request. Worktree and log cleanup are
- * performed on demand as part of each branch's removal.
  *
  * Preserves the `main` branch and remote-tracking branches (`origin/*`).
  */
@@ -242,17 +254,15 @@ export const cleanupClosedBranches = (): void => {
 
     const issueNumber = extractIssueNumberFromBranch(branch);
 
-    if (issueNumber !== null) {
-      if (!isIssueClosed(issueNumber)) {
-        continue;
-      }
-      console.log(`Found local branch ${branch} for closed issue #${issueNumber}`);
-    } else {
-      if (!hasMergedPR(branch)) {
-        continue;
-      }
-      console.log(`Found local branch ${branch} for merged PR`);
+    if (!isBranchCleanable(branch, issueNumber)) {
+      continue;
     }
+
+    console.log(
+      issueNumber !== null
+        ? `Found local branch ${branch} for closed issue #${issueNumber}`
+        : `Found local branch ${branch} for merged PR`,
+    );
 
     if (cleanupBranch(branch, issueNumber)) {
       deletedCount++;
