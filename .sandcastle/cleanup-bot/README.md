@@ -6,18 +6,16 @@ This bot automatically cleans up local Git branches that are associated with clo
 
 The cleanup bot performs the following actions:
 
-1. **Fetches closed PRs** - Gets a list of all closed (merged or closed) pull requests
-2. **Fetches closed issues** - Gets a list of recently closed issues 
-3. **Identifies local branches** - Scans the local repository for Git branches
-4. **Discovers worktrees** - Reads `git worktree list` to map registered worktrees to their branches
-5. **Matches and cleans up** - For local branches that match either:
-   - Branch names that exactly match closed PR branch names
-   - Branch names following the `sandcastle/issue-{number}` pattern for closed issues
-
-   the bot then:
-   - Removes the registered git worktree for the branch (e.g. `.sandcastle/worktrees/sandcastle-issue-N`)
-   - Deletes the local branch
+1. **Identifies local branches** - Scans the local repository for Git branches
+2. **Queries GitHub per-branch** - For each branch, determines whether it is cleanable:
+   - Branches following the `sandcastle/issue-{number}` pattern are cleanable when issue `{number}` is closed (`gh issue view`)
+   - Other branches are cleanable when they are the head ref of a merged pull request (`gh pr list --head <branch> --state merged`)
+3. **Cleans up on demand** - For each cleanable branch, the bot then:
+   - Removes the registered git worktree for the branch, if any (e.g. `.sandcastle/worktrees/sandcastle-issue-N`)
    - Deletes matching log files `.sandcastle/logs/sandcastle-issue-N-*` for closed issues
+   - Deletes the local branch
+
+GitHub is queried lazily per-branch rather than fetching all closed PRs and issues upfront, and worktree/log cleanup happen on demand as part of each branch's removal.
 
 ## Usage
 

@@ -4,32 +4,7 @@ import { join, resolve } from "path";
 
 const SANDCASTLE_BRANCH_PATTERN = /^sandcastle\/issue-(\d+)$/;
 
-const WORKTREES_DIR = resolve(process.cwd(), ".sandcastle/worktrees");
-
 const LOGS_DIR = resolve(process.cwd(), ".sandcastle/logs");
-
-type ClosedPR = { number: number; headRefName: string; state: string };
-
-type ClosedIssue = { number: number; title: string; state: string };
-
-const isClosedPRArray = (value: unknown): value is ClosedPR[] =>
-  Array.isArray(value) &&
-  value.every(
-    (item): item is ClosedPR =>
-      item !== null &&
-      typeof item === "object" &&
-      typeof (item as Record<string, unknown>).number === "number" &&
-      typeof (item as Record<string, unknown>).headRefName === "string",
-  );
-
-const isClosedIssueArray = (value: unknown): value is ClosedIssue[] =>
-  Array.isArray(value) &&
-  value.every(
-    (item): item is ClosedIssue =>
-      item !== null &&
-      typeof item === "object" &&
-      typeof (item as Record<string, unknown>).number === "number",
-  );
 
 /**
  * A worktree registered with git, as reported by `git worktree list`.
@@ -38,42 +13,6 @@ const isClosedIssueArray = (value: unknown): value is ClosedIssue[] =>
  * the worktree is detached or bare.
  */
 export type RegisteredWorktree = { path: string; branch: string | null };
-
-const getClosedPRs = (): ClosedPR[] => {
-  try {
-    const output = execSync(
-      `gh pr list --state closed --limit 100 --json number,headRefName,state`,
-      { encoding: "utf-8" },
-    );
-    const parsed = JSON.parse(output);
-    if (!isClosedPRArray(parsed)) {
-      console.error("Unexpected response shape from gh pr list");
-      return [];
-    }
-    return parsed;
-  } catch (error) {
-    console.error("Failed to fetch closed PRs:", error);
-    return [];
-  }
-};
-
-const getClosedIssues = (): ClosedIssue[] => {
-  try {
-    const output = execSync(
-      `gh issue list --state closed --limit 50 --json number,title,state`,
-      { encoding: "utf-8" },
-    );
-    const parsed = JSON.parse(output);
-    if (!isClosedIssueArray(parsed)) {
-      console.error("Unexpected response shape from gh issue list");
-      return [];
-    }
-    return parsed;
-  } catch (error) {
-    console.error("Failed to fetch closed issues:", error);
-    return [];
-  }
-};
 
 const getLocalBranches = (): string[] => {
   try {
@@ -86,6 +25,58 @@ const getLocalBranches = (): string[] => {
   } catch (error) {
     console.error("Failed to fetch local branches:", error);
     return [];
+  }
+};
+
+/**
+ * Reports whether the GitHub issue with the given number is closed.
+ *
+ * Queries a single issue via `gh issue view` rather than listing all closed
+ * issues upfront. A failed query (e.g. the issue does not exist) is treated as
+ * "not closed" so the branch is preserved.
+ */
+const isIssueClosed = (issueNumber: number): boolean => {
+  try {
+    const output = execSync(`gh issue view ${issueNumber} --json state`, { encoding: "utf-8" });
+    const parsed: unknown = JSON.parse(output);
+    if (
+      parsed === null ||
+      typeof parsed !== "object" ||
+      typeof (parsed as Record<string, unknown>).state !== "string"
+    ) {
+      console.error(`Unexpected response shape from gh issue view ${issueNumber}`);
+      return false;
+    }
+    return (parsed as { state: string }).state === "CLOSED";
+  } catch (error) {
+    console.error(`Failed to query issue #${issueNumber}:`, error);
+    return false;
+  }
+};
+
+/**
+ * Reports whether the given branch is the head ref of a merged pull request.
+ *
+ * Queries `gh pr list --head <branch> --state merged` per-branch so arbitrary
+ * (non-sandcastle) local branches can be matched to their merged PRs without
+ * fetching every closed PR upfront. A failed query is treated as "no merged
+ * PR" so the branch is preserved.
+ */
+const hasMergedPR = (branch: string): boolean => {
+  try {
+    const output = execSync(
+      `gh pr list --head ${JSON.stringify(branch)} --state merged --json number`,
+      { encoding: "utf-8" },
+    );
+    const parsed: unknown = JSON.parse(output);
+    if (!Array.isArray(parsed)) {
+      console.error(`Unexpected response shape from gh pr list for branch ${branch}`);
+      return false;
+    }
+    return parsed.length > 0;
+  } catch (error) {
+    console.error(`Failed to query merged PRs for branch ${branch}:`, error);
+    return false;
   }
 };
 
@@ -122,18 +113,18 @@ export const parseWorktreePorcelain = (output: string): RegisteredWorktree[] => 
 };
 
 /**
- * Lists worktrees registered with git by running `git worktree list --porcelain`.
- *
- * The main worktree is included; callers that only care about issue worktrees
- * should filter paths under `.sandcastle/worktrees`.
+ * Finds the path of the git worktree that has the given branch checked out, or
+ * null when no registered worktree matches. Runs `git worktree list` on demand
+ * for a single branch rather than precomputing a branch-to-worktree map.
  */
-const getRegisteredWorktrees = (): RegisteredWorktree[] => {
+const findWorktreeForBranch = (branch: string): string | null => {
   try {
     const output = execSync("git worktree list --porcelain", { encoding: "utf-8" });
-    return parseWorktreePorcelain(output);
+    const worktree = parseWorktreePorcelain(output).find((wt) => wt.branch === branch);
+    return worktree ? worktree.path : null;
   } catch (error) {
-    console.error("Failed to list git worktrees:", error);
-    return [];
+    console.error(`Failed to list git worktrees for branch ${branch}:`, error);
+    return null;
   }
 };
 
@@ -208,80 +199,39 @@ export const extractIssueNumberFromBranch = (branchName: string): number | null 
 };
 
 /**
- * Warns about worktree directories under `.sandcastle/worktrees` that are not
- * registered with git (orphaned). These are intentionally left in place so the
- * bot never deletes directories git does not track.
+ * Removes the worktree, logs, and the branch itself for a single branch that
+ * has been determined to be cleanable. Worktree and log removal are performed
+ * on demand here rather than precomputed. Returns true when the branch was
+ * deleted.
  */
-const warnAboutOrphanedWorktrees = (registeredPaths: Set<string>): void => {
-  if (!existsSync(WORKTREES_DIR)) {
-    return;
+const cleanupBranch = (branch: string, issueNumber: number | null): boolean => {
+  const worktreePath = findWorktreeForBranch(branch);
+  if (worktreePath !== null) {
+    removeWorktree(worktreePath);
   }
 
-  let entries: string[];
-  try {
-    entries = readdirSync(WORKTREES_DIR);
-  } catch (error) {
-    console.error(`✗ Failed to read worktrees directory ${WORKTREES_DIR}:`, error);
-    return;
+  if (issueNumber !== null) {
+    deleteIssueLogs(issueNumber);
   }
 
-  for (const entry of entries) {
-    const entryPath = join(WORKTREES_DIR, entry);
-    if (!registeredPaths.has(entryPath)) {
-      console.warn(
-        `⚠ Skipping orphaned worktree directory not registered with git: ${entryPath}`,
-      );
-    }
-  }
+  return deleteLocalBranch(branch);
 };
 
 /**
- * Removes local branches whose associated GitHub PRs or issues have been closed,
+ * Removes local branches whose associated GitHub PRs or issues are closed,
  * along with the git worktree and log files tied to closed sandcastle issues.
  *
- * Matches branches by exact PR head ref name, or by extracting the issue number
- * from sandcastle-style branch names.
- * Preserves the `main` branch and remote-tracking branches (`origin/*`).
+ * Iterates local branches and queries GitHub per-branch: `sandcastle/issue-N`
+ * branches are cleaned when issue N is closed; other branches are cleaned when
+ * they are the head ref of a merged pull request. Worktree and log cleanup are
+ * performed on demand as part of each branch's removal.
  *
- * For a closed `sandcastle/issue-N` branch this also removes its registered
- * worktree (at `.sandcastle/worktrees/sandcastle-issue-N`) and deletes matching
- * `.sandcastle/logs/sandcastle-issue-N-*` files. Orphaned worktree directories
- * that git does not track are skipped with a warning.
+ * Preserves the `main` branch and remote-tracking branches (`origin/*`).
  */
 export const cleanupClosedBranches = (): void => {
-  console.log("Fetching closed PRs...");
-  const closedPRs = getClosedPRs();
-  console.log(`Found ${closedPRs.length} closed PRs`);
-
-  console.log("Fetching closed issues...");
-  const closedIssues = getClosedIssues();
-  console.log(`Found ${closedIssues.length} closed issues`);
-
   console.log("Fetching local branches...");
   const localBranches = getLocalBranches();
   console.log(`Found ${localBranches.length} local branches`);
-
-  console.log("Listing git worktrees...");
-  const worktrees = getRegisteredWorktrees();
-  console.log(`Found ${worktrees.length} registered worktrees`);
-
-  const worktreesByBranch = new Map<string, string>();
-  const registeredWorktreePaths = new Set<string>();
-  for (const worktree of worktrees) {
-    registeredWorktreePaths.add(worktree.path);
-    if (worktree.branch !== null) {
-      worktreesByBranch.set(worktree.branch, worktree.path);
-    }
-  }
-
-  warnAboutOrphanedWorktrees(registeredWorktreePaths);
-
-  if (localBranches.length === 0) {
-    return;
-  }
-
-  const closedBranchNames = new Set(closedPRs.map((pr) => pr.headRefName));
-  const closedIssueNumbers = new Set(closedIssues.map((issue) => issue.number));
 
   let deletedCount = 0;
 
@@ -291,30 +241,21 @@ export const cleanupClosedBranches = (): void => {
     }
 
     const issueNumber = extractIssueNumberFromBranch(branch);
-    const matchesClosedPR = closedBranchNames.has(branch);
-    const matchesClosedIssue = issueNumber !== null && closedIssueNumbers.has(issueNumber);
-
-    if (!matchesClosedPR && !matchesClosedIssue) {
-      continue;
-    }
-
-    if (matchesClosedPR) {
-      console.log(`Found local branch ${branch} for closed PR`);
-    } else {
-      console.log(`Found local branch ${branch} for closed issue #${issueNumber}`);
-    }
-
-    const worktreePath = worktreesByBranch.get(branch);
-    if (worktreePath !== undefined) {
-      removeWorktree(worktreePath);
-    }
-
-    if (deleteLocalBranch(branch)) {
-      deletedCount++;
-    }
 
     if (issueNumber !== null) {
-      deleteIssueLogs(issueNumber);
+      if (!isIssueClosed(issueNumber)) {
+        continue;
+      }
+      console.log(`Found local branch ${branch} for closed issue #${issueNumber}`);
+    } else {
+      if (!hasMergedPR(branch)) {
+        continue;
+      }
+      console.log(`Found local branch ${branch} for merged PR`);
+    }
+
+    if (cleanupBranch(branch, issueNumber)) {
+      deletedCount++;
     }
   }
 
