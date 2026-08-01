@@ -62,26 +62,26 @@ describe("Export Engine", () => {
 		{ format: "webp" as const, quality: 0.9 },
 		{ format: "jpeg" as const, quality: 0.8 },
 		{ format: "webp" as const, quality: 0.75 },
-	])("should export $format at quality $quality", async ({
-		format,
-		quality,
-	}) => {
-		const { canvasCreator, imageLoader } = setupStandardMocks();
+	])(
+		"should export $format at quality $quality",
+		async ({ format, quality }) => {
+			const { canvasCreator, imageLoader } = setupStandardMocks();
 
-		const result = await exportMosaic(
-			mosaicDataUrl,
-			100,
-			100,
-			format,
-			quality,
-			canvasCreator,
-			imageLoader,
-		);
+			const result = await exportMosaic(
+				mosaicDataUrl,
+				100,
+				100,
+				format,
+				quality,
+				canvasCreator,
+				imageLoader,
+			);
 
-		expect(result).toBe(expectedMimeTypes[format]);
-		expect(canvasCreator).toHaveBeenCalledWith(100, 100);
-		expect(imageLoader).toHaveBeenCalledWith(mosaicDataUrl);
-	});
+			expect(result).toBe(expectedMimeTypes[format]);
+			expect(canvasCreator).toHaveBeenCalledWith(100, 100);
+			expect(imageLoader).toHaveBeenCalledWith(mosaicDataUrl);
+		},
+	);
 
 	it("should ignore quality parameter for PNG exports", async () => {
 		const { canvasCreator, imageLoader } = setupStandardMocks();
