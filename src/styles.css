@@ -78,8 +78,8 @@ header > p:last-child {
 	border: none;
 	border-radius: var(--pico-border-radius);
 	cursor: pointer;
-	background-color: var(--pico-contrast-background);
-	color: var(--pico-contrast-color);
+	background-color: var(--pico-secondary-background);
+	color: var(--pico-secondary-inverse);
 	transition: background-color 0.2s;
 }
 
