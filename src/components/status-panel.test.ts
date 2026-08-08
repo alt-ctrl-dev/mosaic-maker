@@ -21,7 +21,11 @@ describe("Status Panel Styling", () => {
 		];
 
 		panelSelectors.forEach((selector) => {
-			const rulePattern = new RegExp(`${selector}\\s*\\{([^}]*)\\}`, "s");
+			const escapedSelector = selector.replace(/\./g, "\\.");
+			const rulePattern = new RegExp(
+				`${escapedSelector}\\s*\\{([^}]*)\\}`,
+				"s",
+			);
 			const match = styles.match(rulePattern);
 
 			if (match) {

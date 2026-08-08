@@ -181,9 +181,9 @@ export function ExportMosaic({ state, dispatch }: ExportMosaicProps) {
 						</button>
 
 						{error && (
-							<div className="error-message" role="alert">
+							<article className="error-message" role="alert">
 								<strong>Error:</strong> {error}
-							</div>
+							</article>
 						)}
 					</div>
 				</>
