@@ -20,7 +20,6 @@ export type Comment = {
   author: string;
   body: string;
   createdAt: string;
-  sandcastleCommand?: string;
   isReviewComment: boolean;
   /** Review comment file context (empty for issue comments) */
   file?: string;

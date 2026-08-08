@@ -32,7 +32,7 @@ const extractLinkedIssueNumbersFromPrDescription = (body: string | null): number
 // Sandcastle Agents
 // ---------------------------------------------------------------------------
 
-const createPrImplementorAgent = (sandbox: sandcastle.Sandbox, pr: PR, changeRequest: string, context: string): Agent<void> => {
+const createPrImplementorAgent = (sandbox: sandcastle.Sandbox, pr: PR, context: string): Agent<void> => {
   const run = async () => {
     await sandbox.run({
       name: "pr-implement-agent",
@@ -42,7 +42,6 @@ const createPrImplementorAgent = (sandbox: sandcastle.Sandbox, pr: PR, changeReq
         PR_NUMBER: pr.number.toString(),
         PR_TITLE: pr.title,
         PR_BRANCH: pr.headRefName,
-        CHANGE_REQUEST: changeRequest,
         CONTEXT: context
       },
       completionSignal: "<promise>COMPLETE</promise>"
@@ -64,6 +63,7 @@ const markCommentAsDone = async (comment: Comment) => {
 // Main Processing
 // ---------------------------------------------------------------------------
 
+/** Process unhandled `/sandcastle` comments on a PR by analyzing them with a plan agent and then implementing approved changes. */
 export const processPRComments = async (pr: PR, unhandledComments: Comment[], deps: Deps): Promise<void> => {
   console.log(`Processing PR #${pr.number}: ${pr.title}`);
 
@@ -74,13 +74,10 @@ export const processPRComments = async (pr: PR, unhandledComments: Comment[], de
 
   console.log(`Found ${unhandledComments.length} unhandled /sandcastle comments`);
 
-  for (const comment of unhandledComments) {
-    console.log(`Processing comment from ${comment.author}: ${comment.sandcastleCommand}`);
+  const thread: Thread = { pr, comments: unhandledComments };
 
-    const thread: Thread = {
-      pr,
-      comments: unhandledComments
-    };
+  for (const comment of unhandledComments) {
+    console.log(`Processing comment from ${comment.author}`);
 
     // Fetch linked issue context for the plan agent
     const linkedIssueNumbers = extractIssueNumbersFromPR(pr)
@@ -129,16 +126,16 @@ export const processPRComments = async (pr: PR, unhandledComments: Comment[], de
       copyToWorktree,
     });
 
-    const prImplementorAgent = createPrImplementorAgent(sandbox, pr, comment.sandcastleCommand || "", plan.context || "");
+    const prImplementorAgent = createPrImplementorAgent(sandbox, pr, plan.context || "");
 
     const reviewAgent = createReviewAgent(sandbox, pr.headRefName);
     try {
       await prImplementorAgent.run()
-      console.log("Sleeping for 5 before review...")
+      console.log("Waiting for implement agent output to flush before running review...")
       await sleep(5)
       await reviewAgent.run();
       
-      console.log("Sleeping for 5 post comment...")
+      console.log("Waiting for review agent output to flush before posting comment...")
       await sleep(5)
       const response = `${BOT_REPLY_PREFIX}\n\nI've implemented the requested change: ${plan.summary}`;
        await Promise.all([
