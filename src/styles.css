@@ -497,3 +497,9 @@ label.workflow-sidebar-close,
 		text-align: left;
 	}
 }
+
+.build-tesserae-container {
+	display: flex;
+	flex-direction: column;
+	gap: 2rem;
+}

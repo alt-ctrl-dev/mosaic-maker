@@ -11,9 +11,7 @@ import { useWorkflowReducer } from "./hooks/useWorkflowReducer";
 
 const stages = [
 	"Choose source image",
-	"Set tessera size",
-	"Choose tesserae",
-	"Review tesserae",
+	"Build tesserae",
 	"Generate and preview",
 	"Export mosaic",
 ] as const;
@@ -45,46 +43,43 @@ export function App() {
 						initialState={workflowState}
 					/>
 				);
-			case WorkflowStepEnum.SET_TESSERA_SIZE:
+			case WorkflowStepEnum.BUILD_TESSERAE:
 				return (
-					<TesseraSizeSelection
-						onSizeSelected={(size) => dispatch({ type: "sizeSelected", size })}
-						initialState={workflowState}
-					/>
-				);
-			case WorkflowStepEnum.CHOOSE_TESSERAE:
-				if (workflowState.useGeneratedTesserae) {
-					return (
-						<GeneratedTesserae
-							onTesseraeGenerated={(tesserae) =>
-								dispatch({ type: "tesseraeGenerated", tesserae })
+					<div className="build-tesserae-container">
+						<TesseraSizeSelection
+							onSizeSelected={(size) =>
+								dispatch({ type: "sizeSelected", size })
 							}
 							initialState={workflowState}
 						/>
-					);
-				}
-				return (
-					<TesseraUpload
-						onTesseraeProcessed={(tesserae) =>
-							dispatch({ type: "tesseraeProcessed", tesserae })
-						}
-						adjustedTesseraSize={resolvedTesseraSize}
-					/>
-				);
-			case WorkflowStepEnum.REVIEW_TESSERAE:
-				return (
-					<TesseraReview
-						tesserae={workflowState.tesserae}
-						onRemoveTessera={(index) =>
-							dispatch({ type: "removeTessera", index })
-						}
-						onContinue={() => dispatch({ type: "advanceFromReview" })}
-						isLowVariety={workflowState.isLowVarietyCollection}
-						varietyRecommendation={workflowState.varietyRecommendation}
-						hasAcceptedSupplementation={
-							workflowState.hasAcceptedSupplementation
-						}
-					/>
+						{workflowState.useGeneratedTesserae ? (
+							<GeneratedTesserae
+								onTesseraeGenerated={(tesserae) =>
+									dispatch({ type: "tesseraeGenerated", tesserae })
+								}
+								initialState={workflowState}
+							/>
+						) : (
+							<TesseraUpload
+								onTesseraeProcessed={(tesserae) =>
+									dispatch({ type: "tesseraeProcessed", tesserae })
+								}
+								adjustedTesseraSize={resolvedTesseraSize}
+							/>
+						)}
+						<TesseraReview
+							tesserae={workflowState.tesserae}
+							onRemoveTessera={(index) =>
+								dispatch({ type: "removeTessera", index })
+							}
+							onContinue={() => dispatch({ type: "advanceFromReview" })}
+							isLowVariety={workflowState.isLowVarietyCollection}
+							varietyRecommendation={workflowState.varietyRecommendation}
+							hasAcceptedSupplementation={
+								workflowState.hasAcceptedSupplementation
+							}
+						/>
+					</div>
 				);
 			case WorkflowStepEnum.GENERATE_AND_PREVIEW:
 				return <GenerateAndPreview state={workflowState} dispatch={dispatch} />;
