@@ -34,6 +34,27 @@ export interface PreflightResult {
 	remedy?: string;
 }
 
+/** Bytes per pixel for RGBA image data used in memory estimation. */
+const BYTES_PER_PIXEL = 4;
+
+/** Heuristic average tessera size in pixels for memory estimation. */
+const AVG_TESSERA_SIZE = 64;
+
+/** Device memory threshold (GB) separating high-memory from low-memory devices. */
+const HIGH_MEMORY_THRESHOLD_GB = 4;
+
+/** Memory limit for high-memory devices (2 GB). */
+const MEMORY_LIMIT_HIGH = 2 * 1024 * 1024 * 1024;
+
+/** Memory limit for low-memory devices (1 GB). */
+const MEMORY_LIMIT_LOW = 1 * 1024 * 1024 * 1024;
+
+/** Minimum CPU cores for acceptable mosaic generation performance. */
+const MIN_CPU_CORES = 2;
+
+/** Grid cell count above which a core-count check fires on low-core devices. */
+const GRID_CELL_CPU_THRESHOLD = 50000;
+
 /**
  * Get device capacity information from the browser.
  * Uses navigator APIs when available, with conservative defaults otherwise.
@@ -43,15 +64,12 @@ export interface PreflightResult {
 export function getDeviceCapacity(): DeviceCapacity {
 	const capacity: DeviceCapacity = {};
 
-	// deviceMemory is in GB (approximate)
 	if (typeof navigator !== "undefined" && "deviceMemory" in navigator) {
-		// Type assertion needed because deviceMemory is not part of standard Navigator interface
 		capacity.deviceMemory = (
 			navigator as Navigator & { deviceMemory?: number }
 		).deviceMemory;
 	}
 
-	// hardwareConcurrency is the number of logical CPU cores
 	if (typeof navigator !== "undefined" && "hardwareConcurrency" in navigator) {
 		capacity.hardwareConcurrency = navigator.hardwareConcurrency;
 	}
@@ -74,28 +92,18 @@ export function estimateWorkload(
 	outputWidth: number,
 	outputHeight: number,
 ): WorkloadEstimate {
-	// Estimate memory usage:
-	// - Source image pixels: width * height * 4 bytes (RGBA)
-	// - Each tessera preview: tesseraSize^2 * 4 bytes * tesseraCount
-	// - Working canvases during generation: approximately 2x source image size
-	// - Result mosaic: width * height * 4 bytes
-	const sourcePixels = outputWidth * outputHeight;
-	const sourceMemory = sourcePixels * 4;
+	// Memory model: source image + result mosaic + working canvases (~2x source)
+	// + tessera previews (estimated at AVG_TESSERA_SIZE² × BYTES_PER_PIXEL each)
+	const pixelCount = outputWidth * outputHeight;
+	const imageMemory = pixelCount * BYTES_PER_PIXEL;
+	const workingMemory = imageMemory * 2;
 
-	// Assuming tesserae are typically 64x64 pixels (reasonable average)
-	// In reality, tessera size varies, but we use a heuristic
-	const avgTesseraSize = 64;
-	const tesseraMemoryPerItem = avgTesseraSize * avgTesseraSize * 4;
+	const tesseraMemoryPerItem =
+		AVG_TESSERA_SIZE * AVG_TESSERA_SIZE * BYTES_PER_PIXEL;
 	const totalTesseraMemory = tesseraMemoryPerItem * tesseraCount;
 
-	// Working memory during generation (approx 2x source)
-	const workingMemory = sourceMemory * 2;
-
-	// Result memory
-	const resultMemory = sourcePixels * 4;
-
 	const estimatedMemoryUsage =
-		sourceMemory + totalTesseraMemory + workingMemory + resultMemory;
+		imageMemory * 2 + totalTesseraMemory + workingMemory;
 
 	return {
 		gridCellCount,
@@ -120,15 +128,11 @@ export function checkDeviceCapacity(
 	workload: WorkloadEstimate,
 	capacity: DeviceCapacity,
 ): PreflightResult {
-	// Default conservative thresholds when device info is not available
-	const memoryThreshold =
-		capacity.deviceMemory && capacity.deviceMemory >= 4
-			? 2 * 1024 * 1024 * 1024 // 2GB for high-memory devices
-			: 1 * 1024 * 1024 * 1024; // 1GB for low-memory devices
+	const isHighMemory =
+		capacity.deviceMemory !== undefined &&
+		capacity.deviceMemory >= HIGH_MEMORY_THRESHOLD_GB;
+	const memoryThreshold = isHighMemory ? MEMORY_LIMIT_HIGH : MEMORY_LIMIT_LOW;
 
-	const cpuThreshold = 2; // Minimum 2 cores
-
-	// Check memory usage
 	if (workload.estimatedMemoryUsage > memoryThreshold) {
 		const memoryMB = Math.round(workload.estimatedMemoryUsage / (1024 * 1024));
 		const thresholdMB = Math.round(memoryThreshold / (1024 * 1024));
@@ -141,25 +145,19 @@ export function checkDeviceCapacity(
 		};
 	}
 
-	// Check CPU capacity for very large workloads
 	if (
-		capacity.hardwareConcurrency &&
-		capacity.hardwareConcurrency < cpuThreshold
+		capacity.hardwareConcurrency !== undefined &&
+		capacity.hardwareConcurrency < MIN_CPU_CORES &&
+		workload.gridCellCount > GRID_CELL_CPU_THRESHOLD
 	) {
-		// Only warn about CPU for extremely large workloads
-		if (workload.gridCellCount > 50000) {
-			// Lowered threshold to make testing easier
-			return {
-				isSafe: false,
-				reason: `Device has only ${capacity.hardwareConcurrency} CPU cores, which may be insufficient for this large workload`,
-				remedy: "Try using a larger tessera size to reduce the grid cell count",
-			};
-		}
+		return {
+			isSafe: false,
+			reason: `Device has only ${capacity.hardwareConcurrency} CPU cores, which may be insufficient for this large workload`,
+			remedy: "Try using a larger tessera size to reduce the grid cell count",
+		};
 	}
 
-	return {
-		isSafe: true,
-	};
+	return { isSafe: true };
 }
 
 /**

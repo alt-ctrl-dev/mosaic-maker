@@ -11,12 +11,7 @@ import { describe, it, expect } from "vitest";
 describe("device-capacity-preflight", () => {
 	describe("estimateWorkload", () => {
 		it("should estimate memory usage correctly for a moderate workload", () => {
-			const workload = estimateWorkload(
-				1000, // 1000 grid cells
-				50, // 50 tesserae
-				800, // 800px width
-				600, // 600px height
-			);
+			const workload = estimateWorkload(1000, 50, 800, 600);
 
 			expect(workload).toEqual({
 				gridCellCount: 1000,
@@ -25,14 +20,10 @@ describe("device-capacity-preflight", () => {
 				estimatedMemoryUsage: expect.any(Number),
 			});
 
-			// Verify the calculation makes sense
-			// Source: 800*600*4 = 1,920,000 bytes
-			// Tesserae: 50 * 64*64*4 = 819,200 bytes
-			// Working: 1,920,000 * 2 = 3,840,000 bytes
-			// Result: 1,920,000 bytes
-			// Total: ~8,499,200 bytes (~8.1 MB)
-			expect(workload.estimatedMemoryUsage).toBeGreaterThan(8000000);
-			expect(workload.estimatedMemoryUsage).toBeLessThan(10000000);
+			// 800×600×4 = 1,920,000 (image) × 4 passes + 50 × 64² × 4 (tesserae)
+			// = 7,680,000 + 819,200 = 8,499,200
+			expect(workload.estimatedMemoryUsage).toBeGreaterThan(8_000_000);
+			expect(workload.estimatedMemoryUsage).toBeLessThan(10_000_000);
 		});
 
 		it("should estimate higher memory usage for larger workloads", () => {
@@ -89,7 +80,7 @@ describe("device-capacity-preflight", () => {
 		it("should reject extremely large workloads on single-core devices", () => {
 			const workload: WorkloadEstimate = {
 				...baseWorkload,
-				gridCellCount: 150000, // Very large grid
+				gridCellCount: 150_000,
 			};
 			const capacity: DeviceCapacity = {
 				deviceMemory: 8,
@@ -105,7 +96,7 @@ describe("device-capacity-preflight", () => {
 		it("should allow large workloads on multi-core devices", () => {
 			const workload: WorkloadEstimate = {
 				...baseWorkload,
-				gridCellCount: 150000, // Large grid
+				gridCellCount: 150_000,
 			};
 			const capacity: DeviceCapacity = {
 				deviceMemory: 8,
@@ -119,26 +110,19 @@ describe("device-capacity-preflight", () => {
 
 	describe("runDeviceCapacityPreflight", () => {
 		it("should return safe result for moderate workloads", () => {
-			const result = runDeviceCapacityPreflight(
-				1000, // grid cells
-				50, // tesserae
-				800, // width
-				600, // height
-				{ deviceMemory: 4, hardwareConcurrency: 2 },
-			);
+			const result = runDeviceCapacityPreflight(1000, 50, 800, 600, {
+				deviceMemory: 4,
+				hardwareConcurrency: 2,
+			});
 
 			expect(result).toEqual({ isSafe: true });
 		});
 
 		it("should return unsafe result with explanation for excessive workloads", () => {
-			// Use a case that will definitely exceed CPU limits
-			const result = runDeviceCapacityPreflight(
-				60000, // grid cells (above our 50k threshold)
-				500, // tesserae
-				3000, // width
-				2000, // height
-				{ deviceMemory: 2, hardwareConcurrency: 1 }, // 1 core should fail
-			);
+			const result = runDeviceCapacityPreflight(60_000, 500, 3000, 2000, {
+				deviceMemory: 2,
+				hardwareConcurrency: 1,
+			});
 
 			expect(result.isSafe).toBe(false);
 			expect(result.reason).toBeDefined();
