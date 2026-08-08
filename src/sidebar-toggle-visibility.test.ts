@@ -4,22 +4,17 @@ import { afterEach, beforeEach, describe, expect, it } from "vitest";
 
 const styles = readFileSync(resolve(process.cwd(), "src/styles.css"), "utf8");
 
-/**
- * A single declaration of a property that applies to an element, tagged with
- * the specificity of the winning selector and its document order so the
- * cascade can be resolved deterministically.
- */
+type Specificity = [number, number, number];
+
+/** A CSS declaration matched against an element, with the specificity and document order of the originating rule. */
 interface MatchedDeclaration {
-	specificity: [number, number, number];
+	specificity: Specificity;
 	order: number;
 	value: string;
 }
 
-/** Compare two specificity tuples: returns > 0 when `a` outranks `b`. */
-function compareSpecificity(
-	a: [number, number, number],
-	b: [number, number, number],
-): number {
+/** Compare two specificity tuples. Returns negative when `a` has lower specificity than `b`, zero when equal, positive when `a` has higher specificity. */
+function compareSpecificity(a: Specificity, b: Specificity): number {
 	for (let i = 0; i < 3; i += 1) {
 		if (a[i] !== b[i]) return a[i] - b[i];
 	}
@@ -31,7 +26,7 @@ function compareSpecificity(
  * [ids, classes, types] tuple. Handles the class, attribute, pseudo-class,
  * id and type/pseudo-element selectors used in this stylesheet.
  */
-function selectorSpecificity(selector: string): [number, number, number] {
+function selectorSpecificity(selector: string): Specificity {
 	const ids = (selector.match(/#[\w-]+/g) ?? []).length;
 	const classes =
 		(selector.match(/\.[\w-]+/g) ?? []).length +
@@ -76,18 +71,16 @@ function resolveProperty(
 
 	const visitStyleRule = (rule: CSSStyleRule) => {
 		const value = rule.style.getPropertyValue(property);
-		if (!value) {
-			order += 1;
-			return;
-		}
-		for (const selector of rule.selectorText.split(",")) {
-			const trimmed = selector.trim();
-			if (element.matches(trimmed)) {
-				matched.push({
-					specificity: selectorSpecificity(trimmed),
-					order,
-					value: value.trim(),
-				});
+		if (value) {
+			for (const selector of rule.selectorText.split(",")) {
+				const trimmed = selector.trim();
+				if (element.matches(trimmed)) {
+					matched.push({
+						specificity: selectorSpecificity(trimmed),
+						order,
+						value: value.trim(),
+					});
+				}
 			}
 		}
 		order += 1;
