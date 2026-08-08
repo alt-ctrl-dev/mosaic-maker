@@ -1,3 +1,4 @@
+/** Source image data received from the main thread. */
 interface WorkerSourceImage {
 	width: number;
 	height: number;
@@ -5,6 +6,7 @@ interface WorkerSourceImage {
 	orientation: number;
 }
 
+/** Tessera data received from the main thread. */
 interface WorkerTessera {
 	file: unknown;
 	fileName: string;
@@ -14,6 +16,7 @@ interface WorkerTessera {
 	previewUrl: string | null;
 }
 
+/** Request to start mosaic generation. */
 interface GenerateMosaicRequest {
 	type: "generate";
 	sourceImage: WorkerSourceImage;
@@ -21,15 +24,15 @@ interface GenerateMosaicRequest {
 	tesseraSize: number;
 }
 
+/** Request to cancel in-progress generation. */
 interface CancelRequest {
 	type: "cancel";
 }
 
+/** Union of all messages the worker accepts. */
 type WorkerMessage = GenerateMosaicRequest | CancelRequest;
 
 let isCancelled = false;
-
-// ──── colour types and utilities ──────────────────────────────────────────
 
 interface RGB {
 	r: number;
@@ -37,6 +40,7 @@ interface RGB {
 	b: number;
 }
 
+/** Perceptually uniform OKLab color. */
 interface Oklab {
 	L: number;
 	a: number;
@@ -57,12 +61,11 @@ const COLOR_GRID_SIZE = 3;
 const BLEND_SOURCE_ALPHA = 0.25;
 const ALTERNATIVE_TOLERANCE = 1.1;
 
-// ──── canvas and image utilities ──────────────────────────────────────────
-
 function createCanvas(width: number, height: number): OffscreenCanvas {
 	return new OffscreenCanvas(width, height);
 }
 
+/** Load an image from a data URL into an ImageBitmap. */
 async function loadImage(dataUrl: string): Promise<ImageBitmap> {
 	try {
 		const response = await fetch(dataUrl);
@@ -73,14 +76,24 @@ async function loadImage(dataUrl: string): Promise<ImageBitmap> {
 	}
 }
 
-// ──── colour space conversion ─────────────────────────────────────────────
+/** Convert a Blob to a base64 data URL using FileReader. */
+async function blobToDataUrl(blob: Blob): Promise<string> {
+	return new Promise((resolve, reject) => {
+		const reader = new FileReader();
+		reader.onload = () => resolve(reader.result as string);
+		reader.onerror = () => reject(new Error("Failed to read blob as data URL"));
+		reader.readAsDataURL(blob);
+	});
+}
 
+/** Apply sRGB gamma linearization. */
 function linearize(channel: number): number {
 	return channel <= 0.04045
 		? channel / 12.92
 		: ((channel + 0.055) / 1.055) ** 2.4;
 }
 
+/** Convert an sRGB color to OKLab. */
 function rgbToOklab(rgb: RGB): Oklab {
 	const r = rgb.r / 255;
 	const g = rgb.g / 255;
@@ -105,6 +118,7 @@ function rgbToOklab(rgb: RGB): Oklab {
 	};
 }
 
+/** Euclidean distance between two OKLab colors (perceptually uniform). */
 function oklabDistance(a: Oklab, b: Oklab): number {
 	const deltaL = a.L - b.L;
 	const deltaA = a.a - b.a;
@@ -112,6 +126,7 @@ function oklabDistance(a: Oklab, b: Oklab): number {
 	return Math.sqrt(deltaL * deltaL + deltaA * deltaA + deltaB * deltaB);
 }
 
+/** Average perceptual distance between two color grids. */
 function averageGridDistance(grid1: ColorGrid, grid2: ColorGrid): number {
 	if (
 		grid1.colors.length !== grid2.colors.length ||
@@ -138,6 +153,11 @@ function averageGridDistance(grid1: ColorGrid, grid2: ColorGrid): number {
 
 // ──── tessera selection ───────────────────────────────────────────────────
 
+/**
+ * Choose the best tessera for a cell, preferring the closest color match but
+ * avoiding the tesserae used directly above and to the left when an alternative
+ * is within {@link ALTERNATIVE_TOLERANCE} of the best score.
+ */
 function selectTessera(
 	cellGrid: ColorGrid,
 	processedTesserae: ProcessedTessera[],
@@ -181,8 +201,7 @@ function selectTessera(
 	return bestIndex;
 }
 
-// ──── sampling and rendering ──────────────────────────────────────────────
-
+/** Downsample a region of a canvas to a 3×3 OKLab color grid. */
 function sampleColorGrid(
 	source: OffscreenCanvas,
 	offsetX: number,
@@ -266,8 +285,7 @@ async function createCanvasFromSource(
 	return canvas;
 }
 
-// ──── mosaic generation ───────────────────────────────────────────────────
-
+/** Fill the result canvas cell by cell, reporting progress. */
 async function generateMosaicCanvas(
 	sourceCanvas: OffscreenCanvas,
 	processedTesserae: ProcessedTessera[],
@@ -297,10 +315,10 @@ async function generateMosaicCanvas(
 			if (isCancelled) return resultCanvas;
 
 			if (cellCount % Math.max(1, Math.floor(totalCells / 20)) === 0) {
-				const percent = 70 + Math.round((cellCount / totalCells) * 25);
+				const progressPercent = 70 + Math.round((cellCount / totalCells) * 20);
 				self.postMessage({
 					type: "progress",
-					percent,
+					percent: progressPercent,
 					message: `Generating cell ${cellCount + 1} of ${totalCells}...`,
 				});
 			}
@@ -343,24 +361,22 @@ async function generateMosaicCanvas(
 		}
 	}
 
-	if (!isCancelled) {
-		self.postMessage({
-			type: "progress",
-			percent: 95,
-			message: "Finalizing mosaic...",
-		});
-	}
-
 	return resultCanvas;
 }
 
+/**
+ * Generate a placeholder mosaic (checkerboard pattern) when no valid tesserae
+ * are available. Returns a data URL so no object URL cleanup is needed.
+ */
 async function generatePlaceholderMosaic(
 	width: number,
 	height: number,
 ): Promise<string> {
 	const canvas = createCanvas(width, height);
 	const ctx = canvas.getContext("2d");
-	if (!ctx) return "data:image/png;base64,placeholder";
+	if (!ctx) {
+		return "data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAYAAAAfFcSJAAAADUlEQVR42mNk+M9QDwADhgGAWjR9awAAAABJRU5ErkJggg==";
+	}
 
 	ctx.fillStyle = "#f0f0f0";
 	ctx.fillRect(0, 0, width, height);
@@ -374,7 +390,7 @@ async function generatePlaceholderMosaic(
 	}
 
 	const blob = await canvas.convertToBlob({ type: "image/png" });
-	return URL.createObjectURL(blob);
+	return blobToDataUrl(blob);
 }
 
 async function generateMosaicWithProgress(
@@ -399,8 +415,6 @@ async function generateMosaicWithProgress(
 		);
 		return { dataUrl, width: sourceImage.width, height: sourceImage.height };
 	}
-
-	if (isCancelled) return { dataUrl: "", width: 0, height: 0 };
 
 	self.postMessage({
 		type: "progress",
@@ -457,12 +471,16 @@ async function generateMosaicWithProgress(
 		message: "Creating final image...",
 	});
 	const blob = await resultCanvas.convertToBlob({ type: "image/png" });
-	const dataUrl = URL.createObjectURL(blob);
+	const dataUrl = await blobToDataUrl(blob);
+
+	self.postMessage({
+		type: "progress",
+		percent: 100,
+		message: "Mosaic complete",
+	});
 
 	return { dataUrl, width: sourceImage.width, height: sourceImage.height };
 }
-
-// ──── message handler ─────────────────────────────────────────────────────
 
 self.onmessage = async (event: MessageEvent<WorkerMessage>) => {
 	const message = event.data;

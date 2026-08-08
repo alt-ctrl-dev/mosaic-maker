@@ -88,8 +88,9 @@ export function GenerateAndPreview({
 						case "progress":
 							setProgress({ percent: data.percent, message: data.message });
 							break;
-						case "result":
-							if (data.dataUrl) {
+						case "result": {
+							const success = Boolean(data.dataUrl);
+							if (success) {
 								setPreviewUrl(data.dataUrl);
 								setPreviewDimensions({
 									width: data.width,
@@ -109,6 +110,7 @@ export function GenerateAndPreview({
 							setIsGenerating(false);
 							terminateWorker();
 							break;
+						}
 						case "error":
 							setError(data.message);
 							dispatch({ type: "generationCancelledOrFailed" });
