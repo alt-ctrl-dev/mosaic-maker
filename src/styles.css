@@ -44,7 +44,6 @@ header > p:last-child {
 	padding-right: 1rem;
 }
 
-/* Rail/Drawer Navigation */
 .workflow-sidebar-toggle {
 	display: none;
 }
@@ -222,16 +221,7 @@ header > p:last-child {
 	}
 
 	.workflow-step-button {
-		flex-direction: row;
-		align-items: center;
-		text-align: left;
 		padding: 1rem;
-		margin-bottom: 0.5rem;
-	}
-
-	.step-indicator {
-		margin-right: 0.75rem;
-		margin-bottom: 0;
 	}
 
 	.step-title {

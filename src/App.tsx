@@ -1,3 +1,4 @@
+import { useRef } from "react";
 import { SourceImageSelection } from "./components/SourceImageSelection";
 import { TesseraSizeSelection } from "./components/TesseraSizeSelection";
 import { TesseraUpload } from "./components/TesseraUpload";
@@ -25,6 +26,7 @@ const DEFAULT_TESSERA_SIZE = 16;
  */
 export function App() {
 	const [workflowState, dispatch] = useWorkflowReducer();
+	const sidebarToggleRef = useRef<HTMLInputElement>(null);
 
 	const resolvedTesseraSize =
 		workflowState.adjustedTesseraSize ?? DEFAULT_TESSERA_SIZE;
@@ -106,6 +108,7 @@ export function App() {
 
 			<main className="workflow-container">
 				<input
+					ref={sidebarToggleRef}
 					type="checkbox"
 					id="workflow-sidebar-toggle"
 					className="workflow-sidebar-toggle"
@@ -121,12 +124,11 @@ export function App() {
 					className="workflow-sidebar-scrim"
 					aria-hidden="true"
 					onClick={() => {
-						const toggle = document.getElementById(
-							"workflow-sidebar-toggle",
-						) as HTMLInputElement | null;
-						if (toggle) toggle.checked = false;
+						if (sidebarToggleRef.current) {
+							sidebarToggleRef.current.checked = false;
+						}
 					}}
-				></div>
+				/>
 				<aside className="workflow-sidebar" aria-label="Workflow steps">
 					<label
 						htmlFor="workflow-sidebar-toggle"
