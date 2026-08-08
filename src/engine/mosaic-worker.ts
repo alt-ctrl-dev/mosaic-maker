@@ -1,20 +1,23 @@
-// Worker message types
+interface WorkerSourceImage {
+	width: number;
+	height: number;
+	url: string;
+	orientation: number;
+}
+
+interface WorkerTessera {
+	file: unknown;
+	fileName: string;
+	isValid: boolean;
+	error: string | null;
+	isLowResolution: boolean;
+	previewUrl: string | null;
+}
+
 interface GenerateMosaicRequest {
 	type: "generate";
-	sourceImage: {
-		width: number;
-		height: number;
-		url: string;
-		orientation: number;
-	};
-	tesserae: Array<{
-		file: any;
-		fileName: string;
-		isValid: boolean;
-		error: string | null;
-		isLowResolution: boolean;
-		previewUrl: string | null;
-	}>;
+	sourceImage: WorkerSourceImage;
+	tesserae: WorkerTessera[];
 	tesseraSize: number;
 }
 
@@ -22,31 +25,12 @@ interface CancelRequest {
 	type: "cancel";
 }
 
-interface ProgressUpdate {
-	type: "progress";
-	percent: number;
-	message: string;
-}
-
-interface ResultMessage {
-	type: "result";
-	dataUrl: string;
-	width: number;
-	height: number;
-}
-
-interface ErrorMessage {
-	type: "error";
-	message: string;
-}
-
 type WorkerMessage = GenerateMosaicRequest | CancelRequest;
-type WorkerResponse = ProgressUpdate | ResultMessage | ErrorMessage;
 
-// Global state for cancellation
 let isCancelled = false;
 
-// RGB and Oklab interfaces (copied from mosaic-engine.ts)
+// ──── colour types and utilities ──────────────────────────────────────────
+
 interface RGB {
 	r: number;
 	g: number;
@@ -64,106 +48,39 @@ interface ColorGrid {
 }
 
 interface ProcessedTessera {
-	info: {
-		file: any;
-		fileName: string;
-		isValid: boolean;
-		error: string | null;
-		isLowResolution: boolean;
-		previewUrl: string | null;
-	};
+	info: WorkerTessera;
 	colorGrid: ColorGrid;
-	canvas: any; // OffscreenCanvas or ImageBitmap
+	canvas: OffscreenCanvas;
 }
 
-// Constants (copied from mosaic-engine.ts)
 const COLOR_GRID_SIZE = 3;
 const BLEND_SOURCE_ALPHA = 0.25;
 const ALTERNATIVE_TOLERANCE = 1.1;
 
-// Create an OffscreenCanvas or fallback canvas
-function createCanvas(
-	width: number,
-	height: number,
-):
-	| any
-	| OffscreenCanvas
-	| {
-			width: number;
-			height: number;
-			getContext: () => any;
-			convertToBlob?: () => Promise<Blob>;
-			toDataURL?: () => string;
-	  } {
-	if (typeof OffscreenCanvas !== "undefined") {
-		return new OffscreenCanvas(width, height);
-	} else {
-		// Fallback for browsers without OffscreenCanvas
-		const canvas: any = {
-			width,
-			height,
-			getContext: () => {
-				return {
-					fillStyle: "",
-					fillRect: () => {},
-					drawImage: () => {},
-					getImageData: () => ({
-						data: new Uint8ClampedArray(width * height * 4),
-						width,
-						height,
-					}),
-					globalAlpha: 1,
-					globalCompositeOperation: "source-over",
-				};
-			},
-			convertToBlob: () => Promise.resolve(new Blob()),
-			toDataURL: () => "data:image/png;base64,placeholder",
-		};
-		return canvas;
+// ──── canvas and image utilities ──────────────────────────────────────────
+
+function createCanvas(width: number, height: number): OffscreenCanvas {
+	return new OffscreenCanvas(width, height);
+}
+
+async function loadImage(dataUrl: string): Promise<ImageBitmap> {
+	try {
+		const response = await fetch(dataUrl);
+		const blob = await response.blob();
+		return createImageBitmap(blob);
+	} catch (error) {
+		throw new Error(`Failed to load image: ${error}`);
 	}
 }
 
-// Load image as ImageBitmap in worker environment
-async function loadImage(
-	dataUrl: string,
-): Promise<any | ImageBitmap | { width: number; height: number }> {
-	if (
-		typeof fetch !== "undefined" &&
-		typeof createImageBitmap !== "undefined"
-	) {
-		try {
-			const response = await fetch(dataUrl);
-			const blob = await response.blob();
-			return await createImageBitmap(blob);
-		} catch (error) {
-			throw new Error(`Failed to load image: ${error}`);
-		}
-	} else {
-		// Fallback for environments without fetch or createImageBitmap
-		return Promise.resolve({
-			width: 100,
-			height: 100,
-		});
-	}
+// ──── colour space conversion ─────────────────────────────────────────────
+
+function linearize(channel: number): number {
+	return channel <= 0.04045
+		? channel / 12.92
+		: ((channel + 0.055) / 1.055) ** 2.4;
 }
 
-// Post message back to main thread
-function postMessage(message: WorkerResponse) {
-	self.postMessage(message);
-}
-
-// Report progress during generation
-function reportProgress(percent: number, message: string) {
-	if (!isCancelled) {
-		postMessage({
-			type: "progress",
-			percent,
-			message,
-		});
-	}
-}
-
-// Convert an sRGB color to the perceptually uniform OKLab color space.
 function rgbToOklab(rgb: RGB): Oklab {
 	const r = rgb.r / 255;
 	const g = rgb.g / 255;
@@ -188,23 +105,13 @@ function rgbToOklab(rgb: RGB): Oklab {
 	};
 }
 
-// Apply sRGB gamma linearization.
-function linearize(channel: number): number {
-	return channel <= 0.04045
-		? channel / 12.92
-		: ((channel + 0.055) / 1.055) ** 2.4;
-}
-
-// Calculate the Euclidean distance between two OKLab colors.
 function oklabDistance(a: Oklab, b: Oklab): number {
 	const deltaL = a.L - b.L;
 	const deltaA = a.a - b.a;
 	const deltaB = a.b - b.b;
-
 	return Math.sqrt(deltaL * deltaL + deltaA * deltaA + deltaB * deltaB);
 }
 
-// Calculate the average perceptual distance between two color grids.
 function averageGridDistance(grid1: ColorGrid, grid2: ColorGrid): number {
 	if (
 		grid1.colors.length !== grid2.colors.length ||
@@ -229,9 +136,8 @@ function averageGridDistance(grid1: ColorGrid, grid2: ColorGrid): number {
 	return totalDistance / count;
 }
 
-// Choose the tessera for a cell, preferring the closest colour match but
-// avoiding the tesserae used directly above and to the left when an
-// alternative is within tolerance of the best score.
+// ──── tessera selection ───────────────────────────────────────────────────
+
 function selectTessera(
 	cellGrid: ColorGrid,
 	processedTesserae: ProcessedTessera[],
@@ -275,9 +181,10 @@ function selectTessera(
 	return bestIndex;
 }
 
-// Downsample a rectangular region of a canvas to a COLOR_GRID_SIZE×COLOR_GRID_SIZE OKLab color grid.
+// ──── sampling and rendering ──────────────────────────────────────────────
+
 function sampleColorGrid(
-	source: any, // Canvas or OffscreenCanvas
+	source: OffscreenCanvas,
 	offsetX: number,
 	offsetY: number,
 	regionWidth: number,
@@ -301,33 +208,22 @@ function sampleColorGrid(
 		COLOR_GRID_SIZE,
 	);
 
-	// For OffscreenCanvas, we need to handle ImageData differently
-	let data: Uint8ClampedArray | number[];
-	if (tempCtx.getImageData) {
-		const imageData = tempCtx.getImageData(
-			0,
-			0,
-			COLOR_GRID_SIZE,
-			COLOR_GRID_SIZE,
-		);
-		data = imageData.data;
-	} else {
-		// Fallback for simplified canvas mock
-		data = new Uint8ClampedArray(COLOR_GRID_SIZE * COLOR_GRID_SIZE * 4);
-	}
+	const imageData = tempCtx.getImageData(
+		0,
+		0,
+		COLOR_GRID_SIZE,
+		COLOR_GRID_SIZE,
+	);
+	const { data } = imageData;
 
 	const colors: Oklab[][] = [];
-
 	for (let rowIndex = 0; rowIndex < COLOR_GRID_SIZE; rowIndex++) {
 		const row: Oklab[] = [];
 		for (let colIndex = 0; colIndex < COLOR_GRID_SIZE; colIndex++) {
 			const idx = (rowIndex * COLOR_GRID_SIZE + colIndex) * 4;
-			const rgb: RGB = {
-				r: data[idx],
-				g: data[idx + 1],
-				b: data[idx + 2],
-			};
-			row.push(rgbToOklab(rgb));
+			row.push(
+				rgbToOklab({ r: data[idx], g: data[idx + 1], b: data[idx + 2] }),
+			);
 		}
 		colors.push(row);
 	}
@@ -335,18 +231,10 @@ function sampleColorGrid(
 	return { colors };
 }
 
-// Render a tessera's preview image onto a square canvas at the mosaic's tessera size.
 async function renderTessera(
-	tessera: {
-		file: any;
-		fileName: string;
-		isValid: boolean;
-		error: string | null;
-		isLowResolution: boolean;
-		previewUrl: string | null;
-	},
+	tessera: WorkerTessera,
 	tesseraSize: number,
-): Promise<any | OffscreenCanvas> {
+): Promise<OffscreenCanvas> {
 	if (!tessera.previewUrl) {
 		throw new Error(`Tessera "${tessera.fileName}" has no preview image`);
 	}
@@ -363,8 +251,9 @@ async function renderTessera(
 	return canvas;
 }
 
-// Draw the source image onto a canvas at its natural size
-async function createCanvasFromSource(sourceImage: any): Promise<any> {
+async function createCanvasFromSource(
+	sourceImage: WorkerSourceImage,
+): Promise<OffscreenCanvas> {
 	const canvas = createCanvas(sourceImage.width, sourceImage.height);
 	const ctx = canvas.getContext("2d");
 	if (!ctx) {
@@ -377,123 +266,13 @@ async function createCanvasFromSource(sourceImage: any): Promise<any> {
 	return canvas;
 }
 
-// Modified generateMosaic function for worker use with progress reporting
-async function generateMosaicWithProgress(
-	sourceImage: any,
-	tesserae: any[],
-	tesseraSize: number,
-): Promise<{ dataUrl: string; width: number; height: number }> {
-	if (tesseraSize <= 0) {
-		throw new Error("Tessera size must be positive");
-	}
+// ──── mosaic generation ───────────────────────────────────────────────────
 
-	if (sourceImage.width <= 0 || sourceImage.height <= 0) {
-		throw new Error("Source image dimensions must be positive");
-	}
-
-	const validTesserae = tesserae.filter((t) => t.isValid);
-
-	if (validTesserae.length === 0) {
-		const canvas = createCanvas(sourceImage.width, sourceImage.height);
-		const ctx = canvas.getContext("2d");
-		if (ctx) {
-			ctx.fillStyle = "#f0f0f0";
-			ctx.fillRect(0, 0, sourceImage.width, sourceImage.height);
-
-			ctx.fillStyle = "#cccccc";
-			for (let y = 0; y < sourceImage.height; y += 20) {
-				const rowOffset = (y / 20) % 2 === 0 ? 0 : 10;
-				for (let x = rowOffset; x < sourceImage.width; x += 20) {
-					ctx.fillRect(x, y, 10, 10);
-				}
-			}
-		}
-
-		let dataUrl = "";
-		if (canvas.convertToBlob) {
-			const blob = await canvas.convertToBlob({ type: "image/png" });
-			dataUrl = URL.createObjectURL(blob);
-		} else {
-			dataUrl = "data:image/png;base64,placeholder";
-		}
-
-		return {
-			dataUrl,
-			width: sourceImage.width,
-			height: sourceImage.height,
-		};
-	}
-
-	if (isCancelled) return { dataUrl: "", width: 0, height: 0 };
-
-	reportProgress(10, "Loading source image...");
-	const sourceCanvas = await createCanvasFromSource(sourceImage);
-
-	if (isCancelled) return { dataUrl: "", width: 0, height: 0 };
-
-	reportProgress(30, "Processing tesserae...");
-	const processedTesserae = [];
-	for (let i = 0; i < validTesserae.length; i++) {
-		if (isCancelled) return { dataUrl: "", width: 0, height: 0 };
-
-		const tessera = validTesserae[i];
-		const canvas = await renderTessera(tessera, tesseraSize);
-
-		// Create color grid for the tessera
-		const colorGrid = sampleColorGrid(canvas, 0, 0, tesseraSize, tesseraSize);
-
-		processedTesserae.push({
-			info: tessera,
-			canvas,
-			colorGrid,
-		});
-
-		// Report progress based on tessera processing
-		const progress = 30 + (i / validTesserae.length) * 30;
-		if (i % 5 === 0) {
-			// Report every 5 tesserae to avoid excessive messages
-			reportProgress(
-				Math.round(progress),
-				`Processed ${i + 1} of ${validTesserae.length} tesserae`,
-			);
-		}
-	}
-
-	if (isCancelled) return { dataUrl: "", width: 0, height: 0 };
-
-	reportProgress(70, "Generating mosaic...");
-	const resultCanvas = await generateMosaicCanvas(
-		sourceCanvas,
-		processedTesserae,
-		tesseraSize,
-	);
-
-	if (isCancelled) return { dataUrl: "", width: 0, height: 0 };
-
-	reportProgress(90, "Creating final image...");
-	let dataUrl = "";
-	if (resultCanvas.convertToBlob) {
-		const blob = await resultCanvas.convertToBlob({ type: "image/png" });
-		dataUrl = URL.createObjectURL(blob);
-	} else if (resultCanvas.toDataURL) {
-		dataUrl = resultCanvas.toDataURL("image/png");
-	} else {
-		dataUrl = "data:image/png;base64,generated";
-	}
-
-	return {
-		dataUrl,
-		width: sourceImage.width,
-		height: sourceImage.height,
-	};
-}
-
-// Fill the result canvas by matching each source-grid cell to the best tessera
 async function generateMosaicCanvas(
-	sourceCanvas: any,
+	sourceCanvas: OffscreenCanvas,
 	processedTesserae: ProcessedTessera[],
 	tesseraSize: number,
-): Promise<any> {
+): Promise<OffscreenCanvas> {
 	const resultCanvas = createCanvas(sourceCanvas.width, sourceCanvas.height);
 	const resultCtx = resultCanvas.getContext("2d");
 	if (!resultCtx) {
@@ -519,14 +298,14 @@ async function generateMosaicCanvas(
 
 			if (cellCount % Math.max(1, Math.floor(totalCells / 20)) === 0) {
 				const percent = 70 + Math.round((cellCount / totalCells) * 25);
-				reportProgress(
+				self.postMessage({
+					type: "progress",
 					percent,
-					`Generating cell ${cellCount + 1} of ${totalCells}...`,
-				);
+					message: `Generating cell ${cellCount + 1} of ${totalCells}...`,
+				});
 			}
 			cellCount++;
 
-			// Sample the color grid for this cell
 			const cellGrid = sampleColorGrid(
 				sourceCanvas,
 				x,
@@ -535,7 +314,6 @@ async function generateMosaicCanvas(
 				tesseraSize,
 			);
 
-			// Select the best tessera for this cell
 			const bestMatchIndex = selectTessera(
 				cellGrid,
 				processedTesserae,
@@ -545,8 +323,6 @@ async function generateMosaicCanvas(
 
 			tesseraGrid[gridY][gridX] = bestMatchIndex;
 
-			// Draw the tessera opaquely first, then blend the source over it at 25%,
-			// giving each mosaic pixel exactly 75% tessera / 25% source.
 			resultCtx.globalAlpha = 1;
 			resultCtx.drawImage(processedTesserae[bestMatchIndex].canvas, x, y);
 
@@ -568,13 +344,126 @@ async function generateMosaicCanvas(
 	}
 
 	if (!isCancelled) {
-		reportProgress(95, "Finalizing mosaic...");
+		self.postMessage({
+			type: "progress",
+			percent: 95,
+			message: "Finalizing mosaic...",
+		});
 	}
 
 	return resultCanvas;
 }
 
-// Handle messages from main thread
+async function generatePlaceholderMosaic(
+	width: number,
+	height: number,
+): Promise<string> {
+	const canvas = createCanvas(width, height);
+	const ctx = canvas.getContext("2d");
+	if (!ctx) return "data:image/png;base64,placeholder";
+
+	ctx.fillStyle = "#f0f0f0";
+	ctx.fillRect(0, 0, width, height);
+
+	ctx.fillStyle = "#cccccc";
+	for (let y = 0; y < height; y += 20) {
+		const rowOffset = (y / 20) % 2 === 0 ? 0 : 10;
+		for (let x = rowOffset; x < width; x += 20) {
+			ctx.fillRect(x, y, 10, 10);
+		}
+	}
+
+	const blob = await canvas.convertToBlob({ type: "image/png" });
+	return URL.createObjectURL(blob);
+}
+
+async function generateMosaicWithProgress(
+	sourceImage: WorkerSourceImage,
+	tesserae: WorkerTessera[],
+	tesseraSize: number,
+): Promise<{ dataUrl: string; width: number; height: number }> {
+	if (tesseraSize <= 0) {
+		throw new Error("Tessera size must be positive");
+	}
+
+	if (sourceImage.width <= 0 || sourceImage.height <= 0) {
+		throw new Error("Source image dimensions must be positive");
+	}
+
+	const validTesserae = tesserae.filter((t) => t.isValid);
+
+	if (validTesserae.length === 0) {
+		const dataUrl = await generatePlaceholderMosaic(
+			sourceImage.width,
+			sourceImage.height,
+		);
+		return { dataUrl, width: sourceImage.width, height: sourceImage.height };
+	}
+
+	if (isCancelled) return { dataUrl: "", width: 0, height: 0 };
+
+	self.postMessage({
+		type: "progress",
+		percent: 10,
+		message: "Loading source image...",
+	});
+	const sourceCanvas = await createCanvasFromSource(sourceImage);
+
+	if (isCancelled) return { dataUrl: "", width: 0, height: 0 };
+
+	self.postMessage({
+		type: "progress",
+		percent: 30,
+		message: "Processing tesserae...",
+	});
+	const processedTesserae: ProcessedTessera[] = [];
+	for (let i = 0; i < validTesserae.length; i++) {
+		if (isCancelled) return { dataUrl: "", width: 0, height: 0 };
+
+		const tessera = validTesserae[i];
+		const canvas = await renderTessera(tessera, tesseraSize);
+		const colorGrid = sampleColorGrid(canvas, 0, 0, tesseraSize, tesseraSize);
+
+		processedTesserae.push({ info: tessera, canvas, colorGrid });
+
+		if (i % 5 === 0) {
+			const progress = 30 + (i / validTesserae.length) * 30;
+			self.postMessage({
+				type: "progress",
+				percent: Math.round(progress),
+				message: `Processed ${i + 1} of ${validTesserae.length} tesserae`,
+			});
+		}
+	}
+
+	if (isCancelled) return { dataUrl: "", width: 0, height: 0 };
+
+	self.postMessage({
+		type: "progress",
+		percent: 70,
+		message: "Generating mosaic...",
+	});
+	const resultCanvas = await generateMosaicCanvas(
+		sourceCanvas,
+		processedTesserae,
+		tesseraSize,
+	);
+
+	if (isCancelled) return { dataUrl: "", width: 0, height: 0 };
+
+	self.postMessage({
+		type: "progress",
+		percent: 90,
+		message: "Creating final image...",
+	});
+	const blob = await resultCanvas.convertToBlob({ type: "image/png" });
+	const dataUrl = URL.createObjectURL(blob);
+
+	return { dataUrl, width: sourceImage.width, height: sourceImage.height };
+}
+
+// ──── message handler ─────────────────────────────────────────────────────
+
 self.onmessage = async (event: MessageEvent<WorkerMessage>) => {
 	const message = event.data;
 
@@ -584,9 +473,8 @@ self.onmessage = async (event: MessageEvent<WorkerMessage>) => {
 			break;
 
 		case "generate":
+			isCancelled = false;
 			try {
-				isCancelled = false;
-
 				const result = await generateMosaicWithProgress(
 					message.sourceImage,
 					message.tesserae,
@@ -594,14 +482,14 @@ self.onmessage = async (event: MessageEvent<WorkerMessage>) => {
 				);
 
 				if (isCancelled) {
-					postMessage({
+					self.postMessage({
 						type: "result",
 						dataUrl: "",
 						width: 0,
 						height: 0,
 					});
 				} else {
-					postMessage({
+					self.postMessage({
 						type: "result",
 						dataUrl: result.dataUrl,
 						width: result.width,
@@ -609,7 +497,7 @@ self.onmessage = async (event: MessageEvent<WorkerMessage>) => {
 					});
 				}
 			} catch (error) {
-				postMessage({
+				self.postMessage({
 					type: "error",
 					message:
 						error instanceof Error ? error.message : "Unknown error occurred",

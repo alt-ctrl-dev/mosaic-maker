@@ -116,7 +116,6 @@ export async function generateMosaic(
 	const processedTesserae = [];
 	for (let i = 0; i < validTesserae.length; i++) {
 		if (progressCallback && i % 5 === 0) {
-			// Report progress every 5 tesserae
 			const percent = 10 + Math.round((i / validTesserae.length) * 40);
 			progressCallback(
 				percent,

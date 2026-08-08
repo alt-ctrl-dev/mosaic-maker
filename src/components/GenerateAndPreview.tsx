@@ -1,4 +1,4 @@
-import { useState, useEffect, useRef } from "react";
+import { useState, useEffect, useRef, useCallback } from "react";
 import type { WorkflowState } from "../engine/workflow-state";
 import { generateMosaic, type ProgressCallback } from "../engine/mosaic-engine";
 import type { WorkflowAction } from "../hooks/useWorkflowReducer";
@@ -41,6 +41,13 @@ export function GenerateAndPreview({
 	const beforeUnloadRef = useRef(onBeforeUnload);
 	const workerRef = useRef<Worker | null>(null);
 
+	const terminateWorker = useCallback(() => {
+		if (workerRef.current) {
+			workerRef.current.terminate();
+			workerRef.current = null;
+		}
+	}, []);
+
 	useEffect(() => {
 		if (isGenerating) {
 			window.addEventListener("beforeunload", beforeUnloadRef.current);
@@ -50,12 +57,9 @@ export function GenerateAndPreview({
 
 		return () => {
 			window.removeEventListener("beforeunload", beforeUnloadRef.current);
-			// Clean up worker on unmount
-			if (workerRef.current) {
-				workerRef.current.terminate();
-			}
+			terminateWorker();
 		};
-	}, [isGenerating]);
+	}, [isGenerating, terminateWorker]);
 
 	const handleGenerate = async () => {
 		if (!state.sourceImage || !state.adjustedTesseraSize) {
@@ -69,17 +73,14 @@ export function GenerateAndPreview({
 		setPreviewUrl(null);
 		setPreviewDimensions(null);
 
-		// Try to use Web Worker if available
 		if (typeof Worker !== "undefined") {
 			try {
-				// Create Web Worker
 				const workerUrl = new URL(
 					"../engine/mosaic-worker.ts",
 					import.meta.url,
 				);
 				workerRef.current = new Worker(workerUrl, { type: "module" });
 
-				// Handle messages from worker
 				workerRef.current.onmessage = (event) => {
 					const { type, ...data } = event.data;
 
@@ -103,28 +104,20 @@ export function GenerateAndPreview({
 									},
 								});
 							} else {
-								// Generation was cancelled
 								dispatch({ type: "generationCancelledOrFailed" });
 							}
 							setIsGenerating(false);
-							if (workerRef.current) {
-								workerRef.current.terminate();
-								workerRef.current = null;
-							}
+							terminateWorker();
 							break;
 						case "error":
 							setError(data.message);
 							dispatch({ type: "generationCancelledOrFailed" });
 							setIsGenerating(false);
-							if (workerRef.current) {
-								workerRef.current.terminate();
-								workerRef.current = null;
-							}
+							terminateWorker();
 							break;
 					}
 				};
 
-				// Send generation request to worker
 				workerRef.current.postMessage({
 					type: "generate",
 					sourceImage: state.sourceImage,
@@ -132,37 +125,35 @@ export function GenerateAndPreview({
 					tesseraSize: state.adjustedTesseraSize,
 				});
 			} catch (err) {
-				// Fallback to main thread generation if worker fails
 				console.warn(
 					"Web Worker not supported or failed, falling back to main thread",
 					err,
 				);
-				await generateOnMainThread();
+				await generateOnMainThread(
+					state.sourceImage,
+					state.adjustedTesseraSize,
+				);
 			}
 		} else {
-			// Fallback to main thread if Web Workers not supported
-			await generateOnMainThread();
+			await generateOnMainThread(state.sourceImage, state.adjustedTesseraSize);
 		}
 	};
 
-	const generateOnMainThread = async () => {
+	const generateOnMainThread = async (
+		sourceImage: NonNullable<WorkflowState["sourceImage"]>,
+		tesseraSize: NonNullable<WorkflowState["adjustedTesseraSize"]>,
+	) => {
 		const progressCallback: ProgressCallback = (percent, message) => {
 			setProgress({ percent, message });
 		};
 
-		if (!state.sourceImage || !state.adjustedTesseraSize) {
-			setError("Missing source image or tessera size");
-			setIsGenerating(false);
-			return;
-		}
-
 		try {
 			const result = await generateMosaic(
-				state.sourceImage,
+				sourceImage,
 				state.tesserae,
-				state.adjustedTesseraSize,
-				undefined, // canvasCreator
-				undefined, // imageLoader
+				tesseraSize,
+				undefined,
+				undefined,
 				progressCallback,
 			);
 
@@ -182,12 +173,10 @@ export function GenerateAndPreview({
 	};
 
 	const handleCancel = () => {
-		// Cancel Web Worker if active
 		if (workerRef.current) {
 			workerRef.current.postMessage({ type: "cancel" });
-			workerRef.current.terminate();
-			workerRef.current = null;
 		}
+		terminateWorker();
 
 		setIsGenerating(false);
 		setError(null);
