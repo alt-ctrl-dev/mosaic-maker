@@ -26,6 +26,10 @@ export function App() {
 	const [workflowState, dispatch] = useWorkflowReducer();
 	const sidebarToggleRef = useRef<HTMLInputElement>(null);
 
+	function toggleSidebar() {
+		sidebarToggleRef.current?.click();
+	}
+
 	const resolvedTesseraSize =
 		workflowState.adjustedTesseraSize ?? DEFAULT_TESSERA_SIZE;
 
@@ -115,11 +119,7 @@ export function App() {
 					className="workflow-sidebar-toggle-button"
 					aria-label="Toggle workflow steps"
 					type="button"
-					onClick={() => {
-						if (sidebarToggleRef.current) {
-							sidebarToggleRef.current.click();
-						}
-					}}
+					onClick={toggleSidebar}
 				>
 					☰
 				</button>
@@ -138,11 +138,7 @@ export function App() {
 						aria-label="Close workflow steps"
 						data-secondary
 						type="button"
-						onClick={() => {
-							if (sidebarToggleRef.current) {
-								sidebarToggleRef.current.click();
-							}
-						}}
+						onClick={toggleSidebar}
 					>
 						✕
 					</button>

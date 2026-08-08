@@ -13,11 +13,7 @@ describe("Mosaic Maker workflow", () => {
 		});
 		const buttons = within(workflow).getAllByRole("button");
 		const stages = buttons
-			.filter(
-				(button) =>
-					!button.classList.contains("workflow-sidebar-close") &&
-					!button.classList.contains("workflow-sidebar-toggle-button"),
-			)
+			.filter((button) => !button.classList.contains("workflow-sidebar-close"))
 			.map(
 				(button) =>
 					within(button)
