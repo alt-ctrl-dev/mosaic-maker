@@ -5,7 +5,7 @@ import { App } from "./App";
 afterEach(cleanup);
 
 describe("Mosaic Maker workflow", () => {
-	it("presents all six stages in order", () => {
+	it("presents all four stages in order", () => {
 		render(<App />);
 
 		const workflow = screen.getByRole("complementary", {
@@ -15,15 +15,13 @@ describe("Mosaic Maker workflow", () => {
 		const stages = buttons.map(
 			(button) =>
 				within(button).getByText(
-					/^(Choose source image|Set tessera size|Choose tesserae|Review tesserae|Generate and preview|Export mosaic)$/,
+					/^(Choose source image|Build tesserae|Generate and preview|Export mosaic)$/,
 				).textContent ?? "",
 		);
 
 		expect(stages).toEqual([
 			"Choose source image",
-			"Set tessera size",
-			"Choose tesserae",
-			"Review tesserae",
+			"Build tesserae",
 			"Generate and preview",
 			"Export mosaic",
 		]);

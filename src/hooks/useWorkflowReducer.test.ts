@@ -28,14 +28,14 @@ function makeTessera(isValid: boolean): TesseraInfo {
 }
 
 describe("workflowReducer", () => {
-	it("advances to tessera sizing on a sourceSelected action", () => {
+	it("advances to build tesserae on a sourceSelected action", () => {
 		const next = workflowReducer(INITIAL_WORKFLOW_STATE, {
 			type: "sourceSelected",
 			sourceImage: makeSourceImage(),
 		});
 
 		expect(next.sourceImage).not.toBeNull();
-		expect(next.currentStep).toBe(WorkflowStep.SET_TESSERA_SIZE);
+		expect(next.currentStep).toBe(WorkflowStep.BUILD_TESSERAE);
 	});
 
 	it("records a source error on a sourceError action", () => {
@@ -60,7 +60,7 @@ describe("workflowReducer", () => {
 		});
 
 		expect(next.adjustedTesseraSize).not.toBeNull();
-		expect(next.currentStep).toBe(WorkflowStep.CHOOSE_TESSERAE);
+		expect(next.currentStep).toBe(WorkflowStep.BUILD_TESSERAE);
 	});
 
 	it("counts valid and rejected tesserae on a tesseraeProcessed action", () => {
@@ -71,7 +71,7 @@ describe("workflowReducer", () => {
 
 		expect(next.validTesseraCount).toBe(1);
 		expect(next.rejectedTesseraCount).toBe(1);
-		expect(next.currentStep).toBe(WorkflowStep.REVIEW_TESSERAE);
+		expect(next.currentStep).toBe(WorkflowStep.BUILD_TESSERAE);
 	});
 
 	it("replaces the collection on a tesseraeGenerated action", () => {
@@ -109,37 +109,37 @@ describe("workflowReducer", () => {
 	});
 
 	it("does not allow goToStep to jump ahead of furthest completed step", () => {
-		// Advance to step 2 (SET_TESSERA_SIZE)
-		const stateAtStep2 = workflowReducer(INITIAL_WORKFLOW_STATE, {
+		// Advance to step 1 (BUILD_TESSERAE)
+		const stateAtStep1 = workflowReducer(INITIAL_WORKFLOW_STATE, {
 			type: "sourceSelected",
 			sourceImage: makeSourceImage(),
 		});
 
-		// Try to jump to step 4 (REVIEW_TESSERAE) - should stay at step 2
-		const next = workflowReducer(stateAtStep2, {
+		// Try to jump to step 3 (GENERATE_AND_PREVIEW) - should stay at step 1
+		const next = workflowReducer(stateAtStep1, {
 			type: "goToStep",
-			step: WorkflowStep.REVIEW_TESSERAE,
+			step: WorkflowStep.GENERATE_AND_PREVIEW,
 		});
 
-		expect(next.currentStep).toBe(WorkflowStep.SET_TESSERA_SIZE);
-		expect(next.currentStep).toBe(stateAtStep2.furthestCompletedStep);
+		expect(next.currentStep).toBe(WorkflowStep.BUILD_TESSERAE);
+		expect(next.currentStep).toBe(stateAtStep1.furthestCompletedStep);
 	});
 
 	it("allows goToStep to go back to a previously completed step", () => {
-		// Advance to step 2 (SET_TESSERA_SIZE)
-		const stateAtStep2 = workflowReducer(INITIAL_WORKFLOW_STATE, {
+		// Advance to step 1 (BUILD_TESSERAE)
+		const stateAtStep1 = workflowReducer(INITIAL_WORKFLOW_STATE, {
 			type: "sourceSelected",
 			sourceImage: makeSourceImage(),
 		});
 
 		// Go back to step 0 (CHOOSE_SOURCE_IMAGE)
-		const next = workflowReducer(stateAtStep2, {
+		const next = workflowReducer(stateAtStep1, {
 			type: "goToStep",
 			step: WorkflowStep.CHOOSE_SOURCE_IMAGE,
 		});
 
 		expect(next.currentStep).toBe(WorkflowStep.CHOOSE_SOURCE_IMAGE);
-		expect(next.furthestCompletedStep).toBe(WorkflowStep.SET_TESSERA_SIZE);
+		expect(next.furthestCompletedStep).toBe(WorkflowStep.BUILD_TESSERAE);
 		expect(next.currentStep).toBeLessThan(next.furthestCompletedStep);
 	});
 });

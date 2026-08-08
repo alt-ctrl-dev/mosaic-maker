@@ -76,9 +76,7 @@ export interface WorkflowState {
  */
 export enum WorkflowStep {
 	CHOOSE_SOURCE_IMAGE,
-	SET_TESSERA_SIZE,
-	CHOOSE_TESSERAE,
-	REVIEW_TESSERAE,
+	BUILD_TESSERAE,
 	GENERATE_AND_PREVIEW,
 	EXPORT_MOSAIC,
 }
@@ -203,10 +201,10 @@ export function updateWorkflowWithSourceImage(
 		sourceImage,
 		hasValidSourceDimensions: true,
 		sourceImageError: null,
-		currentStep: WorkflowStep.SET_TESSERA_SIZE,
+		currentStep: WorkflowStep.BUILD_TESSERAE,
 		furthestCompletedStep: Math.max(
 			state.furthestCompletedStep,
-			WorkflowStep.SET_TESSERA_SIZE,
+			WorkflowStep.BUILD_TESSERAE,
 		),
 	};
 }
@@ -274,10 +272,10 @@ export function updateWorkflowWithTesseraSize(
 		requestedTesseraSize: requestedSize,
 		adjustedTesseraSize: adjustedSize,
 		isCoarseGrid: isCoarseGrid(cellCount),
-		currentStep: WorkflowStep.CHOOSE_TESSERAE,
+		currentStep: WorkflowStep.BUILD_TESSERAE,
 		furthestCompletedStep: Math.max(
 			state.furthestCompletedStep,
-			WorkflowStep.CHOOSE_TESSERAE,
+			WorkflowStep.BUILD_TESSERAE,
 		),
 	};
 }
@@ -305,10 +303,10 @@ export function updateWorkflowWithTesserae(
 		totalTesseraCount: tesserae.length,
 		isLowVarietyCollection: varietyMetrics.isLowVariety,
 		varietyRecommendation: varietyMetrics.varietyRecommendation,
-		currentStep: WorkflowStep.REVIEW_TESSERAE,
+		currentStep: WorkflowStep.BUILD_TESSERAE,
 		furthestCompletedStep: Math.max(
 			state.furthestCompletedStep,
-			WorkflowStep.REVIEW_TESSERAE,
+			WorkflowStep.BUILD_TESSERAE,
 		),
 	};
 }
@@ -388,7 +386,7 @@ export function updateWorkflowToGeneratedMode(
 		...state,
 		useGeneratedTesserae: true,
 		seed,
-		currentStep: WorkflowStep.REVIEW_TESSERAE,
+		currentStep: WorkflowStep.BUILD_TESSERAE,
 	};
 }
 
@@ -405,7 +403,7 @@ export function updateWorkflowToUploadMode(
 	return {
 		...state,
 		useGeneratedTesserae: false,
-		currentStep: WorkflowStep.CHOOSE_TESSERAE,
+		currentStep: WorkflowStep.BUILD_TESSERAE,
 	};
 }
 
@@ -484,7 +482,8 @@ export function updateWorkflowWithGeneratedTesserae(
 }
 
 /**
- * Advance the workflow from the review step to the generate-and-preview step.
+ * Advance the workflow from tesserae review to the generate-and-preview
+ * step.
  *
  * @param state - The current workflow state
  * @returns Updated workflow state advanced to the generate-and-preview step
@@ -570,7 +569,7 @@ export function updateWorkflowOnSourceReplacement(
 			? null
 			: "The selected image has no valid tessera sizes (no common divisors above 8 pixels). Please select a different image.",
 		currentStep: hasValidDimensions
-			? WorkflowStep.SET_TESSERA_SIZE
+			? WorkflowStep.BUILD_TESSERAE
 			: WorkflowStep.CHOOSE_SOURCE_IMAGE,
 		requestedTesseraSize: null,
 		adjustedTesseraSize: null,

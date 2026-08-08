@@ -67,6 +67,20 @@ describe("workflow-state", () => {
 		});
 	});
 
+	describe("WorkflowStep enum", () => {
+		it("has four steps after collapsing", () => {
+			const stepKeys = Object.keys(WorkflowStep).filter((key) =>
+				Number.isNaN(Number(key)),
+			);
+			expect(stepKeys).toEqual([
+				"CHOOSE_SOURCE_IMAGE",
+				"BUILD_TESSERAE",
+				"GENERATE_AND_PREVIEW",
+				"EXPORT_MOSAIC",
+			]);
+		});
+	});
+
 	describe("updateWorkflowWithSourceImage", () => {
 		it("updates state with source image information", () => {
 			const sourceImage = {
@@ -84,7 +98,7 @@ describe("workflow-state", () => {
 			expect(newState.sourceImage).toEqual(sourceImage);
 			expect(newState.hasValidSourceDimensions).toBe(true);
 			expect(newState.sourceImageError).toBeNull();
-			expect(newState.currentStep).toBe(WorkflowStep.SET_TESSERA_SIZE);
+			expect(newState.currentStep).toBe(WorkflowStep.BUILD_TESSERAE);
 		});
 
 		it("rejects images with no valid tessera sizes", () => {
@@ -186,7 +200,7 @@ describe("workflow-state", () => {
 			expect(newState.adjustedTesseraSize).toBeNull();
 		});
 
-		it("advances to CHOOSE_TESSERAE step when successful", () => {
+		it("stays at BUILD_TESSERAE step when successful", () => {
 			const stateWithSource = {
 				...INITIAL_WORKFLOW_STATE,
 				sourceImage: {
@@ -196,11 +210,12 @@ describe("workflow-state", () => {
 					url: "blob:source",
 				},
 				hasValidSourceDimensions: true,
+				currentStep: WorkflowStep.BUILD_TESSERAE,
 			};
 
 			const newState = updateWorkflowWithTesseraSize(stateWithSource, 10);
 
-			expect(newState.currentStep).toBe(WorkflowStep.CHOOSE_TESSERAE);
+			expect(newState.currentStep).toBe(WorkflowStep.BUILD_TESSERAE);
 		});
 	});
 
@@ -234,7 +249,7 @@ describe("workflow-state", () => {
 			expect(newState.validTesseraCount).toBe(1);
 			expect(newState.rejectedTesseraCount).toBe(1);
 			expect(newState.totalTesseraCount).toBe(2);
-			expect(newState.currentStep).toBe(WorkflowStep.REVIEW_TESSERAE);
+			expect(newState.currentStep).toBe(WorkflowStep.BUILD_TESSERAE);
 		});
 
 		it("handles empty tesserae collection", () => {
@@ -244,7 +259,7 @@ describe("workflow-state", () => {
 			expect(newState.validTesseraCount).toBe(0);
 			expect(newState.rejectedTesseraCount).toBe(0);
 			expect(newState.totalTesseraCount).toBe(0);
-			expect(newState.currentStep).toBe(WorkflowStep.REVIEW_TESSERAE);
+			expect(newState.currentStep).toBe(WorkflowStep.BUILD_TESSERAE);
 		});
 	});
 
@@ -431,14 +446,14 @@ describe("workflow-state", () => {
 					url: "blob:source",
 				},
 				hasValidSourceDimensions: true,
-				currentStep: WorkflowStep.CHOOSE_TESSERAE,
+				currentStep: WorkflowStep.BUILD_TESSERAE,
 			};
 
 			const newState = updateWorkflowToGeneratedMode(stateWithSource);
 
 			expect(newState.useGeneratedTesserae).toBe(true);
 			expect(newState.seed).toBeDefined();
-			expect(newState.currentStep).toBe(WorkflowStep.REVIEW_TESSERAE);
+			expect(newState.currentStep).toBe(WorkflowStep.BUILD_TESSERAE);
 		});
 
 		it("uses existing seed if available", () => {
@@ -458,13 +473,13 @@ describe("workflow-state", () => {
 			const generatedState = {
 				...INITIAL_WORKFLOW_STATE,
 				useGeneratedTesserae: true,
-				currentStep: WorkflowStep.REVIEW_TESSERAE,
+				currentStep: WorkflowStep.BUILD_TESSERAE,
 			};
 
 			const newState = updateWorkflowToUploadMode(generatedState);
 
 			expect(newState.useGeneratedTesserae).toBe(false);
-			expect(newState.currentStep).toBe(WorkflowStep.CHOOSE_TESSERAE);
+			expect(newState.currentStep).toBe(WorkflowStep.BUILD_TESSERAE);
 		});
 	});
 
@@ -657,7 +672,7 @@ describe("workflow-state", () => {
 					width: 100,
 					height: 100,
 				},
-				currentStep: WorkflowStep.REVIEW_TESSERAE,
+				currentStep: WorkflowStep.BUILD_TESSERAE,
 			};
 
 			const newSourceImage = {
@@ -688,7 +703,7 @@ describe("workflow-state", () => {
 			expect(newState.sourceImage).toEqual(newSourceImage);
 			expect(newState.hasValidSourceDimensions).toBe(true);
 			expect(newState.sourceImageError).toBeNull();
-			expect(newState.currentStep).toBe(WorkflowStep.SET_TESSERA_SIZE);
+			expect(newState.currentStep).toBe(WorkflowStep.BUILD_TESSERAE);
 		});
 
 		it("handles invalid source replacement", () => {
@@ -720,7 +735,7 @@ describe("workflow-state", () => {
 					width: 100,
 					height: 100,
 				},
-				currentStep: WorkflowStep.REVIEW_TESSERAE,
+				currentStep: WorkflowStep.BUILD_TESSERAE,
 			};
 
 			const invalidSourceImage = {
@@ -786,7 +801,7 @@ describe("workflow-state", () => {
 					height: 100,
 				},
 				useGeneratedTesserae: false,
-				currentStep: WorkflowStep.REVIEW_TESSERAE,
+				currentStep: WorkflowStep.BUILD_TESSERAE,
 			};
 
 			const newState = updateWorkflowOnTesseraSizeChange(initialState, 15);
@@ -888,7 +903,7 @@ describe("workflow-state", () => {
 		it("preserves all other state fields", () => {
 			const initialState = {
 				...INITIAL_WORKFLOW_STATE,
-				currentStep: WorkflowStep.REVIEW_TESSERAE,
+				currentStep: WorkflowStep.BUILD_TESSERAE,
 				sourceImage: {
 					width: 100,
 					height: 100,
