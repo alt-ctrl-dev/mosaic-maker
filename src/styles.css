@@ -18,8 +18,6 @@ body {
 	}
 }
 
-/* Pico button styling handles focus */
-
 header {
 	padding-block: 4rem 2rem;
 	text-align: center;
@@ -52,8 +50,8 @@ header > p:last-child {
 }
 
 .workflow-sidebar-toggle,
-label.workflow-sidebar-toggle-button,
-label.workflow-sidebar-close,
+.workflow-sidebar-toggle-button,
+.workflow-sidebar-close,
 .workflow-sidebar-scrim {
 	display: none;
 }
@@ -138,7 +136,7 @@ label.workflow-sidebar-close,
 }
 
 @media (max-width: 900px) {
-	label.workflow-sidebar-toggle-button {
+	.workflow-sidebar-toggle-button {
 		display: block;
 		position: fixed;
 		bottom: 1rem;
@@ -177,7 +175,7 @@ label.workflow-sidebar-close,
 		transform: translateY(0);
 	}
 
-	label.workflow-sidebar-close {
+	.workflow-sidebar-close {
 		display: block;
 		position: sticky;
 		top: 0;

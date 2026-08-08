@@ -115,8 +115,8 @@ const MOBILE_WIDTH = 900;
 
 describe("sidebar toggle visibility", () => {
 	let styleElement: HTMLStyleElement;
-	let toggleButton: HTMLLabelElement;
-	let closeButton: HTMLLabelElement;
+	let toggleButton: HTMLButtonElement;
+	let closeButton: HTMLButtonElement;
 	let toggleInput: HTMLInputElement;
 
 	beforeEach(() => {
@@ -127,19 +127,19 @@ describe("sidebar toggle visibility", () => {
 		document.body.innerHTML = `
 			<main class="workflow-container">
 				<input type="checkbox" class="workflow-sidebar-toggle" id="sidebar-toggle" />
-				<label for="sidebar-toggle" class="workflow-sidebar-toggle-button">☰</label>
+				<button type="button" class="workflow-sidebar-toggle-button">☰</button>
 				<aside class="workflow-sidebar">
-					<label for="sidebar-toggle" class="workflow-sidebar-close">✕</label>
+					<button type="button" class="workflow-sidebar-close">✕</button>
 				</aside>
 			</main>
 		`;
 
 		toggleButton = document.querySelector(
-			"label.workflow-sidebar-toggle-button",
-		) as HTMLLabelElement;
+			".workflow-sidebar-toggle-button",
+		) as HTMLButtonElement;
 		closeButton = document.querySelector(
-			"label.workflow-sidebar-close",
-		) as HTMLLabelElement;
+			".workflow-sidebar-close",
+		) as HTMLButtonElement;
 		toggleInput = document.querySelector(
 			"input.workflow-sidebar-toggle",
 		) as HTMLInputElement;
@@ -150,11 +150,11 @@ describe("sidebar toggle visibility", () => {
 		document.body.innerHTML = "";
 	});
 
-	it("renders the toggle controls as label elements bound to the checkbox", () => {
-		expect(toggleButton.tagName).toBe("LABEL");
-		expect(closeButton.tagName).toBe("LABEL");
-		expect(toggleButton.htmlFor).toBe(toggleInput.id);
-		expect(closeButton.htmlFor).toBe(toggleInput.id);
+	it("renders the toggle controls as button elements", () => {
+		expect(toggleButton.tagName).toBe("BUTTON");
+		expect(closeButton.tagName).toBe("BUTTON");
+		expect(toggleButton.type).toBe("button");
+		expect(closeButton.type).toBe("button");
 	});
 
 	describe("on desktop (> 900px)", () => {
@@ -197,12 +197,14 @@ describe("sidebar toggle visibility", () => {
 		});
 	});
 
-	it("gives the desktop hide rule label-level specificity so it overrides Pico's [type=checkbox] ~ label rule", () => {
+	it("selects toggle and close buttons by class only so they inherit Pico button styling", () => {
 		const desktopCss = styles.slice(
 			0,
 			styles.indexOf("@media (max-width: 900px)"),
 		);
-		expect(desktopCss).toMatch(/label\.workflow-sidebar-toggle-button/);
-		expect(desktopCss).toMatch(/label\.workflow-sidebar-close/);
+		// Selectors use bare class names (no element qualifier) so native
+		// <button> styling from Pico applies freely.
+		expect(desktopCss).toMatch(/\.workflow-sidebar-toggle-button/);
+		expect(desktopCss).toMatch(/\.workflow-sidebar-close/);
 	});
 });
