@@ -77,9 +77,9 @@ export function TesseraUpload({
 			<p className="hint">Supported formats: JPEG, PNG, WebP</p>
 
 			{isProcessing && (
-				<div className="processing-indicator" aria-busy="true">
+				<article className="processing-indicator" aria-busy="true">
 					Processing tesserae...
-				</div>
+				</article>
 			)}
 		</section>
 	);
