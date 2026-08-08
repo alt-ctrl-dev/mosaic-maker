@@ -3,6 +3,9 @@ import type { SourceImageInfo } from "./image-processing";
 import type { TesseraInfo } from "./workflow-state";
 import { SEED_MAX } from "./workflow-state";
 
+/** Counter to ensure unique IDs for generated tesserae */
+let tesseraIdCounter = 0;
+
 /**
  * Simple seeded random number generator using a hash-based approach.
  *
@@ -224,7 +227,8 @@ export async function generateTesseraeUsingNoise(
 			canvasCreator,
 		);
 		const style = isSmooth ? "smooth" : "sharp";
-		const fileName = `generated-${i}-${style}-${seed}.png`;
+		const uniqueId = tesseraIdCounter++;
+		const fileName = `generated-${i}-${style}-${seed}-${uniqueId}.png`;
 
 		tesserae.push({
 			file: new File([previewUrl], fileName, { type: "image/png" }),
