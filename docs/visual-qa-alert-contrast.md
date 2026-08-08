@@ -21,8 +21,8 @@ Capture these **areas** (all called out in issue #97):
 - Primary and outline buttons (`Confirm Size`, `Continue to Generate`,
   `Download`, `← Back` / `Next →`)
 - Warning banner on **Set tessera size** (`.warning-message`)
-- Warning banner on **Review tesserae** (`.tessera-review .warning.alert`)
-- Error banner on **Export mosaic** (`.export-mosaic-step .error-message.alert`)
+- Warning banner on **Review tesserae** (`.warning-message`)
+- Error banner on **Export mosaic** (`.error-message`)
 
 Capture these **workflow steps**:
 
@@ -144,13 +144,13 @@ Do a full capture pass in **light** first, then repeat in **dark**.
    of tesserae (for example 2–3) so the collection is below the
    recommended variety count.
 3. Advance to **Review tesserae**. The **low-variety warning**
-   (`.tessera-review .warning.alert`) appears with the
+   (`.warning-message`) appears with the
    `Add Generated Tesserae` button.
 4. Screenshot the warning banner and the `Continue to Generate` button.
 
 ## Step 6 — Capture the export error
 
-The export error banner (`.export-mosaic-step .error-message.alert`)
+The export error banner (`.error-message`)
 renders when a download/export attempt throws. To force it reliably
 without special inputs, advance to **Export mosaic** (after generating a
 preview) and trigger the error path from the DevTools Console, or use a
@@ -160,7 +160,7 @@ reports an error.
 The simplest deterministic trigger: on the **Export mosaic** step, use
 DevTools to stub the download so the handler's `catch` runs — for example
 temporarily override the anchor/canvas API the export uses, click
-**Download**, and the `.error-message.alert` banner appears. Screenshot the
+**Download**, and the `.error-message` banner appears. Screenshot the
 error banner together with the `Download` button.
 
 > Tip: the export error text is set from the caught error's `message`
