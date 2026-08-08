@@ -123,4 +123,22 @@ describe("workflowReducer", () => {
 		expect(next.currentStep).toBe(WorkflowStep.SET_TESSERA_SIZE);
 		expect(next.currentStep).toBe(stateAtStep2.furthestCompletedStep);
 	});
+
+	it("allows goToStep to go back to a previously completed step", () => {
+		// Advance to step 2 (SET_TESSERA_SIZE)
+		const stateAtStep2 = workflowReducer(INITIAL_WORKFLOW_STATE, {
+			type: "sourceSelected",
+			sourceImage: makeSourceImage(),
+		});
+
+		// Go back to step 0 (CHOOSE_SOURCE_IMAGE)
+		const next = workflowReducer(stateAtStep2, {
+			type: "goToStep",
+			step: WorkflowStep.CHOOSE_SOURCE_IMAGE,
+		});
+
+		expect(next.currentStep).toBe(WorkflowStep.CHOOSE_SOURCE_IMAGE);
+		expect(next.furthestCompletedStep).toBe(WorkflowStep.SET_TESSERA_SIZE);
+		expect(next.currentStep).toBeLessThan(next.furthestCompletedStep);
+	});
 });
