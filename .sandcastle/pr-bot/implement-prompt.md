@@ -9,10 +9,7 @@ PR Number: {{PR_NUMBER}}
 PR Title: {{PR_TITLE}}
 PR Branch: {{PR_BRANCH}}
 
-### Change Request
-{{CHANGE_REQUEST}}
-
-### Additional Context
+### Context
 {{CONTEXT}}
 
 ## YOUR TASK
