@@ -195,10 +195,6 @@ export function updateWorkflowWithSourceImage(
 			sourceImageError:
 				"The selected image has no valid tessera sizes (no common divisors above 8 pixels). Please select a different image.",
 			currentStep: WorkflowStep.CHOOSE_SOURCE_IMAGE,
-			furthestCompletedStep: Math.max(
-				state.furthestCompletedStep,
-				WorkflowStep.CHOOSE_SOURCE_IMAGE,
-			),
 		};
 	}
 
@@ -499,6 +495,10 @@ export function updateWorkflowAdvanceFromReview(
 	return {
 		...state,
 		currentStep: WorkflowStep.GENERATE_AND_PREVIEW,
+		furthestCompletedStep: Math.max(
+			state.furthestCompletedStep,
+			WorkflowStep.GENERATE_AND_PREVIEW,
+		),
 	};
 }
 
@@ -518,6 +518,10 @@ export function updateWorkflowWithMosaicResult(
 		...state,
 		mosaicResult,
 		currentStep: WorkflowStep.EXPORT_MOSAIC,
+		furthestCompletedStep: Math.max(
+			state.furthestCompletedStep,
+			WorkflowStep.EXPORT_MOSAIC,
+		),
 	};
 }
 

@@ -104,6 +104,7 @@ describe("workflowReducer", () => {
 		});
 
 		expect(next.currentStep).toBe(WorkflowStep.GENERATE_AND_PREVIEW);
+		expect(next.furthestCompletedStep).toBe(WorkflowStep.GENERATE_AND_PREVIEW);
 	});
 
 	it("does not allow goToStep to jump ahead of furthest completed step", () => {

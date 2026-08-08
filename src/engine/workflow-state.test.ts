@@ -553,6 +553,7 @@ describe("workflow-state", () => {
 
 			expect(newState.mosaicResult).toEqual(mosaicResult);
 			expect(newState.currentStep).toBe(WorkflowStep.EXPORT_MOSAIC);
+			expect(newState.furthestCompletedStep).toBe(WorkflowStep.EXPORT_MOSAIC);
 		});
 
 		it("handles mosaic result with progress information", () => {
@@ -869,6 +870,9 @@ describe("workflow-state", () => {
 		it("advances from the review step to the generate-and-preview step", () => {
 			const result = updateWorkflowAdvanceFromReview(INITIAL_WORKFLOW_STATE);
 			expect(result.currentStep).toBe(WorkflowStep.GENERATE_AND_PREVIEW);
+			expect(result.furthestCompletedStep).toBe(
+				WorkflowStep.GENERATE_AND_PREVIEW,
+			);
 		});
 
 		it("preserves all other state fields", () => {
