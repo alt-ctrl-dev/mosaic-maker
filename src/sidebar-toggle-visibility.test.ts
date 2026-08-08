@@ -4,9 +4,16 @@ import { describe, expect, it } from "vitest";
 
 const styles = readFileSync(resolve(process.cwd(), "src/styles.css"), "utf8");
 
+const SIDEBAR_SELECTORS = [
+	".workflow-sidebar-toggle",
+	".workflow-sidebar-toggle-button",
+	".workflow-sidebar-close",
+	".workflow-sidebar-scrim",
+] as const;
+
 /**
- * Returns the body of the first `@media (max-width: 900px)` block found in the
- * stylesheet, matching braces so nested rule blocks are captured intact.
+ * Returns the body content between the outermost braces of the first
+ * `@media (max-width: 900px)` block in the stylesheet.
  */
 function mobileMediaBlock(css: string): string {
 	const marker = "@media (max-width: 900px) {";
@@ -26,15 +33,21 @@ function mobileMediaBlock(css: string): string {
 	throw new Error("Unterminated @media block");
 }
 
+/** Build a regex that matches a CSS rule for selectors joined with commas. */
+function selectorRulePattern(selectors: readonly string[]): RegExp {
+	const joined = selectors.map((s) => s.replace(/\./g, "\\.")).join(",\\s*");
+	return new RegExp(`${joined}\\s*\\{[^}]*\\}`);
+}
+
 describe("sidebar toggle desktop visibility", () => {
+	const desktopCss = styles.slice(
+		0,
+		styles.indexOf("@media (max-width: 900px)"),
+	);
+
 	it("hides toggle controls with display: none on desktop", () => {
-		const desktopCss = styles.slice(
-			0,
-			styles.indexOf("@media (max-width: 900px)"),
-		);
-		const rule = desktopCss.match(
-			/\.workflow-container \.workflow-sidebar-toggle,\s*\.workflow-container \.workflow-sidebar-toggle-button,\s*\.workflow-container \.workflow-sidebar-close,\s*\.workflow-container \.workflow-sidebar-scrim\s*\{[^}]*\}/,
-		);
+		const prefixed = SIDEBAR_SELECTORS.map((s) => `.workflow-container ${s}`);
+		const rule = desktopCss.match(selectorRulePattern(prefixed));
 		expect(rule).not.toBeNull();
 		expect(rule?.[0]).toContain("display: none");
 	});
@@ -45,12 +58,11 @@ describe("sidebar toggle desktop visibility", () => {
 
 	it("restores mobile controls with display: block at <= 900px", () => {
 		const mobile = mobileMediaBlock(styles);
-		for (const selector of [
-			".workflow-sidebar-toggle-button",
-			".workflow-sidebar-close",
-			".workflow-sidebar-scrim",
-		]) {
-			const rule = mobile.match(new RegExp(`\\${selector}\\s*\\{[^}]*\\}`));
+		// The .workflow-sidebar-toggle checkbox is a hidden <input>;
+		// it does not get display: block on mobile.
+		const mobileControls = SIDEBAR_SELECTORS.slice(1);
+		for (const selector of mobileControls) {
+			const rule = mobile.match(selectorRulePattern([selector]));
 			expect(rule, `${selector} should have a mobile rule`).not.toBeNull();
 			expect(rule?.[0]).toContain("display: block");
 		}
