@@ -27,6 +27,7 @@ describe("generateNoiseTesseraeFromState", () => {
 	it("generates tesserae based on workflow state", async () => {
 		const mockState: WorkflowState = {
 			currentStep: 0,
+			furthestCompletedStep: 0,
 			sourceImage: {
 				width: 100,
 				height: 100,
@@ -68,6 +69,7 @@ describe("generateNoiseTesseraeFromState", () => {
 	it("uses explicit count when provided", async () => {
 		const mockState: WorkflowState = {
 			currentStep: 0,
+			furthestCompletedStep: 0,
 			sourceImage: {
 				width: 100,
 				height: 100,
@@ -107,6 +109,7 @@ describe("generateNoiseTesseraeFromState", () => {
 	it("throws error when source image is missing", async () => {
 		const mockState: WorkflowState = {
 			currentStep: 0,
+			furthestCompletedStep: 0,
 			sourceImage: null,
 			requestedTesseraSize: 10,
 			adjustedTesseraSize: 10,
@@ -139,6 +142,7 @@ describe("generateNoiseTesseraeFromState", () => {
 	it("throws error when adjusted tessera size is missing", async () => {
 		const mockState: WorkflowState = {
 			currentStep: 0,
+			furthestCompletedStep: 0,
 			sourceImage: {
 				width: 100,
 				height: 100,
