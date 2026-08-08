@@ -95,6 +95,9 @@ export function App() {
 		}
 	}
 
+	const canGoForward =
+		workflowState.currentStep < workflowState.furthestCompletedStep;
+
 	return (
 		<div className="layout-container">
 			<header>
@@ -183,8 +186,7 @@ export function App() {
 						<span className="workflow-step-counter">
 							Step {workflowState.currentStep + 1} of {stages.length}
 						</span>
-						{workflowState.currentStep <
-							workflowState.furthestCompletedStep && (
+						{canGoForward && (
 							<button
 								type="button"
 								onClick={() =>
