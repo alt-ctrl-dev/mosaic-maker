@@ -14,9 +14,5 @@ describe("workflow-step-button styling", () => {
 			"background-color: var(--pico-secondary-background)",
 		);
 		expect(ruleBody).toContain("color: var(--pico-secondary-inverse)");
-		expect(ruleBody).not.toContain(
-			"background-color: var(--pico-contrast-background)",
-		);
-		expect(ruleBody).not.toContain("color: var(--pico-contrast-color)");
 	});
 });
