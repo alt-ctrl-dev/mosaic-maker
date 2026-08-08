@@ -96,8 +96,8 @@ export function App() {
 	}
 
 	return (
-		<>
-			<header className="container">
+		<div className="layout-container">
+			<header>
 				<p className="eyebrow">Private, in-browser image making</p>
 				<h1>Mosaic Maker</h1>
 				<p>
@@ -196,6 +196,6 @@ export function App() {
 					</div>
 				</div>
 			</main>
-		</>
+		</div>
 	);
 }
