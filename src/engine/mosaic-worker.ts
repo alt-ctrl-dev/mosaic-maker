@@ -341,7 +341,6 @@ async function generateMosaicCanvas(
 
 			tesseraGrid[gridY][gridX] = bestMatchIndex;
 
-			// Implement transparency composition rules:\n			// 1. Transparent tessera pixels let the source image show through\n			// 2. Partial source alpha yields proportionally reduced tessera visibility\n			// 3. Fully transparent source regions stay empty in the output\n
 			resultCtx.globalAlpha = 1;
 			resultCtx.drawImage(processedTesserae[bestMatchIndex].canvas, x, y);
 

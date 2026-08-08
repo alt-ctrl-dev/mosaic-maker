@@ -127,30 +127,23 @@ function createFakeCanvas(width: number, height: number): HTMLCanvasElement {
 					const srcOffset = (srcY * src.width + srcX) * 4;
 					const destOffset = (destY * raster.width + destX) * 4;
 
-					// Get source pixel data including alpha
 					const srcR = src.data[srcOffset];
 					const srcG = src.data[srcOffset + 1];
 					const srcB = src.data[srcOffset + 2];
 					const srcA = src.data[srcOffset + 3] / 255;
 
-					// Get destination pixel data including alpha
 					const destR = raster.data[destOffset];
 					const destG = raster.data[destOffset + 1];
 					const destB = raster.data[destOffset + 2];
-					// const destA = raster.data[destOffset + 3] / 255;
 
-					// Apply global alpha to source alpha
 					const effectiveAlpha = srcA * globalAlpha;
 
-					// Blend source over destination (standard alpha compositing)
 					if (effectiveAlpha === 1) {
-						// Fully opaque source
 						raster.data[destOffset] = srcR;
 						raster.data[destOffset + 1] = srcG;
 						raster.data[destOffset + 2] = srcB;
 						raster.data[destOffset + 3] = 255;
 					} else if (effectiveAlpha > 0) {
-						// Partially transparent source
 						raster.data[destOffset] = Math.round(
 							srcR * effectiveAlpha + destR * (1 - effectiveAlpha),
 						);
@@ -160,10 +153,8 @@ function createFakeCanvas(width: number, height: number): HTMLCanvasElement {
 						raster.data[destOffset + 2] = Math.round(
 							srcB * effectiveAlpha + destB * (1 - effectiveAlpha),
 						);
-						// For simplicity in tests, we're not properly handling destination alpha blending
 						raster.data[destOffset + 3] = 255;
 					}
-					// If effectiveAlpha is 0, leave destination unchanged
 				}
 			}
 		},
@@ -180,11 +171,8 @@ function createFakeCanvas(width: number, height: number): HTMLCanvasElement {
 
 /** Maps preview/source URLs to the pixels a loaded image would expose. */
 const IMAGE_RASTERS: Record<string, Raster> = {
-	"blob:source-transparent": makeRaster(
-		4,
-		4,
-		(x, y) =>
-			x < 2 ? [255, 0, 0, 255] : [0, 0, 255, Math.floor(128 + 64 * (y / 3))], // Red left half, blue right half with varying alpha
+	"blob:source-transparent": makeRaster(4, 4, (x, y) =>
+		x < 2 ? [255, 0, 0, 255] : [0, 0, 255, Math.floor(128 + 64 * (y / 3))],
 	),
 	"data:red": solid(2, [255, 0, 0, 255]),
 	"data:blue": solid(2, [0, 0, 255, 255]),
@@ -236,7 +224,6 @@ function pixelAt(dataUrl: string, x: number, y: number, width: number) {
 
 describe("Mosaic Engine Transparency Rules", () => {
 	it("transparent tessera pixels let source show through", async () => {
-		// Test that when a tessera is fully transparent, the source image shows through
 		const result = await generate([
 			makeTessera({
 				fileName: "transparent.png",
@@ -247,18 +234,15 @@ describe("Mosaic Engine Transparency Rules", () => {
 		expect(result.width).toBe(4);
 		expect(result.height).toBe(4);
 
-		// In the left half where source is red, we should see some red (since tessera is transparent)
 		const leftPixel = pixelAt(result.dataUrl, 0, 0, 4);
-		expect(leftPixel[0]).toBeGreaterThan(0); // Some red from source
-		expect(leftPixel[0]).toBeLessThan(255); // Not pure red (blended with background)
+		expect(leftPixel[0]).toBeGreaterThan(0);
+		expect(leftPixel[0]).toBeLessThan(255);
 
-		// In the right half where source is blue with alpha, we should see blue
 		const rightPixel = pixelAt(result.dataUrl, 3, 3, 4);
-		expect(rightPixel[2]).toBeGreaterThan(0); // Some blue from source
+		expect(rightPixel[2]).toBeGreaterThan(0);
 	});
 
 	it("partial source alpha yields proportionally reduced tessera visibility", async () => {
-		// Test that when source has partial alpha, tessera visibility is reduced proportionally
 		const result = await generate([
 			makeTessera({ fileName: "red.png", previewUrl: "data:red" }),
 		]);
@@ -266,28 +250,18 @@ describe("Mosaic Engine Transparency Rules", () => {
 		expect(result.width).toBe(4);
 		expect(result.height).toBe(4);
 
-		// Blue region of source has partial alpha, so tessera should be less visible there
 		const pixel = pixelAt(result.dataUrl, 3, 3, 4);
-		console.log("Pixel values:", pixel);
-		// Should be a blend of red tessera and blue source, weighted by alpha
-		expect(pixel[0]).toBeGreaterThan(100); // Some red from tessera
-		expect(pixel[2]).toBeGreaterThan(30); // Some blue from source
+		expect(pixel[0]).toBeGreaterThan(100);
+		expect(pixel[2]).toBeGreaterThan(30);
 	});
 
-	it("fully transparent source regions stay empty in output", async () => {
-		// We don't have fully transparent source regions in our test data,
-		// but we can check that the alpha channel is preserved properly
-
-		// This test is more about ensuring transparency is handled correctly
-		// throughout the pipeline
+	it("produces valid PNG data URL for opaque source regions", async () => {
 		const result = await generate([
 			makeTessera({ fileName: "red.png", previewUrl: "data:red" }),
 		]);
 
 		expect(result.width).toBe(4);
 		expect(result.height).toBe(4);
-
-		// Make sure we're getting a valid result
 		expect(result.dataUrl).toMatch(/^data:image\/png;base64,/);
 	});
 });
