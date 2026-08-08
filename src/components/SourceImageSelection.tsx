@@ -102,9 +102,9 @@ export function SourceImageSelection({
 			</button>
 
 			{initialState.sourceImageError && (
-				<div className="error-message" role="alert">
+				<article className="error-message" role="alert">
 					{initialState.sourceImageError}
-				</div>
+				</article>
 			)}
 
 			{previewUrl && imageDimensions && (
@@ -118,9 +118,9 @@ export function SourceImageSelection({
 			)}
 
 			{isProcessing && (
-				<div className="processing-indicator" aria-busy="true">
+				<article className="processing-indicator" aria-busy="true">
 					Processing image...
-				</div>
+				</article>
 			)}
 		</div>
 	);
