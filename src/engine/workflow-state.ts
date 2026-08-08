@@ -482,7 +482,8 @@ export function updateWorkflowWithGeneratedTesserae(
 }
 
 /**
- * Advance the workflow from the review step to the generate-and-preview step.
+ * Advance the workflow from tesserae review to the generate-and-preview
+ * step.
  *
  * @param state - The current workflow state
  * @returns Updated workflow state advanced to the generate-and-preview step
