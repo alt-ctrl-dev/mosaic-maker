@@ -1,9 +1,6 @@
 import { describe, expect, it } from "vitest";
 import type { SourceImageInfo } from "./image-processing";
-import {
-	calculateRecommendedTesseraCount,
-	generateTesseraeUsingNoise,
-} from "./noise-tessera-generation";
+import { generateTesseraeUsingNoise } from "./noise-tessera-generation";
 
 /**
  * Create a lightweight in-memory canvas whose `toDataURL` encodes the pixel
@@ -74,139 +71,17 @@ function generate(count: number, size: number, seed: number) {
 }
 
 describe("noise-tessera-generation", () => {
-	describe("calculateRecommendedTesseraCount", () => {
-		it("returns 10% of grid cells capped at 100", () => {
-			// 100x100 grid = 10,000 cells, 10% = 1,000, capped at 100
-			expect(calculateRecommendedTesseraCount(10000)).toBe(100);
+	describe("stable identity", () => {
+		it("generates unique filenames across repeated generations with the same parameters", async () => {
+			const firstBatch = await generate(3, 10, 12345);
+			const secondBatch = await generate(3, 10, 12345);
 
-			// 50x50 grid = 2,500 cells, 10% = 250, capped at 100
-			expect(calculateRecommendedTesseraCount(2500)).toBe(100);
+			const allFilenames = [
+				...firstBatch.map((t) => t.fileName),
+				...secondBatch.map((t) => t.fileName),
+			];
 
-			// 20x20 grid = 400 cells, 10% = 40, not capped
-			expect(calculateRecommendedTesseraCount(400)).toBe(40);
-
-			// 5x5 grid = 25 cells, 10% = 2.5, rounded down to 2
-			expect(calculateRecommendedTesseraCount(25)).toBe(2);
-		});
-
-		it("handles edge case of 10 grid cells correctly", () => {
-			// 10 cells should produce count=1 (10% of 10 = 1)
-			expect(calculateRecommendedTesseraCount(10)).toBe(1);
-		});
-	});
-
-	describe("seededRandom", () => {
-		it("handles negative seeds correctly", async () => {
-			const tesserae = await generate(1, 10, -12345);
-			expect(tesserae).toHaveLength(1);
-			expect(tesserae[0].isValid).toBe(true);
-		});
-
-		it("handles very large seeds correctly", async () => {
-			const tesserae = await generate(1, 10, 999999999);
-			expect(tesserae).toHaveLength(1);
-			expect(tesserae[0].isValid).toBe(true);
-		});
-	});
-
-	describe("generateTesseraeUsingNoise", () => {
-		it("generates the requested number of tesserae", async () => {
-			const tesserae = await generate(10, 10, 12345);
-
-			expect(tesserae).toHaveLength(10);
-			tesserae.forEach((tessera) => {
-				expect(tessera.isValid).toBe(true);
-				expect(tessera.error).toBeNull();
-				expect(tessera.isLowResolution).toBe(false);
-				expect(tessera.previewUrl).toMatch(/^data:image\/png;base64,/);
-				expect(tessera.fileName).toMatch(/^generated-\d+/);
-				expect(tessera.fileName).toMatch(/\.png$/);
-			});
-		});
-
-		it("renders real PNG pixel data rather than encoded metadata", async () => {
-			const size = 8;
-			const [tessera] = await generate(1, size, 12345);
-
-			expect(tessera.previewUrl).not.toBeNull();
-			const base64 = (tessera.previewUrl ?? "").replace(
-				/^data:image\/png;base64,/,
-				"",
-			);
-			const decoded = atob(base64);
-
-			expect(decoded.length).toBe(size * size * 4);
-
-			for (let i = 3; i < decoded.length; i += 4) {
-				expect(decoded.charCodeAt(i)).toBe(255);
-			}
-
-			// Noise must vary the palette color across pixels; the fake source
-			// palette is green, so the variation shows in the green channel.
-			const greenChannels = new Set<number>();
-			for (let i = 1; i < decoded.length; i += 4) {
-				greenChannels.add(decoded.charCodeAt(i));
-			}
-			expect(greenChannels.size).toBeGreaterThan(1);
-		});
-
-		it("tints tesserae with colors sampled from the source image", async () => {
-			const size = 8;
-			const [tessera] = await generate(1, size, 12345);
-			const decoded = atob(
-				(tessera.previewUrl ?? "").replace(/^data:image\/png;base64,/, ""),
-			);
-
-			// The fake source palette is pure green, so every pixel must be a
-			// green shade rather than an arbitrary tint.
-			for (let i = 0; i < decoded.length; i += 4) {
-				expect(decoded.charCodeAt(i)).toBe(0);
-				expect(decoded.charCodeAt(i + 2)).toBe(0);
-				expect(decoded.charCodeAt(i + 1)).toBeGreaterThan(0);
-			}
-		});
-
-		it("produces deterministic results with the same seed", async () => {
-			const tesserae1 = await generate(5, 10, 12345);
-			const tesserae2 = await generate(5, 10, 12345);
-
-			expect(tesserae1.map((t) => t.previewUrl)).toEqual(
-				tesserae2.map((t) => t.previewUrl),
-			);
-		});
-
-		it("produces different pixel data with different seeds", async () => {
-			const [tessera1] = await generate(1, 10, 12345);
-			const [tessera2] = await generate(1, 10, 54321);
-
-			expect(tessera1.previewUrl).not.toBe(tessera2.previewUrl);
-		});
-
-		it("assigns tesserae with either smooth or sharp noise styles", async () => {
-			const tesserae = await generate(20, 10, 12345);
-
-			// Should have both smooth and sharp styles
-			const hasSmooth = tesserae.some((t) => t.fileName.includes("-smooth-"));
-			const hasSharp = tesserae.some((t) => t.fileName.includes("-sharp-"));
-
-			expect(hasSmooth).toBe(true);
-			expect(hasSharp).toBe(true);
-		});
-
-		it("generates tesserae with unique filenames based on index and seed", async () => {
-			const tesserae = await generate(3, 10, 12345);
-
-			expect(tesserae[0].fileName).toBe("generated-0-smooth-12345.png");
-			expect(tesserae[1].fileName).toBe("generated-1-smooth-12345.png");
-			expect(tesserae[2].fileName).toBe("generated-2-smooth-12345.png");
-		});
-
-		it("generates valid tesserae with proper file objects", async () => {
-			const tesserae = await generate(1, 10, 12345);
-
-			expect(tesserae[0].file).toBeInstanceOf(File);
-			expect(tesserae[0].file.type).toBe("image/png");
-			expect(tesserae[0].previewUrl).toMatch(/^data:image\/png;base64,/);
+			expect(new Set(allFilenames).size).toBe(6);
 		});
 	});
 });

@@ -459,24 +459,28 @@ export function updateWorkflowWithGeneratedTesseraCount(
 
 /**
  * Update workflow with newly generated tesserae.
- * This replaces the current tessera collection with the new generated ones.
+ * This appends the new generated tesserae to the existing collection.
  *
  * @param state - The current workflow state
  * @param tesserae - The newly generated tesserae collection
- * @returns Updated workflow state with new tesserae and regeneration flag cleared
+ * @returns Updated workflow state with appended tesserae and regeneration flag cleared
  */
 export function updateWorkflowWithGeneratedTesserae(
 	state: WorkflowState,
 	tesserae: TesseraInfo[],
 ): WorkflowState {
-	const validCount = tesserae.filter((t) => t.isValid).length;
+	const allTesserae = [...state.tesserae, ...tesserae];
+	const validCount = allTesserae.filter((t) => t.isValid).length;
+	const varietyMetrics = recalculateVarietyMetrics(state, validCount);
 
 	return {
 		...state,
-		tesserae,
+		tesserae: allTesserae,
 		validTesseraCount: validCount,
-		rejectedTesseraCount: tesserae.length - validCount,
-		totalTesseraCount: tesserae.length,
+		rejectedTesseraCount: allTesserae.length - validCount,
+		totalTesseraCount: allTesserae.length,
+		isLowVarietyCollection: varietyMetrics.isLowVariety,
+		varietyRecommendation: varietyMetrics.varietyRecommendation,
 		needsRegeneration: false,
 	};
 }
