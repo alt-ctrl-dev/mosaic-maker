@@ -1,9 +1,8 @@
-import { beforeEach, describe, expect, it, vi } from "vitest";
-import { render, screen } from "@testing-library/react";
+import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
+import { cleanup, fireEvent, render, screen } from "@testing-library/react";
 import { TesseraSizeSelection } from "./TesseraSizeSelection";
 import type { WorkflowState } from "../engine/workflow-state";
 
-// Mock the workflow state
 const mockInitialState = {
 	sourceImage: {
 		url: "blob:test",
@@ -20,6 +19,10 @@ describe("TesseraSizeSelection", () => {
 		onSizeSelectedMock.mockReset();
 	});
 
+	afterEach(() => {
+		cleanup();
+	});
+
 	it("renders a range input with min 2 and max 100", () => {
 		render(
 			<TesseraSizeSelection
@@ -32,7 +35,7 @@ describe("TesseraSizeSelection", () => {
 		expect(rangeInput.getAttribute("type")).toBe("range");
 		expect(rangeInput.getAttribute("min")).toBe("2");
 		expect(rangeInput.getAttribute("max")).toBe("100");
-		expect(rangeInput.getAttribute("value")).toBe("16"); // Default value
+		expect(rangeInput.getAttribute("value")).toBe("16");
 	});
 
 	it("displays the current size value", () => {
@@ -46,7 +49,7 @@ describe("TesseraSizeSelection", () => {
 		expect(screen.getAllByText("16px").length).toBeGreaterThan(0);
 	});
 
-	it("does not render the Confirm Size button", () => {
+	it("calls onSizeSelected when the slider value changes", () => {
 		render(
 			<TesseraSizeSelection
 				onSizeSelected={onSizeSelectedMock}
@@ -54,7 +57,9 @@ describe("TesseraSizeSelection", () => {
 			/>,
 		);
 
-		const confirmButton = screen.queryByText("Confirm Size");
-		expect(confirmButton).toBeNull();
+		const rangeInput = screen.getByRole("slider");
+		fireEvent.change(rangeInput, { target: { value: "32" } });
+
+		expect(onSizeSelectedMock).toHaveBeenCalledWith(32);
 	});
 });

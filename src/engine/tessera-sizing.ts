@@ -68,7 +68,7 @@ export function isCoarseGrid(cellCount: number): boolean {
 
 /**
  * Check if the source image has any valid tessera sizes.
- * A valid tessera size must be at least MIN_TESSERA_SIZE (8 pixels)
+ * A valid tessera size must be at least {@link MIN_TESSERA_SIZE}
  * and must divide both the width and height of the image evenly.
  *
  * @param sourceWidth - The width of the source image in pixels
