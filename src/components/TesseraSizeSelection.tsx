@@ -72,7 +72,6 @@ export function TesseraSizeSelection({
 					max="100"
 					value={requestedSize}
 					onChange={handleSizeChange}
-					aria-describedby="size-explanation"
 				/>
 				<span>{requestedSize}px</span>
 			</div>
