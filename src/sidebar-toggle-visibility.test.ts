@@ -6,14 +6,14 @@ const styles = readFileSync(resolve(process.cwd(), "src/styles.css"), "utf8");
 
 type Specificity = [number, number, number];
 
-/** A CSS declaration matched against an element, with the specificity and document order of the originating rule. */
+/** Metadata for a CSS declaration that matched an element, including cascade priority fields. */
 interface MatchedDeclaration {
 	specificity: Specificity;
 	order: number;
 	value: string;
 }
 
-/** Compare two specificity tuples. Returns negative when `a` has lower specificity than `b`, zero when equal, positive when `a` has higher specificity. */
+/** Compare two specificity tuples, returning `a[i] - b[i]` at the first differing component. */
 function compareSpecificity(a: Specificity, b: Specificity): number {
 	for (let i = 0; i < 3; i += 1) {
 		if (a[i] !== b[i]) return a[i] - b[i];
@@ -127,10 +127,10 @@ describe("sidebar toggle visibility", () => {
 
 		document.body.innerHTML = `
 			<main class="workflow-container">
-				<input type="checkbox" class="workflow-sidebar-toggle" id="t" />
-				<label for="t" class="workflow-sidebar-toggle-button">☰</label>
+				<input type="checkbox" class="workflow-sidebar-toggle" id="sidebar-toggle" />
+				<label for="sidebar-toggle" class="workflow-sidebar-toggle-button">☰</label>
 				<aside class="workflow-sidebar">
-					<label for="t" class="workflow-sidebar-close">✕</label>
+					<label for="sidebar-toggle" class="workflow-sidebar-close">✕</label>
 				</aside>
 			</main>
 		`;
@@ -198,9 +198,7 @@ describe("sidebar toggle visibility", () => {
 		});
 	});
 
-	it("gives the desktop hide rule label-level specificity for Pico parity", () => {
-		// Pico ships `[type=checkbox] ~ label { … }` at (0,1,1) specificity.
-		// Our hide rule must match that on the label controls so it wins.
+	it("gives the desktop hide rule label-level specificity so it overrides Pico's [type=checkbox] ~ label rule", () => {
 		const desktopCss = styles.slice(
 			0,
 			styles.indexOf("@media (max-width: 900px)"),
