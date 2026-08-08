@@ -104,5 +104,23 @@ describe("workflowReducer", () => {
 		});
 
 		expect(next.currentStep).toBe(WorkflowStep.GENERATE_AND_PREVIEW);
+		expect(next.furthestCompletedStep).toBe(WorkflowStep.GENERATE_AND_PREVIEW);
+	});
+
+	it("does not allow goToStep to jump ahead of furthest completed step", () => {
+		// Advance to step 2 (SET_TESSERA_SIZE)
+		const stateAtStep2 = workflowReducer(INITIAL_WORKFLOW_STATE, {
+			type: "sourceSelected",
+			sourceImage: makeSourceImage(),
+		});
+
+		// Try to jump to step 4 (REVIEW_TESSERAE) - should stay at step 2
+		const next = workflowReducer(stateAtStep2, {
+			type: "goToStep",
+			step: WorkflowStep.REVIEW_TESSERAE,
+		});
+
+		expect(next.currentStep).toBe(WorkflowStep.SET_TESSERA_SIZE);
+		expect(next.currentStep).toBe(stateAtStep2.furthestCompletedStep);
 	});
 });

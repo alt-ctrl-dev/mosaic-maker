@@ -19,6 +19,11 @@ import {
 	updateWorkflowWithTesserae,
 } from "../engine/workflow-state";
 
+/** Count of workflow steps derived from the enum's string-key members. */
+const WORKFLOW_STEP_COUNT = Object.keys(WorkflowStep).filter((key) =>
+	Number.isNaN(Number(key)),
+).length;
+
 /**
  * Actions that drive workflow state transitions. Each action mirrors a user
  * interaction from a workflow step and carries the payload needed to apply the
@@ -70,9 +75,14 @@ export function workflowReducer(
 		case "exportSettingsChanged":
 			return updateWorkflowExportSettings(state, action.settings);
 		case "goToStep": {
-			const stepCount = Object.keys(WorkflowStep).length / 2;
-			const clamped = Math.max(0, Math.min(action.step, stepCount - 1));
-			return { ...state, currentStep: clamped };
+			const clamped = Math.max(
+				0,
+				Math.min(action.step, WORKFLOW_STEP_COUNT - 1),
+			);
+			if (clamped <= state.furthestCompletedStep) {
+				return { ...state, currentStep: clamped };
+			}
+			return state;
 		}
 		case "advanceFromReview":
 			return updateWorkflowAdvanceFromReview(state);

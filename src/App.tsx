@@ -141,6 +141,7 @@ export function App() {
 						{stages.map((title, index) => {
 							const isCurrent = workflowState.currentStep === index;
 							const isCompleted = index < workflowState.currentStep;
+							const isDisabled = index > workflowState.furthestCompletedStep;
 							return (
 								<li key={title}>
 									<button
@@ -148,6 +149,7 @@ export function App() {
 										className={`workflow-step-button ${isCurrent ? "current" : ""} ${isCompleted ? "completed" : ""}`}
 										aria-current={isCurrent ? "step" : undefined}
 										onClick={() => dispatch({ type: "goToStep", step: index })}
+										disabled={isDisabled}
 									>
 										<span className="step-indicator">
 											{isCompleted ? <span>✓</span> : <span>{index + 1}</span>}
