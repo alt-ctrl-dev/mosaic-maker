@@ -105,7 +105,36 @@ export function App() {
 			</header>
 
 			<main className="workflow-container">
+				<input
+					type="checkbox"
+					id="workflow-sidebar-toggle"
+					className="workflow-sidebar-toggle"
+				/>
+				<label
+					htmlFor="workflow-sidebar-toggle"
+					className="workflow-sidebar-toggle-button"
+					aria-label="Toggle workflow steps"
+				>
+					☰
+				</label>
+				<div
+					className="workflow-sidebar-scrim"
+					aria-hidden="true"
+					onClick={() => {
+						const toggle = document.getElementById(
+							"workflow-sidebar-toggle",
+						) as HTMLInputElement | null;
+						if (toggle) toggle.checked = false;
+					}}
+				></div>
 				<aside className="workflow-sidebar" aria-label="Workflow steps">
+					<label
+						htmlFor="workflow-sidebar-toggle"
+						className="workflow-sidebar-close"
+						aria-label="Close workflow steps"
+					>
+						✕
+					</label>
 					<ol>
 						{stages.map((title, index) => {
 							const isCurrent = workflowState.currentStep === index;
