@@ -563,15 +563,11 @@ describe("workflow-state", () => {
 			expect(newState.furthestCompletedStep).toBe(WorkflowStep.EXPORT_MOSAIC);
 		});
 
-		it("handles mosaic result with progress information", () => {
+		it("handles mosaic result without progress information", () => {
 			const mosaicResult: MosaicResult = {
 				dataUrl: "data:image/png;base64,test-mosaic",
 				width: 100,
 				height: 100,
-				progress: {
-					percent: 50,
-					message: "Generating mosaic...",
-				},
 			};
 
 			const newState = updateWorkflowWithMosaicResult(
