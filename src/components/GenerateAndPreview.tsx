@@ -1,6 +1,6 @@
 import { useState, useEffect, useRef } from "react";
 import type { WorkflowState } from "../engine/workflow-state";
-import { generateMosaic } from "../engine/mosaic-engine";
+import { generateMosaic, type ProgressCallback } from "../engine/mosaic-engine";
 import type { WorkflowAction } from "../hooks/useWorkflowReducer";
 
 /** Props for {@link GenerateAndPreview}. */
@@ -39,6 +39,7 @@ export function GenerateAndPreview({
 	} | null>(null);
 
 	const beforeUnloadRef = useRef(onBeforeUnload);
+	const workerRef = useRef<Worker | null>(null);
 
 	useEffect(() => {
 		if (isGenerating) {
@@ -49,6 +50,10 @@ export function GenerateAndPreview({
 
 		return () => {
 			window.removeEventListener("beforeunload", beforeUnloadRef.current);
+			// Clean up worker on unmount
+			if (workerRef.current) {
+				workerRef.current.terminate();
+			}
 		};
 	}, [isGenerating]);
 
@@ -64,11 +69,101 @@ export function GenerateAndPreview({
 		setPreviewUrl(null);
 		setPreviewDimensions(null);
 
+		// Try to use Web Worker if available
+		if (typeof Worker !== "undefined") {
+			try {
+				// Create Web Worker
+				const workerUrl = new URL(
+					"../engine/mosaic-worker.ts",
+					import.meta.url,
+				);
+				workerRef.current = new Worker(workerUrl, { type: "module" });
+
+				// Handle messages from worker
+				workerRef.current.onmessage = (event) => {
+					const { type, ...data } = event.data;
+
+					switch (type) {
+						case "progress":
+							setProgress({ percent: data.percent, message: data.message });
+							break;
+						case "result":
+							if (data.dataUrl) {
+								setPreviewUrl(data.dataUrl);
+								setPreviewDimensions({
+									width: data.width,
+									height: data.height,
+								});
+								dispatch({
+									type: "mosaicGenerated",
+									mosaicResult: {
+										dataUrl: data.dataUrl,
+										width: data.width,
+										height: data.height,
+									},
+								});
+							} else {
+								// Generation was cancelled
+								dispatch({ type: "generationCancelledOrFailed" });
+							}
+							setIsGenerating(false);
+							if (workerRef.current) {
+								workerRef.current.terminate();
+								workerRef.current = null;
+							}
+							break;
+						case "error":
+							setError(data.message);
+							dispatch({ type: "generationCancelledOrFailed" });
+							setIsGenerating(false);
+							if (workerRef.current) {
+								workerRef.current.terminate();
+								workerRef.current = null;
+							}
+							break;
+					}
+				};
+
+				// Send generation request to worker
+				workerRef.current.postMessage({
+					type: "generate",
+					sourceImage: state.sourceImage,
+					tesserae: state.tesserae,
+					tesseraSize: state.adjustedTesseraSize,
+				});
+			} catch (err) {
+				// Fallback to main thread generation if worker fails
+				console.warn(
+					"Web Worker not supported or failed, falling back to main thread",
+					err,
+				);
+				await generateOnMainThread();
+			}
+		} else {
+			// Fallback to main thread if Web Workers not supported
+			await generateOnMainThread();
+		}
+	};
+
+	const generateOnMainThread = async () => {
+		const progressCallback: ProgressCallback = (percent, message) => {
+			setProgress({ percent, message });
+		};
+
+		if (!state.sourceImage || !state.adjustedTesseraSize) {
+			setError("Missing source image or tessera size");
+			setIsGenerating(false);
+			return;
+		}
+
 		try {
 			const result = await generateMosaic(
 				state.sourceImage,
 				state.tesserae,
 				state.adjustedTesseraSize,
+				undefined, // canvasCreator
+				undefined, // imageLoader
+				progressCallback,
 			);
 
 			setProgress({ percent: 100, message: "Mosaic generated successfully" });
@@ -87,6 +182,13 @@ export function GenerateAndPreview({
 	};
 
 	const handleCancel = () => {
+		// Cancel Web Worker if active
+		if (workerRef.current) {
+			workerRef.current.postMessage({ type: "cancel" });
+			workerRef.current.terminate();
+			workerRef.current = null;
+		}
+
 		setIsGenerating(false);
 		setError(null);
 		setProgress(null);
