@@ -8,5 +8,6 @@ export default defineConfig({
 		environment: "jsdom",
 		exclude: ["**/node_modules/**", "**/dist/**", ".sandcastle/worktrees/**"],
 		globals: true,
+		setupFiles: ["./src/test-setup.ts"],
 	},
 });

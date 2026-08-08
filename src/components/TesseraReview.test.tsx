@@ -1,7 +1,6 @@
 import { describe, it, expect, vi } from "vitest";
 import { render, screen } from "@testing-library/react";
 import { TesseraReview } from "./TesseraReview";
-import "@testing-library/jest-dom/vitest";
 import type { TesseraInfo } from "../engine/workflow-state";
 
 const MOCK_PREVIEW =
