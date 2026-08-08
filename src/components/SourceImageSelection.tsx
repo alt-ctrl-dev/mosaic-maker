@@ -1,5 +1,5 @@
 import type React from "react";
-import { useCallback, useEffect, useState } from "react";
+import { useCallback, useState } from "react";
 import { getSourceImageInfo } from "../engine/image-processing";
 import type { SourceImageInfo } from "../engine/image-processing";
 import type { WorkflowState } from "../engine/workflow-state";
@@ -30,14 +30,6 @@ export function SourceImageSelection({
 		height: number;
 	} | null>(null);
 
-	useEffect(() => {
-		return () => {
-			if (previewUrl) {
-				URL.revokeObjectURL(previewUrl);
-			}
-		};
-	}, [previewUrl]);
-
 	const handleFileChange = useCallback(
 		async (files: FileList | null) => {
 			if (!files || files.length === 0) return;
@@ -55,8 +47,9 @@ export function SourceImageSelection({
 				const sourceImage = await getSourceImageInfo(file);
 				onSourceSelected(sourceImage);
 
-				const url = URL.createObjectURL(file);
-				setPreviewUrl(url);
+				// Reuse the object URL the engine holds rather than creating a second
+				// one; it lives as long as the source image is in the workflow.
+				setPreviewUrl(sourceImage.url);
 				setImageDimensions({
 					width: sourceImage.width,
 					height: sourceImage.height,

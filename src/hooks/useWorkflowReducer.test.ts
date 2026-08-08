@@ -12,6 +12,7 @@ function makeSourceImage(): SourceImageInfo {
 		width: 640,
 		height: 480,
 		orientation: 1,
+		url: "blob:source",
 	};
 }
 

@@ -39,6 +39,8 @@ export interface SourceImageInfo {
 	height: number;
 	/** The orientation of the image as decoded from EXIF data */
 	orientation: number;
+	/** Object URL for the decoded image, used to read its pixels */
+	url: string;
 }
 
 /**
@@ -170,12 +172,14 @@ export async function getSourceImageInfo(file: File): Promise<SourceImageInfo> {
 		const img = new Image();
 		const url = URL.createObjectURL(file);
 
+		// The URL is deliberately not revoked: the mosaic engine needs to reload
+		// the image later to read its pixels. It is released when the tab closes.
 		img.onload = () => {
-			URL.revokeObjectURL(url);
 			resolve({
 				width: img.naturalWidth,
 				height: img.naturalHeight,
 				orientation: orientation,
+				url,
 			});
 		};
 
