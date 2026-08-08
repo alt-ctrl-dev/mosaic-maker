@@ -377,12 +377,12 @@ label.workflow-sidebar-close,
 }
 
 .tessera-review .tessera-item.invalid {
-	border: 2px solid var(--pico-danger-background);
-	background-color: var(--pico-danger-background);
+	border: 2px solid var(--pico-form-element-invalid-border-color);
+	background-color: var(--pico-form-element-invalid-border-color);
 }
 
 .tessera-review .tessera-item.supplemented {
-	border: 2px solid var(--pico-success-background);
+	border: 2px solid var(--pico-form-element-valid-border-color);
 }
 
 .tessera-review .tessera-preview {
