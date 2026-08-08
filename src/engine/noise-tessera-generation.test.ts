@@ -71,41 +71,17 @@ function generate(count: number, size: number, seed: number) {
 }
 
 describe("noise-tessera-generation", () => {
-	// ... existing tests ...
-
 	describe("stable identity", () => {
-		it("should generate unique filenames even with repeated generations", async () => {
-			// Generate first batch
+		it("generates unique filenames across repeated generations with the same parameters", async () => {
 			const firstBatch = await generate(3, 10, 12345);
-
-			// Generate second batch with same parameters
 			const secondBatch = await generate(3, 10, 12345);
 
-			// Collect all filenames
 			const allFilenames = [
 				...firstBatch.map((t) => t.fileName),
 				...secondBatch.map((t) => t.fileName),
 			];
 
-			// Should have 6 unique filenames
-			const uniqueFilenames = new Set(allFilenames);
-			expect(uniqueFilenames.size).toBe(6);
-
-			// No duplicates
-			expect(allFilenames.length).toBe(uniqueFilenames.size);
-		});
-
-		it("should generate unique filenames when appending to existing collection", async () => {
-			// Generate first batch
-			const firstBatch = await generate(3, 10, 12345);
-
-			// Generate second batch - filenames should be different due to unique IDs
-			const secondBatch = await generate(3, 10, 12345);
-
-			// Check that filenames are different
-			expect(firstBatch[0].fileName).not.toBe(secondBatch[0].fileName);
-			expect(firstBatch[1].fileName).not.toBe(secondBatch[1].fileName);
-			expect(firstBatch[2].fileName).not.toBe(secondBatch[2].fileName);
+			expect(new Set(allFilenames).size).toBe(6);
 		});
 	});
 });
