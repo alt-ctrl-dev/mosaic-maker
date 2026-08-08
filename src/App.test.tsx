@@ -35,8 +35,6 @@ describe("Mosaic Maker workflow", () => {
 	it("renders Back button with secondary variant", () => {
 		render(<App />);
 		const backButton = screen.getByText("← Back");
-		expect(backButton).not.toBeNull();
-		// Check that the button has the secondary class by checking its HTML
-		expect(backButton.outerHTML).toContain('class="secondary"');
+		expect(backButton.classList.contains("secondary")).toBe(true);
 	});
 });
