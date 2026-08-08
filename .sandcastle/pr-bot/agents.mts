@@ -75,7 +75,7 @@ export const processPRComments = async (pr: PR, unhandledComments: Comment[], de
   console.log(`Found ${unhandledComments.length} unhandled /sandcastle comments`);
 
   for (const comment of unhandledComments) {
-    console.log(`Processing comment from ${comment.author}: ${comment.sandcastleCommand}`);
+    console.log(`Processing comment from ${comment.author}`);
 
     const thread: Thread = {
       pr,
@@ -129,7 +129,7 @@ export const processPRComments = async (pr: PR, unhandledComments: Comment[], de
       copyToWorktree,
     });
 
-    const prImplementorAgent = createPrImplementorAgent(sandbox, pr, comment.sandcastleCommand || "", plan.context || "");
+    const prImplementorAgent = createPrImplementorAgent(sandbox, pr, "", plan.context || "");
 
     const reviewAgent = createReviewAgent(sandbox, pr.headRefName);
     try {
