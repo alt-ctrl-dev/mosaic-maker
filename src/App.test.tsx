@@ -28,4 +28,9 @@ describe("Mosaic Maker workflow", () => {
 			"Export mosaic",
 		]);
 	});
+
+	it("hides Next button on first load", () => {
+		render(<App />);
+		expect(screen.queryByText("Next →")).toBeNull();
+	});
 });

@@ -95,6 +95,9 @@ export function App() {
 		}
 	}
 
+	const canGoForward =
+		workflowState.currentStep < workflowState.furthestCompletedStep;
+
 	return (
 		<div className="layout-container">
 			<header>
@@ -183,18 +186,19 @@ export function App() {
 						<span className="workflow-step-counter">
 							Step {workflowState.currentStep + 1} of {stages.length}
 						</span>
-						<button
-							type="button"
-							onClick={() =>
-								dispatch({
-									type: "goToStep",
-									step: workflowState.currentStep + 1,
-								})
-							}
-							disabled={workflowState.currentStep === stages.length - 1}
-						>
-							Next →
-						</button>
+						{canGoForward && (
+							<button
+								type="button"
+								onClick={() =>
+									dispatch({
+										type: "goToStep",
+										step: workflowState.currentStep + 1,
+									})
+								}
+							>
+								Next →
+							</button>
+						)}
 					</div>
 				</div>
 			</main>
