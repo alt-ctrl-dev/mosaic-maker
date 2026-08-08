@@ -57,24 +57,10 @@ header > p:last-child {
 	padding-right: 1rem;
 }
 
-.workflow-sidebar-toggle {
-	opacity: 0;
-	position: absolute;
-	width: 1px;
-	height: 1px;
-	margin: -1px;
-	padding: 0;
-	border: 0;
-	clip-path: inset(50%);
-	overflow: hidden;
-	white-space: nowrap;
-}
-
-.workflow-sidebar-toggle-button {
-	display: none;
-}
-
-.workflow-sidebar-close {
+.workflow-sidebar-toggle,
+.workflow-sidebar-toggle-button,
+.workflow-sidebar-close,
+.workflow-sidebar-scrim {
 	display: none;
 }
 
