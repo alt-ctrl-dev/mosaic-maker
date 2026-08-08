@@ -343,11 +343,32 @@ header > p:last-child {
 	font-size: 0.9em;
 }
 
+/* Alert and Error Message Styles */
+.error-message,
+.warning-message {
+	padding: 1rem;
+	border-radius: var(--pico-border-radius);
+	background-color: var(--pico-contrast-background);
+	color: var(--pico-contrast-color);
+	margin: 1rem 0;
+}
+
+.error-message.alert,
+.warning-message.alert {
+	padding: 1rem;
+	border-radius: var(--pico-border-radius);
+	background-color: var(--pico-contrast-background);
+	color: var(--pico-contrast-color);
+	margin: 1rem 0;
+}
+
 /* Tessera Review Styles */
 .tessera-review .warning.alert {
 	margin: 1rem 0;
 	padding: 1rem;
 	border-radius: var(--pico-border-radius);
+	background-color: var(--pico-contrast-background);
+	color: var(--pico-contrast-color);
 }
 
 .tessera-review .tesserae-grid {
@@ -498,6 +519,8 @@ header > p:last-child {
 	margin-top: 1rem;
 	padding: 1rem;
 	border-radius: var(--pico-border-radius);
+	background-color: var(--pico-contrast-background);
+	color: var(--pico-contrast-color);
 }
 
 @media (max-width: 576px) {
