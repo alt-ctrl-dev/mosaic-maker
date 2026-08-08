@@ -55,10 +55,10 @@ header > p:last-child {
 	padding-right: 1rem;
 }
 
-.workflow-sidebar-toggle,
-.workflow-sidebar-toggle-button,
-.workflow-sidebar-close,
-.workflow-sidebar-scrim {
+.workflow-container .workflow-sidebar-toggle,
+.workflow-container .workflow-sidebar-toggle-button,
+.workflow-container .workflow-sidebar-close,
+.workflow-container .workflow-sidebar-scrim {
 	display: none;
 }
 

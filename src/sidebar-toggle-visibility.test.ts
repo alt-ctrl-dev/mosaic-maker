@@ -33,7 +33,7 @@ describe("sidebar toggle desktop visibility", () => {
 			styles.indexOf("@media (max-width: 900px)"),
 		);
 		const rule = desktopCss.match(
-			/\.workflow-sidebar-toggle,\s*\.workflow-sidebar-toggle-button,\s*\.workflow-sidebar-close,\s*\.workflow-sidebar-scrim\s*\{[^}]*\}/,
+			/\.workflow-container \.workflow-sidebar-toggle,\s*\.workflow-container \.workflow-sidebar-toggle-button,\s*\.workflow-container \.workflow-sidebar-close,\s*\.workflow-container \.workflow-sidebar-scrim\s*\{[^}]*\}/,
 		);
 		expect(rule).not.toBeNull();
 		expect(rule?.[0]).toContain("display: none");
