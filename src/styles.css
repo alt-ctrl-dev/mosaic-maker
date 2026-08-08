@@ -82,11 +82,11 @@ header > p:last-child {
 	text-align: left;
 	padding: 0.75rem 1rem;
 	margin-bottom: 0.5rem;
-	background: transparent;
 	border: none;
 	border-radius: var(--pico-border-radius);
 	cursor: pointer;
-	color: var(--pico-color);
+	background-color: var(--pico-contrast-background);
+	color: var(--pico-contrast-color);
 	transition: background-color 0.2s;
 }
 
