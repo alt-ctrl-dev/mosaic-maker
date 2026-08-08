@@ -8,10 +8,8 @@ body {
 }
 
 .layout-container {
-	padding-left: 16px;
-	padding-right: 16px;
-	margin-left: auto;
-	margin-right: auto;
+	padding-inline: 16px;
+	margin-inline: auto;
 }
 
 @media (min-width: 80rem) {
@@ -57,15 +55,10 @@ header > p:last-child {
 	padding-right: 1rem;
 }
 
-.workflow-sidebar-toggle {
-	display: none;
-}
-
-.workflow-sidebar-toggle-button {
-	display: none;
-}
-
-.workflow-sidebar-close {
+.workflow-sidebar-toggle,
+.workflow-sidebar-toggle-button,
+.workflow-sidebar-close,
+.workflow-sidebar-scrim {
 	display: none;
 }
 
