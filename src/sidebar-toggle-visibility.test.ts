@@ -47,12 +47,11 @@ function mediaMatches(mediaText: string, viewportWidthPx: number): boolean {
 		const value = Number.parseFloat(raw);
 		return raw.trim().endsWith("rem") ? value * 16 : value;
 	};
-	let matches = true;
 	const maxWidth = mediaText.match(/max-width:\s*([\d.]+(?:px|rem))/);
-	if (maxWidth) matches &&= viewportWidthPx <= toPx(maxWidth[1]);
+	if (maxWidth && viewportWidthPx > toPx(maxWidth[1])) return false;
 	const minWidth = mediaText.match(/min-width:\s*([\d.]+(?:px|rem))/);
-	if (minWidth) matches &&= viewportWidthPx >= toPx(minWidth[1]);
-	return matches;
+	if (minWidth && viewportWidthPx < toPx(minWidth[1])) return false;
+	return true;
 }
 
 /**
@@ -104,10 +103,10 @@ function resolveProperty(
 	}
 
 	if (matched.length === 0) return undefined;
-	matched.sort((a, b) => {
-		const bySpecificity = compareSpecificity(a.specificity, b.specificity);
-		return bySpecificity !== 0 ? bySpecificity : a.order - b.order;
-	});
+	matched.sort(
+		(a, b) =>
+			compareSpecificity(a.specificity, b.specificity) || a.order - b.order,
+	);
 	return matched[matched.length - 1]?.value;
 }
 
