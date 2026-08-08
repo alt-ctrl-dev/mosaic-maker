@@ -18,11 +18,7 @@ body {
 	}
 }
 
-.workflow-sidebar-toggle-button:focus,
-.workflow-sidebar-close:focus {
-	outline: 2px solid var(--pico-primary);
-	outline-offset: 2px;
-}
+/* Pico button styling handles focus */
 
 header {
 	padding-block: 4rem 2rem;
@@ -150,8 +146,6 @@ label.workflow-sidebar-close,
 		width: 3rem;
 		height: 3rem;
 		border-radius: 50%;
-		background-color: var(--pico-primary);
-		color: var(--pico-primary-inverse);
 		border: none;
 		font-size: 1.5rem;
 		z-index: 1001;
@@ -191,8 +185,6 @@ label.workflow-sidebar-close,
 		width: 2rem;
 		height: 2rem;
 		border-radius: 50%;
-		background-color: var(--pico-secondary);
-		color: var(--pico-secondary-inverse);
 		border: none;
 		font-size: 1rem;
 		z-index: 1002;
