@@ -55,10 +55,10 @@ header > p:last-child {
 	padding-right: 1rem;
 }
 
-.workflow-container .workflow-sidebar-toggle,
-.workflow-container .workflow-sidebar-toggle-button,
-.workflow-container .workflow-sidebar-close,
-.workflow-container .workflow-sidebar-scrim {
+.workflow-sidebar-toggle,
+label.workflow-sidebar-toggle-button,
+label.workflow-sidebar-close,
+.workflow-sidebar-scrim {
 	display: none;
 }
 
@@ -142,7 +142,7 @@ header > p:last-child {
 }
 
 @media (max-width: 900px) {
-	.workflow-sidebar-toggle-button {
+	label.workflow-sidebar-toggle-button {
 		display: block;
 		position: fixed;
 		bottom: 1rem;
@@ -183,7 +183,7 @@ header > p:last-child {
 		transform: translateY(0);
 	}
 
-	.workflow-sidebar-close {
+	label.workflow-sidebar-close {
 		display: block;
 		position: sticky;
 		top: 0;
