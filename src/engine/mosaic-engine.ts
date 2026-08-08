@@ -1,6 +1,7 @@
 import { createCanvas, loadImage } from "./export";
 import type { SourceImageInfo } from "./image-processing";
 import type { TesseraInfo } from "./workflow-state";
+import { runDeviceCapacityPreflight } from "./device-capacity-preflight";
 
 /** Progress callback function type */
 export type ProgressCallback = (percent: number, message: string) => void;
@@ -92,6 +93,25 @@ export async function generateMosaic(
 	}
 
 	const validTesserae = tesserae.filter((t) => t.isValid);
+
+	// Calculate grid cell count for preflight check
+	const gridCellCount =
+		Math.ceil(sourceImage.width / tesseraSize) *
+		Math.ceil(sourceImage.height / tesseraSize);
+
+	// Run device capacity preflight before heavy processing
+	const preflightResult = runDeviceCapacityPreflight(
+		gridCellCount,
+		validTesserae.length,
+		sourceImage.width,
+		sourceImage.height,
+	);
+
+	if (!preflightResult.isSafe) {
+		throw new Error(
+			`Device capacity exceeded: ${preflightResult.reason}. ${preflightResult.remedy}`,
+		);
+	}
 
 	if (validTesserae.length === 0) {
 		return {

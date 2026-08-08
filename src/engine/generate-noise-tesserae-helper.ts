@@ -4,6 +4,7 @@ import {
 	generateTesseraeUsingNoise,
 } from "./noise-tessera-generation";
 import { calculateGridCellCount } from "./tessera-sizing";
+import { runDeviceCapacityPreflight } from "./device-capacity-preflight";
 import type { TesseraInfo, WorkflowState } from "./workflow-state";
 import { SEED_MAX } from "./workflow-state";
 
@@ -41,6 +42,20 @@ export async function generateNoiseTesseraeFromState(
 		tesseraCount = state.generatedTesseraCount;
 	} else {
 		tesseraCount = calculateRecommendedTesseraCount(gridCellCount);
+	}
+
+	// Run device capacity preflight to constrain tessera count
+	const preflightResult = runDeviceCapacityPreflight(
+		gridCellCount,
+		tesseraCount,
+		state.sourceImage.width,
+		state.sourceImage.height,
+	);
+
+	if (!preflightResult.isSafe) {
+		throw new Error(
+			`Device capacity exceeded: ${preflightResult.reason}. ${preflightResult.remedy}`,
+		);
 	}
 
 	tesseraCount = Math.max(1, Math.min(tesseraCount, gridCellCount));
