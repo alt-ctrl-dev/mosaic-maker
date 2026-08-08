@@ -72,7 +72,12 @@ export function workflowReducer(
 		case "goToStep": {
 			const stepCount = Object.keys(WorkflowStep).length / 2;
 			const clamped = Math.max(0, Math.min(action.step, stepCount - 1));
-			return { ...state, currentStep: clamped };
+			// Only allow navigation to steps at or before the furthest completed step
+			if (clamped <= state.furthestCompletedStep) {
+				return { ...state, currentStep: clamped };
+			}
+			// If trying to go forward past furthest completed step, stay at current step
+			return state;
 		}
 		case "advanceFromReview":
 			return updateWorkflowAdvanceFromReview(state);

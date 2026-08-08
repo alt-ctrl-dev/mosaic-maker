@@ -39,6 +39,8 @@ export interface TesseraInfo {
  */
 export interface WorkflowState {
 	currentStep: WorkflowStep;
+	/** The furthest step the user has completed */
+	furthestCompletedStep: WorkflowStep;
 	sourceImage: SourceImageInfo | null;
 	requestedTesseraSize: number | null;
 	adjustedTesseraSize: number | null;
@@ -91,6 +93,7 @@ export const SEED_MAX = 1_000_000;
  */
 export const INITIAL_WORKFLOW_STATE: WorkflowState = {
 	currentStep: WorkflowStep.CHOOSE_SOURCE_IMAGE,
+	furthestCompletedStep: WorkflowStep.CHOOSE_SOURCE_IMAGE,
 	sourceImage: null,
 	requestedTesseraSize: null,
 	adjustedTesseraSize: null,
@@ -192,6 +195,10 @@ export function updateWorkflowWithSourceImage(
 			sourceImageError:
 				"The selected image has no valid tessera sizes (no common divisors above 8 pixels). Please select a different image.",
 			currentStep: WorkflowStep.CHOOSE_SOURCE_IMAGE,
+			furthestCompletedStep: Math.max(
+				state.furthestCompletedStep,
+				WorkflowStep.CHOOSE_SOURCE_IMAGE,
+			),
 		};
 	}
 
@@ -201,6 +208,10 @@ export function updateWorkflowWithSourceImage(
 		hasValidSourceDimensions: true,
 		sourceImageError: null,
 		currentStep: WorkflowStep.SET_TESSERA_SIZE,
+		furthestCompletedStep: Math.max(
+			state.furthestCompletedStep,
+			WorkflowStep.SET_TESSERA_SIZE,
+		),
 	};
 }
 
@@ -268,6 +279,10 @@ export function updateWorkflowWithTesseraSize(
 		adjustedTesseraSize: adjustedSize,
 		isCoarseGrid: isCoarseGrid(cellCount),
 		currentStep: WorkflowStep.CHOOSE_TESSERAE,
+		furthestCompletedStep: Math.max(
+			state.furthestCompletedStep,
+			WorkflowStep.CHOOSE_TESSERAE,
+		),
 	};
 }
 
@@ -295,6 +310,10 @@ export function updateWorkflowWithTesserae(
 		isLowVarietyCollection: varietyMetrics.isLowVariety,
 		varietyRecommendation: varietyMetrics.varietyRecommendation,
 		currentStep: WorkflowStep.REVIEW_TESSERAE,
+		furthestCompletedStep: Math.max(
+			state.furthestCompletedStep,
+			WorkflowStep.REVIEW_TESSERAE,
+		),
 	};
 }
 
