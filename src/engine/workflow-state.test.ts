@@ -5,7 +5,6 @@ import {
 	updateWorkflowWithGeneratedTesserae,
 } from "./workflow-state";
 
-// Helper function to create a test tessera
 function makeTessera(fileName: string, isValid: boolean = true): TesseraInfo {
 	return {
 		file: new File([], fileName, { type: "image/png" }),
@@ -18,10 +17,8 @@ function makeTessera(fileName: string, isValid: boolean = true): TesseraInfo {
 }
 
 describe("workflow-state", () => {
-	// ... existing tests ...
-
 	describe("updateWorkflowWithGeneratedTesserae", () => {
-		it("updates state with generated tesserae collection", () => {
+		it("replaces the collection when starting from an empty state", () => {
 			const tesserae: TesseraInfo[] = [
 				makeTessera("test1.jpg", true),
 				makeTessera("test2.jpg", false),
@@ -39,8 +36,7 @@ describe("workflow-state", () => {
 			expect(newState.needsRegeneration).toBe(false);
 		});
 
-		it("should append generated tesserae to existing collection instead of replacing", () => {
-			// Start with existing tesserae
+		it("appends to the existing collection instead of replacing", () => {
 			const initialState = {
 				...INITIAL_WORKFLOW_STATE,
 				tesserae: [
@@ -62,19 +58,15 @@ describe("workflow-state", () => {
 				newTesserae,
 			);
 
-			// Should append instead of replace
 			expect(newState.tesserae).toHaveLength(4);
 			expect(newState.tesserae[0].fileName).toBe("existing1.jpg");
 			expect(newState.tesserae[1].fileName).toBe("existing2.jpg");
 			expect(newState.tesserae[2].fileName).toBe("generated1.jpg");
 			expect(newState.tesserae[3].fileName).toBe("generated2.jpg");
 
-			// Counts should be updated correctly
-			expect(newState.validTesseraCount).toBe(3); // 1 existing + 2 new
-			expect(newState.rejectedTesseraCount).toBe(1); // 1 existing, 0 new
+			expect(newState.validTesseraCount).toBe(3);
+			expect(newState.rejectedTesseraCount).toBe(1);
 			expect(newState.totalTesseraCount).toBe(4);
 		});
 	});
-
-	// ... rest of the tests ...
 });
