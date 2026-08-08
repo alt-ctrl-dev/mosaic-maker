@@ -1,9 +1,9 @@
 import { describe, expect, it } from "vitest";
-import {
-	generateTesseraeUsingNoise,
-	calculateRecommendedTesseraCount,
-} from "./noise-tessera-generation";
 import type { SourceImageInfo } from "./image-processing";
+import {
+	calculateRecommendedTesseraCount,
+	generateTesseraeUsingNoise,
+} from "./noise-tessera-generation";
 
 /**
  * Create a lightweight in-memory canvas whose `toDataURL` encodes the pixel
@@ -21,6 +21,18 @@ function createFakeCanvas(width: number, height: number): HTMLCanvasElement {
 		}),
 		putImageData: (imageData: { data: Uint8ClampedArray }) => {
 			stored = imageData.data.slice();
+		},
+		drawImage: () => {},
+		// Stands in for the downsampled source image: a pure-green palette, so
+		// tests can assert that generated tesserae take their color from the
+		// source rather than from an invented tint.
+		getImageData: (_x: number, _y: number, w: number, h: number) => {
+			const data = new Uint8ClampedArray(w * h * 4);
+			for (let offset = 0; offset < data.length; offset += 4) {
+				data[offset + 1] = 200;
+				data[offset + 3] = 255;
+			}
+			return { width: w, height: h, data };
 		},
 	};
 
@@ -43,7 +55,12 @@ const mockSourceImage: SourceImageInfo = {
 	width: 100,
 	height: 100,
 	orientation: 1,
+	url: "blob:source",
 };
+
+async function fakeImageLoader(): Promise<HTMLImageElement> {
+	return {} as HTMLImageElement;
+}
 
 function generate(count: number, size: number, seed: number) {
 	return generateTesseraeUsingNoise(
@@ -52,6 +69,7 @@ function generate(count: number, size: number, seed: number) {
 		size,
 		seed,
 		createFakeCanvas,
+		fakeImageLoader,
 	);
 }
 
@@ -123,11 +141,29 @@ describe("noise-tessera-generation", () => {
 				expect(decoded.charCodeAt(i)).toBe(255);
 			}
 
-			const redChannels = new Set<number>();
-			for (let i = 0; i < decoded.length; i += 4) {
-				redChannels.add(decoded.charCodeAt(i));
+			// Noise must vary the palette color across pixels; the fake source
+			// palette is green, so the variation shows in the green channel.
+			const greenChannels = new Set<number>();
+			for (let i = 1; i < decoded.length; i += 4) {
+				greenChannels.add(decoded.charCodeAt(i));
 			}
-			expect(redChannels.size).toBeGreaterThan(1);
+			expect(greenChannels.size).toBeGreaterThan(1);
+		});
+
+		it("tints tesserae with colors sampled from the source image", async () => {
+			const size = 8;
+			const [tessera] = await generate(1, size, 12345);
+			const decoded = atob(
+				(tessera.previewUrl ?? "").replace(/^data:image\/png;base64,/, ""),
+			);
+
+			// The fake source palette is pure green, so every pixel must be a
+			// green shade rather than an arbitrary tint.
+			for (let i = 0; i < decoded.length; i += 4) {
+				expect(decoded.charCodeAt(i)).toBe(0);
+				expect(decoded.charCodeAt(i + 2)).toBe(0);
+				expect(decoded.charCodeAt(i + 1)).toBeGreaterThan(0);
+			}
 		});
 
 		it("produces deterministic results with the same seed", async () => {

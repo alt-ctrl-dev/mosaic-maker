@@ -1,4 +1,4 @@
-import { createCanvas } from "./export";
+import { createCanvas, loadImage } from "./export";
 import type { SourceImageInfo } from "./image-processing";
 import type { TesseraInfo } from "./workflow-state";
 import { SEED_MAX } from "./workflow-state";
@@ -39,13 +39,11 @@ const Y_HASH_PRIME = 19349663;
 const SMOOTH_CELL_SIZE = 4;
 
 /**
- * Minimum brightness for noise tint channels (0-255).
- * Keeps pixels from becoming so dark that the pattern is invisible.
+ * How far noise may brighten or darken the palette tint, as a fraction.
+ * Keeps a generated tessera recognisably its palette color while still
+ * looking textured.
  */
-const TINT_MIN = 96;
-
-/** Range above {@link TINT_MIN} for noise tint channels, yielding values in [96, 255]. */
-const TINT_RANGE = 160;
+const NOISE_CONTRAST = 0.5;
 
 interface TintColor {
 	r: number;
@@ -92,29 +90,49 @@ function smoothNoiseAt(x: number, y: number, seed: number): number {
 	return top + (bottom - top) * ty;
 }
 
+/** Width and height of the downsampled palette read from the source image. */
+const PALETTE_SIZE = 16;
+
 /**
- * Derive a base tint color from the source image characteristics.
+ * Read a palette of colors from the source image by downsampling it.
+ * Generated tesserae are tinted with these colors so the collection
+ * reproduces the source image's palette.
  *
- * The {@link SourceImageInfo} carries no pixel data, so the tint is sampled
- * deterministically from the image's dimensions and orientation combined with
- * the seed. This keeps each generated tessera visually tied to its source while
- * remaining reproducible.
- *
- * @param sourceImage - The source image the tesserae are generated for
- * @param seed - The seed for deterministic generation
- * @returns A tint color with channels in the 0-255 range
+ * @param sourceImage - The source image to sample
+ * @param canvasCreator - Factory for creating canvas elements (overridable for testing)
+ * @param imageLoader - Image loading function (overridable for testing)
+ * @returns A non-empty list of colors sampled from the source image
  */
-function sourceTintColor(
+async function readSourcePalette(
 	sourceImage: SourceImageInfo,
-	seed: number,
-): TintColor {
-	const base =
-		sourceImage.width * 31 + sourceImage.height * 17 + sourceImage.orientation;
-	return {
-		r: TINT_MIN + Math.floor(seededRandom(base + seed) * TINT_RANGE),
-		g: TINT_MIN + Math.floor(seededRandom(base + seed + 1) * TINT_RANGE),
-		b: TINT_MIN + Math.floor(seededRandom(base + seed + 2) * TINT_RANGE),
-	};
+	canvasCreator: (width: number, height: number) => HTMLCanvasElement,
+	imageLoader: (url: string) => Promise<HTMLImageElement>,
+): Promise<TintColor[]> {
+	const canvas = canvasCreator(PALETTE_SIZE, PALETTE_SIZE);
+	const ctx = canvas.getContext("2d");
+	if (!ctx) {
+		throw new Error("Failed to get canvas context for palette sampling");
+	}
+
+	const img = await imageLoader(sourceImage.url);
+	ctx.drawImage(img, 0, 0, PALETTE_SIZE, PALETTE_SIZE);
+
+	const { data } = ctx.getImageData(0, 0, PALETTE_SIZE, PALETTE_SIZE);
+	const palette: TintColor[] = [];
+	for (let offset = 0; offset < data.length; offset += 4) {
+		palette.push({ r: data[offset], g: data[offset + 1], b: data[offset + 2] });
+	}
+
+	return palette.length > 0 ? palette : [{ r: 128, g: 128, b: 128 }];
+}
+
+/**
+ * Pick a palette color deterministically for a given seed.
+ */
+function sourceTintColor(palette: TintColor[], seed: number): TintColor {
+	return palette[
+		Math.floor(seededRandom(seed) * palette.length) % palette.length
+	];
 }
 
 /**
@@ -124,7 +142,7 @@ function sourceTintColor(
  * interpolates a coarser grid for softer transitions. Both are tinted with a
  * color sampled deterministically from the source image.
  *
- * @param sourceImage - The source image used to derive the tint color
+ * @param palette - Colors sampled from the source image
  * @param size - Width and height of the noise pattern in pixels
  * @param seed - Deterministic seed for noise generation
  * @param isSmooth - Whether to use smooth (interpolated) or sharp (per-pixel) noise
@@ -133,7 +151,7 @@ function sourceTintColor(
  * @throws Error if the canvas 2D context is unavailable
  */
 function generateNoisePattern(
-	sourceImage: SourceImageInfo,
+	palette: TintColor[],
 	size: number,
 	seed: number,
 	isSmooth: boolean,
@@ -145,7 +163,7 @@ function generateNoisePattern(
 		throw new Error("Failed to get canvas context for noise generation");
 	}
 
-	const tint = sourceTintColor(sourceImage, seed);
+	const tint = sourceTintColor(palette, seed);
 	const imageData = ctx.createImageData(size, size);
 	const { data } = imageData;
 
@@ -153,10 +171,12 @@ function generateNoisePattern(
 		for (let x = 0; x < size; x++) {
 			const offset = (y * size + x) * 4;
 			const noise = isSmooth ? smoothNoiseAt(x, y, seed) : noiseAt(x, y, seed);
+			// Map noise from [0, 1] onto a brightness factor centred on 1.
+			const brightness = 1 + (noise - 0.5) * NOISE_CONTRAST * 2;
 
-			data[offset] = Math.round(tint.r * noise);
-			data[offset + 1] = Math.round(tint.g * noise);
-			data[offset + 2] = Math.round(tint.b * noise);
+			data[offset] = Math.round(tint.r * brightness);
+			data[offset + 1] = Math.round(tint.g * brightness);
+			data[offset + 2] = Math.round(tint.b * brightness);
 			data[offset + 3] = 255;
 		}
 	}
@@ -184,14 +204,20 @@ export async function generateTesseraeUsingNoise(
 		width: number,
 		height: number,
 	) => HTMLCanvasElement = createCanvas,
+	imageLoader: (url: string) => Promise<HTMLImageElement> = loadImage,
 ): Promise<TesseraInfo[]> {
+	const palette = await readSourcePalette(
+		sourceImage,
+		canvasCreator,
+		imageLoader,
+	);
 	const tesserae: TesseraInfo[] = [];
 
 	for (let i = 0; i < count; i++) {
 		const localSeed = seed + i;
 		const isSmooth = seededRandom(localSeed) > 0.5;
 		const previewUrl = generateNoisePattern(
-			sourceImage,
+			palette,
 			size,
 			localSeed,
 			isSmooth,

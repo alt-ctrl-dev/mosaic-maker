@@ -13,6 +13,12 @@ function createFakeCanvas(width: number, height: number): HTMLCanvasElement {
 			data: new Uint8ClampedArray(w * h * 4),
 		}),
 		putImageData: () => {},
+		drawImage: () => {},
+		getImageData: (_x: number, _y: number, w: number, h: number) => ({
+			width: w,
+			height: h,
+			data: new Uint8ClampedArray(w * h * 4).fill(128),
+		}),
 	};
 
 	return {
@@ -21,6 +27,11 @@ function createFakeCanvas(width: number, height: number): HTMLCanvasElement {
 		getContext: () => context,
 		toDataURL: () => "data:image/png;base64,",
 	} as unknown as HTMLCanvasElement;
+}
+
+/** Stands in for a decoded source image; the fake canvas ignores its pixels. */
+async function fakeImageLoader(): Promise<HTMLImageElement> {
+	return {} as HTMLImageElement;
 }
 
 describe("generateNoiseTesseraeFromState", () => {
@@ -32,6 +43,7 @@ describe("generateNoiseTesseraeFromState", () => {
 				width: 100,
 				height: 100,
 				orientation: 1,
+				url: "blob:source",
 			},
 			requestedTesseraSize: 10,
 			adjustedTesseraSize: 10,
@@ -59,6 +71,7 @@ describe("generateNoiseTesseraeFromState", () => {
 		const tesserae = await generateNoiseTesseraeFromState(
 			mockState,
 			createFakeCanvas,
+			fakeImageLoader,
 		);
 
 		// Should generate the recommended count (10% of 100 cells = 10, capped at 100 = 10)
@@ -74,6 +87,7 @@ describe("generateNoiseTesseraeFromState", () => {
 				width: 100,
 				height: 100,
 				orientation: 1,
+				url: "blob:source",
 			},
 			requestedTesseraSize: 10,
 			adjustedTesseraSize: 10,
@@ -101,6 +115,7 @@ describe("generateNoiseTesseraeFromState", () => {
 		const tesserae = await generateNoiseTesseraeFromState(
 			mockState,
 			createFakeCanvas,
+			fakeImageLoader,
 		);
 
 		expect(tesserae).toHaveLength(5);
@@ -147,6 +162,7 @@ describe("generateNoiseTesseraeFromState", () => {
 				width: 100,
 				height: 100,
 				orientation: 1,
+				url: "blob:source",
 			},
 			requestedTesseraSize: 10,
 			adjustedTesseraSize: null,

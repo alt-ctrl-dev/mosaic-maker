@@ -1,4 +1,4 @@
-import { createCanvas } from "./export";
+import { createCanvas, loadImage } from "./export";
 import type { SourceImageInfo } from "./image-processing";
 import type { TesseraInfo } from "./workflow-state";
 
@@ -44,6 +44,8 @@ interface ColorGrid {
 interface ProcessedTessera {
 	info: TesseraInfo;
 	colorGrid: ColorGrid;
+	/** The tessera rendered at tessera size, ready to draw into the mosaic */
+	canvas: HTMLCanvasElement;
 }
 
 interface RGB {
@@ -55,17 +57,11 @@ interface RGB {
 /** Width and height of the spatial color grid used for matching. */
 const COLOR_GRID_SIZE = 3;
 
-/** Alpha blending ratio for tessera layer in the composite mosaic. */
-const BLEND_TESSERA_ALPHA = 0.75;
-
 /** Alpha blending ratio for source image layer in the composite mosaic. */
 const BLEND_SOURCE_ALPHA = 0.25;
 
 /** Tolerance multiplier for neighbor-avoidance: an alternative within this factor of the best match is preferred. */
 const ALTERNATIVE_TOLERANCE = 1.1;
-
-/** Penalty multiplier applied when a tessera repeats and no acceptable alternative exists. */
-const REPETITION_PENALTY = 1.5;
 
 /**
  * Generate a mosaic from a source image and a collection of tesserae.
@@ -87,6 +83,7 @@ export async function generateMosaic(
 		width: number,
 		height: number,
 	) => HTMLCanvasElement = createCanvas,
+	imageLoader: (url: string) => Promise<HTMLImageElement> = loadImage,
 ): Promise<MosaicResult> {
 	if (tesseraSize <= 0) {
 		throw new Error("Tessera size must be positive");
@@ -110,17 +107,33 @@ export async function generateMosaic(
 		};
 	}
 
-	const sourceCanvas = await createCanvasFromSource(sourceImage, canvasCreator);
+	const sourceCanvas = await createCanvasFromSource(
+		sourceImage,
+		canvasCreator,
+		imageLoader,
+	);
 
 	const processedTesserae = await Promise.all(
-		validTesserae.map(async (tessera) => ({
-			info: tessera,
-			colorGrid: await extractColorGrid(
-				tessera.previewUrl,
+		validTesserae.map(async (tessera) => {
+			const canvas = await renderTessera(
+				tessera,
 				tesseraSize,
 				canvasCreator,
-			),
-		})),
+				imageLoader,
+			);
+			return {
+				info: tessera,
+				colorGrid: sampleColorGrid(
+					canvas,
+					0,
+					0,
+					tesseraSize,
+					tesseraSize,
+					canvasCreator,
+				),
+				canvas,
+			};
+		}),
 	);
 
 	const resultCanvas = await generateMosaicCanvas(
@@ -173,68 +186,93 @@ function generatePlaceholderMosaic(
 }
 
 /**
- * Create a canvas filled with a gradient that stands in for the source image
- * until actual source-image loading is implemented.
+ * Draw the source image onto a canvas at its natural size so its pixels can be
+ * sampled during matching and blending.
  */
 async function createCanvasFromSource(
 	sourceImage: SourceImageInfo,
 	canvasCreator: (width: number, height: number) => HTMLCanvasElement,
+	imageLoader: (url: string) => Promise<HTMLImageElement>,
 ): Promise<HTMLCanvasElement> {
 	const canvas = canvasCreator(sourceImage.width, sourceImage.height);
 	const ctx = canvas.getContext("2d");
 	if (!ctx) {
-		return canvas;
+		throw new Error("Failed to get source canvas context");
 	}
 
-	const gradient = ctx.createLinearGradient(
-		0,
-		0,
-		sourceImage.width,
-		sourceImage.height,
-	);
-	gradient.addColorStop(0, "red");
-	gradient.addColorStop(0.5, "green");
-	gradient.addColorStop(1, "blue");
-	ctx.fillStyle = gradient;
-	ctx.fillRect(0, 0, sourceImage.width, sourceImage.height);
+	const img = await imageLoader(sourceImage.url);
+	ctx.drawImage(img, 0, 0, sourceImage.width, sourceImage.height);
 
 	return canvas;
 }
 
 /**
- * Produce a {@link COLOR_GRID_SIZE}&times;{@link COLOR_GRID_SIZE} color grid
- * for a tessera. Currently generates a synthetic grid rather than extracting
- * colors from the preview image.
+ * Render a tessera's preview image onto a square canvas at the mosaic's
+ * tessera size.
  */
-async function extractColorGrid(
-	previewUrl: string | null,
+async function renderTessera(
+	tessera: TesseraInfo,
 	tesseraSize: number,
 	canvasCreator: (width: number, height: number) => HTMLCanvasElement,
-): Promise<ColorGrid> {
-	if (!previewUrl) {
-		throw new Error("Preview URL is null");
+	imageLoader: (url: string) => Promise<HTMLImageElement>,
+): Promise<HTMLCanvasElement> {
+	if (!tessera.previewUrl) {
+		throw new Error(`Tessera "${tessera.fileName}" has no preview image`);
 	}
 
 	const canvas = canvasCreator(tesseraSize, tesseraSize);
 	const ctx = canvas.getContext("2d");
 	if (!ctx) {
-		throw new Error("Failed to get canvas context");
+		throw new Error("Failed to get tessera canvas context");
 	}
 
-	// In a real implementation we would load the image from previewUrl;
-	// for now we fill a solid color so matching produces consistent results.
-	ctx.fillStyle = "red";
-	ctx.fillRect(0, 0, tesseraSize, tesseraSize);
+	const img = await imageLoader(tessera.previewUrl);
+	ctx.drawImage(img, 0, 0, tesseraSize, tesseraSize);
 
+	return canvas;
+}
+
+/**
+ * Downsample a rectangular region of a canvas to a
+ * {@link COLOR_GRID_SIZE}&times;{@link COLOR_GRID_SIZE} OKLab color grid.
+ */
+function sampleColorGrid(
+	source: HTMLCanvasElement,
+	offsetX: number,
+	offsetY: number,
+	regionWidth: number,
+	regionHeight: number,
+	canvasCreator: (width: number, height: number) => HTMLCanvasElement,
+): ColorGrid {
+	const tempCanvas = canvasCreator(COLOR_GRID_SIZE, COLOR_GRID_SIZE);
+	const tempCtx = tempCanvas.getContext("2d");
+	if (!tempCtx) {
+		throw new Error("Failed to get temporary canvas context");
+	}
+
+	tempCtx.drawImage(
+		source,
+		offsetX,
+		offsetY,
+		regionWidth,
+		regionHeight,
+		0,
+		0,
+		COLOR_GRID_SIZE,
+		COLOR_GRID_SIZE,
+	);
+
+	const { data } = tempCtx.getImageData(0, 0, COLOR_GRID_SIZE, COLOR_GRID_SIZE);
 	const colors: Oklab[][] = [];
 
 	for (let rowIndex = 0; rowIndex < COLOR_GRID_SIZE; rowIndex++) {
 		const row: Oklab[] = [];
 		for (let colIndex = 0; colIndex < COLOR_GRID_SIZE; colIndex++) {
+			const idx = (rowIndex * COLOR_GRID_SIZE + colIndex) * 4;
 			const rgb: RGB = {
-				r: (colIndex / (COLOR_GRID_SIZE - 1)) * 255,
-				g: (rowIndex / (COLOR_GRID_SIZE - 1)) * 255,
-				b: 128,
+				r: data[idx],
+				g: data[idx + 1],
+				b: data[idx + 2],
 			};
 			row.push(rgbToOklab(rgb));
 		}
@@ -320,59 +358,53 @@ function averageGridDistance(grid1: ColorGrid, grid2: ColorGrid): number {
 }
 
 /**
- * Calculate the distance between a cell and a tessera, adjusted by neighbor-avoidance rules.
- * When a tessera repeats horizontally or vertically, alternatives within
- * {@link ALTERNATIVE_TOLERANCE} are preferred; when no alternative exists,
- * the distance is multiplied by {@link REPETITION_PENALTY}.
+ * Choose the tessera for a cell, preferring the closest colour match but
+ * avoiding the tesserae used directly above and to the left when an
+ * alternative is within {@link ALTERNATIVE_TOLERANCE} of the best score.
+ *
+ * @returns The index of the chosen tessera
  */
-function distanceWithNeighborAvoidance(
+function selectTessera(
 	cellGrid: ColorGrid,
-	tesseraIndex: number,
 	processedTesserae: ProcessedTessera[],
 	neighborAbove: number | null,
 	neighborLeft: number | null,
 ): number {
-	const distance = averageGridDistance(
-		cellGrid,
-		processedTesserae[tesseraIndex].colorGrid,
-	);
+	let bestIndex = 0;
+	let bestDistance = Infinity;
+	let bestNonNeighborIndex: number | null = null;
+	let bestNonNeighborDistance = Infinity;
 
-	const isNeighborRepeat =
-		tesseraIndex === neighborAbove || tesseraIndex === neighborLeft;
-
-	if (!isNeighborRepeat) {
-		return distance;
-	}
-
-	let bestAlternativeDistance = Infinity;
-	let hasAlternative = false;
-
-	for (let j = 0; j < processedTesserae.length; j++) {
-		if (j === neighborAbove || j === neighborLeft) {
-			continue;
-		}
-		const altDistance = averageGridDistance(
+	for (let i = 0; i < processedTesserae.length; i++) {
+		const distance = averageGridDistance(
 			cellGrid,
-			processedTesserae[j].colorGrid,
+			processedTesserae[i].colorGrid,
 		);
-		if (altDistance < bestAlternativeDistance) {
-			bestAlternativeDistance = altDistance;
-			hasAlternative = true;
+
+		if (distance < bestDistance) {
+			bestDistance = distance;
+			bestIndex = i;
+		}
+
+		const isNeighbor = i === neighborAbove || i === neighborLeft;
+		if (!isNeighbor && distance < bestNonNeighborDistance) {
+			bestNonNeighborDistance = distance;
+			bestNonNeighborIndex = i;
 		}
 	}
+
+	const bestIsNeighbor =
+		bestIndex === neighborAbove || bestIndex === neighborLeft;
 
 	if (
-		hasAlternative &&
-		bestAlternativeDistance <= distance * ALTERNATIVE_TOLERANCE
+		bestIsNeighbor &&
+		bestNonNeighborIndex !== null &&
+		bestNonNeighborDistance <= bestDistance * ALTERNATIVE_TOLERANCE
 	) {
-		return bestAlternativeDistance;
+		return bestNonNeighborIndex;
 	}
 
-	if (!hasAlternative) {
-		return distance * REPETITION_PENALTY;
-	}
-
-	return distance;
+	return bestIndex;
 }
 
 /**
@@ -404,45 +436,28 @@ async function generateMosaicCanvas(
 			const gridY = Math.floor(y / tesseraSize);
 			const gridX = Math.floor(x / tesseraSize);
 
-			const cellGrid = await extractSourceCellGrid(
+			const cellGrid = sampleColorGrid(
 				sourceCanvas,
 				x,
 				y,
 				tesseraSize,
-				canvasCreator,
-			);
-
-			const neighborAbove = gridY > 0 ? tesseraGrid[gridY - 1][gridX] : null;
-			const neighborLeft = gridX > 0 ? tesseraGrid[gridY][gridX - 1] : null;
-
-			let bestMatchIndex = 0;
-			let bestDistance = Infinity;
-
-			for (let i = 0; i < processedTesserae.length; i++) {
-				const adjustedDistance = distanceWithNeighborAvoidance(
-					cellGrid,
-					i,
-					processedTesserae,
-					neighborAbove,
-					neighborLeft,
-				);
-
-				if (adjustedDistance < bestDistance) {
-					bestDistance = adjustedDistance;
-					bestMatchIndex = i;
-				}
-			}
-
-			tesseraGrid[gridY][gridX] = bestMatchIndex;
-
-			const tesseraCanvas = await createTesseraImage(
-				processedTesserae[bestMatchIndex].info,
 				tesseraSize,
 				canvasCreator,
 			);
 
-			resultCtx.globalAlpha = BLEND_TESSERA_ALPHA;
-			resultCtx.drawImage(tesseraCanvas, x, y);
+			const bestMatchIndex = selectTessera(
+				cellGrid,
+				processedTesserae,
+				gridY > 0 ? tesseraGrid[gridY - 1][gridX] : null,
+				gridX > 0 ? tesseraGrid[gridY][gridX - 1] : null,
+			);
+
+			tesseraGrid[gridY][gridX] = bestMatchIndex;
+
+			// Draw the tessera opaquely first, then blend the source over it at 25%,
+			// giving each mosaic pixel exactly 75% tessera / 25% source.
+			resultCtx.globalAlpha = 1;
+			resultCtx.drawImage(processedTesserae[bestMatchIndex].canvas, x, y);
 
 			resultCtx.globalAlpha = BLEND_SOURCE_ALPHA;
 			resultCtx.drawImage(
@@ -462,79 +477,4 @@ async function generateMosaicCanvas(
 	}
 
 	return resultCanvas;
-}
-
-/**
- * Downsample a rectangular region of the source canvas to a
- * {@link COLOR_GRID_SIZE}&times;{@link COLOR_GRID_SIZE} color grid.
- */
-async function extractSourceCellGrid(
-	sourceCanvas: HTMLCanvasElement,
-	offsetX: number,
-	offsetY: number,
-	tesseraSize: number,
-	canvasCreator: (width: number, height: number) => HTMLCanvasElement,
-): Promise<ColorGrid> {
-	const tempCanvas = canvasCreator(COLOR_GRID_SIZE, COLOR_GRID_SIZE);
-	const tempCtx = tempCanvas.getContext("2d");
-	if (!tempCtx) {
-		throw new Error("Failed to get temporary canvas context");
-	}
-
-	tempCtx.drawImage(
-		sourceCanvas,
-		offsetX,
-		offsetY,
-		tesseraSize,
-		tesseraSize,
-		0,
-		0,
-		COLOR_GRID_SIZE,
-		COLOR_GRID_SIZE,
-	);
-
-	const imageData = tempCtx.getImageData(
-		0,
-		0,
-		COLOR_GRID_SIZE,
-		COLOR_GRID_SIZE,
-	);
-	const colors: Oklab[][] = [];
-
-	for (let rowIndex = 0; rowIndex < COLOR_GRID_SIZE; rowIndex++) {
-		const row: Oklab[] = [];
-		for (let colIndex = 0; colIndex < COLOR_GRID_SIZE; colIndex++) {
-			const idx = (rowIndex * COLOR_GRID_SIZE + colIndex) * 4;
-			const rgb: RGB = {
-				r: imageData.data[idx],
-				g: imageData.data[idx + 1],
-				b: imageData.data[idx + 2],
-			};
-			row.push(rgbToOklab(rgb));
-		}
-		colors.push(row);
-	}
-
-	return { colors };
-}
-
-/**
- * Render a tessera onto a canvas. Draws a solid color derived from the file
- * name; actual preview-image loading is not yet implemented.
- */
-async function createTesseraImage(
-	tessera: TesseraInfo,
-	size: number,
-	canvasCreator: (width: number, height: number) => HTMLCanvasElement,
-): Promise<HTMLCanvasElement> {
-	const canvas = canvasCreator(size, size);
-	const ctx = canvas.getContext("2d");
-
-	if (ctx && tessera.previewUrl) {
-		const isRed = /red/i.test(tessera.fileName);
-		ctx.fillStyle = isRed ? "red" : "blue";
-		ctx.fillRect(0, 0, size, size);
-	}
-
-	return canvas;
 }

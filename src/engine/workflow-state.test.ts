@@ -73,6 +73,7 @@ describe("workflow-state", () => {
 				width: 800,
 				height: 600,
 				orientation: 1,
+				url: "blob:source",
 			};
 
 			const newState = updateWorkflowWithSourceImage(
@@ -91,6 +92,7 @@ describe("workflow-state", () => {
 				width: 11,
 				height: 13,
 				orientation: 1,
+				url: "blob:source",
 			};
 
 			const newState = updateWorkflowWithSourceImage(
@@ -127,6 +129,7 @@ describe("workflow-state", () => {
 					width: 100,
 					height: 100,
 					orientation: 1,
+					url: "blob:source",
 				},
 				hasValidSourceDimensions: true,
 			};
@@ -144,6 +147,7 @@ describe("workflow-state", () => {
 					width: 100,
 					height: 100,
 					orientation: 1,
+					url: "blob:source",
 				},
 				hasValidSourceDimensions: true,
 			};
@@ -161,6 +165,7 @@ describe("workflow-state", () => {
 					width: 100,
 					height: 100,
 					orientation: 1,
+					url: "blob:source",
 				},
 				hasValidSourceDimensions: true,
 			};
@@ -188,6 +193,7 @@ describe("workflow-state", () => {
 					width: 100,
 					height: 100,
 					orientation: 1,
+					url: "blob:source",
 				},
 				hasValidSourceDimensions: true,
 			};
@@ -422,6 +428,7 @@ describe("workflow-state", () => {
 					width: 100,
 					height: 100,
 					orientation: 1,
+					url: "blob:source",
 				},
 				hasValidSourceDimensions: true,
 				currentStep: WorkflowStep.CHOOSE_TESSERAE,
@@ -631,6 +638,7 @@ describe("workflow-state", () => {
 					width: 100,
 					height: 100,
 					orientation: 1,
+					url: "blob:source",
 				},
 				hasValidSourceDimensions: true,
 				requestedTesseraSize: 10,
@@ -660,6 +668,7 @@ describe("workflow-state", () => {
 				width: 200,
 				height: 200,
 				orientation: 1,
+				url: "blob:source",
 			};
 
 			const newState = updateWorkflowOnSourceReplacement(
@@ -693,6 +702,7 @@ describe("workflow-state", () => {
 					width: 100,
 					height: 100,
 					orientation: 1,
+					url: "blob:source",
 				},
 				hasValidSourceDimensions: true,
 				requestedTesseraSize: 10,
@@ -721,6 +731,7 @@ describe("workflow-state", () => {
 				width: 11,
 				height: 13,
 				orientation: 1,
+				url: "blob:source",
 			};
 
 			const newState = updateWorkflowOnSourceReplacement(
@@ -756,6 +767,7 @@ describe("workflow-state", () => {
 					width: 100,
 					height: 100,
 					orientation: 1,
+					url: "blob:source",
 				},
 				hasValidSourceDimensions: true,
 				requestedTesseraSize: 10,
@@ -802,6 +814,7 @@ describe("workflow-state", () => {
 					width: 100,
 					height: 100,
 					orientation: 1,
+					url: "blob:source",
 				},
 				hasValidSourceDimensions: true,
 				useGeneratedTesserae: true,
@@ -832,6 +845,7 @@ describe("workflow-state", () => {
 					width: 100,
 					height: 100,
 					orientation: 1,
+					url: "blob:source",
 				},
 				tesserae: [
 					{
@@ -879,7 +893,12 @@ describe("workflow-state", () => {
 			const initialState = {
 				...INITIAL_WORKFLOW_STATE,
 				currentStep: WorkflowStep.REVIEW_TESSERAE,
-				sourceImage: { width: 100, height: 100, orientation: 1 },
+				sourceImage: {
+					width: 100,
+					height: 100,
+					orientation: 1,
+					url: "blob:source",
+				},
 				tesserae: [
 					{
 						file: new File([], "test.jpg"),
