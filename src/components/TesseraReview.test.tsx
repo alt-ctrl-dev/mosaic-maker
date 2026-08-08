@@ -49,10 +49,9 @@ describe("TesseraReview", () => {
 			"Review tesserae (2 valid, 1 rejected)",
 		);
 
-		// Check that the accordion is closed by default (details not open)
 		const detailsElement = container.querySelector("details");
 		expect(detailsElement).toBeTruthy();
-		expect(detailsElement && !detailsElement.hasAttribute("open")).toBeTruthy();
+		expect((detailsElement as HTMLDetailsElement).open).toBe(false);
 	});
 
 	it("renders Continue button outside accordion", () => {
@@ -64,7 +63,6 @@ describe("TesseraReview", () => {
 			/>,
 		);
 
-		// Find the continue button by text
 		const continueButton = container.querySelector("button.primary");
 		expect(continueButton).toBeTruthy();
 
