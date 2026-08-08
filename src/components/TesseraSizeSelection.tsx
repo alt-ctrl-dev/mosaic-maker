@@ -94,10 +94,10 @@ export function TesseraSizeSelection({
 			)}
 
 			{isCoarse && gridCellCount !== null && (
-				<div className="warning-message" role="alert">
+				<article className="warning-message" role="alert">
 					Warning: This size produces only {gridCellCount} grid cells, which is
 					fewer than recommended.
-				</div>
+				</article>
 			)}
 		</div>
 	);

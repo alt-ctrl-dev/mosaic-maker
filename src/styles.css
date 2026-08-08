@@ -291,10 +291,6 @@ header > p:last-child {
 .source-image-selection .processing-indicator,
 .tessera-upload .processing-indicator {
 	margin-top: 1rem;
-	padding: 1rem;
-	background-color: var(--pico-contrast-background);
-	color: var(--pico-contrast-color);
-	border-radius: var(--pico-border-radius);
 	text-align: center;
 }
 
@@ -330,20 +326,12 @@ header > p:last-child {
 
 .generated-tesserae .generation-info {
 	margin-top: 1rem;
-	padding: 0.5rem;
-	background-color: var(--pico-contrast-background);
-	color: var(--pico-contrast-color);
-	border-radius: var(--pico-border-radius);
 	font-size: 0.9em;
 }
 
 /* Alert and Error Message Styles */
 .error-message,
 .warning-message {
-	padding: 1rem;
-	border-radius: var(--pico-border-radius);
-	background-color: var(--pico-contrast-background);
-	color: var(--pico-contrast-color);
 	margin: 1rem 0;
 }
 
@@ -423,10 +411,6 @@ header > p:last-child {
 
 .generate-preview-step .generation-progress[aria-busy="true"] {
 	margin: 1rem 0;
-	padding: 1rem;
-	background-color: var(--pico-contrast-background);
-	color: var(--pico-contrast-color);
-	border-radius: var(--pico-border-radius);
 	text-align: center;
 }
 

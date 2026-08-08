@@ -212,15 +212,15 @@ export function GenerateAndPreview({
 					)}
 
 					{error && (
-						<div className="error-message" role="alert">
+						<article className="error-message" role="alert">
 							<strong>Error:</strong> {error}
-						</div>
+						</article>
 					)}
 				</div>
 			)}
 
 			{isGenerating && (
-				<div className="generation-progress" aria-busy="true">
+				<article className="generation-progress" aria-busy="true">
 					<h3>Generating Mosaic...</h3>
 					{progress ? (
 						<div className="progress-info">
@@ -242,7 +242,7 @@ export function GenerateAndPreview({
 					<button type="button" onClick={handleCancel} className="outline">
 						Cancel
 					</button>
-				</div>
+				</article>
 			)}
 
 			{previewUrl && previewDimensions && (
