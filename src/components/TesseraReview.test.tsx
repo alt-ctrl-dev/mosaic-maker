@@ -2,35 +2,35 @@ import { describe, it, expect, vi } from "vitest";
 import { render, screen } from "@testing-library/react";
 import { TesseraReview } from "./TesseraReview";
 import "@testing-library/jest-dom/vitest";
+import type { TesseraInfo } from "../engine/workflow-state";
 
-const mockTesserae = [
-	{
-		file: new File([], "valid1.png"),
-		fileName: "valid1.png",
+const MOCK_PREVIEW =
+	"data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAYAAAAfFcSJAAAADUlEQVR42mP8/5+hHgAHggJ/PchI7wAAAABJRU5ErkJggg==";
+
+const noop = () => {};
+
+/** Creates a minimal {@link TesseraInfo} for testing, overriding any fields. */
+function mockTessera(overrides: Partial<TesseraInfo> = {}): TesseraInfo {
+	return {
+		file: new File([], overrides.fileName ?? "test.jpg"),
+		fileName: "test.jpg",
 		isValid: true,
+		isSupplemented: false,
 		error: null,
 		isLowResolution: false,
-		previewUrl: "blob:valid1",
-		isSupplemented: false,
-	},
-	{
-		file: new File([], "invalid1.png"),
+		previewUrl: MOCK_PREVIEW,
+		...overrides,
+	};
+}
+
+const mockTesserae = [
+	mockTessera({ fileName: "valid1.png" }),
+	mockTessera({
 		fileName: "invalid1.png",
 		isValid: false,
 		error: "Invalid dimensions",
-		isLowResolution: false,
-		previewUrl: "blob:invalid1",
-		isSupplemented: false,
-	},
-	{
-		file: new File([], "supplemented1.png"),
-		fileName: "supplemented1.png",
-		isValid: true,
-		error: null,
-		isLowResolution: false,
-		previewUrl: "blob:supplemented1",
-		isSupplemented: true,
-	},
+	}),
+	mockTessera({ fileName: "supplemented1.png", isSupplemented: true }),
 ];
 
 describe("TesseraReview", () => {
@@ -43,7 +43,6 @@ describe("TesseraReview", () => {
 			/>,
 		);
 
-		// Check that the summary shows counts
 		const summaryElement = container.querySelector("summary");
 		expect(summaryElement).toBeTruthy();
 		expect(summaryElement?.textContent).toContain(
@@ -67,7 +66,6 @@ describe("TesseraReview", () => {
 		const continueButton = container.querySelector("button.primary");
 		expect(continueButton).toBeTruthy();
 
-		// Ensure continue button is outside the details element
 		const details = continueButton?.closest("details");
 		expect(details).toBeNull();
 	});
@@ -85,69 +83,55 @@ describe("TesseraReview", () => {
 		const warning = container.querySelector(".warning-message");
 		expect(warning).toBeTruthy();
 
-		// Ensure warning is outside the details element
 		const details = warning?.closest("details");
 		expect(details).toBeNull();
 	});
 
-	it("renders invalid tessera with visual distinction using Pico form validation colors", () => {
+	it("applies invalid styling when tessera is not valid", () => {
 		const tesserae = [
-			{
-				file: new File([], "invalid-tessera.jpg"),
+			mockTessera({
 				fileName: "invalid-tessera.jpg",
 				isValid: false,
-				isSupplemented: false,
 				error: "File too small",
-				isLowResolution: false,
-				previewUrl:
-					"data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAYAAAAfFcSJAAAADUlEQVR42mP8/5+hHgAHggJ/PchI7wAAAABJRU5ErkJggg==",
-			},
+			}),
 		];
 
 		render(
 			<TesseraReview
 				tesserae={tesserae}
-				onRemoveTessera={() => {}}
-				onContinue={() => {}}
+				onRemoveTessera={noop}
+				onContinue={noop}
 			/>,
 		);
 
-		const invalidTessera = screen
+		const item = screen
 			.getByText("invalid-tessera.jpg")
 			.closest(".tessera-item");
-		expect(invalidTessera).toHaveClass("invalid");
-		// Note: We can't easily test computed styles in JSDOM, but we can verify the element exists
-		expect(invalidTessera).toBeInTheDocument();
+		expect(item).toHaveClass("invalid");
+		expect(item).toBeInTheDocument();
 	});
 
-	it("renders supplemented tessera with visual distinction using Pico form validation colors", () => {
+	it("applies supplemented styling and label when tessera is supplemented", () => {
 		const tesserae = [
-			{
-				file: new File([], "supplemented-tessera.jpg"),
+			mockTessera({
 				fileName: "supplemented-tessera.jpg",
-				isValid: true,
 				isSupplemented: true,
-				error: null,
-				isLowResolution: false,
-				previewUrl:
-					"data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAYAAAAfFcSJAAAADUlEQVR42mP8/5+hHgAHggJ/PchI7wAAAABJRU5ErkJggg==",
-			},
+			}),
 		];
 
 		render(
 			<TesseraReview
 				tesserae={tesserae}
-				onRemoveTessera={() => {}}
-				onContinue={() => {}}
+				onRemoveTessera={noop}
+				onContinue={noop}
 			/>,
 		);
 
-		const supplementedTessera = screen
+		const item = screen
 			.getByText("supplemented-tessera.jpg")
 			.closest(".tessera-item");
-		expect(supplementedTessera).toHaveClass("supplemented");
-		// Note: We can't easily test computed styles in JSDOM, but we can verify the element exists
-		expect(supplementedTessera).toBeInTheDocument();
+		expect(item).toHaveClass("supplemented");
+		expect(item).toBeInTheDocument();
 		expect(screen.getByText("Supplemented")).toBeInTheDocument();
 	});
 });
