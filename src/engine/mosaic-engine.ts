@@ -2,11 +2,11 @@ import { createCanvas, loadImage } from "./export";
 import type { SourceImageInfo } from "./image-processing";
 import type { TesseraInfo } from "./workflow-state";
 
+/** Progress callback function type */
+export type ProgressCallback = (percent: number, message: string) => void;
+
 /**
  * Result of a mosaic generation operation.
- *
- * The {@link progress} field is optionally populated during async generation
- * to report incremental status to the caller.
  */
 export interface MosaicResult {
 	/** The mosaic image as a PNG data URL */
@@ -15,11 +15,6 @@ export interface MosaicResult {
 	width: number;
 	/** Height of the mosaic in pixels */
 	height: number;
-	/** Incremental generation progress, set when available */
-	progress?: {
-		percent: number;
-		message: string;
-	};
 }
 
 /**
@@ -72,6 +67,8 @@ const ALTERNATIVE_TOLERANCE = 1.1;
  * @param tesserae - Array of tesserae to use in the mosaic
  * @param tesseraSize - The size of each tessera in pixels
  * @param canvasCreator - Optional factory for creating canvas elements (for testing)
+ * @param imageLoader - Optional image loading function (for testing)
+ * @param progressCallback - Optional callback for progress reporting
  * @returns A promise that resolves to the generated mosaic result
  * @throws Error if tessera size is not positive or source dimensions are not positive
  */
@@ -84,6 +81,7 @@ export async function generateMosaic(
 		height: number,
 	) => HTMLCanvasElement = createCanvas,
 	imageLoader: (url: string) => Promise<HTMLImageElement> = loadImage,
+	progressCallback?: ProgressCallback,
 ): Promise<MosaicResult> {
 	if (tesseraSize <= 0) {
 		throw new Error("Tessera size must be positive");
@@ -107,40 +105,53 @@ export async function generateMosaic(
 		};
 	}
 
+	if (progressCallback) progressCallback(10, "Loading source image...");
+
 	const sourceCanvas = await createCanvasFromSource(
 		sourceImage,
 		canvasCreator,
 		imageLoader,
 	);
 
-	const processedTesserae = await Promise.all(
-		validTesserae.map(async (tessera) => {
-			const canvas = await renderTessera(
-				tessera,
+	const processedTesserae = [];
+	for (let i = 0; i < validTesserae.length; i++) {
+		if (progressCallback && i % 5 === 0) {
+			const percent = 10 + Math.round((i / validTesserae.length) * 40);
+			progressCallback(
+				percent,
+				`Processing tessera ${i + 1} of ${validTesserae.length}...`,
+			);
+		}
+
+		const tessera = validTesserae[i];
+		const canvas = await renderTessera(
+			tessera,
+			tesseraSize,
+			canvasCreator,
+			imageLoader,
+		);
+		processedTesserae.push({
+			info: tessera,
+			colorGrid: sampleColorGrid(
+				canvas,
+				0,
+				0,
+				tesseraSize,
 				tesseraSize,
 				canvasCreator,
-				imageLoader,
-			);
-			return {
-				info: tessera,
-				colorGrid: sampleColorGrid(
-					canvas,
-					0,
-					0,
-					tesseraSize,
-					tesseraSize,
-					canvasCreator,
-				),
-				canvas,
-			};
-		}),
-	);
+			),
+			canvas,
+		});
+	}
+
+	if (progressCallback) progressCallback(70, "Generating mosaic...");
 
 	const resultCanvas = await generateMosaicCanvas(
 		sourceCanvas,
 		processedTesserae,
 		tesseraSize,
 		canvasCreator,
+		progressCallback,
 	);
 
 	return {
@@ -417,6 +428,7 @@ async function generateMosaicCanvas(
 	processedTesserae: ProcessedTessera[],
 	tesseraSize: number,
 	canvasCreator: (width: number, height: number) => HTMLCanvasElement,
+	progressCallback?: ProgressCallback,
 ): Promise<HTMLCanvasElement> {
 	const resultCanvas = canvasCreator(sourceCanvas.width, sourceCanvas.height);
 	const resultCtx = resultCanvas.getContext("2d");
@@ -431,10 +443,25 @@ async function generateMosaicCanvas(
 		tesseraGrid[row] = new Array(gridCols).fill(null);
 	}
 
+	let cellCount = 0;
+	const totalCells = gridRows * gridCols;
+
 	for (let y = 0; y < sourceCanvas.height; y += tesseraSize) {
 		for (let x = 0; x < sourceCanvas.width; x += tesseraSize) {
 			const gridY = Math.floor(y / tesseraSize);
 			const gridX = Math.floor(x / tesseraSize);
+
+			if (
+				progressCallback &&
+				cellCount % Math.max(1, Math.floor(totalCells / 20)) === 0
+			) {
+				const percent = 70 + Math.round((cellCount / totalCells) * 25);
+				progressCallback(
+					percent,
+					`Generating cell ${cellCount + 1} of ${totalCells}...`,
+				);
+			}
+			cellCount++;
 
 			const cellGrid = sampleColorGrid(
 				sourceCanvas,
@@ -475,6 +502,8 @@ async function generateMosaicCanvas(
 			resultCtx.globalAlpha = 1.0;
 		}
 	}
+
+	if (progressCallback) progressCallback(95, "Finalizing mosaic...");
 
 	return resultCanvas;
 }
