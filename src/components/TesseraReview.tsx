@@ -43,7 +43,7 @@ export function TesseraReview({
 				</p>
 
 				{isLowVariety && varietyRecommendation && (
-					<div className="warning alert" role="alert">
+					<div className="warning-message" role="alert">
 						<p>
 							Low variety: You have {validCount} tesserae, but{" "}
 							{varietyRecommendation} are recommended.

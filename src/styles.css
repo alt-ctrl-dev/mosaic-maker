@@ -354,14 +354,6 @@ header > p:last-child {
 }
 
 /* Tessera Review Styles */
-.tessera-review .warning.alert {
-	margin: 1rem 0;
-	padding: 1rem;
-	border-radius: var(--pico-border-radius);
-	background-color: var(--pico-contrast-background);
-	color: var(--pico-contrast-color);
-}
-
 .tessera-review .tesserae-grid {
 	display: grid;
 	grid-template-columns: repeat(auto-fill, minmax(150px, 1fr));
@@ -504,10 +496,6 @@ header > p:last-child {
 .export-mosaic-step .hint.muted {
 	color: var(--pico-muted-color);
 	font-size: 0.9em;
-}
-
-.export-mosaic-step .error-message.alert {
-	margin-top: 1rem;
 }
 
 @media (max-width: 576px) {
