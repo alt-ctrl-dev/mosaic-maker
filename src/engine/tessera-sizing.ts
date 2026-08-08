@@ -1,5 +1,5 @@
 /** Minimum tessera size in pixels. */
-const MIN_TESSERA_SIZE = 8;
+const MIN_TESSERA_SIZE = 2;
 
 /**
  * Calculate the adjusted tessera size that best fits the source image dimensions.
