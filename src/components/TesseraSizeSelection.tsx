@@ -9,7 +9,7 @@ import {
 
 /** Props for {@link TesseraSizeSelection}. */
 interface TesseraSizeSelectionProps {
-	/** Called when the user confirms a tessera size. */
+	/** Called when the tessera size changes. */
 	onSizeSelected: (size: number) => void;
 	/** Current workflow state, used for source image dimensions. */
 	initialState: WorkflowState;
@@ -55,53 +55,48 @@ export function TesseraSizeSelection({
 		initialState.hasValidSourceDimensions,
 	]);
 
-	const handleSubmit = (e: React.FormEvent) => {
-		e.preventDefault();
-		if (adjustedSize !== null) {
-			onSizeSelected(requestedSize);
-		}
+	const handleSizeChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+		const newSize = Number(e.target.value);
+		setRequestedSize(newSize);
+		onSizeSelected(newSize);
 	};
 
 	return (
 		<div className="tessera-size-selection">
-			<form onSubmit={handleSubmit}>
-				<div className="size-input">
-					<label htmlFor="tessera-size">Tessera size (pixels):</label>
-					<input
-						id="tessera-size"
-						type="number"
-						min="8"
-						value={requestedSize}
-						onChange={(e) => setRequestedSize(Number(e.target.value))}
-						aria-describedby="size-explanation"
-					/>
-				</div>
+			<div className="size-input">
+				<label htmlFor="tessera-size">Tessera size (pixels):</label>
+				<input
+					id="tessera-size"
+					type="range"
+					min="2"
+					max="100"
+					value={requestedSize}
+					onChange={handleSizeChange}
+					aria-describedby="size-explanation"
+				/>
+				<span>{requestedSize}px</span>
+			</div>
 
-				{adjustedSize !== null && (
-					<div className="size-adjustment-info">
-						<p>
-							Adjusted size: <strong>{adjustedSize}px</strong>
+			{adjustedSize !== null && (
+				<div className="size-adjustment-info">
+					<p>
+						Adjusted size: <strong>{adjustedSize}px</strong>
+					</p>
+					{requestedSize !== adjustedSize && (
+						<p className="adjustment-explanation">
+							Adjusted to the nearest valid size that divides both source
+							dimensions.
 						</p>
-						{requestedSize !== adjustedSize && (
-							<p className="adjustment-explanation">
-								Adjusted to the nearest valid size that divides both source
-								dimensions.
-							</p>
-						)}
-					</div>
-				)}
+					)}
+				</div>
+			)}
 
-				{isCoarse && gridCellCount !== null && (
-					<div className="warning-message" role="alert">
-						Warning: This size produces only {gridCellCount} grid cells, which
-						is fewer than recommended.
-					</div>
-				)}
-
-				<button type="submit" disabled={adjustedSize === null}>
-					Confirm Size
-				</button>
-			</form>
+			{isCoarse && gridCellCount !== null && (
+				<div className="warning-message" role="alert">
+					Warning: This size produces only {gridCellCount} grid cells, which is
+					fewer than recommended.
+				</div>
+			)}
 		</div>
 	);
 }
