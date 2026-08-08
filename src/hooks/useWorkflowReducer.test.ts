@@ -16,10 +16,10 @@ function makeSourceImage(): SourceImageInfo {
 	};
 }
 
-function makeTessera(isValid: boolean): TesseraInfo {
+function makeTessera(fileName: string, isValid: boolean): TesseraInfo {
 	return {
-		file: new File([], "tessera.png", { type: "image/png" }),
-		fileName: "tessera.png",
+		file: new File([], fileName, { type: "image/png" }),
+		fileName,
 		isValid,
 		error: null,
 		isLowResolution: false,
@@ -66,7 +66,10 @@ describe("workflowReducer", () => {
 	it("counts valid and rejected tesserae on a tesseraeProcessed action", () => {
 		const next = workflowReducer(INITIAL_WORKFLOW_STATE, {
 			type: "tesseraeProcessed",
-			tesserae: [makeTessera(true), makeTessera(false)],
+			tesserae: [
+				makeTessera("tessera1.png", true),
+				makeTessera("tessera2.png", false),
+			],
 		});
 
 		expect(next.validTesseraCount).toBe(1);
@@ -74,20 +77,39 @@ describe("workflowReducer", () => {
 		expect(next.currentStep).toBe(WorkflowStep.BUILD_TESSERAE);
 	});
 
-	it("replaces the collection on a tesseraeGenerated action", () => {
-		const next = workflowReducer(INITIAL_WORKFLOW_STATE, {
+	it("appends to the collection on a tesseraeGenerated action", () => {
+		// Start with existing tesserae
+		const initialState = {
+			...INITIAL_WORKFLOW_STATE,
+			tesserae: [makeTessera("existing1.jpg", true)],
+			validTesseraCount: 1,
+			totalTesseraCount: 1,
+		};
+
+		const next = workflowReducer(initialState, {
 			type: "tesseraeGenerated",
-			tesserae: [makeTessera(true), makeTessera(true)],
+			tesserae: [
+				makeTessera("generated1.jpg", true),
+				makeTessera("generated2.jpg", true),
+			],
 		});
 
-		expect(next.totalTesseraCount).toBe(2);
+		// Should append instead of replace
+		expect(next.totalTesseraCount).toBe(3); // 1 existing + 2 new
+		expect(next.tesserae).toHaveLength(3);
+		expect(next.tesserae[0].fileName).toBe("existing1.jpg");
+		expect(next.tesserae[1].fileName).toBe("generated1.jpg");
+		expect(next.tesserae[2].fileName).toBe("generated2.jpg");
 		expect(next.needsRegeneration).toBe(false);
 	});
 
 	it("removes a tessera at the given index on a removeTessera action", () => {
 		const withTesserae = workflowReducer(INITIAL_WORKFLOW_STATE, {
 			type: "tesseraeProcessed",
-			tesserae: [makeTessera(true), makeTessera(false)],
+			tesserae: [
+				makeTessera("tessera1.png", true),
+				makeTessera("tessera2.png", false),
+			],
 		});
 
 		const next = workflowReducer(withTesserae, {
