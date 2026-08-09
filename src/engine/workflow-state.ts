@@ -191,7 +191,7 @@ export function updateWorkflowWithSourceImage(
 			sourceImage,
 			hasValidSourceDimensions: false,
 			sourceImageError:
-				"The selected image has no valid tessera sizes (no common divisors above 2 pixels). Please select a different image.",
+				"The selected image is too small (both dimensions must be at least 8 pixels). Please select a different image.",
 			currentStep: WorkflowStep.CHOOSE_SOURCE_IMAGE,
 		};
 	}
@@ -571,7 +571,7 @@ export function updateWorkflowOnSourceReplacement(
 		hasValidSourceDimensions: hasValidDimensions,
 		sourceImageError: hasValidDimensions
 			? null
-			: "The selected image has no valid tessera sizes (no common divisors above 2 pixels). Please select a different image.",
+			: "The selected image is too small (both dimensions must be at least 8 pixels). Please select a different image.",
 		currentStep: hasValidDimensions
 			? WorkflowStep.BUILD_TESSERAE
 			: WorkflowStep.CHOOSE_SOURCE_IMAGE,

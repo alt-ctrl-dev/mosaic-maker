@@ -1,40 +1,25 @@
 /** Minimum tessera size in pixels. */
-const MIN_TESSERA_SIZE = 2;
+const MIN_TESSERA_SIZE = 8;
 
 /**
  * Calculate the adjusted tessera size that best fits the source image dimensions.
- * Finds the valid tessera size (one that divides both width and height evenly)
- * that is closest to the requested size. In case of a tie, the smaller size is chosen.
+ * With partial edge cells, any size from {@link MIN_TESSERA_SIZE} to the minimum dimension is valid.
+ * The requested size is clamped to this valid range.
  *
  * @param requestedSize - The tessera size requested by the user
  * @param sourceWidth - The width of the source image in pixels
  * @param sourceHeight - The height of the source image in pixels
- * @returns The adjusted tessera size that fits the image dimensions, or null if none found
+ * @returns The adjusted tessera size clamped to the valid range
  */
 export function calculateAdjustedTesseraSize(
 	requestedSize: number,
 	sourceWidth: number,
 	sourceHeight: number,
-): number | null {
+): number {
 	const maxSize = Math.min(sourceWidth, sourceHeight);
 
-	let bestSize: number | null = null;
-	let bestDistance = Infinity;
-
-	for (let size = MIN_TESSERA_SIZE; size <= maxSize; size++) {
-		if (sourceWidth % size === 0 && sourceHeight % size === 0) {
-			const distance = Math.abs(requestedSize - size);
-			if (
-				distance < bestDistance ||
-				(distance === bestDistance && size < (bestSize || Infinity))
-			) {
-				bestSize = size;
-				bestDistance = distance;
-			}
-		}
-	}
-
-	return bestSize;
+	// Clamp the requested size to the valid range
+	return Math.max(MIN_TESSERA_SIZE, Math.min(requestedSize, maxSize));
 }
 
 /**
@@ -50,8 +35,8 @@ export function calculateGridCellCount(
 	sourceWidth: number,
 	sourceHeight: number,
 ): number {
-	const gridWidth = sourceWidth / tesseraSize;
-	const gridHeight = sourceHeight / tesseraSize;
+	const gridWidth = Math.ceil(sourceWidth / tesseraSize);
+	const gridHeight = Math.ceil(sourceHeight / tesseraSize);
 	return gridWidth * gridHeight;
 }
 
@@ -68,24 +53,17 @@ export function isCoarseGrid(cellCount: number): boolean {
 
 /**
  * Check if the source image has any valid tessera sizes.
- * A valid tessera size must be at least {@link MIN_TESSERA_SIZE}
- * and must divide both the width and height of the image evenly.
+ * With partial edge cells, a valid tessera size is any size from {@link MIN_TESSERA_SIZE}
+ * up to the minimum dimension. So the image is valid as long as both dimensions are
+ * at least {@link MIN_TESSERA_SIZE}.
  *
  * @param sourceWidth - The width of the source image in pixels
  * @param sourceHeight - The height of the source image in pixels
- * @returns True if at least one valid tessera size exists, false otherwise
+ * @returns True if the source image dimensions are both at least {@link MIN_TESSERA_SIZE}, false otherwise
  */
 export function hasValidTesseraSizes(
 	sourceWidth: number,
 	sourceHeight: number,
 ): boolean {
-	const maxSize = Math.min(sourceWidth, sourceHeight);
-
-	for (let size = MIN_TESSERA_SIZE; size <= maxSize; size++) {
-		if (sourceWidth % size === 0 && sourceHeight % size === 0) {
-			return true;
-		}
-	}
-
-	return false;
+	return sourceWidth >= MIN_TESSERA_SIZE && sourceHeight >= MIN_TESSERA_SIZE;
 }
