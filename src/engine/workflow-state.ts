@@ -280,17 +280,8 @@ export function updateWorkflowWithTesserae(
 	state: WorkflowState,
 	tesserae: TesseraInfo[],
 ): WorkflowState {
-	const validCount = tesserae.filter((t) => t.isValid).length;
-	const varietyMetrics = recalculateVarietyMetrics(state, validCount);
-
 	return {
-		...state,
-		tesserae,
-		validTesseraCount: validCount,
-		rejectedTesseraCount: tesserae.length - validCount,
-		totalTesseraCount: tesserae.length,
-		isLowVarietyCollection: varietyMetrics.isLowVariety,
-		varietyRecommendation: varietyMetrics.varietyRecommendation,
+		...replaceTesseraeAndRecalculate(state, tesserae),
 		currentStep: WorkflowStep.BUILD_TESSERAE,
 		furthestCompletedStep: Math.max(
 			state.furthestCompletedStep,
@@ -339,18 +330,7 @@ export function updateWorkflowRemoveTessera(
 	}
 
 	const newTesserae = state.tesserae.filter((_, i) => i !== tesseraIndex);
-	const validCount = newTesserae.filter((t) => t.isValid).length;
-	const varietyMetrics = recalculateVarietyMetrics(state, validCount);
-
-	return {
-		...state,
-		tesserae: newTesserae,
-		validTesseraCount: validCount,
-		rejectedTesseraCount: newTesserae.length - validCount,
-		totalTesseraCount: newTesserae.length,
-		isLowVarietyCollection: varietyMetrics.isLowVariety,
-		varietyRecommendation: varietyMetrics.varietyRecommendation,
-	};
+	return replaceTesseraeAndRecalculate(state, newTesserae);
 }
 
 /**
