@@ -295,6 +295,10 @@ header > p:last-child {
 }
 
 /* Generated Tesserae Styles */
+.generated-tesserae {
+	flex: 1;
+}
+
 .generated-tesserae .control-group {
 	margin-bottom: 1.5rem;
 	border: 1px solid var(--pico-muted-border-color);
@@ -327,6 +331,18 @@ header > p:last-child {
 .generated-tesserae .generation-info {
 	margin-top: 1rem;
 	font-size: 0.9em;
+}
+
+/* Tessera Upload Styles */
+.tessera-upload {
+	flex: 1;
+}
+
+.tessera-upload .control-group {
+	margin: 0;
+	border: 1px solid var(--pico-muted-border-color);
+	border-radius: var(--pico-border-radius);
+	padding: 1rem;
 }
 
 /* Alert and Error Message Styles */

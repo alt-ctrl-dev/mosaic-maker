@@ -81,7 +81,7 @@ export function GeneratedTesserae({
 	};
 
 	return (
-		<div className="generated-tesserae">
+		<div className="generated-tesserae" data-testid="generated-tesserae">
 			<fieldset className="control-group">
 				<legend>Generation Settings</legend>
 				<div className="seed-control">
