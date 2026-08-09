@@ -84,6 +84,16 @@ export function App() {
 								initialState={workflowState}
 							/>
 						</div>
+						{workflowState.tesserae.length > 0 && (
+							<button
+								type="button"
+								onClick={() => dispatch({ type: "clearAllTesserae" })}
+								className="secondary"
+								style={{ marginBottom: "1rem" }}
+							>
+								Clear All Tesserae
+							</button>
+						)}
 						<TesseraReview
 							tesserae={workflowState.tesserae}
 							onRemoveTessera={(index) =>

@@ -6,6 +6,8 @@ interface TesseraReviewProps {
 	tesserae: TesseraInfo[];
 	/** Called when the user removes a tessera at the given index. */
 	onRemoveTessera: (index: number) => void;
+	/** Called when the user wants to clear all tesserae. */
+	onClearAllTesserae?: () => void;
 	/** Called when the user accepts supplementing with generated tesserae. */
 	onAcceptSupplementation?: () => void;
 	/** Called when the user wants to continue to the next step. */

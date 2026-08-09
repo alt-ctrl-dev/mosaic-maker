@@ -8,6 +8,7 @@ import {
 	type TesseraInfo,
 	type WorkflowState,
 	updateWorkflowAdvanceFromReview,
+	updateWorkflowClearAllTesserae,
 	updateWorkflowExportSettings,
 	updateWorkflowOnCancellationOrFailure,
 	updateWorkflowRemoveTessera,
@@ -38,6 +39,7 @@ export type WorkflowAction =
 	| { type: "tesseraeGenerated"; tesserae: TesseraInfo[] }
 	| { type: "tesseraeSupplemented"; tesserae: TesseraInfo[] }
 	| { type: "removeTessera"; index: number }
+	| { type: "clearAllTesserae" }
 	| { type: "mosaicGenerated"; mosaicResult: MosaicResult }
 	| { type: "generationCancelledOrFailed" }
 	| { type: "exportSettingsChanged"; settings: Partial<ExportSettings> }
@@ -72,6 +74,8 @@ export function workflowReducer(
 			return updateWorkflowWithSupplementedTesserae(state, action.tesserae);
 		case "removeTessera":
 			return updateWorkflowRemoveTessera(state, action.index);
+		case "clearAllTesserae":
+			return updateWorkflowClearAllTesserae(state);
 		case "mosaicGenerated":
 			return updateWorkflowWithMosaicResult(state, action.mosaicResult);
 		case "generationCancelledOrFailed":

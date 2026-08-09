@@ -300,6 +300,29 @@ export function updateWorkflowWithTesserae(
 }
 
 /**
+ * Update workflow state by clearing all tesserae.
+ * Resets the tesserae collection and all related metrics.
+ *
+ * @param state - The current workflow state
+ * @returns Updated workflow state with empty tesserae collection
+ */
+export function updateWorkflowClearAllTesserae(
+	state: WorkflowState,
+): WorkflowState {
+	const varietyMetrics = recalculateVarietyMetrics(state, 0);
+
+	return {
+		...state,
+		tesserae: [],
+		validTesseraCount: 0,
+		rejectedTesseraCount: 0,
+		totalTesseraCount: 0,
+		isLowVarietyCollection: varietyMetrics.isLowVariety,
+		varietyRecommendation: varietyMetrics.varietyRecommendation,
+	};
+}
+
+/**
  * Remove a tessera at the specified index from the workflow state.
  * Updates validity counts and variety metrics after removal.
  *
@@ -376,7 +399,38 @@ export async function generateSupplementedTesserae(
 }
 
 /**
+ * Filter out generated tesserae (those with isSupplemented flag) and append new tesserae.
+ * Used when generating new tesserae to clear previous generated ones while keeping uploaded ones.
+ *
+ * @param state - The current workflow state
+ * @param newTesserae - Tesserae to append to the existing collection
+ * @returns State with filtered tesserae and updated variety metrics
+ */
+function filterGeneratedAndAppend(
+	state: WorkflowState,
+	newTesserae: TesseraInfo[],
+): WorkflowState {
+	// Keep only uploaded tesserae (those without isSupplemented flag)
+	const uploadedTesserae = state.tesserae.filter(
+		(tessera) => !tessera.isSupplemented,
+	);
+	const allTesserae = [...uploadedTesserae, ...newTesserae];
+	const validCount = allTesserae.filter((t) => t.isValid).length;
+	const varietyMetrics = recalculateVarietyMetrics(state, validCount);
+	return {
+		...state,
+		tesserae: allTesserae,
+		validTesseraCount: validCount,
+		rejectedTesseraCount: allTesserae.length - validCount,
+		totalTesseraCount: allTesserae.length,
+		isLowVarietyCollection: varietyMetrics.isLowVariety,
+		varietyRecommendation: varietyMetrics.varietyRecommendation,
+	};
+}
+
+/**
  * Append new tesserae to the collection and recalculate variety metrics.
+ * Used when uploading new tesserae to preserve all existing ones.
  *
  * @param state - The current workflow state
  * @param newTesserae - Tesserae to append to the existing collection
@@ -470,18 +524,18 @@ export function updateWorkflowWithGeneratedTesseraCount(
 
 /**
  * Update workflow with newly generated tesserae.
- * Appends the generated tesserae to the existing collection and clears the regeneration flag.
+ * Clears existing generated tesserae, keeps uploaded tesserae, and appends the new generated tesserae.
  *
  * @param state - The current workflow state
  * @param tesserae - The newly generated tesserae collection
- * @returns Updated workflow state with appended tesserae and regeneration flag cleared
+ * @returns Updated workflow state with filtered tesserae and regeneration flag cleared
  */
 export function updateWorkflowWithGeneratedTesserae(
 	state: WorkflowState,
 	tesserae: TesseraInfo[],
 ): WorkflowState {
 	return {
-		...appendTesseraeAndRecalculate(state, tesserae),
+		...filterGeneratedAndAppend(state, tesserae),
 		needsRegeneration: false,
 	};
 }
