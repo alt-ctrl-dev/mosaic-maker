@@ -1,6 +1,14 @@
 import { readFileSync } from "node:fs";
 import { resolve } from "node:path";
-import { afterEach, beforeAll, describe, expect, it, vi } from "vitest";
+import {
+	afterAll,
+	afterEach,
+	beforeAll,
+	describe,
+	expect,
+	it,
+	vi,
+} from "vitest";
 import {
 	cleanup,
 	fireEvent,
@@ -49,10 +57,16 @@ vi.mock("../engine/mosaic-engine", () => ({
 
 const styles = readFileSync(resolve(process.cwd(), "src/styles.css"), "utf8");
 
+let styleElement: HTMLStyleElement;
+
 beforeAll(() => {
-	const styleElement = document.createElement("style");
+	styleElement = document.createElement("style");
 	styleElement.textContent = styles;
 	document.head.appendChild(styleElement);
+});
+
+afterAll(() => {
+	styleElement.remove();
 });
 
 afterEach(cleanup);

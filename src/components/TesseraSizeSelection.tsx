@@ -47,6 +47,8 @@ export function TesseraSizeSelection({
 				);
 
 				setGridCellCount(cellCount);
+			} else {
+				setGridCellCount(null);
 			}
 		}
 	}, [
