@@ -207,7 +207,6 @@ describe("Status panels delegate styling to Pico article elements", () => {
 			sourceImage: { url: "blob:test", width: 100, height: 100 },
 			adjustedTesseraSize: 10,
 			tesserae: [{ isValid: true } as unknown],
-			useGeneratedTesserae: false,
 		} as unknown as WorkflowState;
 
 		const { container } = render(

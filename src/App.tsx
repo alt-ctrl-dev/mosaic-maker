@@ -8,6 +8,7 @@ import { GenerateAndPreview } from "./components/GenerateAndPreview";
 import { ExportMosaic } from "./components/ExportMosaic";
 import { WorkflowStep as WorkflowStepEnum } from "./engine/workflow-state";
 import { useWorkflowReducer } from "./hooks/useWorkflowReducer";
+import { generateSupplementedTesserae } from "./engine/workflow-state";
 
 const stages = [
 	"Choose source image",
@@ -33,6 +34,19 @@ export function App() {
 	const resolvedTesseraSize =
 		workflowState.adjustedTesseraSize ?? DEFAULT_TESSERA_SIZE;
 
+	const handleAcceptSupplementation =
+		workflowState.isLowVarietyCollection &&
+		!workflowState.hasAcceptedSupplementation
+			? async () => {
+					const supplementedTesserae =
+						await generateSupplementedTesserae(workflowState);
+					dispatch({
+						type: "tesseraeSupplemented",
+						tesserae: supplementedTesserae,
+					});
+				}
+			: undefined;
+
 	function renderStepContent(stepIndex: number) {
 		switch (stepIndex) {
 			case WorkflowStepEnum.CHOOSE_SOURCE_IMAGE:
@@ -56,26 +70,26 @@ export function App() {
 							}
 							initialState={workflowState}
 						/>
-						{workflowState.useGeneratedTesserae ? (
-							<GeneratedTesserae
-								onTesseraeGenerated={(tesserae) =>
-									dispatch({ type: "tesseraeGenerated", tesserae })
-								}
-								initialState={workflowState}
-							/>
-						) : (
+						<div className="tessera-inputs">
 							<TesseraUpload
 								onTesseraeProcessed={(tesserae) =>
 									dispatch({ type: "tesseraeProcessed", tesserae })
 								}
 								adjustedTesseraSize={resolvedTesseraSize}
 							/>
-						)}
+							<GeneratedTesserae
+								onTesseraeGenerated={(tesserae) =>
+									dispatch({ type: "tesseraeGenerated", tesserae })
+								}
+								initialState={workflowState}
+							/>
+						</div>
 						<TesseraReview
 							tesserae={workflowState.tesserae}
 							onRemoveTessera={(index) =>
 								dispatch({ type: "removeTessera", index })
 							}
+							onAcceptSupplementation={handleAcceptSupplementation}
 							onContinue={() => dispatch({ type: "advanceFromReview" })}
 							isLowVariety={workflowState.isLowVarietyCollection}
 							varietyRecommendation={workflowState.varietyRecommendation}

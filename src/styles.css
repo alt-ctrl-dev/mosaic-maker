@@ -488,3 +488,16 @@ header > p:last-child {
 	flex-direction: column;
 	gap: 2rem;
 }
+
+.tessera-inputs {
+	display: flex;
+	flex-wrap: wrap;
+	gap: 2rem;
+	align-items: flex-start;
+}
+
+@media (max-width: 768px) {
+	.tessera-inputs {
+		flex-direction: column;
+	}
+}
