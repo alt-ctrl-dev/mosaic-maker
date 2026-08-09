@@ -30,8 +30,6 @@ function createMockStateWithGrid(
 }
 
 test("initializes count to spec-recommended default when no explicit count is set", () => {
-	// Create a state with a 100x100 image and 10px tessera size = 100 grid cells
-	// Recommendation should be 10% of 100 = 10, capped at 100 = 10
 	const mockState = createMockStateWithGrid(100, 100, 10);
 
 	render(
@@ -44,7 +42,7 @@ test("initializes count to spec-recommended default when no explicit count is se
 	const countInput = screen.getByLabelText(
 		"Number of tesserae to generate",
 	) as HTMLInputElement;
-	expect(countInput.value).toBe("10"); // Should be 10, not 20
+	expect(countInput.value).toBe("10");
 });
 
 test("uses explicit count when provided in state", () => {
@@ -63,12 +61,10 @@ test("uses explicit count when provided in state", () => {
 	const countInput = screen.getByLabelText(
 		"Number of tesserae to generate",
 	) as HTMLInputElement;
-	expect(countInput.value).toBe("25"); // Should use explicit count
+	expect(countInput.value).toBe("25");
 });
 
 test("recommends 100 as max for large grid", () => {
-	// Create a state with a 1000x1000 image and 10px tessera size = 10,000 grid cells
-	// Recommendation should be 10% of 10,000 = 1000, capped at 100 = 100
 	const mockState = createMockStateWithGrid(1000, 1000, 10);
 
 	render(
@@ -81,5 +77,5 @@ test("recommends 100 as max for large grid", () => {
 	const countInput = screen.getByLabelText(
 		"Number of tesserae to generate",
 	) as HTMLInputElement;
-	expect(countInput.value).toBe("100"); // Should be capped at 100
+	expect(countInput.value).toBe("100");
 });
