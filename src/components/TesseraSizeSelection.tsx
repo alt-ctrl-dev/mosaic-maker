@@ -37,11 +37,13 @@ export function TesseraSizeSelection({
 				)
 			: 100;
 
-	// Call onSizeSelected with the default value on initial mount
 	const onSizeSelectedRef = useRef(onSizeSelected);
+	onSizeSelectedRef.current = onSizeSelected;
+
+	// biome-ignore lint/correctness/useExhaustiveDependencies: intentional mount-only effect
 	useEffect(() => {
 		onSizeSelectedRef.current(requestedSize);
-	}, [requestedSize]);
+	}, []);
 
 	useEffect(() => {
 		if (initialState.sourceImage && initialState.hasValidSourceDimensions) {
