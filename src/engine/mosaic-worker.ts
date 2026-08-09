@@ -1,8 +1,6 @@
-// Import shared constants and functions
 import {
 	COLOR_GRID_SIZE,
 	BLEND_SOURCE_ALPHA,
-	ALTERNATIVE_TOLERANCE,
 	rgbToOklab,
 	selectTessera as sharedSelectTessera,
 	type ColorGrid,
@@ -79,11 +77,7 @@ async function blobToDataUrl(blob: Blob): Promise<string> {
 
 // ──── tessera selection ───────────────────────────────────────────────────
 
-/**
- * Choose the best tessera for a cell, preferring the closest color match but
- * avoiding the tesserae used directly above and to the left when an alternative
- * is within {@link ALTERNATIVE_TOLERANCE} of the best score.
- */
+/** Delegates to {@link sharedSelectTessera} with {@link ProcessedTessera.colorGrid}. */
 function selectTessera(
 	cellGrid: ColorGrid,
 	processedTesserae: ProcessedTessera[],

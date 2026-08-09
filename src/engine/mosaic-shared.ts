@@ -12,6 +12,7 @@ export const BLEND_SOURCE_ALPHA = 0.25;
 /** Tolerance multiplier for neighbor-avoidance: an alternative within this factor of the best match is preferred. */
 export const ALTERNATIVE_TOLERANCE = 1.1;
 
+/** 8-bit sRGB color with 0-255 channel range. */
 export interface RGB {
 	r: number;
 	g: number;
@@ -25,6 +26,7 @@ export interface Oklab {
 	b: number;
 }
 
+/** {@link COLOR_GRID_SIZE}&times;{@link COLOR_GRID_SIZE} grid of OKLab colors for spatial matching. */
 export interface ColorGrid {
 	colors: Oklab[][];
 }

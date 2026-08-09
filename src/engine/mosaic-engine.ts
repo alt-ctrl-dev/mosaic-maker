@@ -5,7 +5,6 @@ import { runDeviceCapacityPreflight } from "./device-capacity-preflight";
 import {
 	COLOR_GRID_SIZE,
 	BLEND_SOURCE_ALPHA,
-	ALTERNATIVE_TOLERANCE,
 	rgbToOklab,
 	selectTessera as sharedSelectTessera,
 	type ColorGrid,
@@ -292,13 +291,7 @@ function sampleColorGrid(
 	return { colors };
 }
 
-/**
- * Choose the tessera for a cell, preferring the closest colour match but
- * avoiding the tesserae used directly above and to the left when an
- * alternative is within {@link ALTERNATIVE_TOLERANCE} of the best score.
- *
- * @returns The index of the chosen tessera
- */
+/** Delegates to {@link sharedSelectTessera} with {@link ProcessedTessera.colorGrid}. */
 function selectTessera(
 	cellGrid: ColorGrid,
 	processedTesserae: ProcessedTessera[],
