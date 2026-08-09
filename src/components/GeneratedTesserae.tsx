@@ -4,7 +4,29 @@ import {
 	SEED_MAX,
 	type WorkflowState,
 	type TesseraInfo,
+	getVarietyRecommendation,
 } from "../engine/workflow-state";
+import { calculateGridCellCount } from "../engine/tessera-sizing";
+
+/**
+ * Compute the default tessera count for a given workflow state.
+ * Returns the explicit count from state when set, the variety recommendation
+ * when source image and tessera size are available, or 20 as a fallback.
+ */
+function computeDefaultTesseraCount(state: WorkflowState): number {
+	if (state.generatedTesseraCount !== null) {
+		return state.generatedTesseraCount;
+	}
+	if (state.sourceImage && state.adjustedTesseraSize) {
+		const gridCellCount = calculateGridCellCount(
+			state.adjustedTesseraSize,
+			state.sourceImage.width,
+			state.sourceImage.height,
+		);
+		return getVarietyRecommendation(gridCellCount);
+	}
+	return 20;
+}
 
 /** Props for {@link GeneratedTesserae}. */
 interface GeneratedTesseraeProps {
@@ -26,17 +48,15 @@ export function GeneratedTesserae({
 		initialState.seed ?? Math.floor(Math.random() * SEED_MAX),
 	);
 	const [count, setCount] = useState<number>(
-		initialState.generatedTesseraCount ?? 20,
+		computeDefaultTesseraCount(initialState),
 	);
 
 	useEffect(() => {
 		if (initialState.seed !== null) {
 			setSeed(initialState.seed);
 		}
-		if (initialState.generatedTesseraCount !== null) {
-			setCount(initialState.generatedTesseraCount);
-		}
-	}, [initialState.seed, initialState.generatedTesseraCount]);
+		setCount(computeDefaultTesseraCount(initialState));
+	}, [initialState]);
 
 	const handleGenerate = async () => {
 		setIsGenerating(true);
