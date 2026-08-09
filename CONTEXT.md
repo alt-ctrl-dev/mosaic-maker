@@ -13,7 +13,7 @@ A small image available for use as a tile in the mosaic. A tessera may appear re
 _Avoid_: Image tile, tile image
 
 **Tessera size**:
-The square side length requested by the user and adjusted to the nearest value that divides both source-image dimensions. An equal-distance tie resolves to the smaller value.
+The square side length requested by the user and clamped into the 8–ceiling range derived from the source image dimensions. Partial edge cells are allowed when dimensions are not an exact multiple.
 _Avoid_: Tile size, tessera dimensions
 
 **Generated tessera**:
