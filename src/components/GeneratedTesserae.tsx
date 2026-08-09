@@ -102,6 +102,11 @@ export function GeneratedTesserae({
 			>
 				{isGenerating ? "Generating..." : "Generate Tesserae"}
 			</button>
+			{isGenerating && (
+				<article className="generation-info" aria-busy="true">
+					Generating {count} tesserae with seed {seed}...
+				</article>
+			)}
 		</div>
 	);
 }

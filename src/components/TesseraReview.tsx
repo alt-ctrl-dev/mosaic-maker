@@ -40,7 +40,7 @@ export function TesseraReview({
 				Tessera counts updated: {validCount} valid, {rejectedCount} rejected
 			</div>
 			{isLowVariety && varietyRecommendation && (
-				<div className="warning-message" role="alert">
+				<article className="warning-message" role="alert">
 					<p>
 						Low variety: You have {validCount} tesserae, but{" "}
 						{varietyRecommendation} are recommended.
@@ -54,7 +54,7 @@ export function TesseraReview({
 							Add Generated Tesserae
 						</button>
 					)}
-				</div>
+				</article>
 			)}
 
 			<details>
