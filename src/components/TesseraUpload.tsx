@@ -60,21 +60,24 @@ export function TesseraUpload({
 			onDragOver={handleDragOver}
 			onDrop={handleDrop}
 			aria-busy={isProcessing}
+			data-testid="tessera-upload"
 		>
-			<div className="drop-zone">
-				<p>Drop tesserae images here or click below</p>
-				<input
-					type="file"
-					accept="image/jpeg,image/png,image/webp"
-					onChange={(e) => handleFileChange(e.target.files)}
-					multiple
-					disabled={isProcessing}
-					aria-label="Upload tesserae images"
-					className="file-input"
-				/>
-			</div>
+			<fieldset className="control-group" aria-label="Upload Tesserae">
+				<div className="drop-zone">
+					<p>Drop tesserae images here or click below</p>
+					<input
+						type="file"
+						accept="image/jpeg,image/png,image/webp"
+						onChange={(e) => handleFileChange(e.target.files)}
+						multiple
+						disabled={isProcessing}
+						aria-label="Upload tesserae images"
+						className="file-input"
+					/>
+				</div>
 
-			<p className="hint">Supported formats: JPEG, PNG, WebP</p>
+				<p className="hint">Supported formats: JPEG, PNG, WebP</p>
+			</fieldset>
 
 			{isProcessing && (
 				<article className="processing-indicator" aria-busy="true">
