@@ -32,7 +32,7 @@ describe("TesseraSizeSelection with dynamic max", () => {
 		);
 
 		const rangeInput = screen.getByRole("slider");
-		expect(rangeInput.getAttribute("max")).toBe("476"); // min(476, 600)
+		expect(rangeInput.getAttribute("max")).toBe("476");
 	});
 
 	it("updates the max value when source image dimensions change", () => {
@@ -55,7 +55,6 @@ describe("TesseraSizeSelection with dynamic max", () => {
 		const rangeInput = screen.getByRole("slider");
 		expect(rangeInput.getAttribute("max")).toBe("100");
 
-		// Re-render with different dimensions
 		rerender(
 			<TesseraSizeSelection
 				onSizeSelected={onSizeSelectedMock}
@@ -72,7 +71,7 @@ describe("TesseraSizeSelection with dynamic max", () => {
 			/>,
 		);
 
-		expect(rangeInput.getAttribute("max")).toBe("150"); // min(200, 150)
+		expect(rangeInput.getAttribute("max")).toBe("150");
 	});
 
 	it("allows selecting sizes up to the dynamic maximum", () => {
@@ -94,7 +93,6 @@ describe("TesseraSizeSelection with dynamic max", () => {
 
 		const rangeInput = screen.getByRole("slider");
 
-		// Try setting to the maximum allowed value
 		fireEvent.change(rangeInput, { target: { value: "150" } });
 		expect(onSizeSelectedMock).toHaveBeenCalledWith(150);
 	});

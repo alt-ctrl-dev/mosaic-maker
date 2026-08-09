@@ -29,14 +29,13 @@ export function TesseraSizeSelection({
 
 	const isCoarse = gridCellCount !== null && isCoarseGrid(gridCellCount);
 
-	// Calculate dynamic max based on source image dimensions
 	const maxTesseraSize =
 		initialState.sourceImage && initialState.hasValidSourceDimensions
 			? Math.min(
 					initialState.sourceImage.width,
 					initialState.sourceImage.height,
 				)
-			: 100; // fallback to previous hardcoded value
+			: 100;
 
 	useEffect(() => {
 		if (initialState.sourceImage && initialState.hasValidSourceDimensions) {
@@ -80,7 +79,7 @@ export function TesseraSizeSelection({
 					id="tessera-size"
 					type="range"
 					min="2"
-					max={maxTesseraSize.toString()}
+					max={maxTesseraSize}
 					value={requestedSize}
 					onChange={handleSizeChange}
 				/>
