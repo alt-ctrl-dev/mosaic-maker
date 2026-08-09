@@ -14,7 +14,7 @@ Review the code changes on branch `{{BRANCH}}` against both coding standards and
 
 ## Original Issue
 
-!`gh issue view $(git log --oneline | head -5 | grep -o "#\?[0-9]\+" | head -1 | sed 's/#//')`
+!`gh issue view $(git log --oneline | head -5 | grep -o '#[0-9]\+' | head -1 | sed 's/#//')`
 
 # REVIEW PROCESS
 
