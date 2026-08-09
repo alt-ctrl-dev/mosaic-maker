@@ -47,6 +47,15 @@ export function TesseraSizeSelection({
 		onSizeSelectedRef.current(requestedSize);
 	}, []);
 
+	// Clean up debounce timer on unmount
+	useEffect(() => {
+		return () => {
+			if (debounceTimerRef.current) {
+				clearTimeout(debounceTimerRef.current);
+			}
+		};
+	}, []);
+
 	useEffect(() => {
 		if (initialState.sourceImage && initialState.hasValidSourceDimensions) {
 			const adjusted = calculateAdjustedTesseraSize(
@@ -75,10 +84,22 @@ export function TesseraSizeSelection({
 		initialState.hasValidSourceDimensions,
 	]);
 
+	const debounceTimerRef = useRef<NodeJS.Timeout | null>(null);
+
 	const handleSizeChange = (e: React.ChangeEvent<HTMLInputElement>) => {
 		const newSize = Number(e.target.value);
 		setRequestedSize(newSize);
-		onSizeSelected(newSize);
+
+		// Clear existing debounce timer
+		if (debounceTimerRef.current) {
+			clearTimeout(debounceTimerRef.current);
+		}
+
+		// Set new debounce timer
+		debounceTimerRef.current = setTimeout(() => {
+			onSizeSelectedRef.current(newSize);
+			debounceTimerRef.current = null;
+		}, 150);
 	};
 
 	return (
