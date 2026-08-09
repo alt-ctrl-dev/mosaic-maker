@@ -1,5 +1,5 @@
 import type React from "react";
-import { useState, useEffect } from "react";
+import { useState, useEffect, useRef } from "react";
 import type { WorkflowState } from "../engine/workflow-state";
 import {
 	calculateAdjustedTesseraSize,
@@ -36,6 +36,14 @@ export function TesseraSizeSelection({
 					initialState.sourceImage.height,
 				)
 			: 100;
+
+	const onSizeSelectedRef = useRef(onSizeSelected);
+	onSizeSelectedRef.current = onSizeSelected;
+
+	// biome-ignore lint/correctness/useExhaustiveDependencies: intentional mount-only effect
+	useEffect(() => {
+		onSizeSelectedRef.current(requestedSize);
+	}, []);
 
 	useEffect(() => {
 		if (initialState.sourceImage && initialState.hasValidSourceDimensions) {
