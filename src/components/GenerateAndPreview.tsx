@@ -75,11 +75,10 @@ export function GenerateAndPreview({
 
 		if (typeof Worker !== "undefined") {
 			try {
-				const workerUrl = new URL(
-					"../engine/mosaic-worker.ts",
-					import.meta.url,
-				);
-				workerRef.current = new Worker(workerUrl, { type: "module" });
+				const WorkerConstructor = (
+					await import("../engine/mosaic-worker.ts?worker")
+				).default;
+				workerRef.current = new WorkerConstructor();
 
 				workerRef.current.onmessage = (event) => {
 					const { type, ...data } = event.data;
