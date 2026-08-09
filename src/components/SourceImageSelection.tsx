@@ -24,11 +24,20 @@ export function SourceImageSelection({
 	initialState,
 }: SourceImageSelectionProps) {
 	const [isProcessing, setIsProcessing] = useState(false);
-	const [previewUrl, setPreviewUrl] = useState<string | null>(null);
+	const [previewUrl, setPreviewUrl] = useState<string | null>(
+		initialState.sourceImage?.url ?? null,
+	);
 	const [imageDimensions, setImageDimensions] = useState<{
 		width: number;
 		height: number;
-	} | null>(null);
+	} | null>(
+		initialState.sourceImage
+			? {
+					width: initialState.sourceImage.width,
+					height: initialState.sourceImage.height,
+				}
+			: null,
+	);
 
 	const handleFileChange = useCallback(
 		async (files: FileList | null) => {
