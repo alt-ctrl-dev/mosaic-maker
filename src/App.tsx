@@ -139,10 +139,8 @@ export function App() {
 	const canGoForward =
 		workflowState.currentStep < workflowState.furthestCompletedStep;
 
-	// Back button should be hidden on step 1 (CHOOSE_SOURCE_IMAGE)
 	const showBackButton = workflowState.currentStep > 0;
 
-	// Top Next button should be hidden on steps 1 and 2 (CHOOSE_SOURCE_IMAGE and BUILD_TESSERAE)
 	const showTopNextButton =
 		canGoForward && workflowState.currentStep > WorkflowStepEnum.BUILD_TESSERAE;
 

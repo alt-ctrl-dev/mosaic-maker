@@ -36,9 +36,8 @@ describe("Mosaic Maker workflow", () => {
 		expect(screen.queryByText("Next →")).toBeNull();
 	});
 
-	it("renders Back button with secondary variant", () => {
+	it("hides Back button on first load", () => {
 		render(<App />);
-		const backButton = screen.getByText("← Back");
-		expect(backButton.classList.contains("secondary")).toBe(true);
+		expect(screen.queryByText("← Back")).toBeNull();
 	});
 });
