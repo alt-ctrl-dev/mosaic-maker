@@ -47,6 +47,9 @@ export function TesseraSizeSelection({
 
 				setGridCellCount(cellCount);
 				setIsCoarse(isCoarseGrid(cellCount));
+			} else {
+				setGridCellCount(null);
+				setIsCoarse(false);
 			}
 		}
 	}, [
