@@ -31,10 +31,7 @@ export interface ColorGrid {
 	colors: Oklab[][];
 }
 
-/**
- * Apply sRGB gamma linearization.
- */
-export function linearize(channel: number): number {
+function linearize(channel: number): number {
 	return channel <= 0.04045
 		? channel / 12.92
 		: ((channel + 0.055) / 1.055) ** 2.4;
@@ -70,7 +67,7 @@ export function rgbToOklab(rgb: RGB): Oklab {
 /**
  * Euclidean distance between two OKLab colors (perceptually uniform).
  */
-export function oklabDistance(a: Oklab, b: Oklab): number {
+function oklabDistance(a: Oklab, b: Oklab): number {
 	const deltaL = a.L - b.L;
 	const deltaA = a.a - b.a;
 	const deltaB = a.b - b.b;
@@ -80,10 +77,7 @@ export function oklabDistance(a: Oklab, b: Oklab): number {
 /**
  * Average perceptual distance between two color grids.
  */
-export function averageGridDistance(
-	grid1: ColorGrid,
-	grid2: ColorGrid,
-): number {
+function averageGridDistance(grid1: ColorGrid, grid2: ColorGrid): number {
 	if (
 		grid1.colors.length !== grid2.colors.length ||
 		grid1.colors[0].length !== grid2.colors[0].length

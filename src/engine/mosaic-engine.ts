@@ -291,7 +291,6 @@ function sampleColorGrid(
 	return { colors };
 }
 
-/** Delegates to {@link sharedSelectTessera} with {@link ProcessedTessera.colorGrid}. */
 function selectTessera(
 	cellGrid: ColorGrid,
 	processedTesserae: ProcessedTessera[],

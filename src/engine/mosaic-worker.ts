@@ -79,9 +79,6 @@ async function blobToDataUrl(blob: Blob): Promise<string> {
 	});
 }
 
-// ──── tessera selection ───────────────────────────────────────────────────
-
-/** Delegates to {@link sharedSelectTessera} with {@link ProcessedTessera.colorGrid}. */
 function selectTessera(
 	cellGrid: ColorGrid,
 	processedTesserae: ProcessedTessera[],
@@ -383,12 +380,6 @@ async function generateMosaicWithProgress(
 	self.postMessage({
 		type: "progress",
 		percent: 95,
-		message: "Finalizing mosaic...",
-	});
-
-	self.postMessage({
-		type: "progress",
-		percent: 97,
 		message: "Creating final image...",
 	});
 	const blob = await resultCanvas.convertToBlob({ type: "image/png" });
