@@ -131,6 +131,20 @@ export function SourceImageSelection({
 					Processing image...
 				</article>
 			)}
+
+			{/* Show Next button when image is loaded on step 1 */}
+			{previewUrl && imageDimensions && initialState.sourceImage && (
+				<button
+					type="button"
+					className="secondary"
+					onClick={() => {
+						// Advance to next step when image is already loaded
+						onSourceSelected(initialState.sourceImage);
+					}}
+				>
+					Continue to Build Tesserae →
+				</button>
+			)}
 		</div>
 	);
 }

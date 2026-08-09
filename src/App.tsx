@@ -139,6 +139,13 @@ export function App() {
 	const canGoForward =
 		workflowState.currentStep < workflowState.furthestCompletedStep;
 
+	// Back button should be hidden on step 1 (CHOOSE_SOURCE_IMAGE)
+	const showBackButton = workflowState.currentStep > 0;
+
+	// Top Next button should be hidden on steps 1 and 2 (CHOOSE_SOURCE_IMAGE and BUILD_TESSERAE)
+	const showTopNextButton =
+		canGoForward && workflowState.currentStep > WorkflowStepEnum.BUILD_TESSERAE;
+
 	return (
 		<div className="layout-container">
 			<header>
@@ -211,23 +218,24 @@ export function App() {
 
 				<div className="workflow-canvas">
 					<div className="workflow-navigation">
-						<button
-							type="button"
-							className="secondary"
-							onClick={() =>
-								dispatch({
-									type: "goToStep",
-									step: workflowState.currentStep - 1,
-								})
-							}
-							disabled={workflowState.currentStep === 0}
-						>
-							← Back
-						</button>
+						{showBackButton && (
+							<button
+								type="button"
+								className="secondary"
+								onClick={() =>
+									dispatch({
+										type: "goToStep",
+										step: workflowState.currentStep - 1,
+									})
+								}
+							>
+								← Back
+							</button>
+						)}
 						<span className="workflow-step-counter">
 							Step {workflowState.currentStep + 1} of {stages.length}
 						</span>
-						{canGoForward && (
+						{showTopNextButton && (
 							<button
 								type="button"
 								onClick={() =>
