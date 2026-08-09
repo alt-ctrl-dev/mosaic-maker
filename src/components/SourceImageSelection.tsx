@@ -4,6 +4,30 @@ import { getSourceImageInfo } from "../engine/image-processing";
 import type { SourceImageInfo } from "../engine/image-processing";
 import type { WorkflowState } from "../engine/workflow-state";
 
+/** Props for {@link ContinueButton}. */
+interface ContinueButtonProps {
+	/** The processed source image to continue with. */
+	sourceImage: SourceImageInfo;
+	/** Called when the user chooses to continue. */
+	onContinue: (sourceImage: SourceImageInfo) => void;
+}
+
+/**
+ * Button that advances the workflow to the tesserae build step.
+ * Encapsulates passing the selected source image back to the caller.
+ */
+function ContinueButton({ sourceImage, onContinue }: ContinueButtonProps) {
+	return (
+		<button
+			type="button"
+			className="secondary"
+			onClick={() => onContinue(sourceImage)}
+		>
+			Continue to Build Tesserae →
+		</button>
+	);
+}
+
 /** Props for {@link SourceImageSelection}. */
 interface SourceImageSelectionProps {
 	/** Called when a valid source image is selected and processed. */
@@ -130,6 +154,13 @@ export function SourceImageSelection({
 				<article className="processing-indicator" aria-busy="true">
 					Processing image...
 				</article>
+			)}
+
+			{previewUrl && imageDimensions && initialState.sourceImage && (
+				<ContinueButton
+					sourceImage={initialState.sourceImage}
+					onContinue={onSourceSelected}
+				/>
 			)}
 		</div>
 	);
