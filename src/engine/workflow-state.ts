@@ -348,7 +348,6 @@ export async function generateSupplementedTesserae(
 		return [];
 	}
 
-	// Calculate how many more tesserae we need to reach the recommendation
 	const neededCount = Math.max(
 		0,
 		state.varietyRecommendation - state.validTesseraCount,
@@ -358,17 +357,14 @@ export async function generateSupplementedTesserae(
 		return [];
 	}
 
-	// Update state with the needed count for generation
 	const tempState = {
 		...state,
 		generatedTesseraCount: neededCount,
-		// Use a seed based on current seed or generate new one
 		seed: state.seed ?? Math.floor(Math.random() * SEED_MAX),
 	};
 
 	try {
 		const tesserae = await generateNoiseTesseraeFromState(tempState);
-		// Mark all generated tesserae as supplemented
 		return tesserae.map((tessera) => ({
 			...tessera,
 			isSupplemented: true,
@@ -380,8 +376,33 @@ export async function generateSupplementedTesserae(
 }
 
 /**
+ * Append new tesserae to the collection and recalculate variety metrics.
+ *
+ * @param state - The current workflow state
+ * @param newTesserae - Tesserae to append to the existing collection
+ * @returns State with appended tesserae and updated variety metrics
+ */
+function appendTesseraeAndRecalculate(
+	state: WorkflowState,
+	newTesserae: TesseraInfo[],
+): WorkflowState {
+	const allTesserae = [...state.tesserae, ...newTesserae];
+	const validCount = allTesserae.filter((t) => t.isValid).length;
+	const varietyMetrics = recalculateVarietyMetrics(state, validCount);
+	return {
+		...state,
+		tesserae: allTesserae,
+		validTesseraCount: validCount,
+		rejectedTesseraCount: allTesserae.length - validCount,
+		totalTesseraCount: allTesserae.length,
+		isLowVarietyCollection: varietyMetrics.isLowVariety,
+		varietyRecommendation: varietyMetrics.varietyRecommendation,
+	};
+}
+
+/**
  * Update workflow with supplemented tesserae.
- * Adds generated tesserae to reach the variety recommendation.
+ * Appends the supplemented tesserae to the collection and marks supplementation as accepted.
  *
  * @param state - The current workflow state
  * @param supplementedTesserae - The tesserae to add to the collection
@@ -391,18 +412,8 @@ export function updateWorkflowWithSupplementedTesserae(
 	state: WorkflowState,
 	supplementedTesserae: TesseraInfo[],
 ): WorkflowState {
-	const allTesserae = [...state.tesserae, ...supplementedTesserae];
-	const validCount = allTesserae.filter((t) => t.isValid).length;
-	const varietyMetrics = recalculateVarietyMetrics(state, validCount);
-
 	return {
-		...state,
-		tesserae: allTesserae,
-		validTesseraCount: validCount,
-		rejectedTesseraCount: allTesserae.length - validCount,
-		totalTesseraCount: allTesserae.length,
-		isLowVarietyCollection: varietyMetrics.isLowVariety,
-		varietyRecommendation: varietyMetrics.varietyRecommendation,
+		...appendTesseraeAndRecalculate(state, supplementedTesserae),
 		hasAcceptedSupplementation: true,
 	};
 }
@@ -428,7 +439,7 @@ export function updateWorkflowWithSeed(
 
 /**
  * Update workflow with a new random seed for noise tesserae generation.
- * This generates a new random seed and triggers regeneration of tesserae.
+ * Generates a new random seed and triggers regeneration of tesserae.
  *
  * @param state - The current workflow state
  * @returns Updated workflow state with new random seed and regeneration flag set
@@ -440,7 +451,7 @@ export function updateWorkflowWithNewSeed(state: WorkflowState): WorkflowState {
 
 /**
  * Update workflow with a specific count of tesserae to generate.
- * This will trigger regeneration of tesserae with the new count.
+ * Triggers regeneration of tesserae with the updated count.
  *
  * @param state - The current workflow state
  * @param count - The number of tesserae to generate
@@ -459,7 +470,7 @@ export function updateWorkflowWithGeneratedTesseraCount(
 
 /**
  * Update workflow with newly generated tesserae.
- * This appends the new generated tesserae to the existing collection.
+ * Appends the generated tesserae to the existing collection and clears the regeneration flag.
  *
  * @param state - The current workflow state
  * @param tesserae - The newly generated tesserae collection
@@ -469,18 +480,8 @@ export function updateWorkflowWithGeneratedTesserae(
 	state: WorkflowState,
 	tesserae: TesseraInfo[],
 ): WorkflowState {
-	const allTesserae = [...state.tesserae, ...tesserae];
-	const validCount = allTesserae.filter((t) => t.isValid).length;
-	const varietyMetrics = recalculateVarietyMetrics(state, validCount);
-
 	return {
-		...state,
-		tesserae: allTesserae,
-		validTesseraCount: validCount,
-		rejectedTesseraCount: allTesserae.length - validCount,
-		totalTesseraCount: allTesserae.length,
-		isLowVarietyCollection: varietyMetrics.isLowVariety,
-		varietyRecommendation: varietyMetrics.varietyRecommendation,
+		...appendTesseraeAndRecalculate(state, tesserae),
 		needsRegeneration: false,
 	};
 }
@@ -586,8 +587,7 @@ export function updateWorkflowOnSourceReplacement(
 
 /**
  * Update workflow state when tessera size changes.
- * Preserves uploads and seed, flags for tesserae regeneration when in generated
- * mode, recalculates grid metrics, and discards the old mosaic.
+ * Preserves uploads and seed, recalculates grid metrics, and discards the old mosaic.
  *
  * @param state - The current workflow state
  * @param requestedSize - The new requested tessera size
