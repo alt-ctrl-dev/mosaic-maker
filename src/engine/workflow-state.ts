@@ -399,6 +399,30 @@ export async function generateSupplementedTesserae(
 }
 
 /**
+ * Replace the tessera collection and recalculate variety metrics.
+ *
+ * @param state - The current workflow state
+ * @param tesserae - The new tessera collection to set
+ * @returns State with replaced tesserae and updated variety metrics
+ */
+function replaceTesseraeAndRecalculate(
+	state: WorkflowState,
+	tesserae: TesseraInfo[],
+): WorkflowState {
+	const validCount = tesserae.filter((t) => t.isValid).length;
+	const varietyMetrics = recalculateVarietyMetrics(state, validCount);
+	return {
+		...state,
+		tesserae,
+		validTesseraCount: validCount,
+		rejectedTesseraCount: tesserae.length - validCount,
+		totalTesseraCount: tesserae.length,
+		isLowVarietyCollection: varietyMetrics.isLowVariety,
+		varietyRecommendation: varietyMetrics.varietyRecommendation,
+	};
+}
+
+/**
  * Filter out generated tesserae (those with isSupplemented flag) and append new tesserae.
  * Used when generating new tesserae to clear previous generated ones while keeping uploaded ones.
  *
@@ -410,22 +434,13 @@ function filterGeneratedAndAppend(
 	state: WorkflowState,
 	newTesserae: TesseraInfo[],
 ): WorkflowState {
-	// Keep only uploaded tesserae (those without isSupplemented flag)
 	const uploadedTesserae = state.tesserae.filter(
 		(tessera) => !tessera.isSupplemented,
 	);
-	const allTesserae = [...uploadedTesserae, ...newTesserae];
-	const validCount = allTesserae.filter((t) => t.isValid).length;
-	const varietyMetrics = recalculateVarietyMetrics(state, validCount);
-	return {
-		...state,
-		tesserae: allTesserae,
-		validTesseraCount: validCount,
-		rejectedTesseraCount: allTesserae.length - validCount,
-		totalTesseraCount: allTesserae.length,
-		isLowVarietyCollection: varietyMetrics.isLowVariety,
-		varietyRecommendation: varietyMetrics.varietyRecommendation,
-	};
+	return replaceTesseraeAndRecalculate(state, [
+		...uploadedTesserae,
+		...newTesserae,
+	]);
 }
 
 /**
@@ -440,18 +455,10 @@ function appendTesseraeAndRecalculate(
 	state: WorkflowState,
 	newTesserae: TesseraInfo[],
 ): WorkflowState {
-	const allTesserae = [...state.tesserae, ...newTesserae];
-	const validCount = allTesserae.filter((t) => t.isValid).length;
-	const varietyMetrics = recalculateVarietyMetrics(state, validCount);
-	return {
-		...state,
-		tesserae: allTesserae,
-		validTesseraCount: validCount,
-		rejectedTesseraCount: allTesserae.length - validCount,
-		totalTesseraCount: allTesserae.length,
-		isLowVarietyCollection: varietyMetrics.isLowVariety,
-		varietyRecommendation: varietyMetrics.varietyRecommendation,
-	};
+	return replaceTesseraeAndRecalculate(state, [
+		...state.tesserae,
+		...newTesserae,
+	]);
 }
 
 /**

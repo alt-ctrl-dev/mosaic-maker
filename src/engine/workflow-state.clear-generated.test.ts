@@ -1,6 +1,7 @@
 import {
 	INITIAL_WORKFLOW_STATE,
 	type TesseraInfo,
+	updateWorkflowClearAllTesserae,
 	updateWorkflowWithGeneratedTesserae,
 } from "./workflow-state";
 
@@ -75,16 +76,7 @@ describe("workflow-state clear generated tesserae", () => {
 			rejectedTesseraCount: 0,
 		};
 
-		// Create a function to clear all tesserae (simulate clear all functionality)
-		const clearAllTesserae = (state: typeof initialState) => ({
-			...state,
-			tesserae: [],
-			validTesseraCount: 0,
-			rejectedTesseraCount: 0,
-			totalTesseraCount: 0,
-		});
-
-		const newState = clearAllTesserae(initialState);
+		const newState = updateWorkflowClearAllTesserae(initialState);
 
 		// Should clear all tesserae
 		expect(newState.tesserae).toHaveLength(0);
