@@ -9,6 +9,7 @@ import { ExportMosaic } from "./components/ExportMosaic";
 import { WorkflowStep as WorkflowStepEnum } from "./engine/workflow-state";
 import { useWorkflowReducer } from "./hooks/useWorkflowReducer";
 import { generateSupplementedTesserae } from "./engine/workflow-state";
+import { resizeTesserae } from "./engine/tessera-processing";
 
 const stages = [
 	"Choose source image",
@@ -47,6 +48,25 @@ export function App() {
 				}
 			: undefined;
 
+	async function handleSizeSelected(size: number) {
+		dispatch({ type: "sizeSelected", size });
+
+		if (workflowState.tesserae.length === 0) return;
+
+		try {
+			const resizedTesserae = await resizeTesserae(
+				workflowState.tesserae,
+				size,
+			);
+			dispatch({
+				type: "tesseraeResized",
+				tesserae: resizedTesserae,
+			});
+		} catch (error) {
+			console.error("Error resizing tesserae:", error);
+		}
+	}
+
 	function renderStepContent(stepIndex: number) {
 		switch (stepIndex) {
 			case WorkflowStepEnum.CHOOSE_SOURCE_IMAGE:
@@ -65,9 +85,7 @@ export function App() {
 				return (
 					<div className="build-tesserae-container">
 						<TesseraSizeSelection
-							onSizeSelected={(size) =>
-								dispatch({ type: "sizeSelected", size })
-							}
+							onSizeSelected={handleSizeSelected}
 							initialState={workflowState}
 						/>
 						<div className="tessera-inputs">

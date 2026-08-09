@@ -38,6 +38,7 @@ export type WorkflowAction =
 	| { type: "tesseraeProcessed"; tesserae: TesseraInfo[] }
 	| { type: "tesseraeGenerated"; tesserae: TesseraInfo[] }
 	| { type: "tesseraeSupplemented"; tesserae: TesseraInfo[] }
+	| { type: "tesseraeResized"; tesserae: TesseraInfo[] }
 	| { type: "removeTessera"; index: number }
 	| { type: "clearAllTesserae" }
 	| { type: "mosaicGenerated"; mosaicResult: MosaicResult }
@@ -72,6 +73,8 @@ export function workflowReducer(
 			return updateWorkflowWithGeneratedTesserae(state, action.tesserae);
 		case "tesseraeSupplemented":
 			return updateWorkflowWithSupplementedTesserae(state, action.tesserae);
+		case "tesseraeResized":
+			return updateWorkflowWithTesserae(state, action.tesserae);
 		case "removeTessera":
 			return updateWorkflowRemoveTessera(state, action.index);
 		case "clearAllTesserae":
