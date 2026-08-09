@@ -501,14 +501,3 @@ header > p:last-child {
 		flex-direction: column;
 	}
 }
-
-.tessera-input-container {
-	display: flex;
-	gap: 2rem;
-}
-
-@media (max-width: 768px) {
-	.tessera-input-container {
-		flex-direction: column;
-	}
-}

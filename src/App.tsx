@@ -34,6 +34,19 @@ export function App() {
 	const resolvedTesseraSize =
 		workflowState.adjustedTesseraSize ?? DEFAULT_TESSERA_SIZE;
 
+	const handleAcceptSupplementation =
+		workflowState.isLowVarietyCollection &&
+		!workflowState.hasAcceptedSupplementation
+			? async () => {
+					const supplementedTesserae =
+						await generateSupplementedTesserae(workflowState);
+					dispatch({
+						type: "tesseraeSupplemented",
+						tesserae: supplementedTesserae,
+					});
+				}
+			: undefined;
+
 	function renderStepContent(stepIndex: number) {
 		switch (stepIndex) {
 			case WorkflowStepEnum.CHOOSE_SOURCE_IMAGE:
@@ -76,19 +89,7 @@ export function App() {
 							onRemoveTessera={(index) =>
 								dispatch({ type: "removeTessera", index })
 							}
-							onAcceptSupplementation={
-								workflowState.isLowVarietyCollection &&
-								!workflowState.hasAcceptedSupplementation
-									? async () => {
-											const supplementedTesserae =
-												await generateSupplementedTesserae(workflowState);
-											dispatch({
-												type: "tesseraeSupplemented",
-												tesserae: supplementedTesserae,
-											});
-										}
-									: undefined
-							}
+							onAcceptSupplementation={handleAcceptSupplementation}
 							onContinue={() => dispatch({ type: "advanceFromReview" })}
 							isLowVariety={workflowState.isLowVarietyCollection}
 							varietyRecommendation={workflowState.varietyRecommendation}

@@ -107,11 +107,9 @@ export const INITIAL_WORKFLOW_STATE: WorkflowState = {
 	seed: null,
 	generatedTesseraCount: null,
 	needsRegeneration: false,
-	/** The generated mosaic result, set after mosaic generation completes */
 	mosaicResult: null,
 	exportAltText: "",
 	exportFormat: "png",
-	/** Quality setting for JPEG/WebP exports (0.0 - 1.0) */
 	exportQuality: 0.9,
 	exportBackgroundColor: "#ffffff",
 };
@@ -410,11 +408,12 @@ export function updateWorkflowWithSupplementedTesserae(
 }
 
 /**
- * Update workflow to use generated tesserae mode.
- * This switches the workflow to use algorithmically generated tesserae instead of uploaded ones.
+ * Update workflow with a specific seed for noise tesserae generation.
+ * Triggers regeneration of tesserae with the new seed.
  *
  * @param state - The current workflow state
- * @returns Updated workflow state with generated tesserae mode enabled
+ * @param seed - The seed value for noise generation
+ * @returns Updated workflow state with new seed and regeneration flag set
  */
 export function updateWorkflowWithSeed(
 	state: WorkflowState,
@@ -620,28 +619,6 @@ export function updateWorkflowOnTesseraSizeChange(
 		adjustedTesseraSize: adjustedSize,
 		isCoarseGrid: isCoarseGrid(cellCount),
 		mosaicResult: null,
-	};
-}
-
-/**
- * Update workflow state when tessera size changes.
- * Preserves uploads and seed, flags for tesserae regeneration when generated
- * tesserae are present, recalculates grid metrics, and discards the old mosaic.
- *
- * @param state - The current workflow state
- * @param requestedSize - The new requested tessera size
- * @returns Updated workflow state with recalculated metrics
-
-	// Check if any tesserae in the collection are generated/supplemented
-	const hasGeneratedTesserae = state.tesserae.some(tessera => tessera.isSupplemented === true);
-
-	return {
-		...state,
-		requestedTesseraSize: requestedSize,
-		adjustedTesseraSize: adjustedSize,
-		isCoarseGrid: isCoarseGrid(cellCount),
-		mosaicResult: null,
-		needsRegeneration: hasGeneratedTesserae,
 	};
 }
 
