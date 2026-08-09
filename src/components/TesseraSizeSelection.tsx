@@ -23,7 +23,9 @@ export function TesseraSizeSelection({
 	onSizeSelected,
 	initialState,
 }: TesseraSizeSelectionProps) {
-	const [requestedSize, setRequestedSize] = useState<number>(16);
+	const [requestedSize, setRequestedSize] = useState<number>(
+		initialState.requestedTesseraSize ?? 16,
+	);
 	const [adjustedSize, setAdjustedSize] = useState<number | null>(null);
 	const [gridCellCount, setGridCellCount] = useState<number | null>(null);
 
