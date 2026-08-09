@@ -168,6 +168,7 @@ export function App() {
 					<div className="workflow-navigation">
 						<button
 							type="button"
+							className="secondary"
 							onClick={() =>
 								dispatch({
 									type: "goToStep",
