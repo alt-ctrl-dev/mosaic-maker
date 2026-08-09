@@ -23,7 +23,7 @@ describe("TesseraSizeSelection", () => {
 		cleanup();
 	});
 
-	it("renders a range input with min 2 and max 100", () => {
+	it("renders a range input with min 2 and max based on source image dimensions", () => {
 		render(
 			<TesseraSizeSelection
 				onSizeSelected={onSizeSelectedMock}
