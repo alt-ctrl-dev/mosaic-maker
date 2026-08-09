@@ -75,7 +75,6 @@ export function GenerateAndPreview({
 
 		if (typeof Worker !== "undefined") {
 			try {
-				// Import worker using Vite's dynamic import syntax
 				const WorkerConstructor = (
 					await import("../engine/mosaic-worker.ts?worker")
 				).default;
