@@ -4,6 +4,11 @@ import { describe, expect, it } from "vitest";
 
 const styles = readFileSync(resolve(process.cwd(), "src/styles.css"), "utf8");
 
+/** Escapes all regular-expression metacharacters in a literal string. */
+function escapeRegExp(literal: string): string {
+	return literal.replace(/[.*+?^${}()|[\]\\]/g, "\\$&");
+}
+
 describe("Status Panel Styling", () => {
 	it("should not reference nonexistent pico-contrast-color variable", () => {
 		// This should fail initially - we're testing for the bug
@@ -21,7 +26,7 @@ describe("Status Panel Styling", () => {
 		];
 
 		panelSelectors.forEach((selector) => {
-			const escapedSelector = selector.replace(/\./g, "\\.");
+			const escapedSelector = escapeRegExp(selector);
 			const rulePattern = new RegExp(
 				`${escapedSelector}\\s*\\{([^}]*)\\}`,
 				"s",
