@@ -8,37 +8,39 @@ import {
 
 describe("tessera-sizing", () => {
 	describe("calculateAdjustedTesseraSize", () => {
-		it("returns the exact requested size when it divides both dimensions", () => {
+		it("returns the exact requested size when it is within valid range", () => {
 			expect(calculateAdjustedTesseraSize(10, 100, 100)).toBe(10);
 		});
 
-		it("adjusts to the nearest valid size when requested size is invalid", () => {
-			expect(calculateAdjustedTesseraSize(15, 100, 100)).toBe(10);
+		it("clamps to minimum when requested size is below minimum", () => {
+			expect(calculateAdjustedTesseraSize(5, 100, 100)).toBe(8); // MIN_TESSERA_SIZE
 		});
 
-		it("breaks ties by choosing the smaller valid size", () => {
-			expect(calculateAdjustedTesseraSize(15, 100, 100)).toBe(10);
-			expect(calculateAdjustedTesseraSize(11, 60, 60)).toBe(10);
+		it("clamps to maximum when requested size exceeds minimum dimension", () => {
+			expect(calculateAdjustedTesseraSize(150, 100, 100)).toBe(100);
+			expect(calculateAdjustedTesseraSize(150, 100, 50)).toBe(50);
 		});
 
-		it("returns null when no valid sizes exist above minimum", () => {
-			expect(calculateAdjustedTesseraSize(10, 11, 13)).toBeNull();
-		});
-
-		it("respects the minimum tessera size of 2", () => {
-			expect(calculateAdjustedTesseraSize(1, 16, 16)).toBe(2);
+		it("respects the minimum tessera size of 8", () => {
+			expect(calculateAdjustedTesseraSize(1, 16, 16)).toBe(8);
 		});
 
 		it("works with non-square images", () => {
-			// 200x100: valid sizes >= 2 are 10, 20, 25, 50, 100. 30 is closest to 25.
-			expect(calculateAdjustedTesseraSize(30, 200, 100)).toBe(25);
+			// 200x100: requested 30 is within range [8, 100], so returns 30
+			expect(calculateAdjustedTesseraSize(30, 200, 100)).toBe(30);
 		});
 	});
 
 	describe("calculateGridCellCount", () => {
-		it("calculates the correct number of grid cells", () => {
+		it("calculates the correct number of grid cells with exact division", () => {
 			expect(calculateGridCellCount(10, 100, 100)).toBe(100);
 			expect(calculateGridCellCount(10, 200, 100)).toBe(200);
+		});
+
+		it("calculates the correct number of grid cells with partial edge cells", () => {
+			// 476 x 600 with tessera size 10
+			// Grid should be ceil(476/10) x ceil(600/10) = 48 x 60 = 2880 cells
+			expect(calculateGridCellCount(10, 476, 600)).toBe(2880);
 		});
 	});
 
@@ -54,16 +56,15 @@ describe("tessera-sizing", () => {
 	});
 
 	describe("hasValidTesseraSizes", () => {
-		it("returns true for images with valid tessera sizes", () => {
+		it("returns true for images with valid dimensions", () => {
 			expect(hasValidTesseraSizes(100, 100)).toBe(true);
+			expect(hasValidTesseraSizes(476, 600)).toBe(true); // Issue example
 		});
 
-		it("returns false for images with no valid tessera sizes", () => {
-			expect(hasValidTesseraSizes(11, 13)).toBe(false);
-		});
-
-		it("returns true for images with minimum valid tessera size", () => {
-			expect(hasValidTesseraSizes(16, 16)).toBe(true);
+		it("returns false for images with dimensions less than minimum", () => {
+			expect(hasValidTesseraSizes(5, 100)).toBe(false);
+			expect(hasValidTesseraSizes(100, 5)).toBe(false);
+			expect(hasValidTesseraSizes(5, 5)).toBe(false);
 		});
 	});
 });

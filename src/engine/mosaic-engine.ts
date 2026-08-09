@@ -351,12 +351,16 @@ async function generateMosaicCanvas(
 			}
 			cellCount++;
 
+			// Calculate clamped region size for edge cells
+			const regionWidth = Math.min(tesseraSize, sourceCanvas.width - x);
+			const regionHeight = Math.min(tesseraSize, sourceCanvas.height - y);
+
 			const cellGrid = sampleColorGrid(
 				sourceCanvas,
 				x,
 				y,
-				tesseraSize,
-				tesseraSize,
+				regionWidth,
+				regionHeight,
 				canvasCreator,
 			);
 
@@ -375,16 +379,17 @@ async function generateMosaicCanvas(
 			resultCtx.drawImage(processedTesserae[bestMatchIndex].canvas, x, y);
 
 			resultCtx.globalAlpha = BLEND_SOURCE_ALPHA;
+			// Use clamped region size for edge cells to prevent sampling beyond canvas bounds
 			resultCtx.drawImage(
 				sourceCanvas,
 				x,
 				y,
-				tesseraSize,
-				tesseraSize,
+				regionWidth,
+				regionHeight,
 				x,
 				y,
-				tesseraSize,
-				tesseraSize,
+				regionWidth,
+				regionHeight,
 			);
 
 			resultCtx.globalAlpha = 1.0;

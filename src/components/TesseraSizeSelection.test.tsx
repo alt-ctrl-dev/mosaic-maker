@@ -46,7 +46,9 @@ describe("TesseraSizeSelection", () => {
 			/>,
 		);
 
-		expect(screen.getByText("16px")).toBeInTheDocument();
+		expect(
+			screen.getByText("16px", { selector: "strong" }),
+		).toBeInTheDocument();
 	});
 
 	it("calls onSizeSelected when the slider value changes", () => {
