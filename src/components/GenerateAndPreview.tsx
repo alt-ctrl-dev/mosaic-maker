@@ -123,7 +123,11 @@ export function GenerateAndPreview({
 				workerRef.current.postMessage({
 					type: "generate",
 					sourceImage: state.sourceImage,
-					tesserae: state.tesserae,
+					tesserae: state.tesserae.map((tessera) => ({
+						fileName: tessera.fileName,
+						isValid: tessera.isValid,
+						previewUrl: tessera.previewUrl,
+					})),
 					tesseraSize: state.adjustedTesseraSize,
 				});
 			} catch (err) {

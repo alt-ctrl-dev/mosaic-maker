@@ -1,3 +1,13 @@
+import {
+	COLOR_GRID_SIZE,
+	BLEND_SOURCE_ALPHA,
+	rgbToOklab,
+	selectTessera as sharedSelectTessera,
+	type ColorGrid,
+	type Oklab,
+} from "./mosaic-shared";
+import { runDeviceCapacityPreflight } from "./device-capacity-preflight";
+
 /** Source image data received from the main thread. */
 interface WorkerSourceImage {
 	width: number;
@@ -6,13 +16,17 @@ interface WorkerSourceImage {
 	orientation: number;
 }
 
-/** Tessera data received from the main thread. */
+/**
+ * Tessera data received from the main thread.
+ *
+ * Only the fields the worker actually reads are transferred; the full
+ * TesseraInfo carries a File per tessera that the worker never touches, so
+ * narrowing the payload avoids wasting structured-clone bandwidth on image
+ * bytes it does not read.
+ */
 interface WorkerTessera {
-	file: unknown;
 	fileName: string;
 	isValid: boolean;
-	error: string | null;
-	isLowResolution: boolean;
 	previewUrl: string | null;
 }
 
@@ -34,32 +48,11 @@ type WorkerMessage = GenerateMosaicRequest | CancelRequest;
 
 let isCancelled = false;
 
-interface RGB {
-	r: number;
-	g: number;
-	b: number;
-}
-
-/** Perceptually uniform OKLab color. */
-interface Oklab {
-	L: number;
-	a: number;
-	b: number;
-}
-
-interface ColorGrid {
-	colors: Oklab[][];
-}
-
 interface ProcessedTessera {
 	info: WorkerTessera;
 	colorGrid: ColorGrid;
 	canvas: OffscreenCanvas;
 }
-
-const COLOR_GRID_SIZE = 3;
-const BLEND_SOURCE_ALPHA = 0.25;
-const ALTERNATIVE_TOLERANCE = 1.1;
 
 function createCanvas(width: number, height: number): OffscreenCanvas {
 	return new OffscreenCanvas(width, height);
@@ -86,119 +79,19 @@ async function blobToDataUrl(blob: Blob): Promise<string> {
 	});
 }
 
-/** Apply sRGB gamma linearization. */
-function linearize(channel: number): number {
-	return channel <= 0.04045
-		? channel / 12.92
-		: ((channel + 0.055) / 1.055) ** 2.4;
-}
-
-/** Convert an sRGB color to OKLab. */
-function rgbToOklab(rgb: RGB): Oklab {
-	const r = rgb.r / 255;
-	const g = rgb.g / 255;
-	const b = rgb.b / 255;
-
-	const rLin = linearize(r);
-	const gLin = linearize(g);
-	const bLin = linearize(b);
-
-	const l = 0.412221 * rLin + 0.536333 * gLin + 0.051445 * bLin;
-	const m = 0.211903 * rLin + 0.692639 * gLin + 0.095458 * bLin;
-	const s = 0.088302 * rLin + 0.251733 * gLin + 0.659965 * bLin;
-
-	const lCbrt = Math.cbrt(l);
-	const mCbrt = Math.cbrt(m);
-	const sCbrt = Math.cbrt(s);
-
-	return {
-		L: 0.210454 * lCbrt + 0.793721 * mCbrt - 0.004175 * sCbrt,
-		a: 1.977998 * lCbrt - 2.428592 * mCbrt + 0.450594 * sCbrt,
-		b: 0.025904 * lCbrt + 0.782772 * mCbrt - 0.808676 * sCbrt,
-	};
-}
-
-/** Euclidean distance between two OKLab colors (perceptually uniform). */
-function oklabDistance(a: Oklab, b: Oklab): number {
-	const deltaL = a.L - b.L;
-	const deltaA = a.a - b.a;
-	const deltaB = a.b - b.b;
-	return Math.sqrt(deltaL * deltaL + deltaA * deltaA + deltaB * deltaB);
-}
-
-/** Average perceptual distance between two color grids. */
-function averageGridDistance(grid1: ColorGrid, grid2: ColorGrid): number {
-	if (
-		grid1.colors.length !== grid2.colors.length ||
-		grid1.colors[0].length !== grid2.colors[0].length
-	) {
-		throw new Error("Grids must have the same dimensions");
-	}
-
-	let totalDistance = 0;
-	let count = 0;
-
-	for (let rowIndex = 0; rowIndex < grid1.colors.length; rowIndex++) {
-		for (let colIndex = 0; colIndex < grid1.colors[0].length; colIndex++) {
-			totalDistance += oklabDistance(
-				grid1.colors[rowIndex][colIndex],
-				grid2.colors[rowIndex][colIndex],
-			);
-			count++;
-		}
-	}
-
-	return totalDistance / count;
-}
-
-// ──── tessera selection ───────────────────────────────────────────────────
-
-/**
- * Choose the best tessera for a cell, preferring the closest color match but
- * avoiding the tesserae used directly above and to the left when an alternative
- * is within {@link ALTERNATIVE_TOLERANCE} of the best score.
- */
 function selectTessera(
 	cellGrid: ColorGrid,
 	processedTesserae: ProcessedTessera[],
 	neighborAbove: number | null,
 	neighborLeft: number | null,
 ): number {
-	let bestIndex = 0;
-	let bestDistance = Infinity;
-	let bestNonNeighborIndex: number | null = null;
-	let bestNonNeighborDistance = Infinity;
-
-	for (let i = 0; i < processedTesserae.length; i++) {
-		const distance = averageGridDistance(
-			cellGrid,
-			processedTesserae[i].colorGrid,
-		);
-
-		if (distance < bestDistance) {
-			bestDistance = distance;
-			bestIndex = i;
-		}
-
-		const isNeighbor = i === neighborAbove || i === neighborLeft;
-		if (!isNeighbor && distance < bestNonNeighborDistance) {
-			bestNonNeighborDistance = distance;
-			bestNonNeighborIndex = i;
-		}
-	}
-
-	const bestIsNeighbor =
-		bestIndex === neighborAbove || bestIndex === neighborLeft;
-
-	if (
-		bestIsNeighbor &&
-		bestNonNeighborIndex !== null &&
-		bestNonNeighborDistance <= bestDistance * ALTERNATIVE_TOLERANCE
-	) {
-		return bestNonNeighborIndex;
-	}
-
-	return bestIndex;
+	return sharedSelectTessera(
+		cellGrid,
+		processedTesserae,
+		(tessera) => tessera.colorGrid,
+		neighborAbove,
+		neighborLeft,
+	);
 }
 
 /** Downsample a region of a canvas to a 3×3 OKLab color grid. */
@@ -315,7 +208,7 @@ async function generateMosaicCanvas(
 			if (isCancelled) return resultCanvas;
 
 			if (cellCount % Math.max(1, Math.floor(totalCells / 20)) === 0) {
-				const progressPercent = 70 + Math.round((cellCount / totalCells) * 20);
+				const progressPercent = 70 + Math.round((cellCount / totalCells) * 25);
 				self.postMessage({
 					type: "progress",
 					percent: progressPercent,
@@ -408,6 +301,25 @@ async function generateMosaicWithProgress(
 
 	const validTesserae = tesserae.filter((t) => t.isValid);
 
+	// Calculate grid cell count for preflight check
+	const gridCellCount =
+		Math.ceil(sourceImage.width / tesseraSize) *
+		Math.ceil(sourceImage.height / tesseraSize);
+
+	// Run device capacity preflight before heavy processing
+	const preflightResult = runDeviceCapacityPreflight(
+		gridCellCount,
+		validTesserae.length,
+		sourceImage.width,
+		sourceImage.height,
+	);
+
+	if (!preflightResult.isSafe) {
+		throw new Error(
+			`Device capacity exceeded: ${preflightResult.reason}. ${preflightResult.remedy}`,
+		);
+	}
+
 	if (validTesserae.length === 0) {
 		const dataUrl = await generatePlaceholderMosaic(
 			sourceImage.width,
@@ -467,7 +379,7 @@ async function generateMosaicWithProgress(
 
 	self.postMessage({
 		type: "progress",
-		percent: 90,
+		percent: 95,
 		message: "Creating final image...",
 	});
 	const blob = await resultCanvas.convertToBlob({ type: "image/png" });
