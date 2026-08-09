@@ -4,7 +4,9 @@ import {
 	SEED_MAX,
 	type WorkflowState,
 	type TesseraInfo,
+	getVarietyRecommendation,
 } from "../engine/workflow-state";
+import { calculateGridCellCount } from "../engine/tessera-sizing";
 
 /** Props for {@link GeneratedTesserae}. */
 interface GeneratedTesseraeProps {
@@ -25,18 +27,52 @@ export function GeneratedTesserae({
 	const [seed, setSeed] = useState<number>(
 		initialState.seed ?? Math.floor(Math.random() * SEED_MAX),
 	);
-	const [count, setCount] = useState<number>(
-		initialState.generatedTesseraCount ?? 20,
-	);
+
+	// Calculate the default count based on grid cell count recommendation
+	const getDefaultCount = (): number => {
+		if (initialState.generatedTesseraCount !== null) {
+			return initialState.generatedTesseraCount;
+		}
+
+		if (initialState.sourceImage && initialState.adjustedTesseraSize) {
+			const gridCellCount = calculateGridCellCount(
+				initialState.adjustedTesseraSize,
+				initialState.sourceImage.width,
+				initialState.sourceImage.height,
+			);
+			return getVarietyRecommendation(gridCellCount);
+		}
+
+		return 20; // Fallback default
+	};
+
+	const [count, setCount] = useState<number>(getDefaultCount());
 
 	useEffect(() => {
 		if (initialState.seed !== null) {
 			setSeed(initialState.seed);
 		}
+
+		// If there's an explicit count in state, use it
 		if (initialState.generatedTesseraCount !== null) {
 			setCount(initialState.generatedTesseraCount);
 		}
-	}, [initialState.seed, initialState.generatedTesseraCount]);
+		// Otherwise, if source image or tessera size changes, recalculate default
+		else if (initialState.sourceImage && initialState.adjustedTesseraSize) {
+			const gridCellCount = calculateGridCellCount(
+				initialState.adjustedTesseraSize,
+				initialState.sourceImage.width,
+				initialState.sourceImage.height,
+			);
+			const recommendedCount = getVarietyRecommendation(gridCellCount);
+			setCount(recommendedCount);
+		}
+	}, [
+		initialState.seed,
+		initialState.generatedTesseraCount,
+		initialState.sourceImage,
+		initialState.adjustedTesseraSize,
+	]);
 
 	const handleGenerate = async () => {
 		setIsGenerating(true);
