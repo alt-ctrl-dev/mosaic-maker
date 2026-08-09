@@ -56,7 +56,6 @@ describe("Issue #123: Allow partial edge cells", () => {
 			requestedTesseraSize: null,
 			adjustedTesseraSize: null,
 			isCoarseGrid: false,
-			useGeneratedTesserae: false,
 			tesserae: [],
 			validTesseraCount: 0,
 			rejectedTesseraCount: 0,
