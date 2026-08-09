@@ -1,5 +1,6 @@
 import { describe, expect, it, vi } from "vitest";
 import { generateMosaic } from "./mosaic-engine";
+import type { TesseraInfo } from "./workflow-state";
 
 describe("mosaic-engine with partial edge cells", () => {
 	it("successfully generates a mosaic for 476x600 image with partial edge cells", async () => {
@@ -12,14 +13,15 @@ describe("mosaic-engine with partial edge cells", () => {
 		};
 
 		// Mock tesserae - just need one valid tessera for the test
-		const mockTesserae = [
+		const mockTesserae: TesseraInfo[] = [
 			{
 				fileName: "test-tessera.png",
 				previewUrl: "data:image/png;base64,mock-tessera",
 				isValid: true,
-				errorMessage: null,
 				isSupplemented: false,
 				isLowResolution: false,
+				error: null,
+				file: new File([], "test-tessera.png"),
 			},
 		];
 
@@ -74,14 +76,15 @@ describe("mosaic-engine with partial edge cells", () => {
 			orientation: 1,
 		};
 
-		const mockTesserae = [
+		const mockTesserae: TesseraInfo[] = [
 			{
 				fileName: "test-tessera.png",
 				previewUrl: "data:image/png;base64,mock-tessera",
 				isValid: true,
-				errorMessage: null,
 				isSupplemented: false,
 				isLowResolution: false,
+				error: null,
+				file: new File([], "test-tessera.png"),
 			},
 		];
 

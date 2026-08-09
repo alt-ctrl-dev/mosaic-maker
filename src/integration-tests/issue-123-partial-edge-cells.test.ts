@@ -4,7 +4,11 @@ import {
 	calculateAdjustedTesseraSize,
 	calculateGridCellCount,
 } from "../engine/tessera-sizing";
-import { updateWorkflowWithSourceImage } from "../engine/workflow-state";
+import {
+	updateWorkflowWithSourceImage,
+	WorkflowStep,
+} from "../engine/workflow-state";
+import type { WorkflowState } from "../engine/workflow-state";
 
 describe("Issue #123: Allow partial edge cells", () => {
 	it("should accept 476x600 image that previously failed due to no common divisors >= 8", () => {
@@ -42,9 +46,10 @@ describe("Issue #123: Allow partial edge cells", () => {
 
 	it("should work with the workflow state update", () => {
 		// Test that the workflow accepts the 476x600 image
-		const initialState: any = {
-			currentStep: 0,
-			furthestCompletedStep: 0,
+		// Test that the workflow accepts the 476x600 image
+		const initialState: WorkflowState = {
+			currentStep: WorkflowStep.CHOOSE_SOURCE_IMAGE,
+			furthestCompletedStep: WorkflowStep.CHOOSE_SOURCE_IMAGE,
 			sourceImage: null,
 			hasValidSourceDimensions: false,
 			sourceImageError: null,
@@ -57,11 +62,16 @@ describe("Issue #123: Allow partial edge cells", () => {
 			rejectedTesseraCount: 0,
 			totalTesseraCount: 0,
 			isLowVarietyCollection: false,
-			varietyRecommendation: 0,
+			varietyRecommendation: null,
 			hasAcceptedSupplementation: false,
 			seed: null,
+			generatedTesseraCount: null,
 			mosaicResult: null,
 			needsRegeneration: false,
+			exportAltText: "",
+			exportFormat: "png",
+			exportQuality: 0.9,
+			exportBackgroundColor: "#ffffff",
 		};
 
 		const sourceImageInfo = {

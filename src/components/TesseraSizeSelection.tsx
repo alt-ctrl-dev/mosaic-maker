@@ -85,8 +85,7 @@ export function TesseraSizeSelection({
 					</p>
 					{requestedSize !== adjustedSize && (
 						<p className="adjustment-explanation">
-							Adjusted to the nearest valid size that divides both source
-							dimensions.
+							Adjusted to fit within the valid tessera size range.
 						</p>
 					)}
 				</div>

@@ -251,16 +251,6 @@ export function updateWorkflowWithTesseraSize(
 		state.sourceImage.height,
 	);
 
-	if (adjustedSize === null) {
-		// This should not happen if hasValidSourceDimensions is true
-		return {
-			...state,
-			requestedTesseraSize: requestedSize,
-			adjustedTesseraSize: null,
-			isCoarseGrid: false,
-		};
-	}
-
 	const cellCount = calculateGridCellCount(
 		adjustedSize,
 		state.sourceImage.width,
@@ -606,17 +596,6 @@ export function updateWorkflowOnTesseraSizeChange(
 		state.sourceImage.width,
 		state.sourceImage.height,
 	);
-
-	if (adjustedSize === null) {
-		return {
-			...state,
-			requestedTesseraSize: requestedSize,
-			adjustedTesseraSize: null,
-			isCoarseGrid: false,
-			mosaicResult: null,
-			needsRegeneration: true,
-		};
-	}
 
 	const cellCount = calculateGridCellCount(
 		adjustedSize,
