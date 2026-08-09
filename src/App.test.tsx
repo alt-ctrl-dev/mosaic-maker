@@ -12,12 +12,16 @@ describe("Mosaic Maker workflow", () => {
 			name: "Workflow steps",
 		});
 		const buttons = within(workflow).getAllByRole("button");
-		const stages = buttons.map(
-			(button) =>
-				within(button).getByText(
-					/^(Choose source image|Build tesserae|Generate and preview|Export mosaic)$/,
-				).textContent ?? "",
-		);
+		const stages = buttons
+			.filter((button) => !button.classList.contains("workflow-sidebar-close"))
+			.map(
+				(button) =>
+					within(button)
+						.getByText(
+							/^(Choose source image|Build tesserae|Generate and preview|Export mosaic)$/,
+						)
+						.textContent?.trim() ?? "",
+			);
 
 		expect(stages).toEqual([
 			"Choose source image",

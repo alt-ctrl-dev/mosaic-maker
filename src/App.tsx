@@ -26,6 +26,10 @@ export function App() {
 	const [workflowState, dispatch] = useWorkflowReducer();
 	const sidebarToggleRef = useRef<HTMLInputElement>(null);
 
+	function toggleSidebar() {
+		sidebarToggleRef.current?.click();
+	}
+
 	const resolvedTesseraSize =
 		workflowState.adjustedTesseraSize ?? DEFAULT_TESSERA_SIZE;
 
@@ -111,13 +115,14 @@ export function App() {
 					id="workflow-sidebar-toggle"
 					className="workflow-sidebar-toggle"
 				/>
-				<label
-					htmlFor="workflow-sidebar-toggle"
+				<button
 					className="workflow-sidebar-toggle-button"
 					aria-label="Toggle workflow steps"
+					type="button"
+					onClick={toggleSidebar}
 				>
 					☰
-				</label>
+				</button>
 				<div
 					className="workflow-sidebar-scrim"
 					aria-hidden="true"
@@ -128,13 +133,15 @@ export function App() {
 					}}
 				/>
 				<aside className="workflow-sidebar" aria-label="Workflow steps">
-					<label
-						htmlFor="workflow-sidebar-toggle"
+					<button
 						className="workflow-sidebar-close"
 						aria-label="Close workflow steps"
+						data-secondary
+						type="button"
+						onClick={toggleSidebar}
 					>
 						✕
-					</label>
+					</button>
 					<ol>
 						{stages.map((title, index) => {
 							const isCurrent = workflowState.currentStep === index;
