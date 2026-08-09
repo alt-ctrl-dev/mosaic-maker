@@ -41,7 +41,6 @@ export async function processTesserae(
 
 /**
  * Resize existing tesserae to a new target size.
- * Useful when the tessera size changes after tesserae have already been uploaded.
  *
  * @param tesserae - Array of existing tesserae to resize
  * @param targetSize - The new target size for each tessera

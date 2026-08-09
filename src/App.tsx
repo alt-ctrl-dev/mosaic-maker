@@ -48,6 +48,25 @@ export function App() {
 				}
 			: undefined;
 
+	async function handleSizeSelected(size: number) {
+		dispatch({ type: "sizeSelected", size });
+
+		if (workflowState.tesserae.length === 0) return;
+
+		try {
+			const resizedTesserae = await resizeTesserae(
+				workflowState.tesserae,
+				size,
+			);
+			dispatch({
+				type: "tesseraeResized",
+				tesserae: resizedTesserae,
+			});
+		} catch (error) {
+			console.error("Error resizing tesserae:", error);
+		}
+	}
+
 	function renderStepContent(stepIndex: number) {
 		switch (stepIndex) {
 			case WorkflowStepEnum.CHOOSE_SOURCE_IMAGE:
@@ -66,26 +85,7 @@ export function App() {
 				return (
 					<div className="build-tesserae-container">
 						<TesseraSizeSelection
-							onSizeSelected={async (size) => {
-								// Dispatch the size change first
-								dispatch({ type: "sizeSelected", size });
-
-								// If there are uploaded tesserae, resize them to match the new size
-								if (workflowState.tesserae.length > 0) {
-									try {
-										const resizedTesserae = await resizeTesserae(
-											workflowState.tesserae,
-											size,
-										);
-										dispatch({
-											type: "tesseraeResized",
-											tesserae: resizedTesserae,
-										});
-									} catch (error) {
-										console.error("Error resizing tesserae:", error);
-									}
-								}
-							}}
+							onSizeSelected={handleSizeSelected}
 							initialState={workflowState}
 						/>
 						<div className="tessera-inputs">
