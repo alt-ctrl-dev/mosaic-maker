@@ -25,12 +25,12 @@ describe("tessera-sizing", () => {
 			expect(calculateAdjustedTesseraSize(10, 11, 13)).toBeNull();
 		});
 
-		it("respects the minimum tessera size of 8", () => {
-			expect(calculateAdjustedTesseraSize(5, 16, 16)).toBe(8);
+		it("respects the minimum tessera size of 2", () => {
+			expect(calculateAdjustedTesseraSize(1, 16, 16)).toBe(2);
 		});
 
 		it("works with non-square images", () => {
-			// 200x100: valid sizes >= 8 are 10, 20, 25, 50, 100. 30 is closest to 25.
+			// 200x100: valid sizes >= 2 are 10, 20, 25, 50, 100. 30 is closest to 25.
 			expect(calculateAdjustedTesseraSize(30, 200, 100)).toBe(25);
 		});
 	});
