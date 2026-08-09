@@ -193,7 +193,7 @@ export function GenerateAndPreview({
 	const canGenerate =
 		state.sourceImage !== null &&
 		state.adjustedTesseraSize !== null &&
-		(state.tesserae.length > 0 || state.useGeneratedTesserae);
+		state.tesserae.length > 0;
 
 	return (
 		<div className="generate-preview-step">

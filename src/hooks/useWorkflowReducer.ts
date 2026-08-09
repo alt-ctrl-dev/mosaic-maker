@@ -15,6 +15,7 @@ import {
 	updateWorkflowWithMosaicResult,
 	updateWorkflowWithSourceImage,
 	updateWorkflowWithSourceImageError,
+	updateWorkflowWithSupplementedTesserae,
 	updateWorkflowWithTesseraSize,
 	updateWorkflowWithTesserae,
 } from "../engine/workflow-state";
@@ -35,6 +36,7 @@ export type WorkflowAction =
 	| { type: "sizeSelected"; size: number }
 	| { type: "tesseraeProcessed"; tesserae: TesseraInfo[] }
 	| { type: "tesseraeGenerated"; tesserae: TesseraInfo[] }
+	| { type: "tesseraeSupplemented"; tesserae: TesseraInfo[] }
 	| { type: "removeTessera"; index: number }
 	| { type: "mosaicGenerated"; mosaicResult: MosaicResult }
 	| { type: "generationCancelledOrFailed" }
@@ -66,6 +68,8 @@ export function workflowReducer(
 			return updateWorkflowWithTesserae(state, action.tesserae);
 		case "tesseraeGenerated":
 			return updateWorkflowWithGeneratedTesserae(state, action.tesserae);
+		case "tesseraeSupplemented":
+			return updateWorkflowWithSupplementedTesserae(state, action.tesserae);
 		case "removeTessera":
 			return updateWorkflowRemoveTessera(state, action.index);
 		case "mosaicGenerated":

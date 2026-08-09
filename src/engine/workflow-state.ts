@@ -7,6 +7,7 @@ import {
 	hasValidTesseraSizes,
 	isCoarseGrid,
 } from "./tessera-sizing";
+import { generateNoiseTesseraeFromState } from "./generate-noise-tesserae-helper";
 
 export type { MosaicResult };
 
@@ -56,8 +57,6 @@ export interface WorkflowState {
 	/** The recommended number of tesserae for good variety */
 	varietyRecommendation: number | null;
 	hasAcceptedSupplementation: boolean;
-	/** Whether to use generated tesserae instead of uploaded ones */
-	useGeneratedTesserae: boolean;
 	/** Seed for generating reproducible noise tesserae */
 	seed: number | null;
 	generatedTesseraCount: number | null;
@@ -105,13 +104,14 @@ export const INITIAL_WORKFLOW_STATE: WorkflowState = {
 	isLowVarietyCollection: false,
 	varietyRecommendation: null,
 	hasAcceptedSupplementation: false,
-	useGeneratedTesserae: false,
 	seed: null,
 	generatedTesseraCount: null,
 	needsRegeneration: false,
+	/** The generated mosaic result, set after mosaic generation completes */
 	mosaicResult: null,
 	exportAltText: "",
 	exportFormat: "png",
+	/** Quality setting for JPEG/WebP exports (0.0 - 1.0) */
 	exportQuality: 0.9,
 	exportBackgroundColor: "#ffffff",
 };
@@ -333,6 +333,55 @@ export function updateWorkflowRemoveTessera(
 }
 
 /**
+ * Generate supplemental tesserae to reach the variety recommendation.
+ * Generates enough tesserae to bring the total valid count up to the recommendation.
+ *
+ * @param state - The current workflow state
+ * @returns Promise resolving to an array of generated tesserae marked as supplemented
+ */
+export async function generateSupplementedTesserae(
+	state: WorkflowState,
+): Promise<TesseraInfo[]> {
+	if (
+		!state.sourceImage ||
+		!state.adjustedTesseraSize ||
+		!state.varietyRecommendation
+	) {
+		return [];
+	}
+
+	// Calculate how many more tesserae we need to reach the recommendation
+	const neededCount = Math.max(
+		0,
+		state.varietyRecommendation - state.validTesseraCount,
+	);
+
+	if (neededCount <= 0) {
+		return [];
+	}
+
+	// Update state with the needed count for generation
+	const tempState = {
+		...state,
+		generatedTesseraCount: neededCount,
+		// Use a seed based on current seed or generate new one
+		seed: state.seed ?? Math.floor(Math.random() * SEED_MAX),
+	};
+
+	try {
+		const tesserae = await generateNoiseTesseraeFromState(tempState);
+		// Mark all generated tesserae as supplemented
+		return tesserae.map((tessera) => ({
+			...tessera,
+			isSupplemented: true,
+		}));
+	} catch (error) {
+		console.error("Error generating supplemented tesserae:", error);
+		return [];
+	}
+}
+
+/**
  * Update workflow with supplemented tesserae.
  * Adds generated tesserae to reach the variety recommendation.
  *
@@ -366,44 +415,6 @@ export function updateWorkflowWithSupplementedTesserae(
  *
  * @param state - The current workflow state
  * @returns Updated workflow state with generated tesserae mode enabled
- */
-export function updateWorkflowToGeneratedMode(
-	state: WorkflowState,
-): WorkflowState {
-	const seed = state.seed ?? Math.floor(Math.random() * SEED_MAX);
-
-	return {
-		...state,
-		useGeneratedTesserae: true,
-		seed,
-		currentStep: WorkflowStep.BUILD_TESSERAE,
-	};
-}
-
-/**
- * Update workflow to use uploaded tesserae mode.
- * This switches the workflow back to using uploaded tesserae instead of generated ones.
- *
- * @param state - The current workflow state
- * @returns Updated workflow state with uploaded tesserae mode enabled
- */
-export function updateWorkflowToUploadMode(
-	state: WorkflowState,
-): WorkflowState {
-	return {
-		...state,
-		useGeneratedTesserae: false,
-		currentStep: WorkflowStep.BUILD_TESSERAE,
-	};
-}
-
-/**
- * Update workflow with a specific seed for noise tesserae generation.
- * This will trigger regeneration of tesserae with the new seed.
- *
- * @param state - The current workflow state
- * @param seed - The seed value for noise generation
- * @returns Updated workflow state with new seed and regeneration flag set
  */
 export function updateWorkflowWithSeed(
 	state: WorkflowState,
@@ -609,7 +620,28 @@ export function updateWorkflowOnTesseraSizeChange(
 		adjustedTesseraSize: adjustedSize,
 		isCoarseGrid: isCoarseGrid(cellCount),
 		mosaicResult: null,
-		needsRegeneration: state.useGeneratedTesserae,
+	};
+}
+
+/**
+ * Update workflow state when tessera size changes.
+ * Preserves uploads and seed, flags for tesserae regeneration when generated
+ * tesserae are present, recalculates grid metrics, and discards the old mosaic.
+ *
+ * @param state - The current workflow state
+ * @param requestedSize - The new requested tessera size
+ * @returns Updated workflow state with recalculated metrics
+
+	// Check if any tesserae in the collection are generated/supplemented
+	const hasGeneratedTesserae = state.tesserae.some(tessera => tessera.isSupplemented === true);
+
+	return {
+		...state,
+		requestedTesseraSize: requestedSize,
+		adjustedTesseraSize: adjustedSize,
+		isCoarseGrid: isCoarseGrid(cellCount),
+		mosaicResult: null,
+		needsRegeneration: hasGeneratedTesserae,
 	};
 }
 
