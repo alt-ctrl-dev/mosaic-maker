@@ -40,6 +40,22 @@ export async function processTesserae(
 }
 
 /**
+ * Resize existing tesserae to a new target size.
+ * Useful when the tessera size changes after tesserae have already been uploaded.
+ *
+ * @param tesserae - Array of existing tesserae to resize
+ * @param targetSize - The new target size for each tessera
+ * @returns A promise that resolves to an array of resized tesserae
+ */
+export async function resizeTesserae(
+	tesserae: TesseraInfo[],
+	targetSize: number,
+): Promise<TesseraInfo[]> {
+	const files = tesserae.map((t) => t.file);
+	return processTesserae(files, targetSize);
+}
+
+/**
  * Process a single image file into a tessera.
  * Validates the file format, loads the image, crops it to a square,
  * resizes it to the target size, and generates a preview.
