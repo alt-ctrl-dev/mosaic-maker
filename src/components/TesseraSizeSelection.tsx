@@ -25,8 +25,9 @@ export function TesseraSizeSelection({
 }: TesseraSizeSelectionProps) {
 	const [requestedSize, setRequestedSize] = useState<number>(16);
 	const [adjustedSize, setAdjustedSize] = useState<number | null>(null);
-	const [isCoarse, setIsCoarse] = useState(false);
 	const [gridCellCount, setGridCellCount] = useState<number | null>(null);
+
+	const isCoarse = gridCellCount !== null && isCoarseGrid(gridCellCount);
 
 	useEffect(() => {
 		if (initialState.sourceImage && initialState.hasValidSourceDimensions) {
@@ -46,10 +47,6 @@ export function TesseraSizeSelection({
 				);
 
 				setGridCellCount(cellCount);
-				setIsCoarse(isCoarseGrid(cellCount));
-			} else {
-				setGridCellCount(null);
-				setIsCoarse(false);
 			}
 		}
 	}, [
@@ -93,7 +90,7 @@ export function TesseraSizeSelection({
 				</div>
 			)}
 
-			{isCoarse && gridCellCount !== null && (
+			{isCoarse && (
 				<article className="warning-message" role="alert">
 					Warning: This size produces only {gridCellCount} grid cells, which is
 					fewer than recommended.

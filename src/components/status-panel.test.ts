@@ -11,7 +11,6 @@ function escapeRegExp(literal: string): string {
 
 describe("Status Panel Styling", () => {
 	it("should not reference nonexistent pico-contrast-color variable", () => {
-		// This should fail initially - we're testing for the bug
 		expect(styles).not.toContain("var(--pico-contrast-color)");
 	});
 
