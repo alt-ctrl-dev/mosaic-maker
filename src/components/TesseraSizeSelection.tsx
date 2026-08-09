@@ -42,9 +42,19 @@ export function TesseraSizeSelection({
 	const onSizeSelectedRef = useRef(onSizeSelected);
 	onSizeSelectedRef.current = onSizeSelected;
 
+	const debounceTimerRef = useRef<NodeJS.Timeout | null>(null);
+
 	// biome-ignore lint/correctness/useExhaustiveDependencies: intentional mount-only effect
 	useEffect(() => {
 		onSizeSelectedRef.current(requestedSize);
+	}, []);
+
+	useEffect(() => {
+		return () => {
+			if (debounceTimerRef.current) {
+				clearTimeout(debounceTimerRef.current);
+			}
+		};
 	}, []);
 
 	useEffect(() => {
@@ -78,7 +88,15 @@ export function TesseraSizeSelection({
 	const handleSizeChange = (e: React.ChangeEvent<HTMLInputElement>) => {
 		const newSize = Number(e.target.value);
 		setRequestedSize(newSize);
-		onSizeSelected(newSize);
+
+		if (debounceTimerRef.current) {
+			clearTimeout(debounceTimerRef.current);
+		}
+
+		debounceTimerRef.current = setTimeout(() => {
+			onSizeSelectedRef.current(newSize);
+			debounceTimerRef.current = null;
+		}, 150);
 	};
 
 	return (

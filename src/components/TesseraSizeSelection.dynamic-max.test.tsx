@@ -75,6 +75,7 @@ describe("TesseraSizeSelection with dynamic max", () => {
 	});
 
 	it("allows selecting sizes up to the dynamic maximum", () => {
+		vi.useFakeTimers();
 		const mockInitialState = {
 			sourceImage: {
 				url: "blob:test",
@@ -91,9 +92,21 @@ describe("TesseraSizeSelection with dynamic max", () => {
 			/>,
 		);
 
+		// Clear the initial mount call
+		onSizeSelectedMock.mockClear();
+
 		const rangeInput = screen.getByRole("slider");
 
 		fireEvent.change(rangeInput, { target: { value: "150" } });
+
+		// Should not be called immediately (debounced)
+		expect(onSizeSelectedMock).not.toHaveBeenCalled();
+
+		// Advance timers to allow debounce to complete
+		vi.advanceTimersByTime(300);
+
+		// Should be called after debounce
 		expect(onSizeSelectedMock).toHaveBeenCalledWith(150);
+		vi.useRealTimers();
 	});
 });

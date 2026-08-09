@@ -51,7 +51,8 @@ describe("TesseraSizeSelection", () => {
 		).toBeInTheDocument();
 	});
 
-	it("calls onSizeSelected when the slider value changes", () => {
+	it("debounces onSizeSelected when the slider value changes", () => {
+		vi.useFakeTimers();
 		render(
 			<TesseraSizeSelection
 				onSizeSelected={onSizeSelectedMock}
@@ -59,9 +60,20 @@ describe("TesseraSizeSelection", () => {
 			/>,
 		);
 
+		// Clear the initial mount call
+		onSizeSelectedMock.mockClear();
+
 		const rangeInput = screen.getByRole("slider");
 		fireEvent.change(rangeInput, { target: { value: "32" } });
 
+		// Should not be called immediately (debounced)
+		expect(onSizeSelectedMock).not.toHaveBeenCalled();
+
+		// Advance timers to allow debounce to complete
+		vi.advanceTimersByTime(300);
+
+		// Should be called after debounce
 		expect(onSizeSelectedMock).toHaveBeenCalledWith(32);
+		vi.useRealTimers();
 	});
 });

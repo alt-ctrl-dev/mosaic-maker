@@ -38,7 +38,8 @@ describe("TesseraSizeSelection initial value registration", () => {
 		expect(onSizeSelectedMock).toHaveBeenCalledWith(16);
 	});
 
-	it("calls onSizeSelected when user changes slider value", () => {
+	it("debounces onSizeSelected when user changes slider value", () => {
+		vi.useFakeTimers();
 		render(
 			<TesseraSizeSelection
 				onSizeSelected={onSizeSelectedMock}
@@ -47,11 +48,19 @@ describe("TesseraSizeSelection initial value registration", () => {
 		);
 
 		const rangeInput = screen.getByRole("slider");
-		onSizeSelectedMock.mockReset();
+		onSizeSelectedMock.mockClear();
 
 		fireEvent.change(rangeInput, { target: { value: "32" } });
 
+		// Should not be called immediately (debounced)
+		expect(onSizeSelectedMock).not.toHaveBeenCalled();
+
+		// Advance timers to allow debounce to complete
+		vi.advanceTimersByTime(300);
+
+		// Should be called after debounce
 		expect(onSizeSelectedMock).toHaveBeenCalledTimes(1);
 		expect(onSizeSelectedMock).toHaveBeenCalledWith(32);
+		vi.useRealTimers();
 	});
 });
