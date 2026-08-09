@@ -16,13 +16,17 @@ interface WorkerSourceImage {
 	orientation: number;
 }
 
-/** Tessera data received from the main thread. */
+/**
+ * Tessera data received from the main thread.
+ *
+ * Only the fields the worker actually reads are transferred; the full
+ * TesseraInfo carries a File per tessera that the worker never touches, so
+ * narrowing the payload avoids wasting structured-clone bandwidth on image
+ * bytes it does not read.
+ */
 interface WorkerTessera {
-	file: unknown;
 	fileName: string;
 	isValid: boolean;
-	error: string | null;
-	isLowResolution: boolean;
 	previewUrl: string | null;
 }
 
