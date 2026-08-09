@@ -161,10 +161,6 @@ export function App() {
 				</aside>
 
 				<div className="workflow-canvas">
-					<div className="workflow-content">
-						{renderStepContent(workflowState.currentStep)}
-					</div>
-
 					<div className="workflow-navigation">
 						<button
 							type="button"
@@ -195,6 +191,10 @@ export function App() {
 								Next →
 							</button>
 						)}
+					</div>
+
+					<div className="workflow-content">
+						{renderStepContent(workflowState.currentStep)}
 					</div>
 				</div>
 			</main>
