@@ -1,6 +1,6 @@
 import { VERSION_STRING } from "../version";
 
-/** Application footer displaying the current version for identification and support purposes. */
+/** Application footer showing the build version. */
 export function AppFooter() {
 	return (
 		<footer

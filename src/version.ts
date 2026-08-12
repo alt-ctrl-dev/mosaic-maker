@@ -1,7 +1,7 @@
-/** Application version sourced from build-time environment, falling back to the package.json default. */
+/** Application version injected at build time. */
 export const PACKAGE_VERSION = import.meta.env.VITE_APP_VERSION || "-";
 
-/** Git commit hash injected at build time via Vite's define. */
+/** Git commit hash injected at build time. */
 export const COMMIT_SHA = import.meta.env.VITE_APP_COMMIT || "unknown";
 
 /** Human-readable version identifier in `v{version}+{commit}` format. */

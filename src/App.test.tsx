@@ -2,7 +2,6 @@ import { cleanup, render, screen, within } from "@testing-library/react";
 import { afterEach, describe, expect, it, vi } from "vitest";
 import { App } from "./App";
 
-// Mock the version module to provide consistent test values for footer
 vi.mock("./version", () => ({
 	VERSION_STRING: "v1.0.0+abc1234",
 	PACKAGE_VERSION: "1.0.0",
