@@ -1,6 +1,12 @@
 import { cleanup, render, screen, within } from "@testing-library/react";
-import { afterEach, describe, expect, it } from "vitest";
+import { afterEach, describe, expect, it, vi } from "vitest";
 import { App } from "./App";
+
+vi.mock("./version", () => ({
+	VERSION_STRING: "v1.0.0+abc1234",
+	PACKAGE_VERSION: "1.0.0",
+	COMMIT_SHA: "abc1234",
+}));
 
 afterEach(cleanup);
 
@@ -39,5 +45,13 @@ describe("Mosaic Maker workflow", () => {
 	it("hides Back button on first load", () => {
 		render(<App />);
 		expect(screen.queryByText("← Back")).toBeNull();
+	});
+
+	it("displays the version footer with correct information", () => {
+		render(<App />);
+
+		const footer = screen.getByText(/Mosaic Maker v1\.0\.0\+abc1234/);
+		expect(footer).toBeInTheDocument();
+		expect(footer.tagName).toBe("FOOTER");
 	});
 });

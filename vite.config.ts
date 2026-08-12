@@ -1,13 +1,39 @@
 import react from "@vitejs/plugin-react";
-import { defineConfig } from "vitest/config";
+import { defineConfig, loadEnv } from "vite";
+import { execSync } from "node:child_process";
+import { version as packageVersion } from "./package.json";
 
-export default defineConfig({
-	base: "/mosaic-maker/",
-	plugins: [react()],
-	test: {
-		environment: "jsdom",
-		exclude: ["**/node_modules/**", "**/dist/**", ".sandcastle/worktrees/**"],
-		globals: true,
-		setupFiles: ["./src/test-setup.ts"],
-	},
+function getGitCommitSha() {
+	try {
+		return execSync("git rev-parse --short HEAD").toString().trim();
+	} catch (error) {
+		console.error("Failed to get git commit:", error);
+		return "unknown";
+	}
+}
+
+export default defineConfig(({ mode }) => {
+	const env = loadEnv(mode, process.cwd(), "");
+	const commitSha = getGitCommitSha();
+
+	const define = {
+		"import.meta.env.VITE_APP_VERSION": JSON.stringify(
+			env.VITE_APP_VERSION || packageVersion,
+		),
+		"import.meta.env.VITE_APP_COMMIT": JSON.stringify(
+			env.VITE_APP_COMMIT || commitSha,
+		),
+	};
+
+	return {
+		base: "/mosaic-maker/",
+		define,
+		plugins: [react()],
+		test: {
+			environment: "jsdom",
+			exclude: ["**/node_modules/**", "**/dist/**", ".sandcastle/worktrees/**"],
+			globals: true,
+			setupFiles: ["./src/test-setup.ts"],
+		},
+	};
 });

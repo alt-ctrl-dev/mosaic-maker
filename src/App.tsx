@@ -6,6 +6,7 @@ import { GeneratedTesserae } from "./components/GeneratedTesserae";
 import { TesseraReview } from "./components/TesseraReview";
 import { GenerateAndPreview } from "./components/GenerateAndPreview";
 import { ExportMosaic } from "./components/ExportMosaic";
+import { AppFooter } from "./components/AppFooter";
 import { WorkflowStep as WorkflowStepEnum } from "./engine/workflow-state";
 import { useWorkflowReducer } from "./hooks/useWorkflowReducer";
 import { generateSupplementedTesserae } from "./engine/workflow-state";
@@ -253,6 +254,7 @@ export function App() {
 					</div>
 				</div>
 			</main>
+			<AppFooter />
 		</div>
 	);
 }
