@@ -24,8 +24,6 @@ describe("AppFooter", () => {
 		const footer = screen.getByText(/Mosaic Maker/);
 		expect(footer).toBeInTheDocument();
 		expect(footer).toHaveTextContent("Mosaic Maker v1.0.0+abc1234");
-
-		// Check that it has styling that would make it clearly visible
 		expect(footer).toHaveStyle("text-align: center");
 		expect(footer).toHaveStyle("padding: 1rem");
 	});
