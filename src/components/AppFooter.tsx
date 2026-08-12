@@ -1,10 +1,6 @@
 import { VERSION_STRING } from "../version";
 
-/**
- * Footer component that displays the application version information.
- * This component is always visible at the bottom of the application UI
- * to help users identify exactly which version they are running.
- */
+/** Application footer displaying the current version for identification and support purposes. */
 export function AppFooter() {
 	return (
 		<footer
