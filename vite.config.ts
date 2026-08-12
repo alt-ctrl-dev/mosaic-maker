@@ -1,6 +1,7 @@
 import react from "@vitejs/plugin-react";
 import { defineConfig, loadEnv } from "vite";
 import { execSync } from "node:child_process";
+import { version as packageVersion } from "./package.json";
 
 function getGitCommitSha() {
 	try {
@@ -17,7 +18,7 @@ export default defineConfig(({ mode }) => {
 
 	const define = {
 		"import.meta.env.VITE_APP_VERSION": JSON.stringify(
-			env.VITE_APP_VERSION || "1.0.0",
+			env.VITE_APP_VERSION || packageVersion,
 		),
 		"import.meta.env.VITE_APP_COMMIT": JSON.stringify(
 			env.VITE_APP_COMMIT || commitSha,
