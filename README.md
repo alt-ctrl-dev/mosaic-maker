@@ -10,7 +10,7 @@ A photomosaic is a mosaic made up of small photographs, creating a larger compos
 
 - **Privacy First**: All image processing happens in your browser, nothing is uploaded to any server
 - **Full Resolution Output**: Generate high-quality mosaics that maintain the resolution of your source image
-- **Custom Tesserae**: Upload your own images or generate random colored tiles as building blocks
+- **Custom Tesserae**: Upload your own images or generate random colored tesserae as building blocks
 - **Responsive Design**: Works on desktop and mobile devices
 - **Export Options**: Download your finished mosaic as a PNG image
 
@@ -29,7 +29,7 @@ Mosaic Maker follows a four-step workflow:
 
 ```bash
 # Clone the repository
-git clone <repository-url>
+git clone https://github.com/alt-ctrl-dev/mosaic-maker.git
 cd mosaic-maker
 
 # Install dependencies
@@ -58,7 +58,7 @@ pnpm run build
 - `pnpm run build` - Build the application for production
 - `pnpm run test` - Run the test suite
 - `pnpm run lint` - Check code for linting issues
-- `pnpm run format` - Format code according to project standards
+- `pnpm run format` - Check code formatting
 - `pnpm run typecheck` - Run TypeScript type checking
 - `pnpm run check` - Run all checks (lint, format, test, typecheck)
 
@@ -83,7 +83,7 @@ This project uses Vitest for testing with React Testing Library for component te
 pnpm run test
 
 # Run tests in watch mode
-pnpm run test:watch
+pnpm exec vitest
 ```
 
 ## Technology Stack
@@ -120,7 +120,7 @@ This project is licensed under the MIT License - see the [LICENSE](LICENSE) file
 
 ## Demo
 
-You can try Mosaic Maker online at: [GitHub Pages URL will appear here after deployment]
+You can try Mosaic Maker online at: [https://alt-ctrl-dev.github.io/mosaic-maker/](https://alt-ctrl-dev.github.io/mosaic-maker/)
 
 ## Privacy Policy
 
