@@ -20,10 +20,10 @@ function ContinueButton({ sourceImage, onContinue }: ContinueButtonProps) {
 	return (
 		<button
 			type="button"
-			className="secondary"
+			className="primary"
 			onClick={() => onContinue(sourceImage)}
 		>
-			Continue to Build Tesserae →
+			Continue to step 2 →
 		</button>
 	);
 }
@@ -140,13 +140,16 @@ export function SourceImageSelection({
 				</article>
 			)}
 
-			{previewUrl && imageDimensions && (
+			{previewUrl && (
 				<div className="image-preview">
+					<p>Source image preview:</p>
 					<img src={previewUrl} alt="Source" className="preview-image" />
-					<p>
-						Dimensions: {imageDimensions.width} × {imageDimensions.height}{" "}
-						pixels
-					</p>
+					{imageDimensions && (
+						<p>
+							Dimensions: {imageDimensions.width} × {imageDimensions.height}{" "}
+							pixels
+						</p>
+					)}
 				</div>
 			)}
 

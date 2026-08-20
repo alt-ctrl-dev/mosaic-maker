@@ -67,7 +67,6 @@ describe("Issue #123: Allow partial edge cells", () => {
 			generatedTesseraCount: null,
 			mosaicResult: null,
 			needsRegeneration: false,
-			exportAltText: "",
 			exportFormat: "png",
 			exportQuality: 0.9,
 			exportBackgroundColor: "#ffffff",

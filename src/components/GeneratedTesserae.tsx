@@ -83,7 +83,7 @@ export function GeneratedTesserae({
 	return (
 		<div className="generated-tesserae" data-testid="generated-tesserae">
 			<fieldset className="control-group">
-				<legend>Generation Settings</legend>
+				<legend>Generate random tiles</legend>
 				<div className="seed-control">
 					<label htmlFor="seed">Seed:</label>
 					<div className="input-group">
@@ -101,7 +101,7 @@ export function GeneratedTesserae({
 				</div>
 
 				<div className="count-control">
-					<label htmlFor="count">Number of tesserae:</label>
+					<label htmlFor="count">Number of tiles:</label>
 					<input
 						id="count"
 						type="number"
@@ -109,7 +109,7 @@ export function GeneratedTesserae({
 						max="1000"
 						value={count}
 						onChange={(e) => setCount(Number(e.target.value))}
-						aria-label="Number of tesserae to generate"
+						aria-label="Number of tiles to generate"
 					/>
 				</div>
 			</fieldset>
@@ -120,11 +120,11 @@ export function GeneratedTesserae({
 				disabled={isGenerating}
 				aria-busy={isGenerating}
 			>
-				{isGenerating ? "Generating..." : "Generate Tesserae"}
+				{isGenerating ? "Generating..." : "Generate tiles"}
 			</button>
 			{isGenerating && (
 				<article className="generation-info" aria-busy="true">
-					Generating {count} tesserae with seed {seed}...
+					Generating {count} tiles with seed {seed}...
 				</article>
 			)}
 		</div>

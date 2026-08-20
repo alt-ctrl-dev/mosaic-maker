@@ -63,6 +63,7 @@ export function TesseraUpload({
 			data-testid="tessera-upload"
 		>
 			<fieldset className="control-group" aria-label="Upload Tesserae">
+				<legend>Upload your own images</legend>
 				<div className="drop-zone">
 					<p>Drop tesserae images here or click below</p>
 					<input

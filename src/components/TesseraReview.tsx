@@ -51,14 +51,14 @@ export function TesseraReview({
 							onClick={onAcceptSupplementation}
 							className="outline"
 						>
-							Add Generated Tesserae
+							Add random tiles
 						</button>
 					)}
 				</article>
 			)}
 
 			<details>
-				<summary className="tesserae-info">
+				<summary className="tesserae-info outline secondary">
 					Review tesserae ({validCount} valid, {rejectedCount} rejected)
 				</summary>
 
@@ -113,7 +113,7 @@ export function TesseraReview({
 						disabled={validCount === 0}
 						className="primary"
 					>
-						Continue to Generate
+						Continue to step 3 →
 					</button>
 				</div>
 			)}

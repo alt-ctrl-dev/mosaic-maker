@@ -66,109 +66,86 @@ export function ExportMosaic({ state, dispatch }: ExportMosaicProps) {
 		<div className="export-mosaic-step">
 			{state.mosaicResult ? (
 				<>
-					<div className="export-settings">
-						<fieldset className="setting-group">
-							<legend>Format Settings</legend>
-							<div className="input-group">
-								<label htmlFor="export-format">Format:</label>
-								<select
-									id="export-format"
-									value={state.exportFormat}
-									onChange={(e) => {
-										const value = e.target.value;
-										if (isExportFormat(value)) {
-											handleExportSettingsChange({ exportFormat: value });
-										}
-									}}
-									disabled={isExporting}
-								>
-									<option value="png">PNG</option>
-									<option value="jpeg">JPEG</option>
-									<option value="webp">WebP</option>
-								</select>
-							</div>
-						</fieldset>
-
-						{(state.exportFormat === "jpeg" ||
-							state.exportFormat === "webp") && (
-							<fieldset className="setting-group">
-								<legend>Quality Settings</legend>
-								<div className="input-group">
-									<label htmlFor="export-quality">
-										Quality: {Math.round(state.exportQuality * 100)}%
-									</label>
-									<input
-										id="export-quality"
-										type="range"
-										min="0"
-										max="1"
-										step="0.01"
-										value={state.exportQuality}
-										onChange={(e) =>
-											handleExportSettingsChange({
-												exportQuality: parseFloat(e.target.value),
-											})
-										}
-										disabled={isExporting}
-									/>
-								</div>
-							</fieldset>
-						)}
-
-						{state.exportFormat === "jpeg" && (
-							<fieldset className="setting-group">
-								<legend>Background Settings</legend>
-								<div className="input-group">
-									<label htmlFor="export-background">Background Color:</label>
-									<input
-										id="export-background"
-										type="color"
-										value={state.exportBackgroundColor}
-										onChange={(e) =>
-											handleExportSettingsChange({
-												exportBackgroundColor: e.target.value,
-											})
-										}
-										disabled={isExporting}
-									/>
-								</div>
-							</fieldset>
-						)}
-
-						<fieldset className="setting-group">
-							<legend>Accessibility Settings</legend>
-							<div className="input-group">
-								<label htmlFor="export-alt-text">
-									Alt Text (for preview only):
-								</label>
-								<textarea
-									id="export-alt-text"
-									value={state.exportAltText}
-									onChange={(e) =>
-										handleExportSettingsChange({
-											exportAltText: e.target.value,
-										})
-									}
-									placeholder="Describe the mosaic for accessibility..."
-									rows={3}
-									disabled={isExporting}
-								/>
-								<small className="hint muted">
-									Note: Downloaded image files do not carry alt text. Add
-									equivalent text when publishing them.
-								</small>
-							</div>
-						</fieldset>
-					</div>
-
 					<div className="export-preview">
 						<h3>Preview</h3>
 						<img
 							src={state.mosaicResult.dataUrl}
-							alt={state.exportAltText || "Generated mosaic"}
+							alt={"Generated mosaic"}
 							className="mosaic-preview"
 						/>
 					</div>
+					<details>
+						<summary className="outline secondary">Export Settings</summary>
+						<div className="export-settings">
+							<fieldset className="setting-group">
+								<legend>Format Settings</legend>
+								<div className="input-group">
+									<label htmlFor="export-format">Format:</label>
+									<select
+										id="export-format"
+										value={state.exportFormat}
+										onChange={(e) => {
+											const value = e.target.value;
+											if (isExportFormat(value)) {
+												handleExportSettingsChange({ exportFormat: value });
+											}
+										}}
+										disabled={isExporting}
+									>
+										<option value="png">PNG</option>
+										<option value="jpeg">JPEG</option>
+										<option value="webp">WebP</option>
+									</select>
+								</div>
+							</fieldset>
+
+							{(state.exportFormat === "jpeg" ||
+								state.exportFormat === "webp") && (
+								<fieldset className="setting-group">
+									<legend>Quality Settings</legend>
+									<div className="input-group">
+										<label htmlFor="export-quality">
+											Quality: {Math.round(state.exportQuality * 100)}%
+										</label>
+										<input
+											id="export-quality"
+											type="range"
+											min="0"
+											max="1"
+											step="0.01"
+											value={state.exportQuality}
+											onChange={(e) =>
+												handleExportSettingsChange({
+													exportQuality: parseFloat(e.target.value),
+												})
+											}
+											disabled={isExporting}
+										/>
+									</div>
+								</fieldset>
+							)}
+
+							{state.exportFormat === "jpeg" && (
+								<fieldset className="setting-group">
+									<legend>Background Settings</legend>
+									<div className="input-group">
+										<label htmlFor="export-background">Background Color:</label>
+										<input
+											id="export-background"
+											type="color"
+											value={state.exportBackgroundColor}
+											onChange={(e) =>
+												handleExportSettingsChange({
+													exportBackgroundColor: e.target.value,
+												})
+											}
+											disabled={isExporting}
+										/>
+									</div>
+								</fieldset>
+							)}
+						</div>
+					</details>
 
 					<div className="export-actions">
 						<button
@@ -176,6 +153,7 @@ export function ExportMosaic({ state, dispatch }: ExportMosaicProps) {
 							onClick={handleDownload}
 							disabled={isExporting}
 							aria-busy={isExporting}
+							className="primary"
 						>
 							{isExporting ? "Exporting..." : "Download"}
 						</button>
