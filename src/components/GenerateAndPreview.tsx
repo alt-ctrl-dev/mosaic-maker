@@ -198,8 +198,13 @@ export function GenerateAndPreview({
 		<div className="generate-preview-step">
 			{!isGenerating && !previewUrl && (
 				<div className="generate-controls">
+					<p>
+						Ready to generate your mosaic? Press the "Generate Mosaic" button
+						below. You can go back to the previous step anytime if needed.
+					</p>
 					<button
 						type="button"
+						className="primary"
 						onClick={handleGenerate}
 						disabled={!canGenerate || isGenerating}
 						aria-busy={isGenerating}

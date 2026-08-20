@@ -102,7 +102,7 @@ export function TesseraSizeSelection({
 	return (
 		<div className="tessera-size-selection">
 			<div className="size-input">
-				<label htmlFor="tessera-size">Tessera size (pixels):</label>
+				<label htmlFor="tessera-size">Tile size (pixels):</label>
 				<input
 					id="tessera-size"
 					type="range"
@@ -121,7 +121,7 @@ export function TesseraSizeSelection({
 					</p>
 					{requestedSize !== adjustedSize && (
 						<p className="adjustment-explanation">
-							Adjusted to fit within the valid tessera size range.
+							Adjusted to fit within the valid tile size range.
 						</p>
 					)}
 				</div>

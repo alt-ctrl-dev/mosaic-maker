@@ -192,7 +192,7 @@ describe("Status panels delegate styling to Pico article elements", () => {
 			<GeneratedTesserae onTesseraeGenerated={noop} initialState={state} />,
 		);
 
-		fireEvent.click(screen.getByRole("button", { name: /generate tesserae/i }));
+		fireEvent.click(screen.getByRole("button", { name: /generate tiles/i }));
 
 		const panel = await waitFor(() => {
 			const found = container.querySelector(".generation-info");

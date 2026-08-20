@@ -96,6 +96,7 @@ export function App() {
 								}
 								adjustedTesseraSize={resolvedTesseraSize}
 							/>
+							<p>OR</p>
 							<GeneratedTesserae
 								onTesseraeGenerated={(tesserae) =>
 									dispatch({ type: "tesseraeGenerated", tesserae })
@@ -110,7 +111,7 @@ export function App() {
 								className="secondary"
 								style={{ marginBottom: "1rem" }}
 							>
-								Clear All Tesserae
+								Clear all tiles
 							</button>
 						)}
 						<TesseraReview

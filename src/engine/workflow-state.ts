@@ -17,7 +17,6 @@ export type { MosaicResult };
 export interface ExportSettings {
 	exportFormat: ExportFormat;
 	exportQuality: number;
-	exportAltText: string;
 	exportBackgroundColor: string;
 }
 
@@ -63,7 +62,6 @@ export interface WorkflowState {
 	needsRegeneration: boolean;
 	/** The generated mosaic result, set after mosaic generation completes */
 	mosaicResult: MosaicResult | null;
-	exportAltText: string;
 	exportFormat: ExportFormat;
 	/** Quality setting for JPEG/WebP exports (0.0 - 1.0) */
 	exportQuality: number;
@@ -108,7 +106,6 @@ export const INITIAL_WORKFLOW_STATE: WorkflowState = {
 	generatedTesseraCount: null,
 	needsRegeneration: false,
 	mosaicResult: null,
-	exportAltText: "",
 	exportFormat: "png",
 	exportQuality: 0.9,
 	exportBackgroundColor: "#ffffff",
