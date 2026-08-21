@@ -39,7 +39,9 @@ const agentName = "planner"
 
     if (!plan.output.issues.length) {
       console.log("Planning agent found no tasks to work on. Stopping.");
-      throw new Error()
+      throw new Error(
+        "Planning agent returned an empty issue list: no unblocked issues ready for work.",
+      );
     }
     return plan.output.issues[0];
   }
