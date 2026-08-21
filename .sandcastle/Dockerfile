@@ -15,6 +15,13 @@ RUN curl -fsSL https://cli.github.com/packages/githubcli-archive-keyring.gpg \
   && apt-get update && apt-get install -y gh \
   && rm -rf /var/lib/apt/lists/*
 
+# Extra CA certificates (e.g. a corporate TLS-inspection root). Drop *.crt files
+# into .sandcastle/certs/ on the host; the directory is empty by default and this
+# step is then a no-op. See .sandcastle/certs/README.md.
+COPY certs/ /usr/local/share/ca-certificates/
+RUN update-ca-certificates
+ENV NODE_EXTRA_CA_CERTS=/etc/ssl/certs/ca-certificates.crt
+
 # Build-args for UID/GID alignment: sandcastle docker build-image
 # defaults these to the host user's UID/GID so image-built files
 # and bind-mounted files share an owner without runtime chown.
