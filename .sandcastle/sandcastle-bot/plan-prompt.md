@@ -46,12 +46,10 @@ Before selecting an in-progress issue, check the open pull requests above. Exclu
 
 # OUTPUT
 
-Output your plan as a JSON object wrapped in `<plan>` tags:
+Include only unblocked issues. If every issue is blocked, include the single highest-priority candidate (the one with the fewest or weakest dependencies). If there are no issues to work on at all, emit an empty `issues` array — never omit the output block.
+
+Reply with nothing but the output block below (no preamble, no restating these instructions), filling in the real issues:
 
 <plan>
 {"issues": [{"id": "42", "title": "Fix auth bug", "branch": "sandcastle/issue-42"}]}
 </plan>
-
-Include only unblocked issues. If every issue is blocked, include the single highest-priority candidate (the one with the fewest or weakest dependencies).
-
-Always emit the `<plan>` tags, even when there is nothing to do. If there are no issues to work on at all, output `<plan>{"issues": []}</plan>` so the run can exit cleanly.
