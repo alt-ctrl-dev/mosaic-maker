@@ -6,4 +6,7 @@ export const hooks = {
   sandbox: { onSandboxReady: [{ command: "pnpm install" }] },
 };
 
-export const copyToWorktree = ["node_modules"];
+// On Windows the host's node_modules holds win32 binaries the Linux sandbox
+// can't use, and copying the pnpm tree across the Docker bind mount blows the
+// 60s copy timeout. Let the onSandboxReady `pnpm install` build it instead.
+export const copyToWorktree = process.platform === "win32" ? [] : ["node_modules"];

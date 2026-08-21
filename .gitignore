@@ -2,3 +2,7 @@ node_modules/
 dist/
 .sandcastl_olde/
 .pnpm-store/
+~/.pi/agent/sessions/
+
+# Corporate TLS-inspection CA certs (machine-specific, see .sandcastle/certs/README.md)
+.sandcastle/certs/*.crt
