@@ -1,5 +1,31 @@
-import { describe, it, expect, vi, beforeEach, afterEach } from "vitest";
-import { collectDeviceAnalytics } from "./device-analytics";
+import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
+import { collectDeviceSnapshot, track } from "./device-analytics";
+
+interface NavigatorOverrides {
+	userAgent?: string;
+	language?: string;
+	deviceMemory?: number;
+	hardwareConcurrency?: number;
+	userAgentData?: {
+		getHighEntropyValues: (hints: string[]) => Promise<Record<string, string>>;
+	};
+}
+
+function stubNavigator(overrides: NavigatorOverrides): void {
+	for (const [key, value] of Object.entries(overrides)) {
+		Object.defineProperty(navigator, key, {
+			value,
+			configurable: true,
+		});
+	}
+}
+
+function clearNavigatorProp(key: string): void {
+	Object.defineProperty(navigator, key, {
+		value: undefined,
+		configurable: true,
+	});
+}
 
 describe("Device Analytics", () => {
 	beforeEach(() => {
@@ -8,75 +34,94 @@ describe("Device Analytics", () => {
 
 	afterEach(() => {
 		vi.restoreAllMocks();
+		clearNavigatorProp("userAgentData");
 	});
 
-	it("should collect device analytics and log to console", () => {
-		Object.defineProperty(navigator, "userAgent", {
-			value: "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36",
-			configurable: true,
+	it("collects high-entropy OS fields in a full-support environment", async () => {
+		stubNavigator({
+			deviceMemory: 8,
+			hardwareConcurrency: 12,
+			language: "en-US",
+			userAgentData: {
+				getHighEntropyValues: async () => ({
+					platform: "Windows",
+					platformVersion: "15.0.0",
+					architecture: "x86",
+					bitness: "64",
+					uaFullVersion: "120.0.0.0",
+				}),
+			},
 		});
 
-		Object.defineProperty(navigator, "deviceMemory", {
-			value: 8,
-			configurable: true,
+		const snapshot = await collectDeviceSnapshot();
+
+		expect(snapshot.osSource).toBe("userAgentData");
+		expect(snapshot.platform).toBe("Windows");
+		expect(snapshot.platformVersion).toBe("15.0.0");
+		expect(snapshot.architecture).toBe("x86");
+		expect(snapshot.bitness).toBe("64");
+		expect(snapshot.uaFullVersion).toBe("120.0.0.0");
+		expect(snapshot.userAgent).toBeUndefined();
+		expect(snapshot.deviceMemory).toBe(8);
+		expect(snapshot.hardwareConcurrency).toBe(12);
+		expect(snapshot.language).toBe("en-US");
+		expect(typeof snapshot.timeZone).toBe("string");
+	});
+
+	it("falls back to the user-agent string when userAgentData is absent", async () => {
+		clearNavigatorProp("userAgentData");
+		stubNavigator({
+			userAgent:
+				"Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/605.1.15",
 		});
 
-		Object.defineProperty(screen, "width", {
-			value: 1920,
-			configurable: true,
+		const snapshot = await collectDeviceSnapshot();
+
+		expect(snapshot.osSource).toBe("userAgent");
+		expect(snapshot.userAgent).toContain("Macintosh");
+		expect(snapshot.platform).toBeUndefined();
+	});
+
+	it("resolves and omits OS fields when a source throws", async () => {
+		stubNavigator({
+			userAgentData: {
+				getHighEntropyValues: async () => {
+					throw new Error("blocked");
+				},
+			},
 		});
 
-		Object.defineProperty(screen, "height", {
-			value: 1080,
-			configurable: true,
-		});
+		const snapshot = await collectDeviceSnapshot();
 
-		Object.defineProperty(window, "innerWidth", {
-			value: 1200,
-			configurable: true,
-		});
+		expect(snapshot.osSource).toBeUndefined();
+		expect(snapshot.platform).toBeUndefined();
+		// The rest of the snapshot still resolves.
+		expect(typeof snapshot.timeZone).toBe("string");
+	});
 
-		Object.defineProperty(window, "innerHeight", {
-			value: 800,
-			configurable: true,
-		});
+	it("generates a fresh session id per collection", async () => {
+		const first = await collectDeviceSnapshot();
+		const second = await collectDeviceSnapshot();
 
-		Object.defineProperty(crypto, "randomUUID", {
-			value: () => "test-uuid-12345",
-			configurable: true,
-		});
+		expect(first.sessionId).toBeDefined();
+		expect(second.sessionId).toBeDefined();
+		expect(first.sessionId).not.toBe(second.sessionId);
+	});
 
-		collectDeviceAnalytics();
+	it("does not persist any value to web storage", async () => {
+		const localSetSpy = vi.spyOn(Storage.prototype, "setItem");
+
+		await collectDeviceSnapshot();
+
+		expect(localSetSpy).not.toHaveBeenCalled();
+	});
+
+	it("emits the payload through track as JSON", () => {
+		track("device_snapshot", { sessionId: "abc" });
 
 		expect(console.log).toHaveBeenCalledWith(
-			"Device Analytics:",
-			expect.any(String),
+			"device_snapshot",
+			JSON.stringify({ sessionId: "abc" }, null, 2),
 		);
-
-		const logData = JSON.parse(vi.mocked(console.log).mock.calls[0][1]);
-
-		expect(logData).toHaveProperty("os");
-		expect(logData).toHaveProperty("deviceType");
-		expect(logData).toHaveProperty("memory");
-		expect(logData).toHaveProperty("screenResolution");
-		expect(logData).toHaveProperty("viewportResolution");
-		expect(logData).toHaveProperty("deviceId");
-		expect(logData.memory).toBe(8);
-	});
-
-	it("should report memory as -1 when device memory is unavailable", () => {
-		Object.defineProperty(navigator, "userAgent", {
-			value: "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36",
-			configurable: true,
-		});
-
-		// @ts-expect-error deviceMemory is not in all browsers
-		delete navigator.deviceMemory;
-
-		collectDeviceAnalytics();
-
-		const logData = JSON.parse(vi.mocked(console.log).mock.calls[0][1]);
-
-		expect(logData.memory).toBe(-1);
 	});
 });

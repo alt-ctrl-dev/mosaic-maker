@@ -5,16 +5,26 @@ import { App } from "./App";
 import "./styles.css";
 import { collectDeviceAnalytics } from "./device-analytics";
 
-collectDeviceAnalytics();
-
 const root = document.getElementById("root");
 
 if (!root) {
 	throw new Error("Root element not found");
 }
 
-createRoot(root).render(
+const reactRoot = createRoot(root);
+
+reactRoot.render(
 	<StrictMode>
-		<App />
+		<main className="container" aria-busy="true">
+			<article aria-busy="true">Loading…</article>
+		</main>
 	</StrictMode>,
 );
+
+collectDeviceAnalytics().finally(() => {
+	reactRoot.render(
+		<StrictMode>
+			<App />
+		</StrictMode>,
+	);
+});
