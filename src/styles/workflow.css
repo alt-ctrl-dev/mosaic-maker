@@ -1,0 +1,187 @@
+.workflow-container {
+	display: flex;
+	gap: 2rem;
+	position: relative;
+}
+
+.workflow-sidebar {
+	flex: 0 0 14rem;
+	border-right: 1px solid var(--pico-muted-border-color);
+	padding-right: 1rem;
+}
+
+.workflow-sidebar-toggle,
+.workflow-sidebar-toggle-button,
+.workflow-sidebar-close,
+.workflow-sidebar-scrim {
+	display: none;
+}
+
+.workflow-sidebar ol {
+	list-style: none;
+	padding: 0;
+	margin: 0;
+}
+
+.workflow-step-button {
+	display: flex;
+	align-items: center;
+	width: 100%;
+	text-align: left;
+	padding: 0.75rem 1rem;
+	margin-bottom: 0.5rem;
+	border: none;
+	border-radius: var(--pico-border-radius);
+	cursor: pointer;
+	background-color: var(--pico-secondary-background);
+	color: var(--pico-secondary-inverse);
+	transition: background-color 0.2s;
+}
+
+.workflow-step-button:hover {
+	background-color: var(--pico-dropdown-hover-background-color);
+}
+
+.workflow-step-button.current {
+	background-color: var(--pico-primary);
+	color: var(--pico-primary-inverse);
+}
+
+.workflow-step-button.completed {
+	opacity: 0.55;
+}
+
+.step-indicator {
+	display: inline-flex;
+	align-items: center;
+	justify-content: center;
+	width: 1.75rem;
+	height: 1.75rem;
+	border-radius: 50%;
+	margin-right: 0.75rem;
+	font-weight: bold;
+	flex-shrink: 0;
+}
+
+.workflow-step-button.current .step-indicator {
+	background-color: var(--pico-primary-inverse);
+	color: var(--pico-primary);
+}
+
+.step-title {
+	font-weight: 500;
+}
+
+.workflow-canvas {
+	flex: 1;
+	display: flex;
+	flex-direction: column;
+}
+
+.workflow-content {
+	flex: 1;
+}
+
+.workflow-navigation {
+	display: flex;
+	justify-content: space-between;
+	align-items: center;
+	margin-bottom: 1rem;
+	padding-bottom: 0rem;
+	border-bottom: 1px solid var(--pico-muted-border-color);
+}
+
+.workflow-step-counter {
+	color: var(--pico-muted-color);
+	font-size: 0.9rem;
+}
+
+@media (max-width: 900px) {
+	.workflow-sidebar-toggle-button {
+		display: block;
+		position: fixed;
+		bottom: 1rem;
+		right: 1rem;
+		width: 3rem;
+		height: 3rem;
+		border-radius: 50%;
+		border: none;
+		font-size: 1.5rem;
+		z-index: 1001;
+		cursor: pointer;
+		text-align: center;
+		line-height: 3rem;
+		box-shadow: var(--pico-box-shadow);
+	}
+
+	.workflow-sidebar {
+		position: fixed;
+		bottom: 0;
+		left: 0;
+		width: 100%;
+		height: 80vh;
+		background-color: var(--pico-background-color);
+		border-right: none;
+		border-top: 1px solid var(--pico-muted-border-color);
+		border-radius: var(--pico-border-radius) var(--pico-border-radius) 0 0;
+		z-index: 1000;
+		transform: translateY(100%);
+		transition: transform 0.3s ease;
+		padding: 1rem;
+		box-sizing: border-box;
+		overflow-y: auto;
+	}
+
+	.workflow-sidebar-toggle:checked ~ .workflow-sidebar {
+		transform: translateY(0);
+	}
+
+	.workflow-sidebar-close {
+		display: block;
+		position: sticky;
+		top: 0;
+		float: right;
+		width: 2rem;
+		height: 2rem;
+		border-radius: 50%;
+		border: none;
+		font-size: 1rem;
+		z-index: 1002;
+		cursor: pointer;
+		text-align: center;
+		line-height: 2rem;
+		margin-bottom: 1rem;
+	}
+
+	.workflow-sidebar-scrim {
+		display: block;
+		position: fixed;
+		top: 0;
+		left: 0;
+		width: 100%;
+		height: 100%;
+		background-color: var(--pico-modal-overlay-background-color);
+		z-index: 999;
+		opacity: 0;
+		pointer-events: none;
+		transition: opacity 0.3s ease;
+		cursor: pointer;
+	}
+
+	.workflow-sidebar-toggle:checked ~ .workflow-sidebar-scrim {
+		opacity: 1;
+		pointer-events: all;
+	}
+
+	.workflow-sidebar ol {
+		margin-top: 1rem;
+	}
+
+	.workflow-step-button {
+		padding: 1rem;
+	}
+
+	.step-title {
+		font-size: 1rem;
+	}
+}

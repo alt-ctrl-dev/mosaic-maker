@@ -2,7 +2,10 @@ import { readFileSync } from "node:fs";
 import { resolve } from "node:path";
 import { describe, expect, it } from "vitest";
 
-const styles = readFileSync(resolve(process.cwd(), "src/styles.css"), "utf8");
+const styles = readFileSync(
+	resolve(process.cwd(), "src/styles/workflow.css"),
+	"utf8",
+);
 
 describe("workflow-step-button styling", () => {
 	it("uses secondary background and color for resting state", () => {
