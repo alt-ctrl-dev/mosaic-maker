@@ -55,14 +55,14 @@ function getDeviceType(): string {
 
 /**
  * Gets device memory information if available.
- * @returns Memory information in GB or "Unknown"
+ * @returns Memory in GB, or -1 when device memory is unavailable
  */
-function getMemoryInfo(): string | number {
+function getMemoryInfo(): number {
 	if ("deviceMemory" in navigator) {
 		// @ts-expect-error deviceMemory is not in all browsers
 		return navigator.deviceMemory;
 	}
-	return "Unknown";
+	return -1;
 }
 
 /**

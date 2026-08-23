@@ -61,5 +61,22 @@ describe("Device Analytics", () => {
 		expect(logData).toHaveProperty("screenResolution");
 		expect(logData).toHaveProperty("viewportResolution");
 		expect(logData).toHaveProperty("deviceId");
+		expect(logData.memory).toBe(8);
+	});
+
+	it("should report memory as -1 when device memory is unavailable", () => {
+		Object.defineProperty(navigator, "userAgent", {
+			value: "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36",
+			configurable: true,
+		});
+
+		// @ts-expect-error deviceMemory is not in all browsers
+		delete navigator.deviceMemory;
+
+		collectDeviceAnalytics();
+
+		const logData = JSON.parse(vi.mocked(console.log).mock.calls[0][1]);
+
+		expect(logData.memory).toBe(-1);
 	});
 });
