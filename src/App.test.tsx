@@ -47,6 +47,17 @@ describe("Mosaic Maker workflow", () => {
 		expect(screen.queryByText("← Back")).toBeNull();
 	});
 
+	it("displays the header eyebrow text with offline support information", () => {
+		render(<App />);
+
+		const eyebrow = screen.getByText(
+			/Private, in-browser image making • Works offline once loaded/,
+		);
+		expect(eyebrow).toBeInTheDocument();
+		expect(eyebrow.tagName).toBe("P");
+		expect(eyebrow).toHaveClass("eyebrow");
+	});
+
 	it("displays the version footer with correct information", () => {
 		render(<App />);
 
