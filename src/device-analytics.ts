@@ -67,7 +67,7 @@ function getMemoryInfo(): string | number {
 
 /**
  * Gets screen resolution information.
- * @returns Screen resolution as "width×height" or "Unknown"
+ * @returns Screen resolution as "width×height"
  */
 function getScreenResolution(): string {
 	return `${screen.width}×${screen.height}`;
@@ -75,35 +75,28 @@ function getScreenResolution(): string {
 
 /**
  * Gets viewport resolution information.
- * @returns Viewport resolution as "width×height" or "Unknown"
+ * @returns Viewport resolution as "width×height"
  */
 function getViewportResolution(): string {
 	return `${window.innerWidth}×${window.innerHeight}`;
 }
 
 /**
- * Generates or retrieves a device identifier.
+ * Generates a unique device identifier using crypto.randomUUID when available,
+ * falling back to a Math.random-based ID otherwise.
  * @returns A unique device identifier
  */
 function getDeviceId(): string {
-	// Try to use crypto.randomUUID if available
 	if (typeof crypto !== "undefined" && crypto.randomUUID) {
 		return crypto.randomUUID();
 	}
 
-	// Fallback: generate a random ID using Math.random
-	return `id-${Math.random().toString(36).substr(2, 9)}`;
+	return `id-${Math.random().toString(36).slice(2, 11)}`;
 }
 
 /**
- * Collects device analytics information and logs it to the console.
- * This function gathers information about the user's device including:
- * - Operating system
- * - Device type
- * - Memory capacity
- * - Screen resolution
- * - Viewport resolution
- * - Device identifier
+ * Logs device analytics (OS, device type, memory, screen/viewport resolution,
+ * and a unique device identifier) to the console as formatted JSON.
  */
 export function collectDeviceAnalytics(): void {
 	const analyticsData = {

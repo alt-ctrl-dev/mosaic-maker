@@ -5,7 +5,6 @@ import { App } from "./App";
 import "./styles.css";
 import { collectDeviceAnalytics } from "./device-analytics";
 
-// Collect device analytics on app load
 collectDeviceAnalytics();
 
 const root = document.getElementById("root");
