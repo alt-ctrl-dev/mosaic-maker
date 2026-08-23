@@ -1,7 +1,4 @@
-import {
-	type DeviceCapacity,
-	getDeviceCapacity,
-} from "./engine/device-capacity-preflight";
+import { getDeviceCapacity } from "./engine/device-capacity-preflight";
 
 /** Source used to derive OS and platform detail for a device snapshot. */
 export type OsSource = "userAgentData" | "userAgent";
@@ -56,7 +53,6 @@ export interface DeviceSnapshot {
 	language?: string;
 }
 
-/** High-entropy hints requested from `navigator.userAgentData`. */
 const HIGH_ENTROPY_HINTS = [
 	"platform",
 	"platformVersion",
@@ -67,7 +63,7 @@ const HIGH_ENTROPY_HINTS = [
 ] as const;
 
 interface UserAgentData {
-	getHighEntropyValues(hints: string[]): Promise<{
+	getHighEntropyValues(hints: readonly string[]): Promise<{
 		platform?: string;
 		platformVersion?: string;
 		architecture?: string;
@@ -78,9 +74,9 @@ interface UserAgentData {
 }
 
 function getUserAgentData(): UserAgentData | undefined {
-	if (typeof navigator === "undefined") return undefined;
-	return (navigator as Navigator & { userAgentData?: UserAgentData })
-		.userAgentData;
+	return typeof navigator !== "undefined"
+		? (navigator as { userAgentData?: UserAgentData }).userAgentData
+		: undefined;
 }
 
 function assignDefined<T extends object>(target: T, source: Partial<T>): void {
@@ -96,17 +92,11 @@ async function collectOsFields(): Promise<Partial<DeviceSnapshot>> {
 	const userAgentData = getUserAgentData();
 
 	if (userAgentData) {
-		const highEntropy = await userAgentData.getHighEntropyValues([
-			...HIGH_ENTROPY_HINTS,
-		]);
+		const highEntropy =
+			await userAgentData.getHighEntropyValues(HIGH_ENTROPY_HINTS);
 		return {
 			osSource: "userAgentData",
-			platform: highEntropy.platform,
-			platformVersion: highEntropy.platformVersion,
-			architecture: highEntropy.architecture,
-			bitness: highEntropy.bitness,
-			model: highEntropy.model,
-			uaFullVersion: highEntropy.uaFullVersion,
+			...highEntropy,
 		};
 	}
 
@@ -136,7 +126,7 @@ function collectDisplayFields(): Partial<DeviceSnapshot> {
 }
 
 function collectHardwareFields(): Partial<DeviceSnapshot> {
-	const capacity: DeviceCapacity = getDeviceCapacity();
+	const capacity = getDeviceCapacity();
 	return {
 		deviceMemory: capacity.deviceMemory,
 		hardwareConcurrency: capacity.hardwareConcurrency,
