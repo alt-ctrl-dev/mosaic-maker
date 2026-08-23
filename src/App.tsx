@@ -149,7 +149,9 @@ export function App() {
 	return (
 		<div className="layout-container">
 			<header>
-				<p className="eyebrow">Private, in-browser image making</p>
+				<p className="eyebrow">
+					Private, in-browser image making • Works offline once loaded
+				</p>
 				<h1>Mosaic Maker</h1>
 				<p>
 					Turn a source image into a full-resolution photomosaic. Your source
