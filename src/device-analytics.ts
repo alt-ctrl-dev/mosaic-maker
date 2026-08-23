@@ -1,13 +1,3 @@
-/**
- * Device analytics module for collecting basic device information.
- * This module provides functions to gather and log device information
- * including OS, device type, hardware details, and a unique device identifier.
- */
-
-/**
- * Detects the operating system from the user agent string.
- * @returns The detected operating system or "Unknown"
- */
 function getOS(): string {
 	const userAgent = navigator.userAgent;
 
@@ -25,10 +15,6 @@ function getOS(): string {
 	return "Unknown";
 }
 
-/**
- * Detects the device type from the user agent string.
- * @returns The detected device type or "Unknown"
- */
 function getDeviceType(): string {
 	const userAgent = navigator.userAgent;
 
@@ -65,18 +51,10 @@ function getMemoryInfo(): number {
 	return -1;
 }
 
-/**
- * Gets screen resolution information.
- * @returns Screen resolution as "width×height"
- */
 function getScreenResolution(): string {
 	return `${screen.width}×${screen.height}`;
 }
 
-/**
- * Gets viewport resolution information.
- * @returns Viewport resolution as "width×height"
- */
 function getViewportResolution(): string {
 	return `${window.innerWidth}×${window.innerHeight}`;
 }
