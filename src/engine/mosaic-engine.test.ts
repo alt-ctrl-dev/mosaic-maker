@@ -50,6 +50,7 @@ function createFakeCanvas(width: number, height: number): HTMLCanvasElement {
 		},
 		fillStyle: "",
 		fillRect: () => {},
+		clearRect: () => {},
 		drawImage: (source: { raster: Raster }, ...args: number[]) => {
 			const src = source.raster;
 			const [sx, sy, sw, sh, dx, dy, dw, dh] =

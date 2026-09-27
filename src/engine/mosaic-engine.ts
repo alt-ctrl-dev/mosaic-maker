@@ -331,6 +331,13 @@ async function generateMosaicCanvas(
 		tesseraGrid[row] = new Array(gridCols).fill(null);
 	}
 
+	// Reuse a single temporary canvas for color sampling to reduce allocations
+	const tempCanvas = canvasCreator(COLOR_GRID_SIZE, COLOR_GRID_SIZE);
+	const tempCtx = tempCanvas.getContext("2d");
+	if (!tempCtx) {
+		throw new Error("Failed to get temporary canvas context");
+	}
+
 	let cellCount = 0;
 	const totalCells = gridRows * gridCols;
 
@@ -355,14 +362,43 @@ async function generateMosaicCanvas(
 			const regionWidth = Math.min(tesseraSize, sourceCanvas.width - x);
 			const regionHeight = Math.min(tesseraSize, sourceCanvas.height - y);
 
-			const cellGrid = sampleColorGrid(
+			// Reuse the temporary canvas for color sampling instead of creating new ones
+			tempCtx.clearRect(0, 0, COLOR_GRID_SIZE, COLOR_GRID_SIZE);
+			tempCtx.drawImage(
 				sourceCanvas,
 				x,
 				y,
 				regionWidth,
 				regionHeight,
-				canvasCreator,
+				0,
+				0,
+				COLOR_GRID_SIZE,
+				COLOR_GRID_SIZE,
 			);
+
+			const { data } = tempCtx.getImageData(
+				0,
+				0,
+				COLOR_GRID_SIZE,
+				COLOR_GRID_SIZE,
+			);
+			const colors: Oklab[][] = [];
+
+			for (let rowIndex = 0; rowIndex < COLOR_GRID_SIZE; rowIndex++) {
+				const row: Oklab[] = [];
+				for (let colIndex = 0; colIndex < COLOR_GRID_SIZE; colIndex++) {
+					const idx = (rowIndex * COLOR_GRID_SIZE + colIndex) * 4;
+					const rgb: RGB = {
+						r: data[idx],
+						g: data[idx + 1],
+						b: data[idx + 2],
+					};
+					row.push(rgbToOklab(rgb));
+				}
+				colors.push(row);
+			}
+
+			const cellGrid = { colors };
 
 			const bestMatchIndex = selectTessera(
 				cellGrid,

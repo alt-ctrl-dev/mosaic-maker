@@ -31,6 +31,7 @@ describe("mosaic-engine with partial edge cells", () => {
 				width,
 				height,
 				getContext: () => ({
+					clearRect: vi.fn(),
 					drawImage: vi.fn(),
 					fillRect: vi.fn(),
 					fillStyle: "",
@@ -93,9 +94,11 @@ describe("mosaic-engine with partial edge cells", () => {
 			return {
 				width,
 				height,
+				clearRect: vi.fn(),
 				getContext: () => ({
 					drawImage: vi.fn(),
 					fillRect: vi.fn(),
+					clearRect: vi.fn(),
 					fillStyle: "",
 					getImageData: () => ({
 						data: new Uint8ClampedArray(36).fill(100),
