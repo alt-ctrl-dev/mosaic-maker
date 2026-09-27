@@ -3,6 +3,7 @@ import type { WorkflowState } from "../engine/workflow-state";
 import { generateMosaic, type ProgressCallback } from "../engine/mosaic-engine";
 import { ANDROID_READBACK_FAILURE } from "../engine/mosaic-shared";
 import type { WorkflowAction } from "../hooks/useWorkflowReducer";
+import { getSessionId } from "../analytics";
 
 /** Props for {@link GenerateAndPreview}. */
 interface GenerateAndPreviewProps {
@@ -97,6 +98,10 @@ export function GenerateAndPreview({
 						case "progress":
 							setProgress({ percent: data.percent, message: data.message });
 							break;
+						case "timing":
+							// Handle timing events - log to console for now
+							console.log("[Worker Timing]", data.data);
+							break;
 						case "result": {
 							const success = Boolean(data.dataUrl);
 							if (success) {
@@ -150,6 +155,7 @@ export function GenerateAndPreview({
 						previewUrl: tessera.previewUrl,
 					})),
 					tesseraSize: state.adjustedTesseraSize,
+					sessionId: getSessionId(),
 				});
 			} catch (err) {
 				console.warn(
@@ -171,7 +177,26 @@ export function GenerateAndPreview({
 		tesseraSize: NonNullable<WorkflowState["adjustedTesseraSize"]>,
 		fallbackErrorMessage?: string,
 	) => {
+		const startTime = performance.now();
+		let phaseTimings: Record<string, number> = {};
+		let currentPhaseStart = startTime;
+
 		const progressCallback: ProgressCallback = (percent, message) => {
+			// Track phase timing
+			const now = performance.now();
+			if (message.includes("Loading source")) {
+				phaseTimings.loading_source = now - currentPhaseStart;
+				currentPhaseStart = now;
+			} else if (message.includes("Processing tessera")) {
+				phaseTimings.processing_tesserae = now - currentPhaseStart;
+				currentPhaseStart = now;
+			} else if (message.includes("Generating mosaic")) {
+				phaseTimings.generating_mosaic = now - currentPhaseStart;
+				currentPhaseStart = now;
+			} else if (message.includes("Finalizing mosaic")) {
+				phaseTimings.finalizing_mosaic = now - currentPhaseStart;
+				currentPhaseStart = now;
+			}
 			setProgress({ percent, message });
 		};
 
@@ -185,9 +210,23 @@ export function GenerateAndPreview({
 				progressCallback,
 			);
 
+			// Track final phase
+			const endTime = performance.now();
+			phaseTimings.completed = endTime - currentPhaseStart;
+			const totalTime = endTime - startTime;
+
 			setProgress({ percent: 100, message: "Mosaic generated successfully" });
 			setPreviewUrl(result.dataUrl);
 			setPreviewDimensions({ width: result.width, height: result.height });
+
+			// Log timing to console
+			console.log("[Main Thread Timing]", {
+				timingEvent: "mosaic_generation",
+				outcome: "completed",
+				totalTime,
+				phases: phaseTimings,
+				sessionId: getSessionId(),
+			});
 
 			dispatch({ type: "mosaicGenerated", mosaicResult: result });
 		} catch (err) {
@@ -200,6 +239,17 @@ export function GenerateAndPreview({
 				setError("Unknown error occurred");
 			}
 			dispatch({ type: "generationCancelledOrFailed" });
+
+			// Track error timing
+			const endTime = performance.now();
+			const totalTime = endTime - startTime;
+			console.log("[Main Thread Timing]", {
+				timingEvent: "mosaic_generation",
+				outcome: "failed",
+				totalTime,
+				phases: {},
+				sessionId: getSessionId(),
+			});
 		} finally {
 			setIsGenerating(false);
 		}
@@ -215,6 +265,15 @@ export function GenerateAndPreview({
 		setError(null);
 		setProgress(null);
 		dispatch({ type: "generationCancelledOrFailed" });
+
+		// Track cancellation timing
+		console.log("[Timing]", {
+			timingEvent: "mosaic_generation",
+			outcome: "cancelled",
+			totalTime: 0,
+			phases: {},
+			sessionId: getSessionId(),
+		});
 	};
 
 	const canGenerate =

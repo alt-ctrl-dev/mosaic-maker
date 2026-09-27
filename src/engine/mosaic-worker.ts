@@ -7,7 +7,10 @@ import {
 	type ColorGrid,
 	type Oklab,
 } from "./mosaic-shared";
-import { runDeviceCapacityPreflight } from "./device-capacity-preflight";
+import {
+	runDeviceCapacityPreflight,
+	estimateWorkload,
+} from "./device-capacity-preflight";
 
 /** Source image data received from the main thread. */
 interface WorkerSourceImage {
@@ -37,6 +40,7 @@ interface GenerateMosaicRequest {
 	sourceImage: WorkerSourceImage;
 	tesserae: WorkerTessera[];
 	tesseraSize: number;
+	sessionId: string | null;
 }
 
 /** Request to cancel in-progress generation. */
@@ -48,6 +52,10 @@ interface CancelRequest {
 type WorkerMessage = GenerateMosaicRequest | CancelRequest;
 
 let isCancelled = false;
+let sessionId: string | null = null;
+let startTime: number | null = null;
+let phaseTimings: Record<string, number> = {};
+let currentPhaseStart: number | null = null;
 
 interface ProcessedTessera {
 	info: WorkerTessera;
@@ -218,6 +226,43 @@ async function createCanvasFromSource(
 	return canvas;
 }
 
+function startTiming(): void {
+	startTime = performance.now();
+	currentPhaseStart = startTime;
+}
+
+function markPhase(phase: string): void {
+	if (currentPhaseStart !== null && startTime !== null) {
+		const now = performance.now();
+		phaseTimings[phase] = now - currentPhaseStart;
+		currentPhaseStart = now;
+	}
+}
+
+function endTiming(outcome: "completed" | "cancelled" | "failed"): void {
+	if (startTime === null) return;
+
+	const endTime = performance.now();
+	const totalTime = endTime - startTime;
+
+	// Mark the final phase
+	if (currentPhaseStart !== null) {
+		phaseTimings["final"] = endTime - currentPhaseStart;
+	}
+
+	// Emit analytics event
+	self.postMessage({
+		type: "timing",
+		data: {
+			timingEvent: "mosaic_generation",
+			outcome,
+			totalTime,
+			phases: phaseTimings,
+			sessionId,
+		},
+	});
+}
+
 /** Fill the result canvas cell by cell, reporting progress. */
 async function generateMosaicCanvas(
 	sourceCanvas: OffscreenCanvas,
@@ -375,6 +420,7 @@ async function generateMosaicWithProgress(
 		return { dataUrl, width: sourceImage.width, height: sourceImage.height };
 	}
 
+	markPhase("initial");
 	self.postMessage({
 		type: "progress",
 		percent: 10,
@@ -384,6 +430,7 @@ async function generateMosaicWithProgress(
 
 	if (isCancelled) return { dataUrl: "", width: 0, height: 0 };
 
+	markPhase("loading_source");
 	self.postMessage({
 		type: "progress",
 		percent: 30,
@@ -411,6 +458,7 @@ async function generateMosaicWithProgress(
 
 	if (isCancelled) return { dataUrl: "", width: 0, height: 0 };
 
+	markPhase("processing_tesserae");
 	self.postMessage({
 		type: "progress",
 		percent: 70,
@@ -424,6 +472,7 @@ async function generateMosaicWithProgress(
 
 	if (isCancelled) return { dataUrl: "", width: 0, height: 0 };
 
+	markPhase("generating_mosaic");
 	self.postMessage({
 		type: "progress",
 		percent: 95,
@@ -431,6 +480,7 @@ async function generateMosaicWithProgress(
 	});
 	const dataUrl = await offscreenCanvasToDataUrl(resultCanvas, "image/png");
 
+	markPhase("creating_final_image");
 	self.postMessage({
 		type: "progress",
 		percent: 100,
@@ -450,6 +500,8 @@ self.onmessage = async (event: MessageEvent<WorkerMessage>) => {
 
 		case "generate":
 			isCancelled = false;
+			sessionId = message.sessionId;
+			startTiming();
 			try {
 				const result = await generateMosaicWithProgress(
 					message.sourceImage,
@@ -458,6 +510,7 @@ self.onmessage = async (event: MessageEvent<WorkerMessage>) => {
 				);
 
 				if (isCancelled) {
+					endTiming("cancelled");
 					self.postMessage({
 						type: "result",
 						dataUrl: "",
@@ -465,6 +518,7 @@ self.onmessage = async (event: MessageEvent<WorkerMessage>) => {
 						height: 0,
 					});
 				} else {
+					endTiming("completed");
 					self.postMessage({
 						type: "result",
 						dataUrl: result.dataUrl,
@@ -473,6 +527,7 @@ self.onmessage = async (event: MessageEvent<WorkerMessage>) => {
 					});
 				}
 			} catch (error) {
+				endTiming("failed");
 				self.postMessage({
 					type: "error",
 					message:
