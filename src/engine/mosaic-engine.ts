@@ -1,10 +1,7 @@
 import { createCanvas, loadImage } from "./export";
 import type { SourceImageInfo } from "./image-processing";
 import type { TesseraInfo } from "./workflow-state";
-import {
-	runDeviceCapacityPreflight,
-	estimateWorkload,
-} from "./device-capacity-preflight";
+import { runDeviceCapacityPreflight } from "./device-capacity-preflight";
 import {
 	COLOR_GRID_SIZE,
 	BLEND_SOURCE_ALPHA,

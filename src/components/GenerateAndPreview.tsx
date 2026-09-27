@@ -3,7 +3,8 @@ import type { WorkflowState } from "../engine/workflow-state";
 import { generateMosaic, type ProgressCallback } from "../engine/mosaic-engine";
 import { ANDROID_READBACK_FAILURE } from "../engine/mosaic-shared";
 import type { WorkflowAction } from "../hooks/useWorkflowReducer";
-import { getSessionId } from "../analytics";
+import { getSessionId, track } from "../analytics";
+import { estimateWorkload } from "../engine/device-capacity-preflight";
 
 /** Props for {@link GenerateAndPreview}. */
 interface GenerateAndPreviewProps {
@@ -99,8 +100,8 @@ export function GenerateAndPreview({
 							setProgress({ percent: data.percent, message: data.message });
 							break;
 						case "timing":
-							// Handle timing events - log to console for now
-							console.log("[Worker Timing]", data.data);
+							// Handle timing events - track through analytics
+							track("mosaic_generation", data.data);
 							break;
 						case "result": {
 							const success = Boolean(data.dataUrl);
@@ -178,8 +179,20 @@ export function GenerateAndPreview({
 		fallbackErrorMessage?: string,
 	) => {
 		const startTime = performance.now();
-		let phaseTimings: Record<string, number> = {};
+		const phaseTimings: Record<string, number> = {};
 		let currentPhaseStart = startTime;
+
+		// Calculate workload estimate
+		const gridCellCount =
+			Math.ceil(sourceImage.width / tesseraSize) *
+			Math.ceil(sourceImage.height / tesseraSize);
+		const validTesserae = state.tesserae.filter((t) => t.isValid);
+		const workload = estimateWorkload(
+			gridCellCount,
+			validTesserae.length,
+			sourceImage.width,
+			sourceImage.height,
+		);
 
 		const progressCallback: ProgressCallback = (percent, message) => {
 			// Track phase timing
@@ -219,13 +232,16 @@ export function GenerateAndPreview({
 			setPreviewUrl(result.dataUrl);
 			setPreviewDimensions({ width: result.width, height: result.height });
 
-			// Log timing to console
-			console.log("[Main Thread Timing]", {
-				timingEvent: "mosaic_generation",
+			// Track timing event
+			track("mosaic_generation", {
 				outcome: "completed",
 				totalTime,
 				phases: phaseTimings,
 				sessionId: getSessionId(),
+				gridCellCount: workload.gridCellCount,
+				tesseraCount: workload.tesseraCount,
+				outputPixels: workload.outputPixels,
+				estimatedMemoryUsage: workload.estimatedMemoryUsage,
 			});
 
 			dispatch({ type: "mosaicGenerated", mosaicResult: result });
@@ -243,12 +259,15 @@ export function GenerateAndPreview({
 			// Track error timing
 			const endTime = performance.now();
 			const totalTime = endTime - startTime;
-			console.log("[Main Thread Timing]", {
-				timingEvent: "mosaic_generation",
+			track("mosaic_generation", {
 				outcome: "failed",
 				totalTime,
 				phases: {},
 				sessionId: getSessionId(),
+				gridCellCount: workload.gridCellCount,
+				tesseraCount: workload.tesseraCount,
+				outputPixels: workload.outputPixels,
+				estimatedMemoryUsage: workload.estimatedMemoryUsage,
 			});
 		} finally {
 			setIsGenerating(false);
@@ -267,7 +286,7 @@ export function GenerateAndPreview({
 		dispatch({ type: "generationCancelledOrFailed" });
 
 		// Track cancellation timing
-		console.log("[Timing]", {
+		track("mosaic_generation", {
 			timingEvent: "mosaic_generation",
 			outcome: "cancelled",
 			totalTime: 0,

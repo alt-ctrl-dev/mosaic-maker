@@ -54,8 +54,14 @@ type WorkerMessage = GenerateMosaicRequest | CancelRequest;
 let isCancelled = false;
 let sessionId: string | null = null;
 let startTime: number | null = null;
-let phaseTimings: Record<string, number> = {};
+const phaseTimings: Record<string, number> = {};
 let currentPhaseStart: number | null = null;
+let workloadInfo: {
+	gridCellCount: number;
+	tesseraCount: number;
+	outputPixels: number;
+	estimatedMemoryUsage: number;
+} | null = null;
 
 interface ProcessedTessera {
 	info: WorkerTessera;
@@ -247,19 +253,29 @@ function endTiming(outcome: "completed" | "cancelled" | "failed"): void {
 
 	// Mark the final phase
 	if (currentPhaseStart !== null) {
-		phaseTimings["final"] = endTime - currentPhaseStart;
+		phaseTimings.final = endTime - currentPhaseStart;
 	}
 
-	// Emit analytics event
+	// Emit analytics event through the main thread track function
+	const eventData: Record<string, unknown> = {
+		timingEvent: "mosaic_generation",
+		outcome,
+		totalTime,
+		phases: phaseTimings,
+		sessionId,
+	};
+
+	// Include workload information if available
+	if (workloadInfo) {
+		eventData.gridCellCount = workloadInfo.gridCellCount;
+		eventData.tesseraCount = workloadInfo.tesseraCount;
+		eventData.outputPixels = workloadInfo.outputPixels;
+		eventData.estimatedMemoryUsage = workloadInfo.estimatedMemoryUsage;
+	}
+
 	self.postMessage({
 		type: "timing",
-		data: {
-			timingEvent: "mosaic_generation",
-			outcome,
-			totalTime,
-			phases: phaseTimings,
-			sessionId,
-		},
+		data: eventData,
 	});
 }
 
@@ -397,6 +413,15 @@ async function generateMosaicWithProgress(
 	const gridCellCount =
 		Math.ceil(sourceImage.width / tesseraSize) *
 		Math.ceil(sourceImage.height / tesseraSize);
+
+	// Calculate workload information
+	const workload = estimateWorkload(
+		gridCellCount,
+		validTesserae.length,
+		sourceImage.width,
+		sourceImage.height,
+	);
+	workloadInfo = workload;
 
 	// Run device capacity preflight before heavy processing
 	const preflightResult = runDeviceCapacityPreflight(
