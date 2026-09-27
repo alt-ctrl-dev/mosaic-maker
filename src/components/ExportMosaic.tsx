@@ -47,12 +47,28 @@ export function ExportMosaic({ state, dispatch }: ExportMosaicProps) {
 				state.exportQuality,
 			);
 
-			const link = document.createElement("a");
-			link.href = exportedDataUrl;
-			link.download = `mosaic.${state.exportFormat}`;
-			document.body.appendChild(link);
-			link.click();
-			document.body.removeChild(link);
+			// Check if we're on iOS/iPadOS
+			const isIOS = /iPad|iPhone|iPod/.test(navigator.userAgent);
+
+			if (isIOS) {
+				// For iOS, open the image in a new tab instead of downloading
+				// This is a workaround for iOS Safari's download restrictions
+				const newWindow = window.open(exportedDataUrl, "_blank");
+				if (!newWindow) {
+					// If popup blocker prevents opening, show instructions
+					alert(
+						'To save the image, please tap the share button and choose "Save Image"',
+					);
+				}
+			} else {
+				// Standard download approach for other platforms
+				const link = document.createElement("a");
+				link.href = exportedDataUrl;
+				link.download = `mosaic.${state.exportFormat}`;
+				document.body.appendChild(link);
+				link.click();
+				document.body.removeChild(link);
+			}
 		} catch (err) {
 			const errorMessage =
 				err instanceof Error ? err.message : "Unknown error occurred";
