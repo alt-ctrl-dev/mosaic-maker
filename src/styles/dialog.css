@@ -1,0 +1,91 @@
+/*
+ * CSS-only transition for the mobile workflow dialog toggle icons.
+ * The open button shows two horizontal lines; when the dialog is open,
+ * those lines rotate into an X. The close button starts as two lines and
+ * becomes the X as the dialog opens.
+ */
+
+.workflow-sidebar-toggle-button .toggle-line {
+	transform-box: fill-box;
+	transform-origin: center;
+	transition: transform 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+}
+
+/*
+ * While a dialog is open, the outside "show modal" hamburger collapses
+ * into the X shape underneath the dialog's close button.
+ */
+body:has(dialog[open])
+	.workflow-sidebar-toggle-button[command="show-modal"]
+	.toggle-line-top {
+	transform: translateY(4px) rotate(45deg);
+}
+
+body:has(dialog[open])
+	.workflow-sidebar-toggle-button[command="show-modal"]
+	.toggle-line-bottom {
+	transform: translateY(-4px) rotate(-45deg);
+}
+
+/*
+ * The close button's X starts as the same two horizontal lines, then
+ * rotates into the X when the dialog becomes visible.
+ */
+@starting-style {
+	dialog[popover][open]
+		.workflow-sidebar-toggle-button[command="close"]
+		.toggle-line-top {
+		transform: translateY(-4px) rotate(-45deg);
+	}
+
+	dialog[popover][open]
+		.workflow-sidebar-toggle-button[command="close"]
+		.toggle-line-bottom {
+		transform: translateY(4px) rotate(45deg);
+	}
+}
+
+/*
+ * When the dialog closes, the X collapses back into two horizontal lines
+ * while the dialog is still fading out.
+ */
+dialog[popover]:not([open])
+	.workflow-sidebar-toggle-button[command="close"]
+	.toggle-line-top {
+	transform: translateY(-4px) rotate(-45deg);
+}
+
+dialog[popover]:not([open])
+	.workflow-sidebar-toggle-button[command="close"]
+	.toggle-line-bottom {
+	transform: translateY(4px) rotate(45deg);
+}
+
+/*
+ * Let the dialog itself fade and stay rendered long enough for the icon
+ * transition to be visible during close.
+ */
+dialog[popover] {
+	transition:
+		opacity 0.3s ease,
+		display 0.3s allow-discrete,
+		overlay 0.3s allow-discrete;
+	opacity: 1;
+}
+
+dialog[popover]:not([open]) {
+	opacity: 0;
+}
+
+@starting-style {
+	dialog[popover][open] {
+		opacity: 0;
+	}
+}
+
+@media (prefers-reduced-motion: reduce) {
+	dialog[popover],
+	.workflow-sidebar-toggle-button .toggle-line {
+		transition: none;
+	}
+}

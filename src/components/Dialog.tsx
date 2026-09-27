@@ -42,41 +42,27 @@ export const Dialog = ({
 					role="img"
 					width="50%"
 					height="50%"
-					viewBox="-0.5 0 25 25"
+					viewBox="0 0 24 24"
 					fill="none"
 					xmlns="http://www.w3.org/2000/svg"
 					stroke="#ffffff"
+					aria-hidden="true"
 				>
-					<title>Show modal utton icon</title>
-					<g id="SVGRepo_bgCarrier" strokeWidth="0"></g>
-					<g
-						id="SVGRepo_tracerCarrier"
+					<title>Show modal button icon</title>
+					<path
+						className="toggle-line toggle-line-top"
+						d="M3 8H21"
+						stroke="#fff"
+						strokeWidth="2"
 						strokeLinecap="round"
-						strokeLinejoin="round"
-					></g>
-					<g id="SVGRepo_iconCarrier">
-						<path
-							d="M2 12.32H22"
-							stroke="#fff"
-							strokeWidth="1.5"
-							strokeLinecap="round"
-							strokeLinejoin="round"
-						></path>
-						<path
-							d="M2 18.32H22"
-							stroke="#fff"
-							strokeWidth="1.5"
-							strokeLinecap="round"
-							strokeLinejoin="round"
-						></path>
-						<path
-							d="M2 6.32001H22"
-							stroke="#fff"
-							strokeWidth="1.5"
-							strokeLinecap="round"
-							strokeLinejoin="round"
-						></path>
-					</g>
+					/>
+					<path
+						className="toggle-line toggle-line-bottom"
+						d="M3 16H21"
+						stroke="#fff"
+						strokeWidth="2"
+						strokeLinecap="round"
+					/>
 				</svg>
 			</DialogButtonToggle>
 			<dialog id={dialogId} popover="auto">
@@ -90,34 +76,27 @@ export const Dialog = ({
 						role="img"
 						width="50%"
 						height="50%"
-						viewBox="0 0 25.00 25.00"
+						viewBox="0 0 24 24"
 						fill="none"
 						xmlns="http://www.w3.org/2000/svg"
 						stroke="#ffffff"
+						aria-hidden="true"
 					>
 						<title>Close modal button icon</title>
-						<g id="SVGRepo_bgCarrier" strokeWidth="0"></g>
-						<g
-							id="SVGRepo_tracerCarrier"
+						<path
+							className="toggle-line toggle-line-top"
+							d="M5.64 5.64L18.36 18.36"
+							stroke="#fff"
+							strokeWidth="2"
 							strokeLinecap="round"
-							strokeLinejoin="round"
-						></g>
-						<g id="SVGRepo_iconCarrier">
-							<path
-								d="M3 21.32L21 3.32001"
-								stroke="#fff"
-								strokeWidth="2.25"
-								strokeLinecap="round"
-								strokeLinejoin="round"
-							></path>
-							<path
-								d="M3 3.32001L21 21.32"
-								stroke="#fff"
-								strokeWidth="2.25"
-								strokeLinecap="round"
-								strokeLinejoin="round"
-							></path>
-						</g>
+						/>
+						<path
+							className="toggle-line toggle-line-bottom"
+							d="M5.64 18.36L18.36 5.64"
+							stroke="#fff"
+							strokeWidth="2"
+							strokeLinecap="round"
+						/>
 					</svg>
 				</DialogButtonToggle>
 			</dialog>
