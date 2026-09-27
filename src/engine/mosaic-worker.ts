@@ -93,7 +93,10 @@ export async function offscreenCanvasToDataUrl(
 		return await blobToDataUrl(blob);
 	} catch (error) {
 		// Handle specific Android browser issue where convertToBlob fails
-		if (error instanceof DOMException && error.message.includes("Readback")) {
+		if (
+			error instanceof DOMException &&
+			(error.message.includes("Readback") || error.message.includes("readback"))
+		) {
 			console.warn(
 				"OffscreenCanvas.convertToBlob failed due to readback issue:",
 				error,

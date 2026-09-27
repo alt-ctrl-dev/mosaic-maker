@@ -56,4 +56,36 @@ describe("Mosaic Worker Android Compatibility", () => {
 			),
 		).rejects.toThrow("Some other error");
 	});
+
+	it("should handle case insensitive readback error messages", async () => {
+		// Test with lowercase "readback"
+		const mockCanvas: MockOffscreenCanvas = {
+			width: 4,
+			height: 4,
+			convertToBlob: vi
+				.fn()
+				.mockRejectedValue(
+					new DOMException(
+						"Failed to execute 'convertToBlob' on 'OffscreenCanvas': readback of the source image has failed",
+						"OperationError",
+					),
+				),
+			getContext: vi.fn().mockReturnValue({
+				getImageData: vi.fn().mockReturnValue({
+					width: 2,
+					height: 2,
+					data: new Uint8ClampedArray([
+						255, 0, 0, 255, 0, 0, 255, 255, 0, 255, 0, 255, 255, 0, 0, 255,
+					]),
+				}),
+			}),
+		};
+
+		await expect(
+			offscreenCanvasToDataUrl(
+				mockCanvas as unknown as OffscreenCanvas,
+				"image/png",
+			),
+		).rejects.toThrow("ANDROID_READBACK_FAILURE");
+	});
 });

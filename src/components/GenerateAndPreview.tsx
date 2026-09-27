@@ -112,7 +112,7 @@ export function GenerateAndPreview({
 						}
 						case "error":
 							// Check if this is the specific Android readback error that requires fallback
-							if (data.message.includes("ANDROID_READBACK_FAILURE")) {
+							if (data.message?.includes("ANDROID_READBACK_FAILURE")) {
 								console.warn(
 									"Android browser limitation detected, falling back to main thread processing",
 								);
