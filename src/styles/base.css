@@ -1,0 +1,31 @@
+:root {
+	--pico-font-size: 100%;
+	--pico-border-radius: 0.75rem;
+}
+
+body {
+	min-width: 20rem;
+}
+
+:focus-visible {
+	outline: 2px solid currentColor;
+	outline-offset: 2px;
+}
+
+.sr-only {
+	position: absolute;
+	width: 1px;
+	height: 1px;
+	padding: 0;
+	margin: -1px;
+	overflow: hidden;
+	clip: rect(0, 0, 0, 0);
+	white-space: nowrap;
+	border: 0;
+}
+
+/* Shared alert / error message styles */
+.error-message,
+.warning-message {
+	margin: 1rem 0;
+}

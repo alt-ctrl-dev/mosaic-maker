@@ -17,9 +17,8 @@ describe("Mosaic Maker workflow", () => {
 		const workflow = screen.getByRole("complementary", {
 			name: "Workflow steps",
 		});
-		const buttons = within(workflow).getAllByRole("button");
-		const stages = buttons
-			.filter((button) => !button.classList.contains("workflow-sidebar-close"))
+		const stages = within(workflow)
+			.getAllByRole("button")
 			.map(
 				(button) =>
 					within(button)

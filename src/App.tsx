@@ -1,4 +1,3 @@
-import { useRef } from "react";
 import { SourceImageSelection } from "./components/SourceImageSelection";
 import { TesseraSizeSelection } from "./components/TesseraSizeSelection";
 import { TesseraUpload } from "./components/TesseraUpload";
@@ -11,6 +10,7 @@ import { WorkflowStep as WorkflowStepEnum } from "./engine/workflow-state";
 import { useWorkflowReducer } from "./hooks/useWorkflowReducer";
 import { generateSupplementedTesserae } from "./engine/workflow-state";
 import { resizeTesserae } from "./engine/tessera-processing";
+import { Dialog } from "./components/Dialog";
 
 const stages = [
 	"Choose source image",
@@ -27,11 +27,6 @@ const DEFAULT_TESSERA_SIZE = 16;
  */
 export function App() {
 	const [workflowState, dispatch] = useWorkflowReducer();
-	const sidebarToggleRef = useRef<HTMLInputElement>(null);
-
-	function toggleSidebar() {
-		sidebarToggleRef.current?.click();
-	}
 
 	const resolvedTesseraSize =
 		workflowState.adjustedTesseraSize ?? DEFAULT_TESSERA_SIZE;
@@ -160,40 +155,39 @@ export function App() {
 			</header>
 
 			<main className="workflow-container">
-				<input
-					ref={sidebarToggleRef}
-					type="checkbox"
-					id="workflow-sidebar-toggle"
-					className="workflow-sidebar-toggle"
-				/>
-				<button
-					className="workflow-sidebar-toggle-button"
-					aria-label="Toggle workflow steps"
-					type="button"
-					onClick={toggleSidebar}
+				<Dialog
+					dialogId="mobile-workflow-menu"
+					ariaLabel="Toggle workflow steps"
 				>
-					☰
-				</button>
-				<div
-					className="workflow-sidebar-scrim"
-					aria-hidden="true"
-					onClick={() => {
-						if (sidebarToggleRef.current) {
-							sidebarToggleRef.current.checked = false;
-						}
-					}}
-				/>
+					<ol className="workflow-steps">
+						{stages.map((title, index) => {
+							const isCurrent = workflowState.currentStep === index;
+							const isCompleted = index < workflowState.currentStep;
+							const isDisabled = index > workflowState.furthestCompletedStep;
+							return (
+								<li key={title}>
+									<button
+										type="button"
+										className={`workflow-step-button ${isCurrent ? "current" : ""} ${isCompleted ? "completed" : ""}`}
+										aria-current={isCurrent ? "step" : undefined}
+										onClick={() => dispatch({ type: "goToStep", step: index })}
+										disabled={isDisabled}
+										commandfor="mobile-workflow-menu"
+										command="close"
+									>
+										<span className="step-indicator">
+											{isCompleted ? <span>✓</span> : <span>{index + 1}</span>}
+										</span>
+										<span className="step-title">{title}</span>
+									</button>
+								</li>
+							);
+						})}
+					</ol>
+				</Dialog>
+
 				<aside className="workflow-sidebar" aria-label="Workflow steps">
-					<button
-						className="workflow-sidebar-close"
-						aria-label="Close workflow steps"
-						data-secondary
-						type="button"
-						onClick={toggleSidebar}
-					>
-						✕
-					</button>
-					<ol>
+					<ol className="workflow-steps">
 						{stages.map((title, index) => {
 							const isCurrent = workflowState.currentStep === index;
 							const isCompleted = index < workflowState.currentStep;

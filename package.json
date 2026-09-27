@@ -20,26 +20,26 @@
 		"prepare": "husky"
 	},
 	"dependencies": {
-		"@picocss/pico": "^2.1.1",
-		"react": "^19.2.8",
-		"react-dom": "^19.2.8",
-		"zod": "^4.4.3"
+		"@picocss/pico": "2.1.1",
+		"react": "19.2.8",
+		"react-dom": "19.2.8",
+		"zod": "4.4.3"
 	},
 	"devDependencies": {
-		"@ai-hero/sandcastle": "^0.12.0",
-		"@biomejs/biome": "^2.5.8",
-		"@testing-library/jest-dom": "^7.0.1",
-		"@testing-library/react": "^16.3.2",
-		"@types/node": "^26.2.0",
-		"@types/react": "^19.2.18",
-		"@types/react-dom": "^19.2.4",
-		"@vitejs/plugin-react": "^6.0.5",
-		"husky": "^9.1.7",
-		"jsdom": "^29.1.1",
-		"lint-staged": "^17.3.0",
-		"typescript": "^7.0.2",
-		"vite": "^8.2.1",
-		"vitest": "^4.1.10"
+		"@ai-hero/sandcastle": "0.12.0",
+		"@biomejs/biome": "2.5.8",
+		"@testing-library/jest-dom": "7.0.1",
+		"@testing-library/react": "16.3.2",
+		"@types/node": "26.2.0",
+		"@types/react": "19.2.18",
+		"@types/react-dom": "19.2.4",
+		"@vitejs/plugin-react": "6.0.5",
+		"husky": "9.1.7",
+		"jsdom": "29.1.1",
+		"lint-staged": "17.3.0",
+		"typescript": "7.0.2",
+		"vite": "8.2.1",
+		"vitest": "4.1.10"
 	},
 	"version": "1.0.0"
 }

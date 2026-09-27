@@ -2,7 +2,10 @@ import { readFileSync } from "node:fs";
 import { resolve } from "node:path";
 import { afterEach, beforeEach, describe, expect, it } from "vitest";
 
-const styles = readFileSync(resolve(process.cwd(), "src/styles.css"), "utf8");
+const styles = readFileSync(
+	resolve(process.cwd(), "src/styles/workflow.css"),
+	"utf8",
+);
 
 type Specificity = [number, number, number];
 
@@ -117,32 +120,29 @@ describe("sidebar toggle visibility", () => {
 	let styleElement: HTMLStyleElement;
 	let toggleButton: HTMLButtonElement;
 	let closeButton: HTMLButtonElement;
-	let toggleInput: HTMLInputElement;
 
 	beforeEach(() => {
 		styleElement = document.createElement("style");
 		styleElement.textContent = styles;
 		document.head.appendChild(styleElement);
 
+		// Mirrors the markup rendered by <Dialog dialogId="mobile-workflow-menu">:
+		// an open button outside the dialog and a close button inside it, both
+		// toggled natively via command/commandfor on the popover.
 		document.body.innerHTML = `
 			<main class="workflow-container">
-				<input type="checkbox" class="workflow-sidebar-toggle" id="sidebar-toggle" />
-				<button type="button" class="workflow-sidebar-toggle-button">☰</button>
-				<aside class="workflow-sidebar">
-					<button type="button" class="workflow-sidebar-close">✕</button>
-				</aside>
+				<button type="button" class="workflow-sidebar-toggle-button" commandfor="mobile-workflow-menu" command="show-modal">☰</button>
+				<dialog id="mobile-workflow-menu" popover="auto">
+					<button type="button" class="workflow-sidebar-toggle-button" commandfor="mobile-workflow-menu" command="close">✕</button>
+				</dialog>
 			</main>
 		`;
 
-		toggleButton = document.querySelector(
+		const toggleButtons = document.querySelectorAll(
 			".workflow-sidebar-toggle-button",
-		) as HTMLButtonElement;
-		closeButton = document.querySelector(
-			".workflow-sidebar-close",
-		) as HTMLButtonElement;
-		toggleInput = document.querySelector(
-			"input.workflow-sidebar-toggle",
-		) as HTMLInputElement;
+		);
+		toggleButton = toggleButtons[0] as HTMLButtonElement;
+		closeButton = toggleButtons[1] as HTMLButtonElement;
 	});
 
 	afterEach(() => {
@@ -157,47 +157,21 @@ describe("sidebar toggle visibility", () => {
 		expect(closeButton.type).toBe("button");
 	});
 
-	describe("on desktop (> 900px)", () => {
-		it("hides the toggle button", () => {
-			expect(resolveProperty(toggleButton, "display", DESKTOP_WIDTH)).toBe(
-				"none",
-			);
-		});
-
-		it("hides the close button", () => {
-			expect(resolveProperty(closeButton, "display", DESKTOP_WIDTH)).toBe(
-				"none",
-			);
-		});
-
-		it("keeps the toggle checkbox itself hidden", () => {
-			expect(resolveProperty(toggleInput, "display", DESKTOP_WIDTH)).toBe(
-				"none",
-			);
-		});
+	it("hides the toggle controls on desktop (> 900px)", () => {
+		expect(resolveProperty(toggleButton, "display", DESKTOP_WIDTH)).toBe(
+			"none",
+		);
+		expect(resolveProperty(closeButton, "display", DESKTOP_WIDTH)).toBe("none");
 	});
 
-	describe("on mobile (<= 900px)", () => {
-		it("shows the toggle button", () => {
-			expect(resolveProperty(toggleButton, "display", MOBILE_WIDTH)).toBe(
-				"block",
-			);
-		});
-
-		it("shows the close button", () => {
-			expect(resolveProperty(closeButton, "display", MOBILE_WIDTH)).toBe(
-				"block",
-			);
-		});
-
-		it("keeps the toggle checkbox itself hidden", () => {
-			expect(resolveProperty(toggleInput, "display", MOBILE_WIDTH)).toBe(
-				"none",
-			);
-		});
+	it("shows the toggle controls on mobile (<= 900px)", () => {
+		expect(resolveProperty(toggleButton, "display", MOBILE_WIDTH)).toBe(
+			"block",
+		);
+		expect(resolveProperty(closeButton, "display", MOBILE_WIDTH)).toBe("block");
 	});
 
-	it("selects toggle and close buttons by class only so they inherit Pico button styling", () => {
+	it("selects toggle buttons by class only so they inherit Pico button styling", () => {
 		const desktopCss = styles.slice(
 			0,
 			styles.indexOf("@media (max-width: 900px)"),
@@ -205,6 +179,5 @@ describe("sidebar toggle visibility", () => {
 		// Selectors use bare class names (no element qualifier) so native
 		// <button> styling from Pico applies freely.
 		expect(desktopCss).toMatch(/\.workflow-sidebar-toggle-button/);
-		expect(desktopCss).toMatch(/\.workflow-sidebar-close/);
 	});
 });

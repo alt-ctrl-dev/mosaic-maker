@@ -1,0 +1,45 @@
+/* Source Image Selection & Tessera Upload shared drop-zone */
+.source-image-selection .drop-zone,
+.tessera-upload .drop-zone {
+	width: 100%;
+	height: 200px;
+	border: 2px dashed var(--pico-muted-border-color);
+	border-radius: var(--pico-border-radius);
+	display: flex;
+	align-items: center;
+	justify-content: center;
+	text-align: center;
+	background-color: var(--pico-background-color);
+	transition: all 0.2s ease;
+	cursor: pointer;
+	position: relative;
+}
+
+.source-image-selection .drop-zone:hover,
+.source-image-selection .drop-zone[aria-dropeffect="move"],
+.tessera-upload .drop-zone:hover,
+.tessera-upload .drop-zone[aria-dropeffect="move"] {
+	border-color: var(--pico-primary);
+	background-color: var(--pico-primary-background);
+}
+
+.tessera-upload[aria-busy="true"] .drop-zone {
+	border-color: var(--pico-primary);
+	background-color: var(--pico-primary-background);
+}
+
+.source-image-selection .drop-zone .file-input,
+.tessera-upload .drop-zone .file-input {
+	position: absolute;
+	width: 100%;
+	height: 100%;
+	opacity: 0;
+	cursor: pointer;
+}
+
+/* Shared processing indicator */
+.source-image-selection .processing-indicator,
+.tessera-upload .processing-indicator {
+	margin-top: 1rem;
+	text-align: center;
+}

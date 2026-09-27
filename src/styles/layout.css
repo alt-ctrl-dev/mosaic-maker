@@ -1,0 +1,35 @@
+.layout-container {
+	padding-inline: 16px;
+	margin-inline: auto;
+}
+
+@media (min-width: 80rem) {
+	.layout-container {
+		max-width: 80rem;
+	}
+}
+
+header {
+	padding-block: 4rem 2rem;
+	text-align: center;
+}
+
+header > p:last-child {
+	max-width: 40rem;
+	margin-inline: auto;
+}
+
+.eyebrow {
+	margin-bottom: 0.5rem;
+	color: var(--pico-primary);
+	font-weight: 700;
+	letter-spacing: 0.08em;
+	text-transform: uppercase;
+}
+
+@media (max-width: 576px) {
+	header {
+		padding-block-start: 2rem;
+		text-align: left;
+	}
+}

@@ -1,0 +1,58 @@
+/* Tessera Review Styles */
+.tessera-review .tesserae-grid {
+	display: grid;
+	grid-template-columns: repeat(auto-fill, minmax(150px, 1fr));
+	gap: 1rem;
+	margin-top: 1rem;
+}
+
+.tessera-review .tessera-item {
+	padding: 0.75rem;
+	border-radius: var(--pico-border-radius);
+	box-shadow: var(--pico-box-shadow);
+	transition: transform 0.2s ease;
+}
+
+.tessera-review .tessera-item:hover {
+	transform: translateY(-2px);
+}
+
+.tessera-review .tessera-item.invalid {
+	border: 2px solid var(--pico-form-element-invalid-border-color);
+	background-color: var(--pico-form-element-invalid-border-color);
+}
+
+.tessera-review .tessera-item.supplemented {
+	border: 2px solid var(--pico-form-element-valid-border-color);
+}
+
+.tessera-review .tessera-preview {
+	width: 100%;
+	height: 100px;
+	object-fit: cover;
+	border-radius: calc(var(--pico-border-radius) / 2);
+	margin-bottom: 0.5rem;
+}
+
+.tessera-review .tessera-details {
+	font-size: 0.85em;
+}
+
+.tessera-review .tessera-name {
+	font-weight: bold;
+	display: block;
+	margin-bottom: 0.25rem;
+}
+
+.tessera-review .tessera-error {
+	display: block;
+	margin: 0.25rem 0;
+	font-size: 0.8em;
+}
+
+.tessera-review .supplemented-label {
+	font-size: 0.7em;
+	font-weight: bold;
+	padding: 0.1rem 0.3rem;
+	border-radius: calc(var(--pico-border-radius) / 2);
+}

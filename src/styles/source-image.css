@@ -1,0 +1,11 @@
+/* Source Image Selection specific styles */
+.source-image-selection .image-preview {
+	margin-top: 1rem;
+}
+
+.source-image-selection .preview-image {
+	max-width: 100%;
+	height: auto;
+	border-radius: var(--pico-border-radius);
+	box-shadow: var(--pico-box-shadow);
+}
