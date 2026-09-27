@@ -79,6 +79,40 @@ async function blobToDataUrl(blob: Blob): Promise<string> {
 	});
 }
 
+/**
+ * Fallback function to convert OffscreenCanvas to data URL when convertToBlob fails.
+ * Provides a graceful fallback for browsers with OffscreenCanvas limitations.
+ */
+export async function offscreenCanvasToDataUrl(
+	canvas: OffscreenCanvas,
+	type: string = "image/png",
+): Promise<string> {
+	try {
+		// Try the modern approach first
+		const blob = await canvas.convertToBlob({ type });
+		return await blobToDataUrl(blob);
+	} catch (error) {
+		// Handle specific Android browser issue where convertToBlob fails
+		if (error instanceof DOMException && error.message.includes("Readback")) {
+			console.warn(
+				"OffscreenCanvas.convertToBlob failed due to readback issue:",
+				error,
+			);
+
+			// Instead of trying to create a fallback image in the worker,
+			// we throw a specific error that the main thread can catch
+			// and fall back to main thread processing
+			throw new Error(
+				"ANDROID_READBACK_FAILURE: OffscreenCanvas.convertToBlob failed on Android. " +
+					"This is a known browser limitation. Falling back to main thread processing.",
+			);
+		}
+
+		// Re-throw other errors
+		throw error;
+	}
+}
+
 function selectTessera(
 	cellGrid: ColorGrid,
 	processedTesserae: ProcessedTessera[],
@@ -299,8 +333,7 @@ async function generatePlaceholderMosaic(
 		}
 	}
 
-	const blob = await canvas.convertToBlob({ type: "image/png" });
-	return blobToDataUrl(blob);
+	return offscreenCanvasToDataUrl(canvas, "image/png");
 }
 
 async function generateMosaicWithProgress(
@@ -399,8 +432,7 @@ async function generateMosaicWithProgress(
 		percent: 95,
 		message: "Creating final image...",
 	});
-	const blob = await resultCanvas.convertToBlob({ type: "image/png" });
-	const dataUrl = await blobToDataUrl(blob);
+	const dataUrl = await offscreenCanvasToDataUrl(resultCanvas, "image/png");
 
 	self.postMessage({
 		type: "progress",
