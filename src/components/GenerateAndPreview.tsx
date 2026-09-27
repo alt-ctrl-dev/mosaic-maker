@@ -75,6 +75,8 @@ export function GenerateAndPreview({
 
 		if (typeof Worker !== "undefined") {
 			try {
+				const sourceImage = state.sourceImage;
+				const adjustedTesseraSize = state.adjustedTesseraSize;
 				const WorkerConstructor = (
 					await import("../engine/mosaic-worker.ts?worker")
 				).default;
@@ -111,20 +113,15 @@ export function GenerateAndPreview({
 							break;
 						}
 						case "error":
-							// Check if this is the specific Android readback error that requires fallback
 							if (data.message?.includes("ANDROID_READBACK_FAILURE")) {
 								console.warn(
 									"Android browser limitation detected, falling back to main thread processing",
 								);
-								// Terminate the worker and fall back to main thread
 								terminateWorker();
-								// Call the main thread generation without await since we're in an event handler
-								// We know these values exist because we checked them at the beginning of handleGenerate
-								generateOnMainThread(
-									state.sourceImage as NonNullable<typeof state.sourceImage>,
-									state.adjustedTesseraSize as NonNullable<
-										typeof state.adjustedTesseraSize
-									>,
+								generateOnMainThread(sourceImage, adjustedTesseraSize).catch(
+									(err) => {
+										console.error("Main-thread fallback failed:", err);
+									},
 								);
 							} else {
 								setError(data.message);

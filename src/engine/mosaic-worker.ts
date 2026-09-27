@@ -80,38 +80,36 @@ async function blobToDataUrl(blob: Blob): Promise<string> {
 }
 
 /**
- * Fallback function to convert OffscreenCanvas to data URL when convertToBlob fails.
- * Provides a graceful fallback for browsers with OffscreenCanvas limitations.
+ * Convert an OffscreenCanvas to a PNG data URL via {@link OffscreenCanvas.convertToBlob}.
+ *
+ * When the browser cannot complete the GPU readback (a known limitation on
+ * some Android devices), this throws a sentinel error so the caller can fall
+ * back to main-thread processing where a regular canvas does not have the same
+ * restriction.
+ *
+ * @throws An error whose message starts with "ANDROID_READBACK_FAILURE"
+ *   when the browser reports a readback failure.
  */
 export async function offscreenCanvasToDataUrl(
 	canvas: OffscreenCanvas,
 	type: string = "image/png",
 ): Promise<string> {
+	const ANDROID_READBACK_SENTINEL = "ANDROID_READBACK_FAILURE";
+
 	try {
-		// Try the modern approach first
 		const blob = await canvas.convertToBlob({ type });
 		return await blobToDataUrl(blob);
 	} catch (error) {
-		// Handle specific Android browser issue where convertToBlob fails
 		if (
 			error instanceof DOMException &&
 			(error.message.includes("Readback") || error.message.includes("readback"))
 		) {
-			console.warn(
-				"OffscreenCanvas.convertToBlob failed due to readback issue:",
-				error,
-			);
-
-			// Instead of trying to create a fallback image in the worker,
-			// we throw a specific error that the main thread can catch
-			// and fall back to main thread processing
+			console.warn("OffscreenCanvas readback failed:", error);
 			throw new Error(
-				"ANDROID_READBACK_FAILURE: OffscreenCanvas.convertToBlob failed on Android. " +
-					"This is a known browser limitation. Falling back to main thread processing.",
+				`${ANDROID_READBACK_SENTINEL}: OffscreenCanvas.convertToBlob is not supported on this device.`,
 			);
 		}
 
-		// Re-throw other errors
 		throw error;
 	}
 }
