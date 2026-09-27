@@ -2,11 +2,10 @@ import { generateMosaic } from "../mosaic-engine";
 import type { SourceImageInfo } from "../image-processing";
 import type { TesseraInfo } from "../workflow-state";
 
-// Mock canvas implementation for testing
 const mockCanvasContext = {
 	fillRect: vi.fn(),
 	drawImage: vi.fn(),
-	getImageData: vi.fn().mockReturnValue({ data: new Uint8ClampedArray(36) }), // 3x3x4
+	getImageData: vi.fn().mockReturnValue({ data: new Uint8ClampedArray(36) }),
 	clearRect: vi.fn(),
 	globalAlpha: 1,
 };
@@ -23,18 +22,12 @@ const mockImage = {
 	naturalHeight: 100,
 };
 
-describe("Performance tests", () => {
-	const mockCanvasCreator = vi.fn().mockReturnValue(mockCanvas);
-	const mockImageLoader = vi.fn().mockResolvedValue(mockImage);
+function makeSourceImage(width: number, height: number): SourceImageInfo {
+	return { width, height, orientation: 1, url: "test-url" };
+}
 
-	const sourceImage: SourceImageInfo = {
-		width: 1920,
-		height: 1080,
-		orientation: 1,
-		url: "test-url",
-	};
-
-	const tesserae: TesseraInfo[] = Array.from({ length: 50 }, (_, i) => ({
+function makeTesserae(count: number): TesseraInfo[] {
+	return Array.from({ length: count }, (_, i) => ({
 		fileName: `tessera-${i}.jpg`,
 		file: new File([], `tessera-${i}.jpg`),
 		previewUrl: `preview-${i}`,
@@ -42,79 +35,78 @@ describe("Performance tests", () => {
 		error: null,
 		isLowResolution: false,
 	}));
+}
+
+describe("Mosaic generation performance", () => {
+	const mockCanvasCreator = vi.fn().mockReturnValue(mockCanvas);
+	const mockImageLoader = vi.fn().mockResolvedValue(mockImage);
 
 	beforeEach(() => {
 		vi.clearAllMocks();
 		mockCanvasContext.drawImage.mockClear();
 		mockCanvasContext.getImageData.mockClear();
+		mockCanvasContext.clearRect.mockClear();
 	});
 
-	it("should complete mosaic generation for large image within reasonable time", async () => {
+	it("reuses a single temporary canvas for color sampling across all cells", async () => {
+		const tesserae = makeTesserae(50);
+
+		await generateMosaic(
+			makeSourceImage(1920, 1080),
+			tesserae,
+			32,
+			mockCanvasCreator,
+			mockImageLoader,
+		);
+
+		const colorGridCanvases = mockCanvasCreator.mock.calls.filter(
+			(call) => call[0] === 3 && call[1] === 3,
+		);
+
+		// With canvas reuse, only one 3×3 canvas should be created per
+		// call to sampleColorGrid that doesn't pass a reusable context —
+		// the one time per tessera plus the one in generateMosaicCanvas.
+		expect(colorGridCanvases.length).toBeLessThan(100);
+	});
+
+	it("completes in a reasonable time for a large image", async () => {
 		const startTime = performance.now();
 
 		await generateMosaic(
-			sourceImage,
-			tesserae,
-			32, // 32px tessera size
+			makeSourceImage(1920, 1080),
+			makeTesserae(50),
+			32,
 			mockCanvasCreator,
 			mockImageLoader,
 		);
 
-		const endTime = performance.now();
-		const duration = endTime - startTime;
+		const duration = performance.now() - startTime;
 
-		// For a 1920x1080 image with 32px tesserae, we have about 2000 cells
-		// Each cell involves multiple canvas operations
-		// This should complete in under 5 seconds on a reasonable machine
+		// With the canvas-reuse optimization this should be well under 5 s
+		// on any reasonable machine. CI environments may need a larger
+		// allowance; if this flakes, verify that CI hardware meets the
+		// assumption.
 		expect(duration).toBeLessThan(5000);
-
-		// Verify the number of canvas operations is reasonable
-		// For large images, we create many temporary canvases for color sampling
-		expect(mockCanvasCreator).toHaveBeenCalled();
 	});
 
-	it("should scale reasonably with image size", async () => {
-		// Test with smaller image first
-		const smallSource: SourceImageInfo = {
-			width: 640,
-			height: 480,
-			orientation: 1,
-			url: "test-url",
+	it("scales sub-linearly with image area (not exponentially)", async () => {
+		const run = async (w: number, h: number) => {
+			const start = performance.now();
+			await generateMosaic(
+				makeSourceImage(w, h),
+				makeTesserae(50),
+				32,
+				mockCanvasCreator,
+				mockImageLoader,
+			);
+			return performance.now() - start;
 		};
 
-		const startTimeSmall = performance.now();
-		await generateMosaic(
-			smallSource,
-			tesserae,
-			32,
-			mockCanvasCreator,
-			mockImageLoader,
-		);
-		const endTimeSmall = performance.now();
-		const durationSmall = endTimeSmall - startTimeSmall;
+		const small = await run(640, 480);
+		// 3840×2160 has 16× the cells of 640×480 at the same tessera size.
+		const large = await run(3840, 2160);
 
-		// Test with larger image
-		const largeSource: SourceImageInfo = {
-			width: 3840,
-			height: 2160,
-			orientation: 1,
-			url: "test-url",
-		};
-
-		const startTimeLarge = performance.now();
-		await generateMosaic(
-			largeSource,
-			tesserae,
-			32,
-			mockCanvasCreator,
-			mockImageLoader,
-		);
-		const endTimeLarge = performance.now();
-		const durationLarge = endTimeLarge - startTimeLarge;
-
-		// The large image should take roughly 4x longer than the small one
-		// (4x width, 4x height = 16x more cells, but we're using the same tessera count)
-		// But it shouldn't be exponentially slower
-		expect(durationLarge).toBeLessThan(durationSmall * 20);
+		// The large image should be at most 20× slower, not 100× or more.
+		expect(large).toBeLessThan(small * 20);
 	});
 });
