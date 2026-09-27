@@ -1,8 +1,23 @@
 <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 64 64">
   <title>Mosaic Maker</title>
-  <rect width="64" height="64" rx="14" fill="#111827" />
-  <rect x="9" y="9" width="21" height="21" rx="5" fill="#38bdf8" />
-  <rect x="34" y="9" width="21" height="21" rx="5" fill="#a78bfa" />
-  <rect x="9" y="34" width="21" height="21" rx="5" fill="#34d399" />
-  <rect x="34" y="34" width="21" height="21" rx="5" fill="#fbbf24" />
+  <style>
+    .bg { fill: #f8fafc; stroke: #cbd5e1; stroke-width: 2; }
+    .tile-a { fill: #0284c7; }
+    .tile-b { fill: #7c3aed; }
+    .tile-c { fill: #059669; }
+    .tile-d { fill: #d97706; }
+
+    @media (prefers-color-scheme: dark) {
+      .bg { fill: #111827; stroke: none; }
+      .tile-a { fill: #38bdf8; }
+      .tile-b { fill: #a78bfa; }
+      .tile-c { fill: #34d399; }
+      .tile-d { fill: #fbbf24; }
+    }
+  </style>
+  <rect class="bg" width="64" height="64" rx="14" />
+  <rect class="tile-a" x="9" y="9" width="21" height="21" rx="5" />
+  <rect class="tile-b" x="34" y="9" width="21" height="21" rx="5" />
+  <rect class="tile-c" x="9" y="34" width="21" height="21" rx="5" />
+  <rect class="tile-d" x="34" y="34" width="21" height="21" rx="5" />
 </svg>
