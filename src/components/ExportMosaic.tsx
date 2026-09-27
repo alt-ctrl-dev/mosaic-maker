@@ -19,6 +19,45 @@ function isExportFormat(value: string): value is ExportFormat {
 }
 
 /**
+ * Trigger a file download by creating and clicking a temporary anchor element.
+ */
+function downloadFile(dataUrl: string, filename: string): void {
+	const link = document.createElement("a");
+	link.href = dataUrl;
+	link.download = filename;
+	document.body.appendChild(link);
+	link.click();
+	document.body.removeChild(link);
+}
+
+/**
+ * Open the exported image in a new tab.
+ *
+ * @returns Whether the browser allowed the new tab to open.
+ */
+function openImageInNewTab(dataUrl: string): boolean {
+	const newWindow = window.open(dataUrl, "_blank");
+	return newWindow !== null;
+}
+
+/**
+ * Detect whether the browser can reliably handle programmatic anchor
+ * downloads. iOS Safari and WebKit-based browsers frequently fail.
+ */
+function browserSupportsAnchorDownload(): boolean {
+	if (/iPad|iPhone|iPod/.test(navigator.userAgent)) {
+		return false;
+	}
+
+	// iPadOS 13+ reports as desktop Mac but has multi-touch
+	if (navigator.maxTouchPoints > 1 && /Macintosh/.test(navigator.userAgent)) {
+		return false;
+	}
+
+	return true;
+}
+
+/**
  * Export step that lets the user configure format, quality, and alt text,
  * preview the mosaic, and trigger a file download.
  */
@@ -47,27 +86,15 @@ export function ExportMosaic({ state, dispatch }: ExportMosaicProps) {
 				state.exportQuality,
 			);
 
-			// Check if we're on iOS/iPadOS
-			const isIOS = /iPad|iPhone|iPod/.test(navigator.userAgent);
-
-			if (isIOS) {
-				// For iOS, open the image in a new tab instead of downloading
-				// This is a workaround for iOS Safari's download restrictions
-				const newWindow = window.open(exportedDataUrl, "_blank");
-				if (!newWindow) {
-					// If popup blocker prevents opening, show instructions
-					alert(
-						'To save the image, please tap the share button and choose "Save Image"',
+			if (browserSupportsAnchorDownload()) {
+				downloadFile(exportedDataUrl, `mosaic.${state.exportFormat}`);
+			} else {
+				const opened = openImageInNewTab(exportedDataUrl);
+				if (!opened) {
+					setError(
+						'Popup blocked. To save the image, please tap the share button and choose "Save Image".',
 					);
 				}
-			} else {
-				// Standard download approach for other platforms
-				const link = document.createElement("a");
-				link.href = exportedDataUrl;
-				link.download = `mosaic.${state.exportFormat}`;
-				document.body.appendChild(link);
-				link.click();
-				document.body.removeChild(link);
 			}
 		} catch (err) {
 			const errorMessage =
