@@ -24,7 +24,6 @@ export const createReviewAgent = (sandbox: sandcastle.Sandbox, branch: string): 
             promptFile: "./.sandcastle/shared/review-prompt.md",
             promptArgs: {
                 BRANCH: branch,
-                TARGET_BRANCH: "main",
             },
             completionSignal: "<promise>COMPLETE</promise>",
         });
