@@ -1,3 +1,7 @@
+/**
+ * Determines the operating system from the user agent string.
+ * @returns OS name (Windows, MacOS, Linux, Android, iOS) or "Unknown"
+ */
 function getOS(): string {
 	const userAgent = navigator.userAgent;
 
@@ -15,6 +19,10 @@ function getOS(): string {
 	return "Unknown";
 }
 
+/**
+ * Classifies the device type from the user agent string.
+ * @returns Device type (Mobile, Tablet, Desktop) or "Unknown"
+ */
 function getDeviceType(): string {
 	const userAgent = navigator.userAgent;
 

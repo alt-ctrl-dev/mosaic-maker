@@ -1,15 +1,16 @@
 import { describe, it, expect, vi, beforeEach, afterEach } from "vitest";
-import { render, screen, act } from "@testing-library/react";
+import { render, screen, act, cleanup } from "@testing-library/react";
 import { GenerateAndPreview } from "./GenerateAndPreview";
 import * as analytics from "../analytics";
 import * as mosaicEngine from "../engine/mosaic-engine";
 import type { WorkflowState } from "../engine/workflow-state";
 
 // Mock the worker module
+const mockWorkerPostMessage = vi.fn();
 vi.mock("../engine/mosaic-worker.ts?worker", () => ({
 	default: class MockWorker {
 		onmessage = vi.fn();
-		postMessage = vi.fn();
+		postMessage = mockWorkerPostMessage;
 		terminate = vi.fn();
 	},
 }));
@@ -85,6 +86,7 @@ describe("GenerateAndPreview Timing", () => {
 	});
 
 	afterEach(() => {
+		cleanup();
 		vi.restoreAllMocks();
 	});
 

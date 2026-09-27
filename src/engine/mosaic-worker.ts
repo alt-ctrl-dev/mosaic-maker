@@ -258,7 +258,6 @@ function endTiming(outcome: "completed" | "cancelled" | "failed"): void {
 
 	// Emit analytics event through the main thread track function
 	const eventData: Record<string, unknown> = {
-		timingEvent: "mosaic_generation",
 		outcome,
 		totalTime,
 		phases: phaseTimings,

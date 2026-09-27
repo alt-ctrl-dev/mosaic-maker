@@ -195,18 +195,29 @@ export function GenerateAndPreview({
 		);
 
 		const progressCallback: ProgressCallback = (percent, message) => {
-			// Track phase timing
 			const now = performance.now();
-			if (message.includes("Loading source")) {
+			if (
+				message.includes("Loading source") &&
+				!("loading_source" in phaseTimings)
+			) {
 				phaseTimings.loading_source = now - currentPhaseStart;
 				currentPhaseStart = now;
-			} else if (message.includes("Processing tessera")) {
+			} else if (
+				message.includes("Processing tessera") &&
+				!("processing_tesserae" in phaseTimings)
+			) {
 				phaseTimings.processing_tesserae = now - currentPhaseStart;
 				currentPhaseStart = now;
-			} else if (message.includes("Generating mosaic")) {
+			} else if (
+				message.includes("Generating") &&
+				!("generating_mosaic" in phaseTimings)
+			) {
 				phaseTimings.generating_mosaic = now - currentPhaseStart;
 				currentPhaseStart = now;
-			} else if (message.includes("Finalizing mosaic")) {
+			} else if (
+				message.includes("Finalizing mosaic") &&
+				!("finalizing_mosaic" in phaseTimings)
+			) {
 				phaseTimings.finalizing_mosaic = now - currentPhaseStart;
 				currentPhaseStart = now;
 			}
@@ -278,21 +289,10 @@ export function GenerateAndPreview({
 		if (workerRef.current) {
 			workerRef.current.postMessage({ type: "cancel" });
 		}
-		terminateWorker();
 
 		setIsGenerating(false);
 		setError(null);
 		setProgress(null);
-		dispatch({ type: "generationCancelledOrFailed" });
-
-		// Track cancellation timing
-		track("mosaic_generation", {
-			timingEvent: "mosaic_generation",
-			outcome: "cancelled",
-			totalTime: 0,
-			phases: {},
-			sessionId: getSessionId(),
-		});
 	};
 
 	const canGenerate =
