@@ -101,11 +101,20 @@ function sampleColorGrid(
 	offsetY: number,
 	regionWidth: number,
 	regionHeight: number,
+	reusableCtx?: OffscreenCanvasRenderingContext2D,
 ): ColorGrid {
-	const tempCanvas = createCanvas(COLOR_GRID_SIZE, COLOR_GRID_SIZE);
-	const tempCtx = tempCanvas.getContext("2d");
-	if (!tempCtx) {
-		throw new Error("Failed to get temporary canvas context");
+	let tempCtx: OffscreenCanvasRenderingContext2D;
+
+	if (reusableCtx) {
+		tempCtx = reusableCtx;
+		tempCtx.clearRect(0, 0, COLOR_GRID_SIZE, COLOR_GRID_SIZE);
+	} else {
+		const tempCanvas = createCanvas(COLOR_GRID_SIZE, COLOR_GRID_SIZE);
+		const ctx = tempCanvas.getContext("2d");
+		if (!ctx) {
+			throw new Error("Failed to get temporary canvas context");
+		}
+		tempCtx = ctx;
 	}
 
 	tempCtx.drawImage(
@@ -197,6 +206,13 @@ async function generateMosaicCanvas(
 		tesseraGrid[row] = new Array(gridCols).fill(null);
 	}
 
+	// Reuse a single temporary canvas for color sampling to reduce allocations
+	const tempCanvas = createCanvas(COLOR_GRID_SIZE, COLOR_GRID_SIZE);
+	const tempCtx = tempCanvas.getContext("2d");
+	if (!tempCtx) {
+		throw new Error("Failed to get temporary canvas context");
+	}
+
 	let cellCount = 0;
 	const totalCells = gridRows * gridCols;
 
@@ -223,6 +239,7 @@ async function generateMosaicCanvas(
 				y,
 				tesseraSize,
 				tesseraSize,
+				tempCtx,
 			);
 
 			const bestMatchIndex = selectTessera(
