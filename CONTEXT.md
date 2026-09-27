@@ -20,6 +20,10 @@ _Avoid_: Tile size, tessera dimensions
 A tessera created from source-image colors and seeded noise. Each generated tessera is randomly assigned either softly blended noise or sharp pixel noise, never both; the seed reproduces the assignment.
 _Avoid_: Random tile, noise tile
 
+**Telemetry**:
+Anonymized, non-content app performance data — errors, web vitals, and mosaic generation metrics — sent to an observability backend. Never includes image data or user content; users can opt out.
+_Avoid_: Analytics, tracking
+
 **Mosaic**:
 The final image assembled from tesserae, with the same pixel width and height as the source image.
 _Avoid_: Output image, result image
