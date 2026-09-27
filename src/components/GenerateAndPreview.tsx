@@ -51,6 +51,7 @@ export function GenerateAndPreview({
 
 	const beforeUnloadRef = useRef(onBeforeUnload);
 	const workerRef = useRef<Worker | null>(null);
+	const generationStartTimeRef = useRef<number>(0);
 
 	const terminateWorker = useCallback(() => {
 		if (workerRef.current) {
@@ -79,16 +80,19 @@ export function GenerateAndPreview({
 		}
 
 		terminateWorker();
+
+		const sourceImage = state.sourceImage;
+		const tesseraSize = state.adjustedTesseraSize;
+
 		setIsGenerating(true);
 		setError(null);
 		setProgress(null);
 		setPreviewUrl(null);
 		setPreviewDimensions(null);
+		generationStartTimeRef.current = Date.now();
 
 		if (typeof Worker !== "undefined") {
 			try {
-				const sourceImage = state.sourceImage;
-				const adjustedTesseraSize = state.adjustedTesseraSize;
 				const WorkerConstructor = (
 					await import("../engine/mosaic-worker.ts?worker")
 				).default;
@@ -106,6 +110,14 @@ export function GenerateAndPreview({
 							break;
 						case "result": {
 							const success = Boolean(data.dataUrl);
+							const duration = Date.now() - generationStartTimeRef.current;
+							trackMosaicGeneration(
+								success,
+								duration,
+								sourceImage.width,
+								sourceImage.height,
+								tesseraSize,
+							);
 							if (success) {
 								setPreviewUrl(data.dataUrl);
 								setPreviewDimensions({
@@ -135,13 +147,20 @@ export function GenerateAndPreview({
 								terminateWorker();
 								generateOnMainThread(
 									sourceImage,
-									adjustedTesseraSize,
+									tesseraSize,
 									ANDROID_FALLBACK_ERROR_MESSAGE,
 								);
 							} else {
 								setError(data.message);
 								dispatch({ type: "generationCancelledOrFailed" });
 								setIsGenerating(false);
+								trackMosaicGeneration(
+									false,
+									Date.now() - generationStartTimeRef.current,
+									sourceImage.width,
+									sourceImage.height,
+									tesseraSize,
+								);
 								terminateWorker();
 							}
 							break;
@@ -150,13 +169,13 @@ export function GenerateAndPreview({
 
 				workerRef.current.postMessage({
 					type: "generate",
-					sourceImage: state.sourceImage,
+					sourceImage,
 					tesserae: state.tesserae.map((tessera) => ({
 						fileName: tessera.fileName,
 						isValid: tessera.isValid,
 						previewUrl: tessera.previewUrl,
 					})),
-					tesseraSize: state.adjustedTesseraSize,
+					tesseraSize,
 					sessionId: getSessionId(),
 				});
 			} catch (err) {
@@ -164,13 +183,10 @@ export function GenerateAndPreview({
 					"Web Worker not supported or failed, falling back to main thread",
 					err,
 				);
-				await generateOnMainThread(
-					state.sourceImage,
-					state.adjustedTesseraSize,
-				);
+				await generateOnMainThread(sourceImage, tesseraSize);
 			}
 		} else {
-			await generateOnMainThread(state.sourceImage, state.adjustedTesseraSize);
+			await generateOnMainThread(sourceImage, tesseraSize);
 		}
 	};
 
@@ -304,6 +320,23 @@ export function GenerateAndPreview({
 	const handleCancel = () => {
 		if (workerRef.current) {
 			workerRef.current.postMessage({ type: "cancel" });
+			if (state.sourceImage && state.adjustedTesseraSize) {
+				trackMosaicGeneration(
+					false,
+					Date.now() - generationStartTimeRef.current,
+					state.sourceImage.width,
+					state.sourceImage.height,
+					state.adjustedTesseraSize,
+				);
+			}
+		} else if (state.sourceImage && state.adjustedTesseraSize) {
+			trackMosaicGeneration(
+				false,
+				Date.now() - generationStartTimeRef.current,
+				state.sourceImage.width,
+				state.sourceImage.height,
+				state.adjustedTesseraSize,
+			);
 		}
 
 		setIsGenerating(false);
