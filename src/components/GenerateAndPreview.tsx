@@ -5,6 +5,7 @@ import { ANDROID_READBACK_FAILURE } from "../engine/mosaic-shared";
 import type { WorkflowAction } from "../hooks/useWorkflowReducer";
 import { getSessionId, track } from "../analytics";
 import { estimateWorkload } from "../engine/device-capacity-preflight";
+import { trackMosaicGeneration } from "../telemetry";
 
 /** Props for {@link GenerateAndPreview}. */
 interface GenerateAndPreviewProps {
@@ -239,6 +240,14 @@ export function GenerateAndPreview({
 			markPhase("complete");
 			const totalTime = endTime - startTime;
 
+			trackMosaicGeneration(
+				true,
+				totalTime,
+				sourceImage.width,
+				sourceImage.height,
+				tesseraSize,
+			);
+
 			setProgress({ percent: 100, message: "Mosaic generated successfully" });
 			setPreviewUrl(result.dataUrl);
 			setPreviewDimensions({ width: result.width, height: result.height });
@@ -268,6 +277,15 @@ export function GenerateAndPreview({
 
 			const endTime = performance.now();
 			const totalTime = endTime - startTime;
+
+			trackMosaicGeneration(
+				false,
+				totalTime,
+				sourceImage.width,
+				sourceImage.height,
+				tesseraSize,
+			);
+
 			track("mosaic_generation", {
 				outcome: "failed",
 				totalTime,

@@ -5,6 +5,10 @@ import { App } from "./App";
 import "./styles.css";
 import { collectDeviceAnalytics } from "./device-analytics";
 import { initAnalytics } from "./analytics";
+import { initializeTelemetry } from "./telemetry";
+
+// Initialize telemetry before app bootstrap
+initializeTelemetry();
 
 const root = document.getElementById("root");
 

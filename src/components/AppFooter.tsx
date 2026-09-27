@@ -1,7 +1,19 @@
 import { VERSION_STRING } from "../version";
+import { useState, useEffect } from "react";
+import { hasTelemetryConsent, setTelemetryConsent } from "../telemetry";
 
 /** Application footer showing the build version. */
 export function AppFooter() {
+	const [consent, setConsent] = useState(hasTelemetryConsent());
+
+	useEffect(() => {
+		setTelemetryConsent(consent);
+	}, [consent]);
+
+	const handleConsentChange = (event: React.ChangeEvent<HTMLInputElement>) => {
+		setConsent(event.target.checked);
+	};
+
 	return (
 		<footer
 			style={{
@@ -13,7 +25,30 @@ export function AppFooter() {
 				marginTop: "auto",
 			}}
 		>
-			Mosaic Maker {VERSION_STRING}
+			<div
+				style={{
+					display: "flex",
+					flexDirection: "column",
+					alignItems: "center",
+					gap: "0.5rem",
+				}}
+			>
+				<div>Mosaic Maker {VERSION_STRING}</div>
+				<div style={{ display: "flex", alignItems: "center", gap: "0.5rem" }}>
+					<input
+						type="checkbox"
+						id="telemetry-consent"
+						checked={consent}
+						onChange={handleConsentChange}
+					/>
+					<label
+						htmlFor="telemetry-consent"
+						style={{ margin: 0, fontSize: "0.85rem" }}
+					>
+						Share anonymous usage data
+					</label>
+				</div>
+			</div>
 		</footer>
 	);
 }

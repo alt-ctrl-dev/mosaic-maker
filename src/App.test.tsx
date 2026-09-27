@@ -60,8 +60,8 @@ describe("Mosaic Maker workflow", () => {
 	it("displays the version footer with correct information", () => {
 		render(<App />);
 
-		const footer = screen.getByText(/Mosaic Maker v1\.0\.0\+abc1234/);
+		const footer = screen.getByRole("contentinfo");
 		expect(footer).toBeInTheDocument();
-		expect(footer.tagName).toBe("FOOTER");
+		expect(footer).toHaveTextContent("Mosaic Maker v1.0.0+abc1234");
 	});
 });
