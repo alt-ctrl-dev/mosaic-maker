@@ -1,8 +1,29 @@
+/** localStorage key under which the persistent device identifier is stored. */
+const DEVICE_ID_STORAGE_KEY = "mosaicMaker.deviceId";
+
+/** OS name and, when available, its version string. */
+interface OsInfo {
+	os: string;
+	osVersion?: string;
+}
+
+interface HighEntropyUserAgentData {
+	getHighEntropyValues(hints: string[]): Promise<{
+		platform?: string;
+		platformVersion?: string;
+	}>;
+}
+
+function getUserAgentData(): HighEntropyUserAgentData | undefined {
+	return (navigator as { userAgentData?: HighEntropyUserAgentData })
+		.userAgentData;
+}
+
 /**
- * Determines the operating system from the user agent string.
+ * Parses the operating system name from the user agent string.
  * @returns OS name (Windows, MacOS, Linux, Android, iOS) or "Unknown"
  */
-function getOS(): string {
+function parseOSFromUserAgent(): string {
 	const userAgent = navigator.userAgent;
 
 	if (userAgent.includes("Win")) return "Windows";
@@ -17,6 +38,35 @@ function getOS(): string {
 		return "iOS";
 
 	return "Unknown";
+}
+
+/**
+ * Resolves OS name and version, preferring the high-entropy
+ * `navigator.userAgentData` values and falling back to user agent parsing when
+ * the API is unavailable or rejects.
+ * @returns OS name and, when exposed, its version string
+ */
+async function getOSInfo(): Promise<OsInfo> {
+	const userAgentData = getUserAgentData();
+
+	if (userAgentData) {
+		try {
+			const highEntropy = await userAgentData.getHighEntropyValues([
+				"platform",
+				"platformVersion",
+			]);
+			if (highEntropy.platform) {
+				return {
+					os: highEntropy.platform,
+					osVersion: highEntropy.platformVersion || undefined,
+				};
+			}
+		} catch {
+			// High-entropy values are best-effort; fall back to UA parsing.
+		}
+	}
+
+	return { os: parseOSFromUserAgent() };
 }
 
 /**
@@ -68,11 +118,33 @@ function getViewportResolution(): string {
 }
 
 /**
- * Generates a unique device identifier using crypto.randomUUID when available,
- * falling back to a Math.random-based ID otherwise.
- * @returns A unique device identifier
+ * Returns a device identifier that persists across browser sessions in
+ * localStorage under `mosaicMaker.deviceId`, generating and storing a new one
+ * on first use. When localStorage is unavailable, a fresh identifier is
+ * generated for the current session without persistence.
+ * @returns A stable device identifier
  */
 function getDeviceId(): string {
+	try {
+		const stored = localStorage.getItem(DEVICE_ID_STORAGE_KEY);
+		if (stored) {
+			return stored;
+		}
+
+		const deviceId = generateDeviceId();
+		localStorage.setItem(DEVICE_ID_STORAGE_KEY, deviceId);
+		return deviceId;
+	} catch {
+		return generateDeviceId();
+	}
+}
+
+/**
+ * Generates a fresh device identifier using `crypto.randomUUID` when available,
+ * falling back to a `Math.random`-based identifier otherwise.
+ * @returns A newly generated device identifier
+ */
+function generateDeviceId(): string {
 	if (typeof crypto !== "undefined" && crypto.randomUUID) {
 		return crypto.randomUUID();
 	}
@@ -81,12 +153,16 @@ function getDeviceId(): string {
 }
 
 /**
- * Logs device analytics (OS, device type, memory, screen/viewport resolution,
- * and a unique device identifier) to the console as formatted JSON.
+ * Logs device analytics (OS name and version, device type, memory,
+ * screen/viewport resolution, and a persistent device identifier) to the
+ * console as formatted JSON.
  */
-export function collectDeviceAnalytics(): void {
+export async function collectDeviceAnalytics(): Promise<void> {
+	const { os, osVersion } = await getOSInfo();
+
 	const analyticsData = {
-		os: getOS(),
+		os,
+		osVersion,
 		deviceType: getDeviceType(),
 		memory: getMemoryInfo(),
 		screenResolution: getScreenResolution(),

@@ -1,82 +1,156 @@
 import { describe, it, expect, vi, beforeEach, afterEach } from "vitest";
 import { collectDeviceAnalytics } from "./device-analytics";
 
+const WINDOWS_USER_AGENT =
+	"Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36";
+
+function setUserAgent(value: string): void {
+	Object.defineProperty(navigator, "userAgent", {
+		value,
+		configurable: true,
+	});
+}
+
+function lastLoggedData(): Record<string, unknown> {
+	return JSON.parse(vi.mocked(console.log).mock.calls[0][1]);
+}
+
 describe("Device Analytics", () => {
 	beforeEach(() => {
 		vi.spyOn(console, "log").mockImplementation(() => {});
-	});
+		localStorage.clear();
 
-	afterEach(() => {
-		vi.restoreAllMocks();
-	});
-
-	it("should collect device analytics and log to console", () => {
-		Object.defineProperty(navigator, "userAgent", {
-			value: "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36",
+		// Default to user agent parsing unless a test opts into userAgentData.
+		Object.defineProperty(navigator, "userAgentData", {
+			value: undefined,
 			configurable: true,
 		});
+
+		setUserAgent(WINDOWS_USER_AGENT);
 
 		Object.defineProperty(navigator, "deviceMemory", {
 			value: 8,
 			configurable: true,
 		});
 
-		Object.defineProperty(screen, "width", {
-			value: 1920,
-			configurable: true,
-		});
-
+		Object.defineProperty(screen, "width", { value: 1920, configurable: true });
 		Object.defineProperty(screen, "height", {
 			value: 1080,
 			configurable: true,
 		});
-
 		Object.defineProperty(window, "innerWidth", {
 			value: 1200,
 			configurable: true,
 		});
-
 		Object.defineProperty(window, "innerHeight", {
 			value: 800,
 			configurable: true,
 		});
+	});
 
-		Object.defineProperty(crypto, "randomUUID", {
-			value: () => "test-uuid-12345",
-			configurable: true,
-		});
+	afterEach(() => {
+		vi.restoreAllMocks();
+		localStorage.clear();
+	});
 
-		collectDeviceAnalytics();
+	it("collects device analytics and logs the expected values", async () => {
+		await collectDeviceAnalytics();
 
 		expect(console.log).toHaveBeenCalledWith(
 			"Device Analytics:",
 			expect.any(String),
 		);
 
-		const logData = JSON.parse(vi.mocked(console.log).mock.calls[0][1]);
+		const logData = lastLoggedData();
 
-		expect(logData).toHaveProperty("os");
-		expect(logData).toHaveProperty("deviceType");
-		expect(logData).toHaveProperty("memory");
-		expect(logData).toHaveProperty("screenResolution");
-		expect(logData).toHaveProperty("viewportResolution");
-		expect(logData).toHaveProperty("deviceId");
+		expect(logData.os).toBe("Windows");
+		expect(logData.deviceType).toBe("Desktop");
 		expect(logData.memory).toBe(8);
+		expect(logData.screenResolution).toBe("1920×1080");
+		expect(logData.viewportResolution).toBe("1200×800");
+		expect(typeof logData.deviceId).toBe("string");
 	});
 
-	it("should report memory as -1 when device memory is unavailable", () => {
-		Object.defineProperty(navigator, "userAgent", {
-			value: "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36",
-			configurable: true,
-		});
-
+	it("reports memory as -1 when device memory is unavailable", async () => {
 		// @ts-expect-error deviceMemory is not in all browsers
 		delete navigator.deviceMemory;
 
-		collectDeviceAnalytics();
+		await collectDeviceAnalytics();
 
-		const logData = JSON.parse(vi.mocked(console.log).mock.calls[0][1]);
+		expect(lastLoggedData().memory).toBe(-1);
+	});
 
-		expect(logData.memory).toBe(-1);
+	it("detects MacOS from a macOS user agent", async () => {
+		setUserAgent(
+			"Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36",
+		);
+
+		await collectDeviceAnalytics();
+
+		expect(lastLoggedData().os).toBe("MacOS");
+	});
+
+	it("classifies an Android user agent as a Mobile device", async () => {
+		setUserAgent(
+			"Mozilla/5.0 (Linux; Android 14; Pixel 8) AppleWebKit/537.36 Mobile Safari/537.36",
+		);
+
+		await collectDeviceAnalytics();
+
+		const logData = lastLoggedData();
+		expect(logData.os).toBe("Linux");
+		expect(logData.deviceType).toBe("Mobile");
+	});
+
+	it("persists the device id in localStorage under mosaicMaker.deviceId", async () => {
+		await collectDeviceAnalytics();
+
+		const storedId = localStorage.getItem("mosaicMaker.deviceId");
+		expect(storedId).not.toBeNull();
+		expect(lastLoggedData().deviceId).toBe(storedId);
+	});
+
+	it("reuses the persisted device id across sessions", async () => {
+		localStorage.setItem("mosaicMaker.deviceId", "persisted-device-id");
+
+		await collectDeviceAnalytics();
+
+		expect(lastLoggedData().deviceId).toBe("persisted-device-id");
+		expect(localStorage.getItem("mosaicMaker.deviceId")).toBe(
+			"persisted-device-id",
+		);
+	});
+
+	it("uses navigator.userAgentData high-entropy values for OS detail", async () => {
+		Object.defineProperty(navigator, "userAgentData", {
+			value: {
+				getHighEntropyValues: vi.fn().mockResolvedValue({
+					platform: "Windows",
+					platformVersion: "15.0.0",
+				}),
+			},
+			configurable: true,
+		});
+
+		await collectDeviceAnalytics();
+
+		const logData = lastLoggedData();
+		expect(logData.os).toBe("Windows");
+		expect(logData.osVersion).toBe("15.0.0");
+	});
+
+	it("falls back to user agent parsing when high-entropy values reject", async () => {
+		Object.defineProperty(navigator, "userAgentData", {
+			value: {
+				getHighEntropyValues: vi
+					.fn()
+					.mockRejectedValue(new Error("not allowed")),
+			},
+			configurable: true,
+		});
+
+		await collectDeviceAnalytics();
+
+		expect(lastLoggedData().os).toBe("Windows");
 	});
 });

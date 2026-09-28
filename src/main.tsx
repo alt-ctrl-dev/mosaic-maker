@@ -23,10 +23,11 @@ reactRoot.render(
 );
 
 initAnalytics();
-collectDeviceAnalytics();
 
-reactRoot.render(
-	<StrictMode>
-		<App />
-	</StrictMode>,
-);
+collectDeviceAnalytics().finally(() => {
+	reactRoot.render(
+		<StrictMode>
+			<App />
+		</StrictMode>,
+	);
+});
