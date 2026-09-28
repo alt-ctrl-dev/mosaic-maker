@@ -153,4 +153,76 @@ describe("Device Analytics", () => {
 
 		expect(lastLoggedData().os).toBe("Windows");
 	});
+
+	it("falls back to user agent parsing when high-entropy platform is absent", async () => {
+		Object.defineProperty(navigator, "userAgentData", {
+			value: {
+				getHighEntropyValues: vi.fn().mockResolvedValue({}),
+			},
+			configurable: true,
+		});
+
+		await collectDeviceAnalytics();
+
+		expect(lastLoggedData().os).toBe("Windows");
+	});
+
+	it("omits osVersion when high-entropy values expose no platform version", async () => {
+		Object.defineProperty(navigator, "userAgentData", {
+			value: {
+				getHighEntropyValues: vi.fn().mockResolvedValue({
+					platform: "Windows",
+					platformVersion: "",
+				}),
+			},
+			configurable: true,
+		});
+
+		await collectDeviceAnalytics();
+
+		const logData = lastLoggedData();
+		expect(logData.os).toBe("Windows");
+		expect(logData.osVersion).toBeUndefined();
+	});
+
+	it("omits osVersion when falling back to user agent parsing", async () => {
+		await collectDeviceAnalytics();
+
+		expect(lastLoggedData().osVersion).toBeUndefined();
+	});
+
+	it("reports os as Unknown for an unrecognized user agent", async () => {
+		setUserAgent("CustomBot/1.0");
+
+		await collectDeviceAnalytics();
+
+		const logData = lastLoggedData();
+		expect(logData.os).toBe("Unknown");
+		expect(logData.deviceType).toBe("Unknown");
+	});
+
+	it("classifies an iPad user agent as a Tablet device", async () => {
+		setUserAgent(
+			"Mozilla/5.0 (iPad; CPU OS 17_0 like Mac OS X) AppleWebKit/605.1.15",
+		);
+
+		await collectDeviceAnalytics();
+
+		expect(lastLoggedData().deviceType).toBe("Tablet");
+	});
+
+	it("generates a non-persistent device id when localStorage is unavailable", async () => {
+		const getItem = vi
+			.spyOn(Storage.prototype, "getItem")
+			.mockImplementation(() => {
+				throw new Error("localStorage blocked");
+			});
+
+		await collectDeviceAnalytics();
+
+		expect(typeof lastLoggedData().deviceId).toBe("string");
+		expect(lastLoggedData().deviceId).not.toBe("");
+
+		getItem.mockRestore();
+	});
 });
