@@ -1,6 +1,7 @@
 import {
 	COLOR_GRID_SIZE,
 	BLEND_SOURCE_ALPHA,
+	ANDROID_READBACK_FAILURE,
 	rgbToOklab,
 	selectTessera as sharedSelectTessera,
 	type ColorGrid,
@@ -77,6 +78,36 @@ async function blobToDataUrl(blob: Blob): Promise<string> {
 		reader.onerror = () => reject(new Error("Failed to read blob as data URL"));
 		reader.readAsDataURL(blob);
 	});
+}
+
+/**
+ * Convert an OffscreenCanvas to a PNG data URL via {@link OffscreenCanvas.convertToBlob}.
+ *
+ * When the browser cannot complete the GPU readback (a known limitation on
+ * some Android devices), this throws a sentinel error so the caller can fall
+ * back to main-thread processing where a regular canvas does not have the same
+ * restriction.
+ *
+ * @throws An error whose message starts with {@link ANDROID_READBACK_FAILURE}
+ *   when the browser reports a readback failure.
+ */
+export async function offscreenCanvasToDataUrl(
+	canvas: OffscreenCanvas,
+	type: string = "image/png",
+): Promise<string> {
+	try {
+		const blob = await canvas.convertToBlob({ type });
+		return await blobToDataUrl(blob);
+	} catch (error) {
+		if (error instanceof DOMException && /readback/i.test(error.message)) {
+			console.warn("OffscreenCanvas readback failed:", error);
+			throw new Error(
+				`${ANDROID_READBACK_FAILURE}: failed to read back the canvas on this device.`,
+			);
+		}
+
+		throw error;
+	}
 }
 
 function selectTessera(
@@ -299,8 +330,7 @@ async function generatePlaceholderMosaic(
 		}
 	}
 
-	const blob = await canvas.convertToBlob({ type: "image/png" });
-	return blobToDataUrl(blob);
+	return offscreenCanvasToDataUrl(canvas, "image/png");
 }
 
 async function generateMosaicWithProgress(
@@ -399,8 +429,7 @@ async function generateMosaicWithProgress(
 		percent: 95,
 		message: "Creating final image...",
 	});
-	const blob = await resultCanvas.convertToBlob({ type: "image/png" });
-	const dataUrl = await blobToDataUrl(blob);
+	const dataUrl = await offscreenCanvasToDataUrl(resultCanvas, "image/png");
 
 	self.postMessage({
 		type: "progress",

@@ -1,6 +1,7 @@
 import { useState, useEffect, useRef, useCallback } from "react";
 import type { WorkflowState } from "../engine/workflow-state";
 import { generateMosaic, type ProgressCallback } from "../engine/mosaic-engine";
+import { ANDROID_READBACK_FAILURE } from "../engine/mosaic-shared";
 import type { WorkflowAction } from "../hooks/useWorkflowReducer";
 
 /** Props for {@link GenerateAndPreview}. */
@@ -10,6 +11,13 @@ interface GenerateAndPreviewProps {
 	/** Dispatches workflow actions for mosaic generation results and cancellations. */
 	dispatch: (action: WorkflowAction) => void;
 }
+
+/**
+ * User-facing error shown when the Android main-thread fallback also fails,
+ * meaning the mosaic could not be generated on the current device.
+ */
+const ANDROID_FALLBACK_ERROR_MESSAGE =
+	"Unable to generate mosaic on your device. Please try again or use a different browser.";
 
 function onBeforeUnload(event: BeforeUnloadEvent) {
 	event.preventDefault();
@@ -75,6 +83,8 @@ export function GenerateAndPreview({
 
 		if (typeof Worker !== "undefined") {
 			try {
+				const sourceImage = state.sourceImage;
+				const adjustedTesseraSize = state.adjustedTesseraSize;
 				const WorkerConstructor = (
 					await import("../engine/mosaic-worker.ts?worker")
 				).default;
@@ -111,10 +121,22 @@ export function GenerateAndPreview({
 							break;
 						}
 						case "error":
-							setError(data.message);
-							dispatch({ type: "generationCancelledOrFailed" });
-							setIsGenerating(false);
-							terminateWorker();
+							if (data.message?.includes(ANDROID_READBACK_FAILURE)) {
+								console.warn(
+									"Android browser limitation detected, falling back to main thread processing",
+								);
+								terminateWorker();
+								generateOnMainThread(
+									sourceImage,
+									adjustedTesseraSize,
+									ANDROID_FALLBACK_ERROR_MESSAGE,
+								);
+							} else {
+								setError(data.message);
+								dispatch({ type: "generationCancelledOrFailed" });
+								setIsGenerating(false);
+								terminateWorker();
+							}
 							break;
 					}
 				};
@@ -147,6 +169,7 @@ export function GenerateAndPreview({
 	const generateOnMainThread = async (
 		sourceImage: NonNullable<WorkflowState["sourceImage"]>,
 		tesseraSize: NonNullable<WorkflowState["adjustedTesseraSize"]>,
+		fallbackErrorMessage?: string,
 	) => {
 		const progressCallback: ProgressCallback = (percent, message) => {
 			setProgress({ percent, message });
@@ -168,9 +191,14 @@ export function GenerateAndPreview({
 
 			dispatch({ type: "mosaicGenerated", mosaicResult: result });
 		} catch (err) {
-			const errorMessage =
-				err instanceof Error ? err.message : "Unknown error occurred";
-			setError(errorMessage);
+			if (fallbackErrorMessage) {
+				console.error("Main-thread fallback failed:", err);
+				setError(fallbackErrorMessage);
+			} else if (err instanceof Error) {
+				setError(err.message);
+			} else {
+				setError("Unknown error occurred");
+			}
 			dispatch({ type: "generationCancelledOrFailed" });
 		} finally {
 			setIsGenerating(false);

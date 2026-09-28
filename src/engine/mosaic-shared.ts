@@ -3,6 +3,14 @@
  * and the web worker.
  */
 
+/**
+ * Prefix marking a worker error caused by an Android OffscreenCanvas readback
+ * failure. The worker prefixes the error message with this string and the main
+ * thread matches on it to trigger a main-thread fallback, so both sides must
+ * use the exact same value.
+ */
+export const ANDROID_READBACK_FAILURE = "ANDROID_READBACK_FAILURE";
+
 /** Width and height of the spatial color grid used for matching. */
 export const COLOR_GRID_SIZE = 3;
 
