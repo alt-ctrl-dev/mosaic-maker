@@ -16,6 +16,6 @@ describe("AppFooter", () => {
 		expect(footer).toBeInTheDocument();
 		expect(footer.tagName).toBe("FOOTER");
 		expect(footer).toHaveStyle("text-align: center");
-		expect(footer).toHaveStyle("padding: 1rem");
+		expect(footer).toHaveStyle("padding: 16px");
 	});
 });
