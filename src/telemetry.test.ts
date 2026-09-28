@@ -9,14 +9,11 @@ import {
 
 describe("telemetry", () => {
 	beforeEach(() => {
-		// Clear localStorage before each test
 		localStorage.clear();
-		// Reset console spies
 		vi.restoreAllMocks();
 	});
 
 	afterEach(() => {
-		// Clean up mocks
 		vi.restoreAllMocks();
 	});
 

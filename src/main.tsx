@@ -4,7 +4,6 @@ import { createRoot } from "react-dom/client";
 import { App } from "./App";
 import "./styles.css";
 import { collectDeviceAnalytics } from "./device-analytics";
-import { initAnalytics } from "./analytics";
 import { initializeTelemetry } from "./telemetry";
 
 // Initialize telemetry before app bootstrap
@@ -25,8 +24,6 @@ reactRoot.render(
 		</main>
 	</StrictMode>,
 );
-
-initAnalytics();
 
 collectDeviceAnalytics().finally(() => {
 	reactRoot.render(

@@ -1,21 +1,18 @@
 import { describe, it, expect, vi, beforeEach, afterEach } from "vitest";
 import { render, screen, act, cleanup } from "@testing-library/react";
 import { GenerateAndPreview } from "./GenerateAndPreview";
-import * as analytics from "../analytics";
+import * as telemetry from "../telemetry";
 import * as mosaicEngine from "../engine/mosaic-engine";
 import type { WorkflowState } from "../engine/workflow-state";
 
-// Mock the analytics module
-vi.mock("../analytics", async () => {
-	const actual = await vi.importActual("../analytics");
+vi.mock("../telemetry", async () => {
+	const actual = await vi.importActual("../telemetry");
 	return {
 		...actual,
-		track: vi.fn(),
-		getSessionId: vi.fn().mockReturnValue("test-session-id"),
+		trackMosaicGeneration: vi.fn(),
 	};
 });
 
-// Mock the mosaic engine
 vi.mock("../engine/mosaic-engine", () => ({
 	generateMosaic: vi.fn(),
 }));
@@ -47,7 +44,7 @@ describe("GenerateAndPreview Timing", () => {
 		},
 	];
 	const mockState: WorkflowState = {
-		currentStep: 2, // WorkflowStep.GENERATE_AND_PREVIEW
+		currentStep: 2,
 		furthestCompletedStep: 2,
 		sourceImage: mockSourceImage,
 		tesserae: mockTesserae,
@@ -80,17 +77,15 @@ describe("GenerateAndPreview Timing", () => {
 		vi.restoreAllMocks();
 	});
 
-	it("should track timing for successful main thread generation", async () => {
+	it("should track generation timing for successful main thread generation", async () => {
 		const mockResult = {
 			dataUrl: "result-data-url",
 			width: 100,
 			height: 100,
 		};
 
-		// Mock generateMosaic to resolve successfully
 		vi.spyOn(mosaicEngine, "generateMosaic").mockResolvedValue(mockResult);
 
-		// Mock Worker to be undefined to force main thread execution
 		const originalWorker = window.Worker;
 		// @ts-expect-error - intentionally removing Worker
 		delete window.Worker;
@@ -103,33 +98,23 @@ describe("GenerateAndPreview Timing", () => {
 				generateButton.click();
 			});
 
-			// Check that track was called with timing information
-			expect(analytics.track).toHaveBeenCalledWith(
-				"mosaic_generation",
-				expect.objectContaining({
-					outcome: "completed",
-					totalTime: expect.any(Number),
-					phases: expect.any(Object),
-					sessionId: "test-session-id",
-					gridCellCount: expect.any(Number),
-					tesseraCount: expect.any(Number),
-					outputPixels: expect.any(Number),
-					estimatedMemoryUsage: expect.any(Number),
-				}),
+			expect(telemetry.trackMosaicGeneration).toHaveBeenCalledWith(
+				true,
+				expect.any(Number),
+				100,
+				100,
+				10,
 			);
 		} finally {
-			// Restore Worker
 			window.Worker = originalWorker;
 		}
 	});
 
-	it("should track timing for failed main thread generation", async () => {
-		// Mock generateMosaic to reject with an error
+	it("should track generation timing for failed main thread generation", async () => {
 		vi.spyOn(mosaicEngine, "generateMosaic").mockRejectedValue(
 			new Error("Test error"),
 		);
 
-		// Mock Worker to be undefined to force main thread execution
 		const originalWorker = window.Worker;
 		// @ts-expect-error - intentionally removing Worker
 		delete window.Worker;
@@ -142,25 +127,16 @@ describe("GenerateAndPreview Timing", () => {
 				generateButton.click();
 			});
 
-			// Wait for the error to be displayed
 			await screen.findByText("Test error");
 
-			// Check that track was called with timing information for failure
-			expect(analytics.track).toHaveBeenCalledWith(
-				"mosaic_generation",
-				expect.objectContaining({
-					outcome: "failed",
-					totalTime: expect.any(Number),
-					phases: expect.any(Object),
-					sessionId: "test-session-id",
-					gridCellCount: expect.any(Number),
-					tesseraCount: expect.any(Number),
-					outputPixels: expect.any(Number),
-					estimatedMemoryUsage: expect.any(Number),
-				}),
+			expect(telemetry.trackMosaicGeneration).toHaveBeenCalledWith(
+				false,
+				expect.any(Number),
+				100,
+				100,
+				10,
 			);
 		} finally {
-			// Restore Worker
 			window.Worker = originalWorker;
 		}
 	});

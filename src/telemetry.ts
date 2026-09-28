@@ -2,6 +2,7 @@ import {
 	initializeFaro,
 	getWebInstrumentations,
 	faro,
+	LogLevel,
 } from "@grafana/faro-web-sdk";
 import { PACKAGE_VERSION } from "./version";
 
@@ -11,7 +12,6 @@ const FARO_APP_NAME_ENV_VAR = "VITE_FARO_APP_NAME";
 
 function isFaroConfigured(): boolean {
 	return (
-		hasTelemetryConsent() &&
 		Boolean(import.meta.env[FARO_URL_ENV_VAR]) &&
 		Boolean(import.meta.env[FARO_APP_NAME_ENV_VAR])
 	);
@@ -63,6 +63,15 @@ export function initializeTelemetry(): void {
 					captureConsole: true,
 				}),
 			],
+			consoleInstrumentation: {
+				disabledLevels: [
+					LogLevel.DEBUG,
+					LogLevel.TRACE,
+					LogLevel.LOG,
+					LogLevel.INFO,
+					LogLevel.WARN,
+				],
+			},
 		});
 
 		console.log("Faro telemetry initialized successfully");
