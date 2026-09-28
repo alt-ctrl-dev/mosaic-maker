@@ -291,6 +291,7 @@ export function GenerateAndPreview({
 		setIsGenerating(false);
 		setError(null);
 		setProgress(null);
+		dispatch({ type: "generationCancelledOrFailed" });
 	};
 
 	const canGenerate =

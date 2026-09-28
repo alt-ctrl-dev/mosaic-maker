@@ -10,6 +10,7 @@ import {
 import {
 	runDeviceCapacityPreflight,
 	estimateWorkload,
+	type WorkloadEstimate,
 } from "./device-capacity-preflight";
 
 /** Source image data received from the main thread. */
@@ -56,12 +57,7 @@ let sessionId: string | null = null;
 let startTime: number | null = null;
 const phaseTimings: Record<string, number> = {};
 let currentPhaseStart: number | null = null;
-let workloadInfo: {
-	gridCellCount: number;
-	tesseraCount: number;
-	outputPixels: number;
-	estimatedMemoryUsage: number;
-} | null = null;
+let workloadInfo: WorkloadEstimate | null = null;
 
 interface ProcessedTessera {
 	info: WorkerTessera;
@@ -244,7 +240,7 @@ function startTiming(): void {
 
 /** Record elapsed time for the named phase and reset the phase timer. */
 function markPhase(phase: string): void {
-	if (currentPhaseStart !== null && startTime !== null) {
+	if (currentPhaseStart !== null) {
 		const now = performance.now();
 		phaseTimings[phase] = now - currentPhaseStart;
 		currentPhaseStart = now;

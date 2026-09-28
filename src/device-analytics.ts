@@ -1,4 +1,3 @@
-/** localStorage key under which the persistent device identifier is stored. */
 const DEVICE_ID_STORAGE_KEY = "mosaicMaker.deviceId";
 
 /** OS name and, when available, its version string. */
@@ -109,16 +108,10 @@ function getMemoryInfo(): number {
 	return -1;
 }
 
-/**
- * Returns the physical screen resolution as "width×height".
- */
 function getScreenResolution(): string {
 	return `${screen.width}×${screen.height}`;
 }
 
-/**
- * Returns the viewport (window inner) resolution as "width×height".
- */
 function getViewportResolution(): string {
 	return `${window.innerWidth}×${window.innerHeight}`;
 }
