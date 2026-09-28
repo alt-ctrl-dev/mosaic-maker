@@ -77,6 +77,7 @@ export function GenerateAndPreview({
 			return;
 		}
 
+		terminateWorker();
 		setIsGenerating(true);
 		setError(null);
 		setProgress(null);
@@ -181,6 +182,12 @@ export function GenerateAndPreview({
 		const phaseTimings: Record<string, number> = {};
 		let currentPhaseStart = startTime;
 
+		const markPhase = (phase: string) => {
+			const now = performance.now();
+			phaseTimings[phase] = now - currentPhaseStart;
+			currentPhaseStart = now;
+		};
+
 		const gridCellCount =
 			Math.ceil(sourceImage.width / tesseraSize) *
 			Math.ceil(sourceImage.height / tesseraSize);
@@ -193,31 +200,27 @@ export function GenerateAndPreview({
 		);
 
 		const progressCallback: ProgressCallback = (percent, message) => {
-			const now = performance.now();
 			if (
 				message.includes("Loading source") &&
 				!("loading_source" in phaseTimings)
 			) {
-				phaseTimings.loading_source = now - currentPhaseStart;
-				currentPhaseStart = now;
+				markPhase("initial");
+				markPhase("loading_source");
 			} else if (
 				message.includes("Processing tessera") &&
 				!("processing_tesserae" in phaseTimings)
 			) {
-				phaseTimings.processing_tesserae = now - currentPhaseStart;
-				currentPhaseStart = now;
+				markPhase("processing_tesserae");
 			} else if (
 				message.includes("Generating cell") &&
 				!("generating_mosaic" in phaseTimings)
 			) {
-				phaseTimings.generating_mosaic = now - currentPhaseStart;
-				currentPhaseStart = now;
+				markPhase("generating_mosaic");
 			} else if (
 				message.includes("Finalizing mosaic") &&
 				!("finalizing_mosaic" in phaseTimings)
 			) {
-				phaseTimings.finalizing_mosaic = now - currentPhaseStart;
-				currentPhaseStart = now;
+				markPhase("finalizing_mosaic");
 			}
 			setProgress({ percent, message });
 		};
@@ -233,7 +236,7 @@ export function GenerateAndPreview({
 			);
 
 			const endTime = performance.now();
-			phaseTimings.final = endTime - currentPhaseStart;
+			markPhase("complete");
 			const totalTime = endTime - startTime;
 
 			setProgress({ percent: 100, message: "Mosaic generated successfully" });

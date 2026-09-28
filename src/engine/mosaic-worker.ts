@@ -252,18 +252,15 @@ function markPhase(phase: string): void {
 }
 
 /**
- * End timing, mark the final phase, and post a timing event with the given
- * outcome back to the main thread.
+ * Post a timing event with the given outcome back to the main thread.
+ * The caller is expected to have called {@link markPhase} for the final
+ * phase before invoking this function.
  */
 function endTiming(outcome: "completed" | "cancelled" | "failed"): void {
 	if (startTime === null) return;
 
 	const endTime = performance.now();
 	const totalTime = endTime - startTime;
-
-	if (currentPhaseStart !== null) {
-		phaseTimings.final = endTime - currentPhaseStart;
-	}
 
 	const eventData: Record<string, unknown> = {
 		outcome,
@@ -540,6 +537,7 @@ self.onmessage = async (event: MessageEvent<WorkerMessage>) => {
 					message.tesseraSize,
 				);
 
+				markPhase("complete");
 				if (isCancelled) {
 					endTiming("cancelled");
 					self.postMessage({
@@ -558,6 +556,7 @@ self.onmessage = async (event: MessageEvent<WorkerMessage>) => {
 					});
 				}
 			} catch (error) {
+				markPhase("complete");
 				endTiming("failed");
 				self.postMessage({
 					type: "error",

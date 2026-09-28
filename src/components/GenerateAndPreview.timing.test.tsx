@@ -5,16 +5,6 @@ import * as analytics from "../analytics";
 import * as mosaicEngine from "../engine/mosaic-engine";
 import type { WorkflowState } from "../engine/workflow-state";
 
-// Mock the worker module
-const mockWorkerPostMessage = vi.fn();
-vi.mock("../engine/mosaic-worker.ts?worker", () => ({
-	default: class MockWorker {
-		onmessage = vi.fn();
-		postMessage = mockWorkerPostMessage;
-		terminate = vi.fn();
-	},
-}));
-
 // Mock the analytics module
 vi.mock("../analytics", async () => {
 	const actual = await vi.importActual("../analytics");
