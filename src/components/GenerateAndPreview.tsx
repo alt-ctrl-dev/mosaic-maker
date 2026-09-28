@@ -100,7 +100,6 @@ export function GenerateAndPreview({
 							setProgress({ percent: data.percent, message: data.message });
 							break;
 						case "timing":
-							// Handle timing events - track through analytics
 							track("mosaic_generation", data.data);
 							break;
 						case "result": {
@@ -182,7 +181,6 @@ export function GenerateAndPreview({
 		const phaseTimings: Record<string, number> = {};
 		let currentPhaseStart = startTime;
 
-		// Calculate workload estimate
 		const gridCellCount =
 			Math.ceil(sourceImage.width / tesseraSize) *
 			Math.ceil(sourceImage.height / tesseraSize);
@@ -234,16 +232,14 @@ export function GenerateAndPreview({
 				progressCallback,
 			);
 
-			// Track final phase
 			const endTime = performance.now();
-			phaseTimings.completed = endTime - currentPhaseStart;
+			phaseTimings.final = endTime - currentPhaseStart;
 			const totalTime = endTime - startTime;
 
 			setProgress({ percent: 100, message: "Mosaic generated successfully" });
 			setPreviewUrl(result.dataUrl);
 			setPreviewDimensions({ width: result.width, height: result.height });
 
-			// Track timing event
 			track("mosaic_generation", {
 				outcome: "completed",
 				totalTime,
@@ -267,7 +263,6 @@ export function GenerateAndPreview({
 			}
 			dispatch({ type: "generationCancelledOrFailed" });
 
-			// Track error timing
 			const endTime = performance.now();
 			const totalTime = endTime - startTime;
 			track("mosaic_generation", {

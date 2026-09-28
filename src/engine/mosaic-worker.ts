@@ -232,11 +232,13 @@ async function createCanvasFromSource(
 	return canvas;
 }
 
+/** Start the generation timer, recording the initial phase start. */
 function startTiming(): void {
 	startTime = performance.now();
 	currentPhaseStart = startTime;
 }
 
+/** Record elapsed time for the named phase and reset the phase timer. */
 function markPhase(phase: string): void {
 	if (currentPhaseStart !== null && startTime !== null) {
 		const now = performance.now();
@@ -245,18 +247,20 @@ function markPhase(phase: string): void {
 	}
 }
 
+/**
+ * End timing, mark the final phase, and post a timing event with the given
+ * outcome back to the main thread.
+ */
 function endTiming(outcome: "completed" | "cancelled" | "failed"): void {
 	if (startTime === null) return;
 
 	const endTime = performance.now();
 	const totalTime = endTime - startTime;
 
-	// Mark the final phase
 	if (currentPhaseStart !== null) {
 		phaseTimings.final = endTime - currentPhaseStart;
 	}
 
-	// Emit analytics event through the main thread track function
 	const eventData: Record<string, unknown> = {
 		outcome,
 		totalTime,
@@ -264,7 +268,6 @@ function endTiming(outcome: "completed" | "cancelled" | "failed"): void {
 		sessionId,
 	};
 
-	// Include workload information if available
 	if (workloadInfo) {
 		eventData.gridCellCount = workloadInfo.gridCellCount;
 		eventData.tesseraCount = workloadInfo.tesseraCount;

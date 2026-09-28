@@ -109,10 +109,16 @@ function getMemoryInfo(): number {
 	return -1;
 }
 
+/**
+ * Returns the physical screen resolution as "width×height".
+ */
 function getScreenResolution(): string {
 	return `${screen.width}×${screen.height}`;
 }
 
+/**
+ * Returns the viewport (window inner) resolution as "width×height".
+ */
 function getViewportResolution(): string {
 	return `${window.innerWidth}×${window.innerHeight}`;
 }
