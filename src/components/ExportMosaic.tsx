@@ -31,12 +31,58 @@ function downloadFile(dataUrl: string, filename: string): void {
 }
 
 /**
+ * Convert a data URL to a Blob.
+ *
+ * @param dataUrl - The data URL to convert
+ * @returns A Blob representation of the data
+ */
+function dataUrlToBlob(dataUrl: string): Blob {
+	const [header, base64Data] = dataUrl.split(",");
+	const mimeType = header.split(":")[1].split(";")[0];
+	const byteString = atob(base64Data);
+	const ab = new ArrayBuffer(byteString.length);
+	const ia = new Uint8Array(ab);
+	for (let i = 0; i < byteString.length; i++) {
+		ia[i] = byteString.charCodeAt(i);
+	}
+	return new Blob([ia], { type: mimeType });
+}
+
+/**
  * Open the exported image in a new tab.
+ * For iOS devices, converts data URL to Blob URL to avoid blank tab issue.
  *
  * @returns Whether the browser allowed the new tab to open.
  */
 function openImageInNewTab(dataUrl: string): boolean {
-	const newWindow = window.open(dataUrl, "_blank");
+	let urlToOpen = dataUrl;
+	let blobUrl: string | null = null;
+
+	// For iOS devices, convert data URL to Blob URL to avoid blank tab issue
+	if (
+		/iPad|iPhone|iPod/.test(navigator.userAgent) ||
+		(navigator.maxTouchPoints > 1 && /Macintosh/.test(navigator.userAgent))
+	) {
+		try {
+			const blob = dataUrlToBlob(dataUrl);
+			blobUrl = URL.createObjectURL(blob);
+			urlToOpen = blobUrl;
+		} catch (error) {
+			// If Blob conversion fails, fall back to data URL
+			console.warn(
+				"Failed to convert data URL to Blob, falling back to data URL:",
+				error,
+			);
+		}
+	}
+
+	const newWindow = window.open(urlToOpen, "_blank");
+
+	// Clean up Blob URL if we created one
+	if (blobUrl) {
+		setTimeout(() => URL.revokeObjectURL(blobUrl), 1000);
+	}
+
 	return newWindow !== null;
 }
 

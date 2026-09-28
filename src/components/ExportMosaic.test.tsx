@@ -174,4 +174,46 @@ describe("ExportMosaic", () => {
 
 		mockExportMosaic.mockRestore();
 	});
+
+	it("should open image with blob URL on iOS to avoid blank tab issue", async () => {
+		// Simulate iOS device
+		Object.defineProperty(navigator, "userAgent", {
+			writable: true,
+			value:
+				"Mozilla/5.0 (iPhone; CPU iPhone OS 14_0 like Mac OS X) AppleWebKit/605.1.15",
+		});
+
+		// Mock URL.createObjectURL and URL.revokeObjectURL
+		const mockObjectUrl = "blob:test-url";
+		const createObjectURLMock = vi
+			.spyOn(URL, "createObjectURL")
+			.mockImplementation((_) => mockObjectUrl);
+		const revokeObjectURLMock = vi.spyOn(URL, "revokeObjectURL");
+
+		const mockOpen = vi.fn().mockReturnValue({ document: { write: vi.fn() } });
+		window.open = mockOpen;
+
+		// Use valid base64 data for testing
+		const imageData =
+			"data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAYAAAAfFcSJAAAADUlEQVR42mP8/5+hHgAHggJ/PchI7wAAAABJRU5ErkJggg==";
+		const mockExportMosaic = vi
+			.spyOn(exportEngine, "exportMosaic")
+			.mockResolvedValue(imageData);
+
+		render(<ExportMosaic state={mockState} dispatch={mockDispatch} />);
+
+		const downloadButton = screen.getByRole("button", { name: "Download" });
+		fireEvent.click(downloadButton);
+
+		await waitFor(() => {
+			// Should create a blob from the data URL
+			expect(createObjectURLMock).toHaveBeenCalled();
+			// Should open the blob URL in a new tab
+			expect(mockOpen).toHaveBeenCalledWith(mockObjectUrl, "_blank");
+		});
+
+		mockExportMosaic.mockRestore();
+		createObjectURLMock.mockRestore();
+		revokeObjectURLMock.mockRestore();
+	});
 });
