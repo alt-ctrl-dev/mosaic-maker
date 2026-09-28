@@ -11,6 +11,13 @@ interface GenerateAndPreviewProps {
 	dispatch: (action: WorkflowAction) => void;
 }
 
+/**
+ * User-facing error shown when the Android main-thread fallback also fails,
+ * meaning the mosaic could not be generated on the current device.
+ */
+const ANDROID_FALLBACK_ERROR_MESSAGE =
+	"Unable to generate mosaic on your device. Please try again or use a different browser.";
+
 function onBeforeUnload(event: BeforeUnloadEvent) {
 	event.preventDefault();
 	event.returnValue =
@@ -118,10 +125,10 @@ export function GenerateAndPreview({
 									"Android browser limitation detected, falling back to main thread processing",
 								);
 								terminateWorker();
-								generateOnMainThread(sourceImage, adjustedTesseraSize).catch(
-									(err) => {
-										console.error("Main-thread fallback failed:", err);
-									},
+								generateOnMainThread(
+									sourceImage,
+									adjustedTesseraSize,
+									ANDROID_FALLBACK_ERROR_MESSAGE,
 								);
 							} else {
 								setError(data.message);
@@ -161,6 +168,7 @@ export function GenerateAndPreview({
 	const generateOnMainThread = async (
 		sourceImage: NonNullable<WorkflowState["sourceImage"]>,
 		tesseraSize: NonNullable<WorkflowState["adjustedTesseraSize"]>,
+		fallbackErrorMessage?: string,
 	) => {
 		const progressCallback: ProgressCallback = (percent, message) => {
 			setProgress({ percent, message });
@@ -182,8 +190,14 @@ export function GenerateAndPreview({
 
 			dispatch({ type: "mosaicGenerated", mosaicResult: result });
 		} catch (err) {
-			const errorMessage =
-				err instanceof Error ? err.message : "Unknown error occurred";
+			if (fallbackErrorMessage) {
+				console.error("Main-thread fallback failed:", err);
+			}
+			const errorMessage = fallbackErrorMessage
+				? fallbackErrorMessage
+				: err instanceof Error
+					? err.message
+					: "Unknown error occurred";
 			setError(errorMessage);
 			dispatch({ type: "generationCancelledOrFailed" });
 		} finally {
