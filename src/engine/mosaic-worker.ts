@@ -232,10 +232,14 @@ async function createCanvasFromSource(
 	return canvas;
 }
 
-/** Start the generation timer, recording the initial phase start. */
+/** Start the generation timer, resetting state for a new run. */
 function startTiming(): void {
 	startTime = performance.now();
 	currentPhaseStart = startTime;
+	for (const key of Object.keys(phaseTimings)) {
+		delete phaseTimings[key];
+	}
+	workloadInfo = null;
 }
 
 /** Record elapsed time for the named phase and reset the phase timer. */

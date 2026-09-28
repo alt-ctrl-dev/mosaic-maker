@@ -25,7 +25,6 @@ export function getSessionId(): string | null {
 
 /**
  * Track an analytics event.
- * Currently logs to console, but could be extended to send to a backend service.
  *
  * @param event - Event name
  * @param payload - Event payload data

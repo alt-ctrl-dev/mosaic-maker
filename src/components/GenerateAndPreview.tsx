@@ -207,7 +207,7 @@ export function GenerateAndPreview({
 				phaseTimings.processing_tesserae = now - currentPhaseStart;
 				currentPhaseStart = now;
 			} else if (
-				message.includes("Generating") &&
+				message.includes("Generating cell") &&
 				!("generating_mosaic" in phaseTimings)
 			) {
 				phaseTimings.generating_mosaic = now - currentPhaseStart;
