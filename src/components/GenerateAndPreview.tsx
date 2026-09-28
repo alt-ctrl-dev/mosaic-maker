@@ -3,6 +3,8 @@ import type { WorkflowState } from "../engine/workflow-state";
 import { generateMosaic, type ProgressCallback } from "../engine/mosaic-engine";
 import { ANDROID_READBACK_FAILURE } from "../engine/mosaic-shared";
 import type { WorkflowAction } from "../hooks/useWorkflowReducer";
+import { getSessionId, track } from "../analytics";
+import { estimateWorkload } from "../engine/device-capacity-preflight";
 
 /** Props for {@link GenerateAndPreview}. */
 interface GenerateAndPreviewProps {
@@ -75,6 +77,7 @@ export function GenerateAndPreview({
 			return;
 		}
 
+		terminateWorker();
 		setIsGenerating(true);
 		setError(null);
 		setProgress(null);
@@ -96,6 +99,9 @@ export function GenerateAndPreview({
 					switch (type) {
 						case "progress":
 							setProgress({ percent: data.percent, message: data.message });
+							break;
+						case "timing":
+							track("mosaic_generation", data.data);
 							break;
 						case "result": {
 							const success = Boolean(data.dataUrl);
@@ -150,6 +156,7 @@ export function GenerateAndPreview({
 						previewUrl: tessera.previewUrl,
 					})),
 					tesseraSize: state.adjustedTesseraSize,
+					sessionId: getSessionId(),
 				});
 			} catch (err) {
 				console.warn(
@@ -171,7 +178,50 @@ export function GenerateAndPreview({
 		tesseraSize: NonNullable<WorkflowState["adjustedTesseraSize"]>,
 		fallbackErrorMessage?: string,
 	) => {
+		const startTime = performance.now();
+		const phaseTimings: Record<string, number> = {};
+		let currentPhaseStart = startTime;
+
+		const markPhase = (phase: string) => {
+			const now = performance.now();
+			phaseTimings[phase] = now - currentPhaseStart;
+			currentPhaseStart = now;
+		};
+
+		const gridCellCount =
+			Math.ceil(sourceImage.width / tesseraSize) *
+			Math.ceil(sourceImage.height / tesseraSize);
+		const validTesserae = state.tesserae.filter((t) => t.isValid);
+		const workload = estimateWorkload(
+			gridCellCount,
+			validTesserae.length,
+			sourceImage.width,
+			sourceImage.height,
+		);
+
 		const progressCallback: ProgressCallback = (percent, message) => {
+			if (
+				message.includes("Loading source") &&
+				!("loading_source" in phaseTimings)
+			) {
+				markPhase("initial");
+				markPhase("loading_source");
+			} else if (
+				message.includes("Processing tessera") &&
+				!("processing_tesserae" in phaseTimings)
+			) {
+				markPhase("processing_tesserae");
+			} else if (
+				message.includes("Generating cell") &&
+				!("generating_mosaic" in phaseTimings)
+			) {
+				markPhase("generating_mosaic");
+			} else if (
+				message.includes("Finalizing mosaic") &&
+				!("finalizing_mosaic" in phaseTimings)
+			) {
+				markPhase("finalizing_mosaic");
+			}
 			setProgress({ percent, message });
 		};
 
@@ -185,9 +235,24 @@ export function GenerateAndPreview({
 				progressCallback,
 			);
 
+			const endTime = performance.now();
+			markPhase("complete");
+			const totalTime = endTime - startTime;
+
 			setProgress({ percent: 100, message: "Mosaic generated successfully" });
 			setPreviewUrl(result.dataUrl);
 			setPreviewDimensions({ width: result.width, height: result.height });
+
+			track("mosaic_generation", {
+				outcome: "completed",
+				totalTime,
+				phases: phaseTimings,
+				sessionId: getSessionId(),
+				gridCellCount: workload.gridCellCount,
+				tesseraCount: workload.tesseraCount,
+				outputPixels: workload.outputPixels,
+				estimatedMemoryUsage: workload.estimatedMemoryUsage,
+			});
 
 			dispatch({ type: "mosaicGenerated", mosaicResult: result });
 		} catch (err) {
@@ -200,6 +265,19 @@ export function GenerateAndPreview({
 				setError("Unknown error occurred");
 			}
 			dispatch({ type: "generationCancelledOrFailed" });
+
+			const endTime = performance.now();
+			const totalTime = endTime - startTime;
+			track("mosaic_generation", {
+				outcome: "failed",
+				totalTime,
+				phases: {},
+				sessionId: getSessionId(),
+				gridCellCount: workload.gridCellCount,
+				tesseraCount: workload.tesseraCount,
+				outputPixels: workload.outputPixels,
+				estimatedMemoryUsage: workload.estimatedMemoryUsage,
+			});
 		} finally {
 			setIsGenerating(false);
 		}
@@ -209,7 +287,6 @@ export function GenerateAndPreview({
 		if (workerRef.current) {
 			workerRef.current.postMessage({ type: "cancel" });
 		}
-		terminateWorker();
 
 		setIsGenerating(false);
 		setError(null);

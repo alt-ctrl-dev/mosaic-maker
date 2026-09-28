@@ -1,200 +1,173 @@
-import { getDeviceCapacity } from "./engine/device-capacity-preflight";
+const DEVICE_ID_STORAGE_KEY = "mosaicMaker.deviceId";
 
-/** Source used to derive OS and platform detail for a device snapshot. */
-export type OsSource = "userAgentData" | "userAgent";
-
-/**
- * Device/environment snapshot collected once before the app mounts.
- *
- * Every field sourced from an optional browser API is optional; the snapshot
- * must remain constructible on a browser that supports none of them.
- */
-export interface DeviceSnapshot {
-	/**
-	 * In-memory correlation key grouping events within a single app load.
-	 * Never persisted and never derived from device characteristics.
-	 */
-	sessionId?: string;
-	/** Which browser source supplied the OS/platform fields. */
-	osSource?: OsSource;
-	/** OS/platform name (e.g. "Windows", "macOS"). */
-	platform?: string;
-	/** OS/platform version string when the browser exposes it. */
-	platformVersion?: string;
-	/** CPU architecture (e.g. "x86") from high-entropy values. */
-	architecture?: string;
-	/** CPU bitness (e.g. "64") from high-entropy values. */
-	bitness?: string;
-	/** Device model when exposed (typically mobile Chromium). */
-	model?: string;
-	/** Full browser version from high-entropy values. */
-	uaFullVersion?: string;
-	/** Raw user-agent string, recorded when falling back to `navigator.userAgent`. */
-	userAgent?: string;
-	/** Physical screen width in pixels. */
-	screenWidth?: number;
-	/** Physical screen height in pixels. */
-	screenHeight?: number;
-	/** Screen colour depth in bits per pixel. */
-	pixelDepth?: number;
-	/** Ratio of physical to CSS pixels. */
-	devicePixelRatio?: number;
-	/** Viewport width in CSS pixels. */
-	viewportWidth?: number;
-	/** Viewport height in CSS pixels. */
-	viewportHeight?: number;
-	/** Approximate device memory in GB, from `getDeviceCapacity()`. */
-	deviceMemory?: number;
-	/** Logical CPU core count, from `getDeviceCapacity()`. */
-	hardwareConcurrency?: number;
-	/** IANA timezone name (e.g. "Europe/London"). */
-	timeZone?: string;
-	/** Preferred browser language (e.g. "en-US"). */
-	language?: string;
+/** OS name and, when available, its version string. */
+interface OsInfo {
+	os: string;
+	osVersion?: string;
 }
 
-const HIGH_ENTROPY_HINTS = [
-	"platform",
-	"platformVersion",
-	"architecture",
-	"bitness",
-	"model",
-	"uaFullVersion",
-] as const;
-
-interface UserAgentData {
-	getHighEntropyValues(hints: readonly string[]): Promise<{
+interface HighEntropyUserAgentData {
+	getHighEntropyValues(hints: string[]): Promise<{
 		platform?: string;
 		platformVersion?: string;
-		architecture?: string;
-		bitness?: string;
-		model?: string;
-		uaFullVersion?: string;
 	}>;
 }
 
-function getUserAgentData(): UserAgentData | undefined {
-	return typeof navigator !== "undefined"
-		? (navigator as { userAgentData?: UserAgentData }).userAgentData
-		: undefined;
+function getUserAgentData(): HighEntropyUserAgentData | undefined {
+	return (navigator as { userAgentData?: HighEntropyUserAgentData })
+		.userAgentData;
 }
 
-function assignDefined<T extends object>(target: T, source: Partial<T>): void {
-	for (const key of Object.keys(source) as (keyof T)[]) {
-		const value = source[key];
-		if (value !== undefined && value !== "") {
-			target[key] = value as T[keyof T];
-		}
-	}
+/**
+ * Parses the operating system name from the user agent string.
+ * @returns OS name (Windows, MacOS, Linux, Android, iOS) or "Unknown"
+ */
+function parseOSFromUserAgent(): string {
+	const userAgent = navigator.userAgent;
+
+	if (userAgent.includes("Win")) return "Windows";
+	if (userAgent.includes("Mac")) return "MacOS";
+	if (userAgent.includes("Linux")) return "Linux";
+	if (userAgent.includes("Android")) return "Android";
+	if (
+		userAgent.includes("iOS") ||
+		userAgent.includes("iPhone") ||
+		userAgent.includes("iPad")
+	)
+		return "iOS";
+
+	return "Unknown";
 }
 
-async function collectOsFields(): Promise<Partial<DeviceSnapshot>> {
+/**
+ * Resolves OS name and version, preferring the high-entropy
+ * `navigator.userAgentData` values and falling back to user agent parsing when
+ * the API is unavailable or rejects.
+ * @returns OS name and, when exposed, its version string
+ */
+async function getOSInfo(): Promise<OsInfo> {
 	const userAgentData = getUserAgentData();
 
 	if (userAgentData) {
-		const highEntropy =
-			await userAgentData.getHighEntropyValues(HIGH_ENTROPY_HINTS);
-		return {
-			osSource: "userAgentData",
-			...highEntropy,
-		};
+		try {
+			const highEntropy = await userAgentData.getHighEntropyValues([
+				"platform",
+				"platformVersion",
+			]);
+			if (highEntropy.platform) {
+				return {
+					os: highEntropy.platform,
+					osVersion: highEntropy.platformVersion || undefined,
+				};
+			}
+		} catch {
+			// High-entropy values are best-effort; fall back to UA parsing.
+		}
 	}
 
-	if (typeof navigator !== "undefined" && navigator.userAgent) {
-		return { osSource: "userAgent", userAgent: navigator.userAgent };
-	}
-
-	return {};
+	return { os: parseOSFromUserAgent() };
 }
 
-function collectDisplayFields(): Partial<DeviceSnapshot> {
-	const fields: Partial<DeviceSnapshot> = {};
+/**
+ * Classifies the device type from the user agent string.
+ * @returns Device type (Mobile, Tablet, Desktop) or "Unknown"
+ */
+function getDeviceType(): string {
+	const userAgent = navigator.userAgent;
 
-	if (typeof screen !== "undefined") {
-		fields.screenWidth = screen.width;
-		fields.screenHeight = screen.height;
-		fields.pixelDepth = screen.pixelDepth;
+	if (
+		userAgent.includes("Mobile") ||
+		userAgent.includes("Android") ||
+		userAgent.includes("iPhone")
+	) {
+		return "Mobile";
+	}
+	if (userAgent.includes("iPad") || userAgent.includes("Tablet")) {
+		return "Tablet";
+	}
+	if (
+		userAgent.includes("Win") ||
+		userAgent.includes("Mac") ||
+		userAgent.includes("Linux")
+	) {
+		return "Desktop";
 	}
 
-	if (typeof window !== "undefined") {
-		fields.devicePixelRatio = window.devicePixelRatio;
-		fields.viewportWidth = window.innerWidth;
-		fields.viewportHeight = window.innerHeight;
-	}
-
-	return fields;
+	return "Unknown";
 }
 
-function collectHardwareFields(): Partial<DeviceSnapshot> {
-	const capacity = getDeviceCapacity();
-	return {
-		deviceMemory: capacity.deviceMemory,
-		hardwareConcurrency: capacity.hardwareConcurrency,
-	};
+/**
+ * Gets device memory information if available.
+ * @returns Memory in GB, or -1 when device memory is unavailable
+ */
+function getMemoryInfo(): number {
+	if ("deviceMemory" in navigator) {
+		// @ts-expect-error deviceMemory is not in all browsers
+		return navigator.deviceMemory;
+	}
+	return -1;
 }
 
-function collectLocaleFields(): Partial<DeviceSnapshot> {
-	const fields: Partial<DeviceSnapshot> = {};
-
-	if (typeof Intl !== "undefined") {
-		fields.timeZone = Intl.DateTimeFormat().resolvedOptions().timeZone;
-	}
-
-	if (typeof navigator !== "undefined") {
-		fields.language = navigator.language;
-	}
-
-	return fields;
+function getScreenResolution(): string {
+	return `${screen.width}×${screen.height}`;
 }
 
-function generateSessionId(): string | undefined {
+function getViewportResolution(): string {
+	return `${window.innerWidth}×${window.innerHeight}`;
+}
+
+/**
+ * Returns a device identifier that persists across browser sessions in
+ * localStorage under `mosaicMaker.deviceId`, generating and storing a new one
+ * on first use. When localStorage is unavailable, a fresh identifier is
+ * generated for the current session without persistence.
+ * @returns A stable device identifier
+ */
+function getDeviceId(): string {
+	try {
+		const stored = localStorage.getItem(DEVICE_ID_STORAGE_KEY);
+		if (stored) {
+			return stored;
+		}
+
+		const deviceId = generateDeviceId();
+		localStorage.setItem(DEVICE_ID_STORAGE_KEY, deviceId);
+		return deviceId;
+	} catch {
+		return generateDeviceId();
+	}
+}
+
+/**
+ * Generates a fresh device identifier using `crypto.randomUUID` when available,
+ * falling back to a `Math.random`-based identifier otherwise.
+ * @returns A newly generated device identifier
+ */
+function generateDeviceId(): string {
 	if (typeof crypto !== "undefined" && crypto.randomUUID) {
 		return crypto.randomUUID();
 	}
-	return undefined;
+
+	return `id-${Math.random().toString(36).slice(2, 11)}`;
 }
 
 /**
- * Collect a device/environment snapshot, resolving even when individual
- * sources fail. Unavailable fields are omitted entirely rather than filled
- * with placeholder values.
- */
-export async function collectDeviceSnapshot(): Promise<DeviceSnapshot> {
-	const snapshot: DeviceSnapshot = {};
-
-	assignDefined(snapshot, { sessionId: generateSessionId() });
-
-	try {
-		assignDefined(snapshot, await collectOsFields());
-	} catch {
-		// OS detail is best-effort; omit it when the source throws.
-	}
-
-	assignDefined(snapshot, collectDisplayFields());
-	assignDefined(snapshot, collectHardwareFields());
-	assignDefined(snapshot, collectLocaleFields());
-
-	return snapshot;
-}
-
-/**
- * Single analytics entry point. The console sink is an implementation detail;
- * a later transport (Sentry, Grafana) will be wired behind this signature.
- */
-export function track(event: string, payload: object): void {
-	console.log(event, JSON.stringify(payload, null, 2));
-}
-
-/**
- * Collect the device snapshot and emit it as a single `device_snapshot`
- * analytics event. Never throws: collection failures are swallowed so app
- * mounting is never blocked.
+ * Logs device analytics (OS name and version, device type, memory,
+ * screen/viewport resolution, and a persistent device identifier) to the
+ * console as formatted JSON.
  */
 export async function collectDeviceAnalytics(): Promise<void> {
-	try {
-		const snapshot = await collectDeviceSnapshot();
-		track("device_snapshot", snapshot);
-	} catch {
-		// Analytics must never break app startup.
-	}
+	const { os, osVersion } = await getOSInfo();
+
+	const analyticsData = {
+		os,
+		osVersion,
+		deviceType: getDeviceType(),
+		memory: getMemoryInfo(),
+		screenResolution: getScreenResolution(),
+		viewportResolution: getViewportResolution(),
+		deviceId: getDeviceId(),
+	};
+
+	console.log("Device Analytics:", JSON.stringify(analyticsData, null, 2));
 }
