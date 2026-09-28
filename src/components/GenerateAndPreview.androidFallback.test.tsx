@@ -2,6 +2,7 @@ import { describe, expect, it, vi, beforeEach, afterEach } from "vitest";
 import { render, screen, fireEvent, waitFor } from "@testing-library/react";
 import { GenerateAndPreview } from "./GenerateAndPreview";
 import * as mosaicEngine from "../engine/mosaic-engine";
+import { ANDROID_READBACK_FAILURE } from "../engine/mosaic-shared";
 import { INITIAL_WORKFLOW_STATE, WorkflowStep } from "../engine/workflow-state";
 import type { WorkflowState } from "../engine/workflow-state";
 
@@ -74,7 +75,9 @@ describe("GenerateAndPreview Android readback fallback", () => {
 			expect(currentWorker).not.toBeNull();
 		});
 
-		currentWorker?.emitError("ANDROID_READBACK_FAILURE: readback unsupported");
+		currentWorker?.emitError(
+			`${ANDROID_READBACK_FAILURE}: readback unsupported`,
+		);
 
 		await waitFor(() => {
 			expect(

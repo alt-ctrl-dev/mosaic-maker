@@ -1,5 +1,6 @@
 import { describe, it, expect, vi } from "vitest";
 import { offscreenCanvasToDataUrl } from "./mosaic-worker";
+import { ANDROID_READBACK_FAILURE } from "./mosaic-shared";
 
 interface MockOffscreenCanvas {
 	width: number;
@@ -38,7 +39,7 @@ describe("Mosaic Worker Android Compatibility", () => {
 				mockCanvas as unknown as OffscreenCanvas,
 				"image/png",
 			),
-		).rejects.toThrow("ANDROID_READBACK_FAILURE");
+		).rejects.toThrow(ANDROID_READBACK_FAILURE);
 	});
 
 	it("should rethrow non-Android errors", async () => {
@@ -86,6 +87,6 @@ describe("Mosaic Worker Android Compatibility", () => {
 				mockCanvas as unknown as OffscreenCanvas,
 				"image/png",
 			),
-		).rejects.toThrow("ANDROID_READBACK_FAILURE");
+		).rejects.toThrow(ANDROID_READBACK_FAILURE);
 	});
 });

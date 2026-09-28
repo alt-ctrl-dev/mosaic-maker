@@ -1,6 +1,7 @@
 import {
 	COLOR_GRID_SIZE,
 	BLEND_SOURCE_ALPHA,
+	ANDROID_READBACK_FAILURE,
 	rgbToOklab,
 	selectTessera as sharedSelectTessera,
 	type ColorGrid,
@@ -87,26 +88,21 @@ async function blobToDataUrl(blob: Blob): Promise<string> {
  * back to main-thread processing where a regular canvas does not have the same
  * restriction.
  *
- * @throws An error whose message starts with "ANDROID_READBACK_FAILURE"
+ * @throws An error whose message starts with {@link ANDROID_READBACK_FAILURE}
  *   when the browser reports a readback failure.
  */
 export async function offscreenCanvasToDataUrl(
 	canvas: OffscreenCanvas,
 	type: string = "image/png",
 ): Promise<string> {
-	const ANDROID_READBACK_SENTINEL = "ANDROID_READBACK_FAILURE";
-
 	try {
 		const blob = await canvas.convertToBlob({ type });
 		return await blobToDataUrl(blob);
 	} catch (error) {
-		if (
-			error instanceof DOMException &&
-			(error.message.includes("Readback") || error.message.includes("readback"))
-		) {
+		if (error instanceof DOMException && /readback/i.test(error.message)) {
 			console.warn("OffscreenCanvas readback failed:", error);
 			throw new Error(
-				`${ANDROID_READBACK_SENTINEL}: OffscreenCanvas.convertToBlob is not supported on this device.`,
+				`${ANDROID_READBACK_FAILURE}: failed to read back the canvas on this device.`,
 			);
 		}
 

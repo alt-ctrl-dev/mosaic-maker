@@ -1,6 +1,7 @@
 import { useState, useEffect, useRef, useCallback } from "react";
 import type { WorkflowState } from "../engine/workflow-state";
 import { generateMosaic, type ProgressCallback } from "../engine/mosaic-engine";
+import { ANDROID_READBACK_FAILURE } from "../engine/mosaic-shared";
 import type { WorkflowAction } from "../hooks/useWorkflowReducer";
 
 /** Props for {@link GenerateAndPreview}. */
@@ -120,7 +121,7 @@ export function GenerateAndPreview({
 							break;
 						}
 						case "error":
-							if (data.message?.includes("ANDROID_READBACK_FAILURE")) {
+							if (data.message?.includes(ANDROID_READBACK_FAILURE)) {
 								console.warn(
 									"Android browser limitation detected, falling back to main thread processing",
 								);
@@ -192,13 +193,12 @@ export function GenerateAndPreview({
 		} catch (err) {
 			if (fallbackErrorMessage) {
 				console.error("Main-thread fallback failed:", err);
+				setError(fallbackErrorMessage);
+			} else if (err instanceof Error) {
+				setError(err.message);
+			} else {
+				setError("Unknown error occurred");
 			}
-			const errorMessage = fallbackErrorMessage
-				? fallbackErrorMessage
-				: err instanceof Error
-					? err.message
-					: "Unknown error occurred";
-			setError(errorMessage);
 			dispatch({ type: "generationCancelledOrFailed" });
 		} finally {
 			setIsGenerating(false);
