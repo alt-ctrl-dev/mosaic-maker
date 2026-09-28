@@ -75,6 +75,10 @@ describe("image-processing", () => {
 
 		beforeEach(() => {
 			vi.stubGlobal("Image", MockImage);
+			vi.stubGlobal("URL", {
+				createObjectURL: vi.fn(() => "blob:test"),
+				revokeObjectURL: vi.fn(),
+			});
 		});
 
 		afterEach(() => {
