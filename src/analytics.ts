@@ -6,13 +6,26 @@
 let sessionId: string | null = null;
 
 /**
+ * Generate a cryptographically secure session ID from random bytes.
+ * Used as a fallback when crypto.randomUUID is unavailable.
+ *
+ * @returns Session ID string with 16 bytes of entropy encoded as hex
+ */
+function generateSecureSessionId(): string {
+	const bytes = new Uint8Array(16);
+	crypto.getRandomValues(bytes);
+	const hex = Array.from(bytes, (byte) =>
+		byte.toString(16).padStart(2, "0"),
+	).join("");
+	return `session-${Date.now()}-${hex}`;
+}
+
+/**
  * Initialize analytics with a session ID.
  * Should be called once when the application starts.
  */
 export function initAnalytics(): void {
-	sessionId =
-		crypto.randomUUID?.() ||
-		`session-${Date.now()}-${Math.random().toString(36).slice(2)}`;
+	sessionId = crypto.randomUUID?.() || generateSecureSessionId();
 }
 
 /**
