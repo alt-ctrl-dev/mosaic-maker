@@ -6,6 +6,10 @@ import { INITIAL_WORKFLOW_STATE, WorkflowStep } from "../engine/workflow-state";
 
 const mockDispatch = vi.fn();
 
+const validBase64 =
+	"iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAYAAAAfFcSJAAAADUlEQVR42mP8/5+hHgAHggJ/PchI7wAAAABJRU5ErkJggg==";
+const validDataUrl = `data:image/png;base64,${validBase64}`;
+
 const mockMosaicResult = {
 	dataUrl: "data:image/png;base64,mock-image-data",
 	width: 100,
@@ -88,19 +92,24 @@ describe("ExportMosaic", () => {
 		mockExportMosaic.mockRestore();
 	});
 
-	it("should open image in new tab for iOS devices", async () => {
+	it("should open image via blob URL on iOS devices", async () => {
 		Object.defineProperty(navigator, "userAgent", {
 			writable: true,
 			value:
 				"Mozilla/5.0 (iPad; CPU OS 14_0 like Mac OS X) AppleWebKit/605.1.15",
 		});
 
+		const mockBlobUrl = "blob:ios-test";
+		const createObjectURLMock = vi
+			.spyOn(URL, "createObjectURL")
+			.mockReturnValue(mockBlobUrl);
+
 		const mockOpen = vi.fn();
 		window.open = mockOpen;
 
 		const mockExportMosaic = vi
 			.spyOn(exportEngine, "exportMosaic")
-			.mockResolvedValue("data:image/png;base64,exported-image-data");
+			.mockResolvedValue(validDataUrl);
 
 		render(<ExportMosaic state={mockState} dispatch={mockDispatch} />);
 
@@ -108,16 +117,15 @@ describe("ExportMosaic", () => {
 		fireEvent.click(downloadButton);
 
 		await waitFor(() => {
-			expect(mockOpen).toHaveBeenCalledWith(
-				"data:image/png;base64,exported-image-data",
-				"_blank",
-			);
+			expect(createObjectURLMock).toHaveBeenCalled();
+			expect(mockOpen).toHaveBeenCalledWith(mockBlobUrl, "_blank");
 		});
 
 		mockExportMosaic.mockRestore();
+		createObjectURLMock.mockRestore();
 	});
 
-	it("should open image in new tab for iPadOS 13+ devices", async () => {
+	it("should open image via blob URL on iPadOS 13+ devices", async () => {
 		Object.defineProperty(navigator, "userAgent", {
 			writable: true,
 			value:
@@ -128,12 +136,17 @@ describe("ExportMosaic", () => {
 			value: 5,
 		});
 
+		const mockBlobUrl = "blob:ipados-test";
+		const createObjectURLMock = vi
+			.spyOn(URL, "createObjectURL")
+			.mockReturnValue(mockBlobUrl);
+
 		const mockOpen = vi.fn();
 		window.open = mockOpen;
 
 		const mockExportMosaic = vi
 			.spyOn(exportEngine, "exportMosaic")
-			.mockResolvedValue("data:image/png;base64,exported-image-data");
+			.mockResolvedValue(validDataUrl);
 
 		render(<ExportMosaic state={mockState} dispatch={mockDispatch} />);
 
@@ -141,13 +154,12 @@ describe("ExportMosaic", () => {
 		fireEvent.click(downloadButton);
 
 		await waitFor(() => {
-			expect(mockOpen).toHaveBeenCalledWith(
-				"data:image/png;base64,exported-image-data",
-				"_blank",
-			);
+			expect(createObjectURLMock).toHaveBeenCalled();
+			expect(mockOpen).toHaveBeenCalledWith(mockBlobUrl, "_blank");
 		});
 
 		mockExportMosaic.mockRestore();
+		createObjectURLMock.mockRestore();
 	});
 
 	it("should show error when popup is blocked on iOS", async () => {
@@ -157,11 +169,13 @@ describe("ExportMosaic", () => {
 				"Mozilla/5.0 (iPad; CPU OS 14_0 like Mac OS X) AppleWebKit/605.1.15",
 		});
 
+		const mockBlobUrl = "blob:popup-blocked-test";
+		vi.spyOn(URL, "createObjectURL").mockReturnValue(mockBlobUrl);
 		window.open = vi.fn().mockReturnValue(null);
 
 		const mockExportMosaic = vi
 			.spyOn(exportEngine, "exportMosaic")
-			.mockResolvedValue("data:image/png;base64,exported-image-data");
+			.mockResolvedValue(validDataUrl);
 
 		render(<ExportMosaic state={mockState} dispatch={mockDispatch} />);
 
@@ -173,5 +187,66 @@ describe("ExportMosaic", () => {
 		});
 
 		mockExportMosaic.mockRestore();
+	});
+
+	it("should show error when blob conversion fails on iOS", async () => {
+		Object.defineProperty(navigator, "userAgent", {
+			writable: true,
+			value:
+				"Mozilla/5.0 (iPhone; CPU iPhone OS 14_0 like Mac OS X) AppleWebKit/605.1.15",
+		});
+
+		// Use invalid base64 to trigger conversion failure
+		const mockExportMosaic = vi
+			.spyOn(exportEngine, "exportMosaic")
+			.mockResolvedValue("data:image/png;base64,!!!not-valid-base64!!!");
+
+		render(<ExportMosaic state={mockState} dispatch={mockDispatch} />);
+
+		const downloadButton = screen.getByRole("button", { name: "Download" });
+		fireEvent.click(downloadButton);
+
+		await waitFor(() => {
+			expect(
+				screen.getByText(/Could not prepare image for iOS/),
+			).toBeInTheDocument();
+		});
+
+		mockExportMosaic.mockRestore();
+	});
+
+	it("should open image with blob URL on iOS to avoid blank tab issue", async () => {
+		Object.defineProperty(navigator, "userAgent", {
+			writable: true,
+			value:
+				"Mozilla/5.0 (iPhone; CPU iPhone OS 14_0 like Mac OS X) AppleWebKit/605.1.15",
+		});
+
+		const mockObjectUrl = "blob:test-url";
+		const createObjectURLMock = vi
+			.spyOn(URL, "createObjectURL")
+			.mockReturnValue(mockObjectUrl);
+		const revokeObjectURLMock = vi.spyOn(URL, "revokeObjectURL");
+
+		const mockOpen = vi.fn().mockReturnValue({ document: { write: vi.fn() } });
+		window.open = mockOpen;
+
+		const mockExportMosaic = vi
+			.spyOn(exportEngine, "exportMosaic")
+			.mockResolvedValue(validDataUrl);
+
+		render(<ExportMosaic state={mockState} dispatch={mockDispatch} />);
+
+		const downloadButton = screen.getByRole("button", { name: "Download" });
+		fireEvent.click(downloadButton);
+
+		await waitFor(() => {
+			expect(createObjectURLMock).toHaveBeenCalled();
+			expect(mockOpen).toHaveBeenCalledWith(mockObjectUrl, "_blank");
+		});
+
+		mockExportMosaic.mockRestore();
+		createObjectURLMock.mockRestore();
+		revokeObjectURLMock.mockRestore();
 	});
 });

@@ -18,6 +18,15 @@ function isExportFormat(value: string): value is ExportFormat {
 	return EXPORT_FORMATS.includes(value as ExportFormat);
 }
 
+/** Detect iOS or iPadOS browsers that cannot reliably handle anchor downloads. */
+function isIOSOrIPadOS(): boolean {
+	if (/iPad|iPhone|iPod/.test(navigator.userAgent)) {
+		return true;
+	}
+	// iPadOS 13+ reports as desktop Mac but has multi-touch
+	return navigator.maxTouchPoints > 1 && /Macintosh/.test(navigator.userAgent);
+}
+
 /**
  * Trigger a file download by creating and clicking a temporary anchor element.
  */
@@ -31,13 +40,58 @@ function downloadFile(dataUrl: string, filename: string): void {
 }
 
 /**
- * Open the exported image in a new tab.
+ * Convert a data URL to a Blob.
  *
- * @returns Whether the browser allowed the new tab to open.
+ * @param dataUrl - The data URL to convert (must include a valid base64 payload)
+ * @returns A Blob representation of the data
  */
-function openImageInNewTab(dataUrl: string): boolean {
-	const newWindow = window.open(dataUrl, "_blank");
-	return newWindow !== null;
+function dataUrlToBlob(dataUrl: string): Blob {
+	const [header, base64Data] = dataUrl.split(",");
+	const mimeType = header.split(":")[1].split(";")[0];
+	const byteString = atob(base64Data);
+	const buffer = new ArrayBuffer(byteString.length);
+	const bytes = new Uint8Array(buffer);
+	for (let i = 0; i < byteString.length; i++) {
+		bytes[i] = byteString.charCodeAt(i);
+	}
+	return new Blob([bytes], { type: mimeType });
+}
+
+/**
+ * Open the exported image in a new tab.
+ * For iOS devices, converts data URL to Blob URL to avoid blank tab issue.
+ *
+ * @returns An object with `opened` indicating whether the tab opened, and an
+ *   optional `error` string if blob conversion failed.
+ */
+function openImageInNewTab(dataUrl: string): {
+	opened: boolean;
+	error?: string;
+} {
+	let urlToOpen = dataUrl;
+	let blobUrl: string | null = null;
+
+	if (isIOSOrIPadOS()) {
+		try {
+			const blob = dataUrlToBlob(dataUrl);
+			blobUrl = URL.createObjectURL(blob);
+			urlToOpen = blobUrl;
+		} catch (_error) {
+			return {
+				opened: false,
+				error:
+					"Could not prepare image for iOS. Please try a different browser.",
+			};
+		}
+	}
+
+	const newWindow = window.open(urlToOpen, "_blank");
+
+	if (blobUrl) {
+		setTimeout(() => URL.revokeObjectURL(blobUrl), 1000);
+	}
+
+	return { opened: newWindow !== null };
 }
 
 /**
@@ -45,16 +99,7 @@ function openImageInNewTab(dataUrl: string): boolean {
  * downloads. iOS Safari and WebKit-based browsers frequently fail.
  */
 function browserSupportsAnchorDownload(): boolean {
-	if (/iPad|iPhone|iPod/.test(navigator.userAgent)) {
-		return false;
-	}
-
-	// iPadOS 13+ reports as desktop Mac but has multi-touch
-	if (navigator.maxTouchPoints > 1 && /Macintosh/.test(navigator.userAgent)) {
-		return false;
-	}
-
-	return true;
+	return !isIOSOrIPadOS();
 }
 
 /**
@@ -89,8 +134,10 @@ export function ExportMosaic({ state, dispatch }: ExportMosaicProps) {
 			if (browserSupportsAnchorDownload()) {
 				downloadFile(exportedDataUrl, `mosaic.${state.exportFormat}`);
 			} else {
-				const opened = openImageInNewTab(exportedDataUrl);
-				if (!opened) {
+				const { opened, error: openError } = openImageInNewTab(exportedDataUrl);
+				if (openError) {
+					setError(openError);
+				} else if (!opened) {
 					setError(
 						'Popup blocked. To save the image, please tap the share button and choose "Save Image".',
 					);
