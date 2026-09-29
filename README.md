@@ -125,3 +125,20 @@ You can try Mosaic Maker online at: [https://alt-ctrl-dev.github.io/mosaic-maker
 ## Privacy Policy
 
 Mosaic Maker does not collect, store, or transmit any personal data or images. All processing occurs locally in your browser, and images are never sent to any server.
+
+However, to help us improve the application, we collect anonymous usage data when you opt-in. This includes:
+
+- Performance metrics and page load times
+- Feature usage statistics
+- Error reports to help identify bugs
+- Device information (browser type, screen resolution, etc.)
+
+This telemetry is completely optional and can be disabled at any time using the checkbox in the footer. When disabled, no data is collected or transmitted.
+
+We never collect:
+- Your source images or tesserae
+- Personal identification information
+- File names or paths
+- Content of any kind
+
+All telemetry data is collected in accordance with our commitment to privacy and is used solely to improve the application experience.

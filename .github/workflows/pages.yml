@@ -25,6 +25,9 @@ jobs:
           cache: pnpm
       - run: pnpm install --frozen-lockfile
       - run: pnpm run build
+        env:
+          VITE_FARO_URL: ${{ secrets.VITE_FARO_URL }}
+          VITE_FARO_APP_NAME: ${{ secrets.VITE_FARO_APP_NAME }}
       - uses: actions/configure-pages@v6
       - uses: actions/upload-pages-artifact@v5
         with:

@@ -2,6 +2,7 @@ import react from "@vitejs/plugin-react";
 import { defineConfig, loadEnv } from "vite";
 import { execSync } from "node:child_process";
 import { version as packageVersion } from "./package.json";
+import faroUploader from "@grafana/faro-rollup-plugin";
 
 function getGitCommitSha() {
 	try {
@@ -28,7 +29,26 @@ export default defineConfig(({ mode }) => {
 	return {
 		base: "/mosaic-maker/",
 		define,
-		plugins: [react()],
+		plugins: [
+			react(),
+			// Only upload sourcemaps where the token is available (CI).
+			...(env.VITE_FARO_SOURCEMAP_TOKEN
+				? [
+						faroUploader({
+							appName: env.VITE_FARO_APP_NAME,
+							endpoint:
+								"https://faro-api-prod-au-southeast-1.grafana.net/faro/api/v1",
+							appId: "575",
+							stackId: "1807442",
+							verbose: true,
+							// instructions on how to obtain your API key are in the documentation
+							// https://grafana.com/docs/grafana-cloud/monitor-applications/frontend-observability/sourcemap-upload-plugins/#obtain-an-api-key
+							apiKey: env.VITE_FARO_SOURCEMAP_TOKEN,
+							gzipContents: true,
+						}),
+					]
+				: []),
+		],
 		test: {
 			environment: "jsdom",
 			exclude: ["**/node_modules/**", "**/dist/**", ".sandcastle/worktrees/**"],
