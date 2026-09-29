@@ -51,13 +51,14 @@ export function initializeTelemetry(): void {
 		return;
 	}
 
+	const environment = import.meta.env.PROD ? "production" : "dev";
 	try {
 		initializeFaro({
 			url: faroUrl,
 			app: {
 				name: appName,
 				version: PACKAGE_VERSION,
-				environment: "production",
+				environment,
 			},
 			sessionTracking: {
 				samplingRate: 0.8,
