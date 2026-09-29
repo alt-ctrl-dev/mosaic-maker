@@ -11,10 +11,14 @@ describe("telemetry", () => {
 	beforeEach(() => {
 		localStorage.clear();
 		vi.restoreAllMocks();
+		// Tests assume no Faro config; .env may provide one, so clear it.
+		vi.stubEnv("VITE_FARO_URL", "");
+		vi.stubEnv("VITE_FARO_APP_NAME", "");
 	});
 
 	afterEach(() => {
 		vi.restoreAllMocks();
+		vi.unstubAllEnvs();
 	});
 
 	describe("hasTelemetryConsent", () => {
