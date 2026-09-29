@@ -7,6 +7,7 @@ import {
 import { PACKAGE_VERSION } from "./version";
 
 const CONSENT_KEY = "telemetry-consent";
+const SESSION_KEY = "telemetry-session";
 const FARO_URL_ENV_VAR = "VITE_FARO_URL";
 const FARO_APP_NAME_ENV_VAR = "VITE_FARO_APP_NAME";
 
@@ -32,6 +33,21 @@ export function setTelemetryConsent(consent: boolean): void {
 }
 
 /**
+ * Identifier for the current user session: one workflow run (upload image →
+ * build tesserae → generate mosaic → download). Stored in sessionStorage so a
+ * reload mid-workflow keeps the same id and closing the tab ends the session.
+ * Every tracked event carries it, which is what stitches the funnel together.
+ */
+export function getWorkflowSessionId(): string {
+	let id = sessionStorage.getItem(SESSION_KEY);
+	if (!id) {
+		id = crypto.randomUUID();
+		sessionStorage.setItem(SESSION_KEY, id);
+	}
+	return id;
+}
+
+/**
  * Initialize Faro telemetry when consent is granted and the required
  * build-time environment variables (collector URL and app name) are set.
  * When either condition is not met the module runs in log-only mode:
@@ -52,6 +68,7 @@ export function initializeTelemetry(): void {
 	}
 
 	const environment = import.meta.env.PROD ? "production" : "dev";
+	const samplingRate = import.meta.env.SAMPLING_RATE ?? 1;
 	try {
 		initializeFaro({
 			url: faroUrl,
@@ -61,7 +78,7 @@ export function initializeTelemetry(): void {
 				environment,
 			},
 			sessionTracking: {
-				samplingRate: 0.8,
+				samplingRate,
 			},
 			instrumentations: [
 				...getWebInstrumentations({
@@ -94,15 +111,19 @@ export function trackEvent(
 	name: string,
 	payload: Record<string, unknown>,
 ): void {
-	const attributes: Record<string, string> = {};
+	const attributes: Record<string, string> = {
+		sessionId: getWorkflowSessionId(),
+	};
 	for (const [key, value] of Object.entries(payload)) {
 		attributes[key] = String(value);
 	}
-	faro.api.pushEvent(name, attributes);
 
 	if (!isFaroConfigured()) {
-		console.log(`[Telemetry] ${name}:`, JSON.stringify(payload, null, 2));
+		console.log(`[Telemetry] ${name}:`, JSON.stringify(attributes, null, 2));
+		return;
 	}
+
+	faro.api.pushEvent(name, attributes);
 }
 
 /**
