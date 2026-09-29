@@ -143,6 +143,9 @@ export function App() {
 
 	return (
 		<div className="layout-container">
+			<a href="#main-content" className="skip-link">
+				Skip to main content
+			</a>
 			<header>
 				<p className="eyebrow">
 					Private, in-browser image making • Works offline once loaded
@@ -154,7 +157,7 @@ export function App() {
 				</p>
 			</header>
 
-			<main className="workflow-container">
+			<main id="main-content" className="workflow-container">
 				<Dialog
 					dialogId="mobile-workflow-menu"
 					ariaLabel="Toggle workflow steps"
