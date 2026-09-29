@@ -31,18 +31,23 @@ export default defineConfig(({ mode }) => {
 		define,
 		plugins: [
 			react(),
-			faroUploader({
-				appName: env.VITE_FARO_APP_NAME,
-				endpoint:
-					"https://faro-api-prod-au-southeast-1.grafana.net/faro/api/v1",
-				appId: "575",
-				stackId: "1807442",
-				verbose: true,
-				// instructions on how to obtain your API key are in the documentation
-				// https://grafana.com/docs/grafana-cloud/monitor-applications/frontend-observability/sourcemap-upload-plugins/#obtain-an-api-key
-				apiKey: env.VITE_FARO_SOURCEMAP_TOKEN,
-				gzipContents: true,
-			}),
+			// Only upload sourcemaps where the token is available (CI).
+			...(env.VITE_FARO_SOURCEMAP_TOKEN
+				? [
+						faroUploader({
+							appName: env.VITE_FARO_APP_NAME,
+							endpoint:
+								"https://faro-api-prod-au-southeast-1.grafana.net/faro/api/v1",
+							appId: "575",
+							stackId: "1807442",
+							verbose: true,
+							// instructions on how to obtain your API key are in the documentation
+							// https://grafana.com/docs/grafana-cloud/monitor-applications/frontend-observability/sourcemap-upload-plugins/#obtain-an-api-key
+							apiKey: env.VITE_FARO_SOURCEMAP_TOKEN,
+							gzipContents: true,
+						}),
+					]
+				: []),
 		],
 		test: {
 			environment: "jsdom",
