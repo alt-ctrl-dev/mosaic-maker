@@ -7,6 +7,7 @@ import {
 	getVarietyRecommendation,
 } from "../engine/workflow-state";
 import { calculateGridCellCount } from "../engine/tessera-sizing";
+import { trackEvent } from "../telemetry";
 
 /**
  * Compute the default tessera count for a given workflow state.
@@ -69,6 +70,13 @@ export function GeneratedTesserae({
 
 			const tesserae = await generateNoiseTesseraeFromState(tempState);
 			onTesseraeGenerated(tesserae);
+
+			trackEvent("tesserae_generation", {
+				count: tesserae.length,
+				requestedCount: count,
+				tesseraSize: initialState.adjustedTesseraSize ?? 0,
+				seed,
+			});
 		} catch (error) {
 			console.error("Error generating tesserae:", error);
 		} finally {

@@ -5,11 +5,13 @@ import {
 	initializeTelemetry,
 	trackEvent,
 	trackMosaicGeneration,
+	getWorkflowSessionId,
 } from "./telemetry";
 
 describe("telemetry", () => {
 	beforeEach(() => {
 		localStorage.clear();
+		sessionStorage.clear();
 		vi.restoreAllMocks();
 		// Tests assume no Faro config; .env may provide one, so clear it.
 		vi.stubEnv("VITE_FARO_URL", "");
@@ -71,6 +73,17 @@ describe("telemetry", () => {
 		});
 	});
 
+	describe("getWorkflowSessionId", () => {
+		it("should reuse one id per tab and start a new one per session", () => {
+			const first = getWorkflowSessionId();
+			expect(first).toBeTruthy();
+			expect(getWorkflowSessionId()).toBe(first);
+
+			sessionStorage.clear();
+			expect(getWorkflowSessionId()).not.toBe(first);
+		});
+	});
+
 	describe("trackEvent", () => {
 		it("should log to console when consent is denied", () => {
 			const consoleLogSpy = vi
@@ -80,8 +93,25 @@ describe("telemetry", () => {
 			trackEvent("test_event", { test: "data" });
 			expect(consoleLogSpy).toHaveBeenCalledWith(
 				"[Telemetry] test_event:",
-				JSON.stringify({ test: "data" }, null, 2),
+				JSON.stringify(
+					{ sessionId: getWorkflowSessionId(), test: "data" },
+					null,
+					2,
+				),
 			);
+		});
+
+		it("should stamp every event with the workflow session id", () => {
+			const consoleLogSpy = vi
+				.spyOn(console, "log")
+				.mockImplementation(() => {});
+			setTelemetryConsent(true);
+			const sessionId = getWorkflowSessionId();
+			trackEvent("source_image_upload", { width: 100 });
+			trackEvent("mosaic_download", { format: "png" });
+			for (const call of consoleLogSpy.mock.calls) {
+				expect(call[1]).toContain(sessionId);
+			}
 		});
 
 		it("should log to console when environment variables are missing", () => {
@@ -92,7 +122,11 @@ describe("telemetry", () => {
 			trackEvent("test_event", { test: "data" });
 			expect(consoleLogSpy).toHaveBeenCalledWith(
 				"[Telemetry] test_event:",
-				JSON.stringify({ test: "data" }, null, 2),
+				JSON.stringify(
+					{ sessionId: getWorkflowSessionId(), test: "data" },
+					null,
+					2,
+				),
 			);
 		});
 	});
@@ -107,11 +141,12 @@ describe("telemetry", () => {
 				"[Telemetry] mosaic_generation:",
 				JSON.stringify(
 					{
-						success: true,
-						duration: 1000,
-						sourceWidth: 1920,
-						sourceHeight: 1080,
-						tesseraSize: 16,
+						sessionId: getWorkflowSessionId(),
+						success: "true",
+						duration: "1000",
+						sourceWidth: "1920",
+						sourceHeight: "1080",
+						tesseraSize: "16",
 					},
 					null,
 					2,

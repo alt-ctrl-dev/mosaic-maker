@@ -3,6 +3,7 @@ import { useCallback, useState } from "react";
 import { getSourceImageInfo } from "../engine/image-processing";
 import type { SourceImageInfo } from "../engine/image-processing";
 import type { WorkflowState } from "../engine/workflow-state";
+import { trackEvent } from "../telemetry";
 
 /** Props for {@link ContinueButton}. */
 interface ContinueButtonProps {
@@ -79,6 +80,13 @@ export function SourceImageSelection({
 			try {
 				const sourceImage = await getSourceImageInfo(file);
 				onSourceSelected(sourceImage);
+
+				trackEvent("source_image_upload", {
+					width: sourceImage.width,
+					height: sourceImage.height,
+					fileSize: file.size,
+					fileType: file.type,
+				});
 
 				// Reuse the object URL the engine holds rather than creating a second
 				// one; it lives as long as the source image is in the workflow.

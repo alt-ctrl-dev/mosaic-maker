@@ -14,6 +14,11 @@ A photomosaic is a mosaic made up of small photographs, creating a larger compos
 - **Responsive Design**: Works on desktop and mobile devices
 - **Export Options**: Download your finished mosaic as a PNG image
 
+## Demo
+
+You can try Mosaic Maker online at: [https://alt-ctrl-dev.github.io/mosaic-maker/](https://alt-ctrl-dev.github.io/mosaic-maker/)
+
+
 ## How It Works
 
 Mosaic Maker follows a four-step workflow:
@@ -118,9 +123,6 @@ Before submitting changes:
 
 This project is licensed under the MIT License - see the [LICENSE](LICENSE) file for details.
 
-## Demo
-
-You can try Mosaic Maker online at: [https://alt-ctrl-dev.github.io/mosaic-maker/](https://alt-ctrl-dev.github.io/mosaic-maker/)
 
 ## Privacy Policy
 

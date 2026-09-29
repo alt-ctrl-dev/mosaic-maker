@@ -3,6 +3,7 @@ import type { ExportFormat } from "../engine/export";
 import { exportMosaic } from "../engine/export";
 import type { WorkflowState, ExportSettings } from "../engine/workflow-state";
 import type { WorkflowAction } from "../hooks/useWorkflowReducer";
+import { trackEvent } from "../telemetry";
 
 /** Props for {@link ExportMosaic}. */
 interface ExportMosaicProps {
@@ -143,6 +144,14 @@ export function ExportMosaic({ state, dispatch }: ExportMosaicProps) {
 					);
 				}
 			}
+
+			trackEvent("mosaic_download", {
+				format: state.exportFormat,
+				quality: state.exportQuality,
+				width: state.mosaicResult.width,
+				height: state.mosaicResult.height,
+				delivery: browserSupportsAnchorDownload() ? "anchor" : "new-tab",
+			});
 		} catch (err) {
 			const errorMessage =
 				err instanceof Error ? err.message : "Unknown error occurred";
