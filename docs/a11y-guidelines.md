@@ -90,23 +90,23 @@ This document outlines the accessibility requirements and guidelines for the Mos
 
 ## Implementation Utilities
 
-The `accessibility-utils.ts` file provides several helper classes:
+The `accessibility-utils.ts` file provides several helper functions:
 
-### FocusManager
+### Focus functions
 - `moveFocus()`: Move focus between elements with wrapping
 - `getFocusableElements()`: Get all focusable elements in a container
 - `trapFocus()`: Keep focus within a container (for dialogs, etc.)
 
-### ScreenReaderAnnouncer
+### Screen reader announcements
 - `announce()`: Send messages to screen readers via live regions
 
-### ReducedMotion
+### Reduced motion
 - `prefersReducedMotion()`: Check system preference
 - `applyReducedMotionClass()`: Apply class when needed
 
-### KeyboardUtils
-- Helpers for common keyboard event detection
-- `isEnterKey()`, `isSpaceKey()`, `isEscapeKey()`, `isActivationKey()`
+### Keyboard helpers
+- `isEnterKey()`, `isSpaceKey()`, `isEscapeKey()`: Detect specific key events
+- `isActivationKey()`: True for Enter or Space
 
 ## Device Support Requirements
 

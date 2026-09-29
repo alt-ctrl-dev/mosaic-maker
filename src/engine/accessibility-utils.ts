@@ -35,11 +35,15 @@ export function moveFocus(
 	return focusable[nextIndex];
 }
 
-/** Narrow a generic Element to an interactive HTMLElement that is focusable. */
+/** Narrow a generic Element to an interactive HTMLElement that is visually present and enabled. */
 function isFocusableElement(element: Element): element is HTMLElement {
 	if (!(element instanceof HTMLElement)) return false;
-	if (element.hidden || element.offsetWidth <= 0) return false;
-	if ("disabled" in element && (element as HTMLInputElement).disabled)
+	if (element.hidden) return false;
+	if (getComputedStyle(element).display === "none") return false;
+	if (
+		"disabled" in element &&
+		(element as HTMLElement & { disabled?: boolean }).disabled
+	)
 		return false;
 	return true;
 }
@@ -47,11 +51,11 @@ function isFocusableElement(element: Element): element is HTMLElement {
 /**
  * Return every focusable element within a container (links, buttons, inputs,
  * textareas, selects, open details, and elements with a non-negative tabindex).
- * Excludes hidden, zero-width, and disabled elements.
+ * Excludes hidden and disabled elements.
  */
 export function getFocusableElements(container: HTMLElement): HTMLElement[] {
 	const selector =
-		'a[href], button, input, textarea, select, details, [tabindex]:not([tabindex="-1"])';
+		'a[href], button, input, textarea, select, details[open], [tabindex]:not([tabindex="-1"])';
 	return Array.from(container.querySelectorAll(selector)).filter(
 		isFocusableElement,
 	);
@@ -83,15 +87,16 @@ export function trapFocus(container: HTMLElement, event: KeyboardEvent): void {
 let liveRegion: HTMLElement | null = null;
 let announceTimer: ReturnType<typeof setTimeout> | null = null;
 
-function ensureLiveRegion(): void {
-	if (liveRegion) return;
-
-	liveRegion = document.createElement("div");
-	liveRegion.setAttribute("aria-live", "polite");
-	liveRegion.setAttribute("aria-atomic", "true");
-	liveRegion.style.cssText =
-		"position:absolute;left:-10000px;width:1px;height:1px;overflow:hidden";
-	document.body.appendChild(liveRegion);
+function ensureLiveRegion(): HTMLElement {
+	if (!liveRegion) {
+		liveRegion = document.createElement("div");
+		liveRegion.setAttribute("aria-live", "polite");
+		liveRegion.setAttribute("aria-atomic", "true");
+		liveRegion.style.cssText =
+			"position:absolute;left:-10000px;width:1px;height:1px;overflow:hidden";
+		document.body.appendChild(liveRegion);
+	}
+	return liveRegion;
 }
 
 /**
@@ -103,16 +108,15 @@ export function announce(
 	message: string,
 	priority: "polite" | "assertive" = "polite",
 ): void {
-	ensureLiveRegion();
-	if (!liveRegion) return;
+	const region = ensureLiveRegion();
 
 	if (announceTimer !== null) {
 		clearTimeout(announceTimer);
 		announceTimer = null;
 	}
 
-	liveRegion.setAttribute("aria-live", priority);
-	liveRegion.textContent = message;
+	region.setAttribute("aria-live", priority);
+	region.textContent = message;
 
 	announceTimer = setTimeout(() => {
 		announceTimer = null;
@@ -128,6 +132,7 @@ export function announce(
  * Safe to call in SSR environments where matchMedia may be absent.
  */
 export function prefersReducedMotion(): boolean {
+	if (typeof window === "undefined") return false;
 	return (
 		window.matchMedia?.("(prefers-reduced-motion: reduce)").matches ?? false
 	);
