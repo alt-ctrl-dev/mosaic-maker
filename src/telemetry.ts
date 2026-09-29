@@ -57,6 +57,10 @@ export function initializeTelemetry(): void {
 			app: {
 				name: appName,
 				version: PACKAGE_VERSION,
+				environment: "production",
+			},
+			sessionTracking: {
+				samplingRate: 0.8,
 			},
 			instrumentations: [
 				...getWebInstrumentations({
