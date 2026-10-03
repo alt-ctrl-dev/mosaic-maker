@@ -28,6 +28,11 @@ function isIOSOrIPadOS(): boolean {
 	return navigator.maxTouchPoints > 1 && /Macintosh/.test(navigator.userAgent);
 }
 
+/** Check if the Web Share API surface is present in the browser. */
+function supportsWebShare(): boolean {
+	return !!navigator.share && !!navigator.canShare;
+}
+
 /**
  * Trigger a file download by creating and clicking a temporary anchor element.
  */
@@ -160,18 +165,99 @@ function browserSupportsAnchorDownload(): boolean {
 }
 
 /**
+ * Compute the label for the primary export button based on the current
+ * exporting state and whether the Web Share API is available.
+ */
+function exportButtonLabel(isExporting: boolean, canShare: boolean): string {
+	if (isExporting) {
+		return canShare ? "Sharing..." : "Exporting...";
+	}
+	return canShare ? "Share" : "Download";
+}
+
+/**
  * Export step that lets the user configure format, quality, and alt text,
  * preview the mosaic, and trigger a file download.
  */
 export function ExportMosaic({ state, dispatch }: ExportMosaicProps) {
 	const [isExporting, setIsExporting] = useState(false);
 	const [error, setError] = useState<string | null>(null);
+	const canShare = supportsWebShare();
 	const handleExportSettingsChange = (settings: Partial<ExportSettings>) => {
 		dispatch({ type: "exportSettingsChanged", settings });
 	};
 
-	const handleDownload = async () => {
-		if (!state.mosaicResult) {
+	/**
+	 * Share the mosaic via the Web Share API. Returns `false` when the browser
+	 * reports it cannot share the generated file, letting the caller fall back
+	 * to a download. Lets {@link navigator.share} rejections (network failures,
+	 * API errors, user-aborted share sheet) propagate to the caller.
+	 */
+	const shareExportedMosaic = async (
+		exportedDataUrl: string,
+		mosaicResult: NonNullable<WorkflowState["mosaicResult"]>,
+	): Promise<boolean> => {
+		const blob = dataUrlToBlob(exportedDataUrl);
+		const file = new File([blob], `mosaic.${state.exportFormat}`, {
+			type: blob.type,
+		});
+
+		if (!navigator.canShare?.({ files: [file] })) {
+			return false;
+		}
+
+		await navigator.share({
+			files: [file],
+			title: "Mosaic Image",
+			text: "Check out this mosaic I created!",
+		});
+
+		trackEvent("mosaic_download", {
+			format: state.exportFormat,
+			quality: state.exportQuality,
+			width: mosaicResult.width,
+			height: mosaicResult.height,
+			delivery: "share",
+		});
+
+		return true;
+	};
+
+	/**
+	 * Deliver an already-exported mosaic to the device, using a direct anchor
+	 * download where supported and falling back to populating a tab that was
+	 * pre-opened within the user gesture on iOS/iPadOS.
+	 *
+	 * @param exportedDataUrl - The already-exported mosaic data URL to deliver
+	 * @param mosaicResult - The mosaic result, used for telemetry dimensions
+	 * @param useAnchorDownload - Whether a direct anchor download is supported
+	 * @param tabPopulator - Callback that fills the pre-opened tab with the
+	 *   image, used when anchor downloads are unavailable
+	 */
+	const downloadExportedMosaic = (
+		exportedDataUrl: string,
+		mosaicResult: NonNullable<WorkflowState["mosaicResult"]>,
+		useAnchorDownload: boolean,
+		tabPopulator: ((dataUrl: string) => void) | null,
+	): void => {
+		if (useAnchorDownload) {
+			downloadFile(exportedDataUrl, `mosaic.${state.exportFormat}`);
+		} else if (tabPopulator) {
+			tabPopulator(exportedDataUrl);
+		}
+
+		trackEvent("mosaic_download", {
+			format: state.exportFormat,
+			quality: state.exportQuality,
+			width: mosaicResult.width,
+			height: mosaicResult.height,
+			delivery: useAnchorDownload ? "anchor" : "new-tab-populated",
+		});
+	};
+
+	const handleExport = async () => {
+		const mosaicResult = state.mosaicResult;
+		if (!mosaicResult) {
 			setError("No mosaic to export");
 			return;
 		}
@@ -179,45 +265,53 @@ export function ExportMosaic({ state, dispatch }: ExportMosaicProps) {
 		setIsExporting(true);
 		setError(null);
 
+		// Prepare the download delivery path up front. On iOS/iPadOS a tab must be
+		// opened synchronously within the user gesture, before the async export,
+		// so the browser does not treat it as a blocked popup.
 		const useAnchorDownload = browserSupportsAnchorDownload();
 		let tabPopulator: ((dataUrl: string) => void) | null = null;
-		let deliveryMethod: "anchor" | "new-tab-populated" = "anchor";
-
-		if (!useAnchorDownload) {
+		if (!canShare && !useAnchorDownload) {
 			const { populate, error } = openNewTabForLaterPopulation();
 			if (error) {
 				setError(error);
 				setIsExporting(false);
 				return;
 			}
-
 			tabPopulator = populate;
-			deliveryMethod = "new-tab-populated";
 		}
 
 		try {
+			// Export exactly once per user action and reuse the result for both the
+			// share and download delivery paths.
 			const exportedDataUrl = await exportMosaic(
-				state.mosaicResult.dataUrl,
-				state.mosaicResult.width,
-				state.mosaicResult.height,
+				mosaicResult.dataUrl,
+				mosaicResult.width,
+				mosaicResult.height,
 				state.exportFormat,
 				state.exportQuality,
 			);
 
-			if (useAnchorDownload) {
-				downloadFile(exportedDataUrl, `mosaic.${state.exportFormat}`);
-			} else if (tabPopulator) {
-				tabPopulator(exportedDataUrl);
+			if (canShare) {
+				const shared = await shareExportedMosaic(exportedDataUrl, mosaicResult);
+				if (shared) {
+					return;
+				}
+				// Sharing failed (unsupported file type). Fall through to download
+				// using the already-exported data URL to avoid re-exporting.
 			}
 
-			trackEvent("mosaic_download", {
-				format: state.exportFormat,
-				quality: state.exportQuality,
-				width: state.mosaicResult.width,
-				height: state.mosaicResult.height,
-				delivery: deliveryMethod,
-			});
+			downloadExportedMosaic(
+				exportedDataUrl,
+				mosaicResult,
+				useAnchorDownload,
+				tabPopulator,
+			);
 		} catch (err) {
+			// User cancelling the native share sheet is not an error.
+			if (err instanceof DOMException && err.name === "AbortError") {
+				return;
+			}
+
 			const errorMessage =
 				err instanceof Error ? err.message : "Unknown error occurred";
 			setError(errorMessage);
@@ -314,12 +408,12 @@ export function ExportMosaic({ state, dispatch }: ExportMosaicProps) {
 					<div className="export-actions">
 						<button
 							type="button"
-							onClick={handleDownload}
+							onClick={handleExport}
 							disabled={isExporting}
 							aria-busy={isExporting}
 							className="primary"
 						>
-							{isExporting ? "Exporting..." : "Download"}
+							{exportButtonLabel(isExporting, canShare)}
 						</button>
 
 						{error && (

@@ -24,6 +24,10 @@ const mockState = {
 	exportQuality: 0.9,
 };
 
+// Mock navigator.share and navigator.canShare
+const mockNavigatorShare = vi.fn();
+const mockNavigatorCanShare = vi.fn();
+
 /**
  * Create a mock popup window whose `document` is a real detached HTML document,
  * so the component can populate it with DOM APIs as it does in the browser.
@@ -39,8 +43,30 @@ function createMockPopupWindow() {
 }
 
 describe("ExportMosaic", () => {
+	/** Enable the Web Share API surface for tests that exercise sharing. */
+	function enableWebShare() {
+		Object.defineProperty(navigator, "share", {
+			writable: true,
+			value: mockNavigatorShare,
+		});
+		Object.defineProperty(navigator, "canShare", {
+			writable: true,
+			value: mockNavigatorCanShare,
+		});
+	}
+
 	beforeEach(() => {
 		vi.clearAllMocks();
+		// Default to no Web Share support so the single export button behaves as a
+		// download. Tests that exercise sharing opt in via enableWebShare().
+		Object.defineProperty(navigator, "share", {
+			writable: true,
+			value: undefined,
+		});
+		Object.defineProperty(navigator, "canShare", {
+			writable: true,
+			value: undefined,
+		});
 	});
 
 	afterEach(() => {
@@ -304,6 +330,97 @@ describe("ExportMosaic", () => {
 		img?.dispatchEvent(new Event("load"));
 
 		expect(revokeSpy).toHaveBeenCalledWith(mockBlobUrl);
+
+		mockExportMosaic.mockRestore();
+	});
+
+	it("should label the single export button Share when Web Share API is available", async () => {
+		enableWebShare();
+		mockNavigatorCanShare.mockReturnValue(true);
+		mockNavigatorShare.mockResolvedValue(undefined);
+
+		render(<ExportMosaic state={mockState} dispatch={mockDispatch} />);
+
+		expect(screen.getByRole("button", { name: "Share" })).toBeInTheDocument();
+		expect(
+			screen.queryByRole("button", { name: "Download" }),
+		).not.toBeInTheDocument();
+	});
+
+	it("should use Web Share API when Share button is clicked", async () => {
+		enableWebShare();
+		mockNavigatorCanShare.mockReturnValue(true);
+		mockNavigatorShare.mockResolvedValue(undefined);
+
+		const mockExportMosaic = vi
+			.spyOn(exportEngine, "exportMosaic")
+			.mockResolvedValue(validDataUrl);
+
+		render(<ExportMosaic state={mockState} dispatch={mockDispatch} />);
+
+		const shareButton = screen.getByRole("button", { name: "Share" });
+		fireEvent.click(shareButton);
+
+		await waitFor(() => {
+			expect(mockNavigatorShare).toHaveBeenCalled();
+		});
+
+		mockExportMosaic.mockRestore();
+	});
+
+	it("should label the single export button Download when Web Share API is not available", () => {
+		render(<ExportMosaic state={mockState} dispatch={mockDispatch} />);
+
+		expect(
+			screen.getByRole("button", { name: "Download" }),
+		).toBeInTheDocument();
+		expect(
+			screen.queryByRole("button", { name: "Share" }),
+		).not.toBeInTheDocument();
+	});
+
+	it("should show an error when the Web Share API fails", async () => {
+		enableWebShare();
+		mockNavigatorCanShare.mockReturnValue(true);
+		mockNavigatorShare.mockRejectedValue(new Error("Share failed"));
+
+		const mockExportMosaic = vi
+			.spyOn(exportEngine, "exportMosaic")
+			.mockResolvedValue(validDataUrl);
+
+		render(<ExportMosaic state={mockState} dispatch={mockDispatch} />);
+
+		const shareButton = screen.getByRole("button", { name: "Share" });
+		fireEvent.click(shareButton);
+
+		await waitFor(() => {
+			expect(screen.getByText(/Share failed/)).toBeInTheDocument();
+		});
+
+		mockExportMosaic.mockRestore();
+	});
+
+	it("should not show error when user cancels the native share sheet", async () => {
+		enableWebShare();
+		mockNavigatorCanShare.mockReturnValue(true);
+		const abortError = new DOMException("Share cancelled", "AbortError");
+		mockNavigatorShare.mockRejectedValue(abortError);
+
+		const mockExportMosaic = vi
+			.spyOn(exportEngine, "exportMosaic")
+			.mockResolvedValue(validDataUrl);
+
+		render(<ExportMosaic state={mockState} dispatch={mockDispatch} />);
+
+		const shareButton = screen.getByRole("button", { name: "Share" });
+		fireEvent.click(shareButton);
+
+		await waitFor(() => {
+			expect(mockNavigatorShare).toHaveBeenCalled();
+		});
+
+		expect(screen.queryByRole("alert")).not.toBeInTheDocument();
+		expect(screen.getByRole("button", { name: "Share" })).not.toBeDisabled();
 
 		mockExportMosaic.mockRestore();
 	});
