@@ -1,4 +1,5 @@
 import type { PropsWithChildren } from "react";
+import { trackEvent } from "../telemetry";
 
 type DialogProp = {
 	ariaLabel: string;
@@ -21,6 +22,12 @@ const DialogButtonToggle = ({
 		type="button"
 		commandfor={dialogId}
 		command={command}
+		onClick={() => {
+			trackEvent("mobile_workflow_menu_interaction", {
+				action: command,
+				dialogId,
+			});
+		}}
 	>
 		{children}
 	</button>

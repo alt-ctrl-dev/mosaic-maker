@@ -1,10 +1,10 @@
+import { runDeviceCapacityPreflight } from "./device-capacity-preflight";
 import { createCanvas, loadImage } from "./export";
 import {
 	calculateRecommendedTesseraCount,
 	generateTesseraeUsingNoise,
 } from "./noise-tessera-generation";
 import { calculateGridCellCount } from "./tessera-sizing";
-import { runDeviceCapacityPreflight } from "./device-capacity-preflight";
 import type { TesseraInfo, WorkflowState } from "./workflow-state";
 import { SEED_MAX } from "./workflow-state";
 

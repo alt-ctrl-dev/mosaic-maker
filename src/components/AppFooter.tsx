@@ -1,6 +1,6 @@
-import { VERSION_STRING } from "../version";
-import { useState, useEffect } from "react";
+import { useEffect, useState } from "react";
 import { hasTelemetryConsent, setTelemetryConsent } from "../telemetry";
+import { VERSION_STRING } from "../version";
 
 /** Application footer showing the build version. */
 export function AppFooter() {

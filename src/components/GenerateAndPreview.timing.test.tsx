@@ -1,9 +1,9 @@
-import { describe, it, expect, vi, beforeEach, afterEach } from "vitest";
-import { render, screen, act, cleanup } from "@testing-library/react";
-import { GenerateAndPreview } from "./GenerateAndPreview";
-import * as telemetry from "../telemetry";
+import { act, cleanup, render, screen } from "@testing-library/react";
+import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 import * as mosaicEngine from "../engine/mosaic-engine";
 import type { WorkflowState } from "../engine/workflow-state";
+import * as telemetry from "../telemetry";
+import { GenerateAndPreview } from "./GenerateAndPreview";
 
 vi.mock("../telemetry", async () => {
 	const actual = await vi.importActual("../telemetry");

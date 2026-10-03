@@ -1,9 +1,9 @@
 import type React from "react";
-import { useCallback, useState } from "react";
-import { getSourceImageInfo } from "../engine/image-processing";
+import { useCallback, useEffect, useState } from "react";
 import type { SourceImageInfo } from "../engine/image-processing";
+import { getSourceImageInfo } from "../engine/image-processing";
 import type { WorkflowState } from "../engine/workflow-state";
-import { trackEvent } from "../telemetry";
+import { trackError, trackEvent, trackStepView } from "../telemetry";
 
 /** Props for {@link ContinueButton}. */
 interface ContinueButtonProps {
@@ -64,6 +64,10 @@ export function SourceImageSelection({
 			: null,
 	);
 
+	useEffect(() => {
+		trackStepView("choose_source_image");
+	}, []);
+
 	const handleFileChange = useCallback(
 		async (files: FileList | null) => {
 			if (!files || files.length === 0) return;
@@ -101,6 +105,11 @@ export function SourceImageSelection({
 						? error.message
 						: "Failed to process the image.";
 				onSourceError(errorMessage);
+				trackError("source_image_load", error, {
+					fileName: file.name,
+					fileType: file.type,
+					fileSize: file.size,
+				});
 			} finally {
 				setIsProcessing(false);
 			}

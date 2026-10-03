@@ -1,4 +1,5 @@
 import type { ExportFormat } from "./export";
+import { generateNoiseTesseraeFromState } from "./generate-noise-tesserae-helper";
 import type { SourceImageInfo } from "./image-processing";
 import type { MosaicResult } from "./mosaic-engine";
 import {
@@ -7,7 +8,6 @@ import {
 	hasValidTesseraSizes,
 	isCoarseGrid,
 } from "./tessera-sizing";
-import { generateNoiseTesseraeFromState } from "./generate-noise-tesserae-helper";
 
 export type { MosaicResult };
 

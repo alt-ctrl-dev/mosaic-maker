@@ -1,13 +1,13 @@
+import { runDeviceCapacityPreflight } from "./device-capacity-preflight";
 import {
-	COLOR_GRID_SIZE,
-	BLEND_SOURCE_ALPHA,
 	ANDROID_READBACK_FAILURE,
-	rgbToOklab,
-	selectTessera as sharedSelectTessera,
+	BLEND_SOURCE_ALPHA,
+	COLOR_GRID_SIZE,
 	type ColorGrid,
 	type Oklab,
+	rgbToOklab,
+	selectTessera as sharedSelectTessera,
 } from "./mosaic-shared";
-import { runDeviceCapacityPreflight } from "./device-capacity-preflight";
 import type { MosaicMode } from "./workflow-state";
 
 /** Source image data received from the main thread. */

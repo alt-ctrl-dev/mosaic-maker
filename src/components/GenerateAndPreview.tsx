@@ -1,9 +1,9 @@
-import { useState, useEffect, useRef, useCallback } from "react";
-import type { WorkflowState } from "../engine/workflow-state";
+import { useCallback, useEffect, useRef, useState } from "react";
 import { generateMosaic, type ProgressCallback } from "../engine/mosaic-engine";
 import { ANDROID_READBACK_FAILURE } from "../engine/mosaic-shared";
+import type { WorkflowState } from "../engine/workflow-state";
 import type { WorkflowAction } from "../hooks/useWorkflowReducer";
-import { trackMosaicGeneration } from "../telemetry";
+import { trackError, trackMosaicGeneration, trackStepView } from "../telemetry";
 
 /** Props for {@link GenerateAndPreview}. */
 interface GenerateAndPreviewProps {
@@ -56,6 +56,10 @@ export function GenerateAndPreview({
 			workerRef.current.terminate();
 			workerRef.current = null;
 		}
+	}, []);
+
+	useEffect(() => {
+		trackStepView("generate_and_preview");
 	}, []);
 
 	useEffect(() => {
@@ -181,6 +185,7 @@ export function GenerateAndPreview({
 					"Web Worker not supported or failed, falling back to main thread",
 					err,
 				);
+				trackError("mosaic_generation_worker_init", err);
 				await generateOnMainThread(sourceImage, tesseraSize);
 			}
 		} else {
@@ -230,6 +235,11 @@ export function GenerateAndPreview({
 			if (fallbackErrorMessage) {
 				console.error("Main-thread fallback failed:", err);
 				setError(fallbackErrorMessage);
+				trackError("mosaic_generation_android_fallback", err, {
+					sourceWidth: sourceImage.width,
+					sourceHeight: sourceImage.height,
+					tesseraSize,
+				});
 			} else if (err instanceof Error) {
 				setError(err.message);
 			} else {

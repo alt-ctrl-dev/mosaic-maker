@@ -1,7 +1,7 @@
 import {
-	initializeFaro,
-	getWebInstrumentations,
 	faro,
+	getWebInstrumentations,
+	initializeFaro,
 	LogLevel,
 } from "@grafana/faro-web-sdk";
 import { VERSION_STRING } from "./version";
@@ -130,6 +130,39 @@ export function trackEvent(
 	}
 
 	faro.api.pushEvent(name, attributes);
+}
+
+/**
+ * Track an error event with additional context.
+ * Accepts any caught value and extracts Error properties when available,
+ * ensuring callers never need to unsafely cast `unknown` from catch blocks.
+ */
+export function trackError(
+	step: string,
+	error: unknown,
+	context?: Record<string, unknown>,
+): void {
+	const errorInstance =
+		error instanceof Error ? error : new Error(String(error));
+	const payload: Record<string, unknown> = {
+		errorName: errorInstance.name,
+		errorMessage: errorInstance.message,
+		step,
+	};
+	if (context !== undefined) {
+		payload.context = JSON.stringify(context);
+	}
+	trackEvent(`error_${step}`, payload);
+}
+
+/**
+ * Track when a user views/navigates to a step in the workflow.
+ * Helps understand user progression and drop-off points.
+ */
+export function trackStepView(step: string): void {
+	trackEvent(`step_view_${step}`, {
+		step,
+	});
 }
 
 /** OS name and, when available, its version string. */

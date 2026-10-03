@@ -1,11 +1,13 @@
-import { describe, it, expect, beforeEach, afterEach, vi } from "vitest";
+import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 import {
+	getWorkflowSessionId,
 	hasTelemetryConsent,
-	setTelemetryConsent,
 	initializeTelemetry,
+	setTelemetryConsent,
+	trackError,
 	trackEvent,
 	trackMosaicGeneration,
-	getWorkflowSessionId,
+	trackStepView,
 } from "./telemetry";
 import { VERSION_STRING } from "./version";
 
@@ -497,6 +499,128 @@ describe("telemetry", () => {
 					2,
 				),
 			);
+		});
+	});
+
+	describe("trackError", () => {
+		beforeEach(() => {
+			vi.stubEnv("VITE_FARO_URL", "");
+			vi.stubEnv("VITE_FARO_APP_NAME", "");
+		});
+
+		it("emits an error prefixed event with step attribution", () => {
+			const consoleLogSpy = vi
+				.spyOn(console, "log")
+				.mockImplementation(() => {});
+
+			trackError("mosaic_export", new Error("canvas failed"));
+
+			const call = consoleLogSpy.mock.calls.find(
+				(args) => args[0] === "[Telemetry] error_mosaic_export:",
+			);
+			expect(call).toBeDefined();
+			const payload = JSON.parse(call?.[1] as string);
+			expect(payload.step).toBe("mosaic_export");
+			expect(payload.errorName).toBe("Error");
+			expect(payload.errorMessage).toBe("canvas failed");
+		});
+
+		it("includes optional context in the payload", () => {
+			const consoleLogSpy = vi
+				.spyOn(console, "log")
+				.mockImplementation(() => {});
+
+			trackError("tesserae_generation", new Error("oom"), {
+				seed: 42,
+				count: 100,
+			});
+
+			const call = consoleLogSpy.mock.calls.find(
+				(args) => args[0] === "[Telemetry] error_tesserae_generation:",
+			);
+			expect(call).toBeDefined();
+			const payload = JSON.parse(call?.[1] as string);
+			expect(payload.context).toBeDefined();
+			const context = JSON.parse(payload.context);
+			expect(context.seed).toBe(42);
+			expect(context.count).toBe(100);
+		});
+
+		it("stamps every error event with session id and app version", () => {
+			const consoleLogSpy = vi
+				.spyOn(console, "log")
+				.mockImplementation(() => {});
+
+			trackError("source_image_load", new Error("bad format"));
+
+			const call = consoleLogSpy.mock.calls[0];
+			const payload = JSON.parse(call[1] as string);
+			expect(payload.sessionId).toBe(getWorkflowSessionId());
+			expect(payload.appVersion).toBe(VERSION_STRING);
+		});
+
+		it("handles non-Error values thrown from catch blocks gracefully", () => {
+			const consoleLogSpy = vi
+				.spyOn(console, "log")
+				.mockImplementation(() => {});
+
+			trackError("source_image_load", "just a string");
+
+			const call = consoleLogSpy.mock.calls.find(
+				(args) => args[0] === "[Telemetry] error_source_image_load:",
+			);
+			expect(call).toBeDefined();
+			const payload = JSON.parse(call?.[1] as string);
+			expect(payload.errorMessage).toBe("just a string");
+		});
+
+		it("handles undefined errors from catch blocks gracefully", () => {
+			const consoleLogSpy = vi
+				.spyOn(console, "log")
+				.mockImplementation(() => {});
+
+			trackError("mosaic_export", undefined);
+
+			const call = consoleLogSpy.mock.calls.find(
+				(args) => args[0] === "[Telemetry] error_mosaic_export:",
+			);
+			expect(call).toBeDefined();
+			const payload = JSON.parse(call?.[1] as string);
+			expect(payload.errorMessage).toBe("undefined");
+		});
+	});
+
+	describe("trackStepView", () => {
+		beforeEach(() => {
+			vi.stubEnv("VITE_FARO_URL", "");
+			vi.stubEnv("VITE_FARO_APP_NAME", "");
+		});
+
+		it("emits a step_view event for the given step", () => {
+			const consoleLogSpy = vi
+				.spyOn(console, "log")
+				.mockImplementation(() => {});
+
+			trackStepView("choose_source_image");
+
+			const call = consoleLogSpy.mock.calls.find(
+				(args) => args[0] === "[Telemetry] step_view_choose_source_image:",
+			);
+			expect(call).toBeDefined();
+			const payload = JSON.parse(call?.[1] as string);
+			expect(payload.step).toBe("choose_source_image");
+		});
+
+		it("stamps step view events with session id and app version", () => {
+			const consoleLogSpy = vi
+				.spyOn(console, "log")
+				.mockImplementation(() => {});
+
+			trackStepView("build_tesserae");
+
+			const payload = JSON.parse(consoleLogSpy.mock.calls[0][1] as string);
+			expect(payload.sessionId).toBe(getWorkflowSessionId());
+			expect(payload.appVersion).toBe(VERSION_STRING);
 		});
 	});
 });

@@ -1,12 +1,11 @@
+import { describe, expect, it } from "vitest";
 import {
-	estimateWorkload,
 	checkDeviceCapacity,
-	runDeviceCapacityPreflight,
 	type DeviceCapacity,
+	estimateWorkload,
+	runDeviceCapacityPreflight,
 	type WorkloadEstimate,
 } from "./device-capacity-preflight";
-
-import { describe, it, expect } from "vitest";
 
 describe("device-capacity-preflight", () => {
 	describe("estimateWorkload", () => {

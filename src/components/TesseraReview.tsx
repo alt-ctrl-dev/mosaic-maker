@@ -1,4 +1,6 @@
+import { useEffect } from "react";
 import type { TesseraInfo } from "../engine/workflow-state";
+import { trackEvent } from "../telemetry";
 
 /** Props for {@link TesseraReview}. */
 interface TesseraReviewProps {
@@ -33,6 +35,25 @@ export function TesseraReview({
 }: TesseraReviewProps) {
 	const validCount = tesserae.filter((t) => t.isValid).length;
 	const rejectedCount = tesserae.length - validCount;
+
+	// Track when the tessera review section is viewed
+	useEffect(() => {
+		trackEvent("tessera_review_viewed", {
+			tesseraCount: tesserae.length,
+			validCount,
+			rejectedCount,
+			isLowVariety,
+			varietyRecommendation,
+			hasAcceptedSupplementation,
+		});
+	}, [
+		tesserae.length,
+		validCount,
+		rejectedCount,
+		isLowVariety,
+		varietyRecommendation,
+		hasAcceptedSupplementation,
+	]);
 
 	return (
 		<div className="tessera-review">

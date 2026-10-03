@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import { selectTessera, type ColorGrid } from "./mosaic-shared";
+import { type ColorGrid, selectTessera } from "./mosaic-shared";
 
 /**
  * An OKLab color grid where every cell is the same color, for controlled

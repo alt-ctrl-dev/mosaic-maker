@@ -1,16 +1,16 @@
+import { runDeviceCapacityPreflight } from "./device-capacity-preflight";
 import { createCanvas, loadImage } from "./export";
 import type { SourceImageInfo } from "./image-processing";
-import type { MosaicMode, TesseraInfo } from "./workflow-state";
-import { runDeviceCapacityPreflight } from "./device-capacity-preflight";
 import {
-	COLOR_GRID_SIZE,
 	BLEND_SOURCE_ALPHA,
-	rgbToOklab,
-	selectTessera as sharedSelectTessera,
+	COLOR_GRID_SIZE,
 	type ColorGrid,
 	type Oklab,
 	type RGB,
+	rgbToOklab,
+	selectTessera as sharedSelectTessera,
 } from "./mosaic-shared";
+import type { MosaicMode, TesseraInfo } from "./workflow-state";
 
 /** Progress callback function type */
 export type ProgressCallback = (percent: number, message: string) => void;

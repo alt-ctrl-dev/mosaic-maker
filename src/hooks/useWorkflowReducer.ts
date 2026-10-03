@@ -2,26 +2,35 @@ import { type Dispatch, useReducer } from "react";
 import type { SourceImageInfo } from "../engine/image-processing";
 import type { MosaicResult } from "../engine/mosaic-engine";
 import {
-	INITIAL_WORKFLOW_STATE,
-	WorkflowStep,
 	type ExportSettings,
-	type TesseraInfo,
-	type WorkflowState,
+	INITIAL_WORKFLOW_STATE,
 	type MosaicMode,
+	type TesseraInfo,
 	updateWorkflowAdvanceFromReview,
 	updateWorkflowClearAllTesserae,
 	updateWorkflowExportSettings,
 	updateWorkflowOnCancellationOrFailure,
 	updateWorkflowRemoveTessera,
 	updateWorkflowWithGeneratedTesserae,
-	updateWorkflowWithMosaicResult,
 	updateWorkflowWithMode,
+	updateWorkflowWithMosaicResult,
 	updateWorkflowWithSourceImage,
 	updateWorkflowWithSourceImageError,
 	updateWorkflowWithSupplementedTesserae,
-	updateWorkflowWithTesseraSize,
 	updateWorkflowWithTesserae,
+	updateWorkflowWithTesseraSize,
+	type WorkflowState,
+	WorkflowStep,
 } from "../engine/workflow-state";
+import { trackEvent } from "../telemetry";
+
+const WORKFLOW_STEP_NAMES = [
+	"choose_mode",
+	"choose_source_image",
+	"build_tesserae",
+	"generate_and_preview",
+	"export_mosaic",
+] as const;
 
 /** Count of workflow steps derived from the enum's string-key members. */
 const WORKFLOW_STEP_COUNT = Object.keys(WorkflowStep).filter((key) =>
@@ -96,7 +105,19 @@ export function workflowReducer(
 				Math.min(action.step, WORKFLOW_STEP_COUNT - 1),
 			);
 			if (clamped <= state.furthestCompletedStep) {
-				return { ...state, currentStep: clamped };
+				const newState = { ...state, currentStep: clamped };
+
+				// Track step navigation
+				trackEvent("workflow_step_navigate", {
+					fromStep:
+						WORKFLOW_STEP_NAMES[state.currentStep] ||
+						`step_${state.currentStep}`,
+					toStep: WORKFLOW_STEP_NAMES[clamped] || `step_${clamped}`,
+					isForward: clamped > state.currentStep,
+					isBackward: clamped < state.currentStep,
+				});
+
+				return newState;
 			}
 			return state;
 		}

@@ -1,14 +1,14 @@
 import { describe, expect, it } from "vitest";
 import {
-	hasValidTesseraSizes,
 	calculateAdjustedTesseraSize,
 	calculateGridCellCount,
+	hasValidTesseraSizes,
 } from "../engine/tessera-sizing";
+import type { WorkflowState } from "../engine/workflow-state";
 import {
 	updateWorkflowWithSourceImage,
 	WorkflowStep,
 } from "../engine/workflow-state";
-import type { WorkflowState } from "../engine/workflow-state";
 
 describe("Issue #123: Allow partial edge cells", () => {
 	it("should accept 476x600 image that previously failed due to no common divisors >= 8", () => {
