@@ -6,6 +6,7 @@ import {
 	INITIAL_WORKFLOW_STATE,
 	type MosaicMode,
 	type TesseraInfo,
+	updateWorkflowAdvanceFromMode,
 	updateWorkflowAdvanceFromReview,
 	updateWorkflowClearAllTesserae,
 	updateWorkflowExportSettings,
@@ -57,6 +58,7 @@ export type WorkflowAction =
 	| { type: "generationCancelledOrFailed" }
 	| { type: "exportSettingsChanged"; settings: Partial<ExportSettings> }
 	| { type: "goToStep"; step: number }
+	| { type: "advanceFromMode" }
 	| { type: "advanceFromReview" };
 
 /**
@@ -121,6 +123,8 @@ export function workflowReducer(
 			}
 			return state;
 		}
+		case "advanceFromMode":
+			return updateWorkflowAdvanceFromMode(state);
 		case "advanceFromReview":
 			return updateWorkflowAdvanceFromReview(state);
 	}
