@@ -55,6 +55,8 @@ export async function generateMosaic(
 	sourceImage: SourceImageInfo,
 	tesserae: TesseraInfo[],
 	tesseraSize: number,
+	_mode: "photomosaic" | "lego" = "photomosaic",
+	_legoColors?: string[],
 	canvasCreator: (
 		width: number,
 		height: number,

@@ -37,6 +37,8 @@ interface GenerateMosaicRequest {
 	sourceImage: WorkerSourceImage;
 	tesserae: WorkerTessera[];
 	tesseraSize: number;
+	mode: "photomosaic" | "lego";
+	legoColors?: string[];
 }
 
 /** Request to cancel in-progress generation. */
@@ -337,6 +339,8 @@ async function generateMosaicWithProgress(
 	sourceImage: WorkerSourceImage,
 	tesserae: WorkerTessera[],
 	tesseraSize: number,
+	_mode: "photomosaic" | "lego" = "photomosaic",
+	_legoColors?: string[],
 ): Promise<{ dataUrl: string; width: number; height: number }> {
 	if (tesseraSize <= 0) {
 		throw new Error("Tessera size must be positive");
@@ -455,6 +459,8 @@ self.onmessage = async (event: MessageEvent<WorkerMessage>) => {
 					message.sourceImage,
 					message.tesserae,
 					message.tesseraSize,
+					message.mode,
+					message.legoColors,
 				);
 
 				if (isCancelled) {

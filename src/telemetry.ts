@@ -333,6 +333,7 @@ export function trackMosaicGeneration(
 	sourceWidth: number,
 	sourceHeight: number,
 	tesseraSize: number,
+	mode: "photomosaic" | "lego" = "photomosaic",
 ): void {
 	trackEvent("mosaic_generation", {
 		success,
@@ -340,5 +341,6 @@ export function trackMosaicGeneration(
 		sourceWidth,
 		sourceHeight,
 		tesseraSize,
+		mode,
 	});
 }

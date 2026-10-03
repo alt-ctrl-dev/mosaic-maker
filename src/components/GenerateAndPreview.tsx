@@ -112,6 +112,7 @@ export function GenerateAndPreview({
 								sourceImage.width,
 								sourceImage.height,
 								tesseraSize,
+								state.mode,
 							);
 							if (success) {
 								setPreviewUrl(data.dataUrl);
@@ -155,6 +156,7 @@ export function GenerateAndPreview({
 									sourceImage.width,
 									sourceImage.height,
 									tesseraSize,
+									state.mode,
 								);
 								terminateWorker();
 							}
@@ -171,6 +173,8 @@ export function GenerateAndPreview({
 						previewUrl: tessera.previewUrl,
 					})),
 					tesseraSize,
+					mode: state.mode,
+					legoColors: state.legoColors,
 				});
 			} catch (err) {
 				console.warn(
@@ -200,6 +204,8 @@ export function GenerateAndPreview({
 				sourceImage,
 				state.tesserae,
 				tesseraSize,
+				state.mode,
+				state.legoColors || undefined,
 				undefined,
 				undefined,
 				progressCallback,
@@ -213,6 +219,7 @@ export function GenerateAndPreview({
 				sourceImage.width,
 				sourceImage.height,
 				tesseraSize,
+				state.mode,
 			);
 
 			setProgress({ percent: 100, message: "Mosaic generated successfully" });
@@ -239,6 +246,7 @@ export function GenerateAndPreview({
 				sourceImage.width,
 				sourceImage.height,
 				tesseraSize,
+				state.mode,
 			);
 		} finally {
 			setIsGenerating(false);

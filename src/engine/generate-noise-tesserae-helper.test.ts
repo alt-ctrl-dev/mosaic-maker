@@ -39,6 +39,7 @@ describe("generateNoiseTesseraeFromState", () => {
 		const mockState: WorkflowState = {
 			currentStep: 0,
 			furthestCompletedStep: 0,
+			mode: "photomosaic",
 			sourceImage: {
 				width: 100,
 				height: 100,
@@ -61,6 +62,7 @@ describe("generateNoiseTesseraeFromState", () => {
 			generatedTesseraCount: null,
 			needsRegeneration: false,
 			mosaicResult: null,
+			legoColors: null,
 			exportFormat: "png",
 			exportQuality: 0.9,
 			exportBackgroundColor: "#ffffff",
@@ -81,6 +83,7 @@ describe("generateNoiseTesseraeFromState", () => {
 		const mockState: WorkflowState = {
 			currentStep: 0,
 			furthestCompletedStep: 0,
+			mode: "photomosaic",
 			sourceImage: {
 				width: 100,
 				height: 100,
@@ -103,6 +106,7 @@ describe("generateNoiseTesseraeFromState", () => {
 			generatedTesseraCount: 5,
 			needsRegeneration: false,
 			mosaicResult: null,
+			legoColors: null,
 			exportFormat: "png",
 			exportQuality: 0.9,
 			exportBackgroundColor: "#ffffff",
@@ -121,6 +125,7 @@ describe("generateNoiseTesseraeFromState", () => {
 		const mockState: WorkflowState = {
 			currentStep: 0,
 			furthestCompletedStep: 0,
+			mode: "photomosaic",
 			sourceImage: null,
 			requestedTesseraSize: 10,
 			adjustedTesseraSize: 10,
@@ -138,6 +143,7 @@ describe("generateNoiseTesseraeFromState", () => {
 			generatedTesseraCount: null,
 			needsRegeneration: false,
 			mosaicResult: null,
+			legoColors: null,
 			exportFormat: "png",
 			exportQuality: 0.9,
 			exportBackgroundColor: "#ffffff",
@@ -152,6 +158,7 @@ describe("generateNoiseTesseraeFromState", () => {
 		const mockState: WorkflowState = {
 			currentStep: 0,
 			furthestCompletedStep: 0,
+			mode: "photomosaic",
 			sourceImage: {
 				width: 100,
 				height: 100,
@@ -174,6 +181,7 @@ describe("generateNoiseTesseraeFromState", () => {
 			generatedTesseraCount: null,
 			needsRegeneration: false,
 			mosaicResult: null,
+			legoColors: null,
 			exportFormat: "png",
 			exportQuality: 0.9,
 			exportBackgroundColor: "#ffffff",

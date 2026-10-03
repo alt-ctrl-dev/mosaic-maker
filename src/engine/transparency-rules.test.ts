@@ -210,6 +210,8 @@ function generate(tesserae: TesseraInfo[], tesseraSize = 2) {
 		sourceImage,
 		tesserae,
 		tesseraSize,
+		"photomosaic",
+		undefined,
 		createFakeCanvas,
 		fakeImageLoader,
 	);

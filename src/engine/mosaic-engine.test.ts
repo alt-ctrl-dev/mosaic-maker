@@ -161,6 +161,8 @@ function generate(tesserae: TesseraInfo[], tesseraSize = 2) {
 		sourceImage,
 		tesserae,
 		tesseraSize,
+		"photomosaic",
+		undefined,
 		createFakeCanvas,
 		fakeImageLoader,
 	);
@@ -250,6 +252,8 @@ describe("Mosaic Engine", () => {
 				{ ...sourceImage, width: 0, height: 0 },
 				[makeTessera()],
 				2,
+				"photomosaic",
+				undefined,
 				createFakeCanvas,
 				fakeImageLoader,
 			),

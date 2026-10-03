@@ -50,6 +50,7 @@ describe("Issue #123: Allow partial edge cells", () => {
 		const initialState: WorkflowState = {
 			currentStep: WorkflowStep.CHOOSE_SOURCE_IMAGE,
 			furthestCompletedStep: WorkflowStep.CHOOSE_SOURCE_IMAGE,
+			mode: "photomosaic",
 			sourceImage: null,
 			hasValidSourceDimensions: false,
 			sourceImageError: null,
@@ -67,6 +68,7 @@ describe("Issue #123: Allow partial edge cells", () => {
 			generatedTesseraCount: null,
 			mosaicResult: null,
 			needsRegeneration: false,
+			legoColors: null,
 			exportFormat: "png",
 			exportQuality: 0.9,
 			exportBackgroundColor: "#ffffff",

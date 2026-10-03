@@ -21,6 +21,19 @@ export interface ExportSettings {
 }
 
 /**
+ * Available mosaic generation modes.
+ */
+export type MosaicMode = "photomosaic" | "lego";
+
+/**
+ * Color palette for lego mode.
+ */
+export interface LegoColorPalette {
+	colors: string[]; // Array of hex color values
+	name: string; // Name of the palette
+}
+
+/**
  * Information about a tessera that has been processed for the mosaic.
  */
 export interface TesseraInfo {
@@ -41,6 +54,8 @@ export interface WorkflowState {
 	currentStep: WorkflowStep;
 	/** The furthest step the user has completed */
 	furthestCompletedStep: WorkflowStep;
+	/** Selected mosaic generation mode */
+	mode: MosaicMode;
 	sourceImage: SourceImageInfo | null;
 	requestedTesseraSize: number | null;
 	adjustedTesseraSize: number | null;
@@ -62,6 +77,8 @@ export interface WorkflowState {
 	needsRegeneration: boolean;
 	/** The generated mosaic result, set after mosaic generation completes */
 	mosaicResult: MosaicResult | null;
+	/** Selected colors for lego mode */
+	legoColors: string[] | null;
 	exportFormat: ExportFormat;
 	/** Quality setting for JPEG/WebP exports (0.0 - 1.0) */
 	exportQuality: number;
@@ -72,6 +89,7 @@ export interface WorkflowState {
  * Workflow steps.
  */
 export enum WorkflowStep {
+	CHOOSE_MODE, // New step for mode selection
 	CHOOSE_SOURCE_IMAGE,
 	BUILD_TESSERAE,
 	GENERATE_AND_PREVIEW,
@@ -87,8 +105,9 @@ export const SEED_MAX = 1_000_000;
  * Initial workflow state.
  */
 export const INITIAL_WORKFLOW_STATE: WorkflowState = {
-	currentStep: WorkflowStep.CHOOSE_SOURCE_IMAGE,
-	furthestCompletedStep: WorkflowStep.CHOOSE_SOURCE_IMAGE,
+	currentStep: WorkflowStep.CHOOSE_MODE, // Start with mode selection
+	furthestCompletedStep: WorkflowStep.CHOOSE_MODE,
+	mode: "photomosaic", // Default mode
 	sourceImage: null,
 	requestedTesseraSize: null,
 	adjustedTesseraSize: null,
@@ -106,6 +125,7 @@ export const INITIAL_WORKFLOW_STATE: WorkflowState = {
 	generatedTesseraCount: null,
 	needsRegeneration: false,
 	mosaicResult: null,
+	legoColors: null, // No colors selected initially
 	exportFormat: "png",
 	exportQuality: 0.9,
 	exportBackgroundColor: "#ffffff",
@@ -674,6 +694,59 @@ export function updateWorkflowOnCancellationOrFailure(
 		...state,
 		mosaicResult: null,
 		needsRegeneration: false,
+	};
+}
+
+/**
+ * Update workflow state with a selected mode.
+ * When mode changes, reset tesserae selection but keep source image.
+ *
+ * @param state - The current workflow state
+ * @param mode - The selected mosaic mode
+ * @returns Updated workflow state with new mode and reset tesserae selection
+ */
+export function updateWorkflowWithMode(
+	state: WorkflowState,
+	mode: MosaicMode,
+): WorkflowState {
+	// If mode changed, reset tesserae selection but keep source image
+	if (state.mode !== mode) {
+		return {
+			...state,
+			mode,
+			// Reset tesserae-related state
+			tesserae: [],
+			validTesseraCount: 0,
+			rejectedTesseraCount: 0,
+			totalTesseraCount: 0,
+			isLowVarietyCollection: false,
+			varietyRecommendation: null,
+			hasAcceptedSupplementation: false,
+			seed: null,
+			generatedTesseraCount: null,
+			needsRegeneration: false,
+			legoColors: null,
+			// Clear any generated mosaic
+			mosaicResult: null,
+		};
+	}
+	return { ...state, mode };
+}
+
+/**
+ * Update workflow state with selected lego colors.
+ *
+ * @param state - The current workflow state
+ * @param colors - Array of selected hex color values
+ * @returns Updated workflow state with lego colors
+ */
+export function updateWorkflowWithLegoColors(
+	state: WorkflowState,
+	colors: string[],
+): WorkflowState {
+	return {
+		...state,
+		legoColors: colors,
 	};
 }
 
