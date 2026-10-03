@@ -80,13 +80,12 @@ export function initializeTelemetry(): void {
 			sessionTracking: {
 				samplingRate,
 			},
+			webVitalsInstrumentation: {
+				reportAllChanges: true,
+			},
 			instrumentations: [
 				...getWebInstrumentations({
 					captureConsole: true,
-					// @ts-expect-error webVitalsInstrumentation is not in the public type definitions
-					webVitalsInstrumentation: {
-						reportAllChanges: true,
-					},
 				}),
 			],
 			consoleInstrumentation: {

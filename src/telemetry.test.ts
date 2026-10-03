@@ -77,19 +77,20 @@ describe("telemetry", () => {
 			vi.stubEnv("VITE_FARO_APP_NAME", "test-app");
 			setTelemetryConsent(true);
 
-			const mockGetWebInstrumentations = vi.fn(() => []);
+			const mockInitializeFaro = vi.fn();
 			vi.doMock("@grafana/faro-web-sdk", async () => {
 				const actual = await vi.importActual("@grafana/faro-web-sdk");
 				return {
 					...actual,
-					getWebInstrumentations: mockGetWebInstrumentations,
+					initializeFaro: mockInitializeFaro,
+					getWebInstrumentations: vi.fn(() => []),
 				};
 			});
 
 			const { initializeTelemetry } = await import("./telemetry");
 			initializeTelemetry();
 
-			expect(mockGetWebInstrumentations).toHaveBeenCalledWith(
+			expect(mockInitializeFaro).toHaveBeenCalledWith(
 				expect.objectContaining({
 					webVitalsInstrumentation: { reportAllChanges: true },
 				}),
