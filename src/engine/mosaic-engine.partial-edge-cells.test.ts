@@ -53,7 +53,6 @@ describe("mosaic-engine with partial edge cells", () => {
 			mockTesserae,
 			10, // This would fail before our fix because gcd(476, 600) = 4 < 8
 			"photomosaic",
-			undefined,
 			mockCanvasCreator,
 			mockImageLoader,
 		);
@@ -119,7 +118,6 @@ describe("mosaic-engine with partial edge cells", () => {
 			mockTesserae,
 			10,
 			"photomosaic",
-			undefined,
 			mockCanvasCreator,
 			mockImageLoader,
 		);

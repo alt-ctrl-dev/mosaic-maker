@@ -56,7 +56,6 @@ describe("Mosaic generation performance", () => {
 			tesserae,
 			32,
 			"photomosaic",
-			undefined,
 			mockCanvasCreator,
 			mockImageLoader,
 		);
@@ -79,7 +78,6 @@ describe("Mosaic generation performance", () => {
 			makeTesserae(50),
 			32,
 			"photomosaic",
-			undefined,
 			mockCanvasCreator,
 			mockImageLoader,
 		);
@@ -101,7 +99,6 @@ describe("Mosaic generation performance", () => {
 				makeTesserae(50),
 				32,
 				"photomosaic",
-				undefined,
 				mockCanvasCreator,
 				mockImageLoader,
 			);

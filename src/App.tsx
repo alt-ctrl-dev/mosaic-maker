@@ -98,10 +98,7 @@ export function App() {
 				const isLego = workflowState.mode === "lego";
 				const hasPhotomosaicTesserae =
 					isPhotomosaic && workflowState.tesserae.length > 0;
-				const hasLegoColors =
-					isLego &&
-					workflowState.legoColors !== null &&
-					workflowState.legoColors.length >= 2;
+				const hasLegoColors = isLego && workflowState.tesserae.length >= 2;
 				const canReview = hasPhotomosaicTesserae || hasLegoColors;
 
 				return (
@@ -141,10 +138,12 @@ export function App() {
 						)}
 						{isLego && (
 							<LegoColorPicker
-								onColorsSelected={(colors) =>
-									dispatch({ type: "legoColorsSelected", colors })
+								onTesseraeSelected={(tesserae) =>
+									dispatch({ type: "tesseraeProcessed", tesserae })
 								}
-								initialColors={workflowState.legoColors || []}
+								initialColors={workflowState.tesserae
+									.map((tessera) => tessera.color)
+									.filter((color): color is string => color !== undefined)}
 							/>
 						)}
 						{canReview && (

@@ -14,7 +14,6 @@ import {
 	updateWorkflowOnCancellationOrFailure,
 	updateWorkflowRemoveTessera,
 	updateWorkflowWithGeneratedTesserae,
-	updateWorkflowWithLegoColors,
 	updateWorkflowWithMosaicResult,
 	updateWorkflowWithMode,
 	updateWorkflowWithSourceImage,
@@ -36,7 +35,6 @@ const WORKFLOW_STEP_COUNT = Object.keys(WorkflowStep).filter((key) =>
  */
 export type WorkflowAction =
 	| { type: "modeSelected"; mode: MosaicMode }
-	| { type: "legoColorsSelected"; colors: string[] }
 	| { type: "sourceSelected"; sourceImage: SourceImageInfo }
 	| { type: "sourceError"; errorMessage: string }
 	| { type: "sizeSelected"; size: number }
@@ -68,8 +66,6 @@ export function workflowReducer(
 	switch (action.type) {
 		case "modeSelected":
 			return updateWorkflowWithMode(state, action.mode);
-		case "legoColorsSelected":
-			return updateWorkflowWithLegoColors(state, action.colors);
 		case "sourceSelected":
 			return updateWorkflowWithSourceImage(state, action.sourceImage);
 		case "sourceError":

@@ -5,6 +5,7 @@ import {
 	LogLevel,
 } from "@grafana/faro-web-sdk";
 import { VERSION_STRING } from "./version";
+import type { MosaicMode } from "./engine/workflow-state";
 
 const CONSENT_KEY = "telemetry-consent";
 const SESSION_KEY = "telemetry-session";
@@ -333,7 +334,7 @@ export function trackMosaicGeneration(
 	sourceWidth: number,
 	sourceHeight: number,
 	tesseraSize: number,
-	mode: "photomosaic" | "lego" = "photomosaic",
+	mode: MosaicMode = "photomosaic",
 ): void {
 	trackEvent("mosaic_generation", {
 		success,

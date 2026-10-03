@@ -1,6 +1,6 @@
 import { createCanvas, loadImage } from "./export";
 import type { SourceImageInfo } from "./image-processing";
-import type { TesseraInfo } from "./workflow-state";
+import type { MosaicMode, TesseraInfo } from "./workflow-state";
 import { runDeviceCapacityPreflight } from "./device-capacity-preflight";
 import {
 	COLOR_GRID_SIZE,
@@ -45,6 +45,8 @@ interface ProcessedTessera {
  * @param sourceImage - Information about the source image
  * @param tesserae - Array of tesserae to use in the mosaic
  * @param tesseraSize - The size of each tessera in pixels
+ * @param mode - The mosaic generation mode. In `lego` mode the source image is
+ *   not blended over the tesserae, so each cell shows its flat tessera colour.
  * @param canvasCreator - Optional factory for creating canvas elements (for testing)
  * @param imageLoader - Optional image loading function (for testing)
  * @param progressCallback - Optional callback for progress reporting
@@ -55,8 +57,7 @@ export async function generateMosaic(
 	sourceImage: SourceImageInfo,
 	tesserae: TesseraInfo[],
 	tesseraSize: number,
-	_mode: "photomosaic" | "lego" = "photomosaic",
-	_legoColors?: string[],
+	mode: MosaicMode = "photomosaic",
 	canvasCreator: (
 		width: number,
 		height: number,
@@ -150,6 +151,7 @@ export async function generateMosaic(
 		sourceCanvas,
 		processedTesserae,
 		tesseraSize,
+		mode,
 		canvasCreator,
 		progressCallback,
 	);
@@ -218,8 +220,10 @@ async function createCanvasFromSource(
 }
 
 /**
- * Render a tessera's preview image onto a square canvas at the mosaic's
- * tessera size.
+ * Render a tessera onto a square canvas at the mosaic's tessera size.
+ *
+ * Synthetic lego tesserae have no preview image and are filled with their flat
+ * {@link TesseraInfo.color}; photomosaic tesserae draw their preview image.
  */
 async function renderTessera(
 	tessera: TesseraInfo,
@@ -227,14 +231,20 @@ async function renderTessera(
 	canvasCreator: (width: number, height: number) => HTMLCanvasElement,
 	imageLoader: (url: string) => Promise<HTMLImageElement>,
 ): Promise<HTMLCanvasElement> {
-	if (!tessera.previewUrl) {
-		throw new Error(`Tessera "${tessera.fileName}" has no preview image`);
-	}
-
 	const canvas = canvasCreator(tesseraSize, tesseraSize);
 	const ctx = canvas.getContext("2d");
 	if (!ctx) {
 		throw new Error("Failed to get tessera canvas context");
+	}
+
+	if (tessera.color) {
+		ctx.fillStyle = tessera.color;
+		ctx.fillRect(0, 0, tesseraSize, tesseraSize);
+		return canvas;
+	}
+
+	if (!tessera.previewUrl) {
+		throw new Error(`Tessera "${tessera.fileName}" has no preview image`);
 	}
 
 	const img = await imageLoader(tessera.previewUrl);
@@ -318,14 +328,18 @@ function selectTessera(
 }
 
 /**
- * Fill the result canvas by matching each source-grid cell to the best tessera,
- * blending 75% tessera with 25% source image, and avoiding visible repetition
- * on horizontal and vertical neighbors.
+ * Fill the result canvas by matching each source-grid cell to the best tessera
+ * and avoiding visible repetition on horizontal and vertical neighbors.
+ *
+ * In `photomosaic` mode the source image is blended over each tessera at
+ * {@link BLEND_SOURCE_ALPHA}, giving 75% tessera / 25% source per pixel. In
+ * `lego` mode no blending occurs, so each cell shows its flat tessera colour.
  */
 async function generateMosaicCanvas(
 	sourceCanvas: HTMLCanvasElement,
 	processedTesserae: ProcessedTessera[],
 	tesseraSize: number,
+	mode: MosaicMode,
 	canvasCreator: (width: number, height: number) => HTMLCanvasElement,
 	progressCallback?: ProgressCallback,
 ): Promise<HTMLCanvasElement> {
@@ -392,24 +406,26 @@ async function generateMosaicCanvas(
 
 			tesseraGrid[gridY][gridX] = bestMatchIndex;
 
-			// Draw the tessera opaquely first, then blend the source over it at 25%,
-			// giving each mosaic pixel exactly 75% tessera / 25% source.
+			// Draw the tessera opaquely first, then (photomosaic only) blend the
+			// source over it at 25%, giving each pixel 75% tessera / 25% source.
 			resultCtx.globalAlpha = 1;
 			resultCtx.drawImage(processedTesserae[bestMatchIndex].canvas, x, y);
 
-			resultCtx.globalAlpha = BLEND_SOURCE_ALPHA;
-			// Use clamped region size for edge cells to prevent sampling beyond canvas bounds
-			resultCtx.drawImage(
-				sourceCanvas,
-				x,
-				y,
-				regionWidth,
-				regionHeight,
-				x,
-				y,
-				regionWidth,
-				regionHeight,
-			);
+			if (mode !== "lego") {
+				resultCtx.globalAlpha = BLEND_SOURCE_ALPHA;
+				// Use clamped region size for edge cells to prevent sampling beyond canvas bounds
+				resultCtx.drawImage(
+					sourceCanvas,
+					x,
+					y,
+					regionWidth,
+					regionHeight,
+					x,
+					y,
+					regionWidth,
+					regionHeight,
+				);
+			}
 
 			resultCtx.globalAlpha = 1.0;
 		}

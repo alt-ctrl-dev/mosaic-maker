@@ -64,7 +64,6 @@ describe("GenerateAndPreview Timing", () => {
 		generatedTesseraCount: null,
 		needsRegeneration: false,
 		mosaicResult: null,
-		legoColors: null,
 		exportFormat: "png",
 		exportQuality: 0.9,
 		exportBackgroundColor: "#ffffff",

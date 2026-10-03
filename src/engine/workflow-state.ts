@@ -27,9 +27,16 @@ export type MosaicMode = "photomosaic" | "lego";
 
 /**
  * Information about a tessera that has been processed for the mosaic.
+ *
+ * Photomosaic tesserae carry an uploaded or generated image via
+ * {@link TesseraInfo.file} and {@link TesseraInfo.previewUrl}. Lego-mode
+ * tesserae are synthetic: they carry only a flat {@link TesseraInfo.color}
+ * and have no backing image, so the generation engine renders them as a
+ * solid colour fill.
  */
 export interface TesseraInfo {
-	file: File;
+	/** Backing image file for photomosaic tesserae; absent for synthetic lego tesserae. */
+	file?: File;
 	fileName: string;
 	isValid: boolean;
 	error: string | null;
@@ -37,6 +44,38 @@ export interface TesseraInfo {
 	previewUrl: string | null;
 	/** Whether the tessera is supplemented (generated) */
 	isSupplemented?: boolean;
+	/** Flat hex colour for synthetic lego-mode tesserae; absent for photomosaic tesserae. */
+	color?: string;
+}
+
+/**
+ * Create a synthetic tessera representing a single flat lego colour.
+ *
+ * Synthetic tesserae have no backing image file; the generation engine fills
+ * the tessera with {@link TesseraInfo.color} instead of drawing an image.
+ *
+ * @param color - Hex colour value (e.g. `#FF0000`) for the lego tessera
+ * @returns A valid synthetic tessera for the given colour
+ */
+export function createLegoTessera(color: string): TesseraInfo {
+	return {
+		fileName: `lego-${color}`,
+		isValid: true,
+		error: null,
+		isLowResolution: false,
+		previewUrl: null,
+		color,
+	};
+}
+
+/**
+ * Create synthetic tesserae for a collection of lego colours.
+ *
+ * @param colors - Hex colour values selected by the user
+ * @returns One synthetic tessera per colour
+ */
+export function createLegoTesserae(colors: string[]): TesseraInfo[] {
+	return colors.map(createLegoTessera);
 }
 
 /**
@@ -69,8 +108,6 @@ export interface WorkflowState {
 	needsRegeneration: boolean;
 	/** The generated mosaic result, set after mosaic generation completes */
 	mosaicResult: MosaicResult | null;
-	/** Selected colors for lego mode */
-	legoColors: string[] | null;
 	exportFormat: ExportFormat;
 	/** Quality setting for JPEG/WebP exports (0.0 - 1.0) */
 	exportQuality: number;
@@ -117,7 +154,6 @@ export const INITIAL_WORKFLOW_STATE: WorkflowState = {
 	generatedTesseraCount: null,
 	needsRegeneration: false,
 	mosaicResult: null,
-	legoColors: null, // No colors selected initially
 	exportFormat: "png",
 	exportQuality: 0.9,
 	exportBackgroundColor: "#ffffff",
@@ -717,29 +753,11 @@ export function updateWorkflowWithMode(
 			seed: null,
 			generatedTesseraCount: null,
 			needsRegeneration: false,
-			legoColors: null,
 			// Clear any generated mosaic
 			mosaicResult: null,
 		};
 	}
 	return { ...state, mode };
-}
-
-/**
- * Update workflow state with selected lego colors.
- *
- * @param state - The current workflow state
- * @param colors - Array of selected hex color values
- * @returns Updated workflow state with lego colors
- */
-export function updateWorkflowWithLegoColors(
-	state: WorkflowState,
-	colors: string[],
-): WorkflowState {
-	return {
-		...state,
-		legoColors: colors,
-	};
 }
 
 /**

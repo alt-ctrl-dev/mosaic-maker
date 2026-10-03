@@ -8,6 +8,7 @@ import {
 	type Oklab,
 } from "./mosaic-shared";
 import { runDeviceCapacityPreflight } from "./device-capacity-preflight";
+import type { MosaicMode } from "./workflow-state";
 
 /** Source image data received from the main thread. */
 interface WorkerSourceImage {
@@ -29,6 +30,8 @@ interface WorkerTessera {
 	fileName: string;
 	isValid: boolean;
 	previewUrl: string | null;
+	/** Flat hex colour for synthetic lego-mode tesserae; absent for photomosaic tesserae. */
+	color?: string;
 }
 
 /** Request to start mosaic generation. */
@@ -37,8 +40,7 @@ interface GenerateMosaicRequest {
 	sourceImage: WorkerSourceImage;
 	tesserae: WorkerTessera[];
 	tesseraSize: number;
-	mode: "photomosaic" | "lego";
-	legoColors?: string[];
+	mode: MosaicMode;
 }
 
 /** Request to cancel in-progress generation. */
@@ -189,14 +191,20 @@ async function renderTessera(
 	tessera: WorkerTessera,
 	tesseraSize: number,
 ): Promise<OffscreenCanvas> {
-	if (!tessera.previewUrl) {
-		throw new Error(`Tessera "${tessera.fileName}" has no preview image`);
-	}
-
 	const canvas = createCanvas(tesseraSize, tesseraSize);
 	const ctx = canvas.getContext("2d");
 	if (!ctx) {
 		throw new Error("Failed to get tessera canvas context");
+	}
+
+	if (tessera.color) {
+		ctx.fillStyle = tessera.color;
+		ctx.fillRect(0, 0, tesseraSize, tesseraSize);
+		return canvas;
+	}
+
+	if (!tessera.previewUrl) {
+		throw new Error(`Tessera "${tessera.fileName}" has no preview image`);
 	}
 
 	const img = await loadImage(tessera.previewUrl);
@@ -225,6 +233,7 @@ async function generateMosaicCanvas(
 	sourceCanvas: OffscreenCanvas,
 	processedTesserae: ProcessedTessera[],
 	tesseraSize: number,
+	mode: MosaicMode,
 ): Promise<OffscreenCanvas> {
 	const resultCanvas = createCanvas(sourceCanvas.width, sourceCanvas.height);
 	const resultCtx = resultCanvas.getContext("2d");
@@ -287,18 +296,20 @@ async function generateMosaicCanvas(
 			resultCtx.globalAlpha = 1;
 			resultCtx.drawImage(processedTesserae[bestMatchIndex].canvas, x, y);
 
-			resultCtx.globalAlpha = BLEND_SOURCE_ALPHA;
-			resultCtx.drawImage(
-				sourceCanvas,
-				x,
-				y,
-				tesseraSize,
-				tesseraSize,
-				x,
-				y,
-				tesseraSize,
-				tesseraSize,
-			);
+			if (mode !== "lego") {
+				resultCtx.globalAlpha = BLEND_SOURCE_ALPHA;
+				resultCtx.drawImage(
+					sourceCanvas,
+					x,
+					y,
+					tesseraSize,
+					tesseraSize,
+					x,
+					y,
+					tesseraSize,
+					tesseraSize,
+				);
+			}
 
 			resultCtx.globalAlpha = 1.0;
 		}
@@ -339,8 +350,7 @@ async function generateMosaicWithProgress(
 	sourceImage: WorkerSourceImage,
 	tesserae: WorkerTessera[],
 	tesseraSize: number,
-	_mode: "photomosaic" | "lego" = "photomosaic",
-	_legoColors?: string[],
+	mode: MosaicMode = "photomosaic",
 ): Promise<{ dataUrl: string; width: number; height: number }> {
 	if (tesseraSize <= 0) {
 		throw new Error("Tessera size must be positive");
@@ -424,6 +434,7 @@ async function generateMosaicWithProgress(
 		sourceCanvas,
 		processedTesserae,
 		tesseraSize,
+		mode,
 	);
 
 	if (isCancelled) return { dataUrl: "", width: 0, height: 0 };
@@ -460,7 +471,6 @@ self.onmessage = async (event: MessageEvent<WorkerMessage>) => {
 					message.tesserae,
 					message.tesseraSize,
 					message.mode,
-					message.legoColors,
 				);
 
 				if (isCancelled) {

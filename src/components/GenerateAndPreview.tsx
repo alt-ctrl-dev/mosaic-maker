@@ -171,10 +171,10 @@ export function GenerateAndPreview({
 						fileName: tessera.fileName,
 						isValid: tessera.isValid,
 						previewUrl: tessera.previewUrl,
+						color: tessera.color,
 					})),
 					tesseraSize,
 					mode: state.mode,
-					legoColors: state.legoColors,
 				});
 			} catch (err) {
 				console.warn(
@@ -205,7 +205,6 @@ export function GenerateAndPreview({
 				state.tesserae,
 				tesseraSize,
 				state.mode,
-				state.legoColors || undefined,
 				undefined,
 				undefined,
 				progressCallback,
@@ -288,7 +287,7 @@ export function GenerateAndPreview({
 		state.sourceImage !== null &&
 		state.adjustedTesseraSize !== null &&
 		(state.mode === "lego"
-			? state.legoColors !== null && state.legoColors.length >= 2
+			? state.tesserae.length >= 2
 			: state.tesserae.length > 0);
 
 	return (

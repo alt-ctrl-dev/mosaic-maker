@@ -1,9 +1,10 @@
 import { useState } from "react";
+import { createLegoTesserae, type TesseraInfo } from "../engine/workflow-state";
 
 /** Props for {@link LegoColorPicker}. */
 interface LegoColorPickerProps {
-	/** Called with the updated array of selected hex color values. */
-	onColorsSelected: (colors: string[]) => void;
+	/** Called with synthetic tesserae for the updated set of selected colors. */
+	onTesseraeSelected: (tesserae: TesseraInfo[]) => void;
 	/** Previously selected colors to restore when revisiting this step. */
 	initialColors?: string[];
 }
@@ -50,7 +51,7 @@ const PRESET_PALETTES = [
  * from preset palettes or a custom color wheel.
  */
 export function LegoColorPicker({
-	onColorsSelected,
+	onTesseraeSelected,
 	initialColors = [],
 }: LegoColorPickerProps) {
 	const [selectedColors, setSelectedColors] = useState<string[]>(initialColors);
@@ -59,7 +60,7 @@ export function LegoColorPicker({
 
 	const updateColors = (next: string[]) => {
 		setSelectedColors(next);
-		onColorsSelected(next);
+		onTesseraeSelected(createLegoTesserae(next));
 	};
 
 	const toggleColor = (color: string) => {

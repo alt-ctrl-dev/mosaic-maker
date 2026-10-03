@@ -68,7 +68,6 @@ describe("Issue #123: Allow partial edge cells", () => {
 			generatedTesseraCount: null,
 			mosaicResult: null,
 			needsRegeneration: false,
-			legoColors: null,
 			exportFormat: "png",
 			exportQuality: 0.9,
 			exportBackgroundColor: "#ffffff",
