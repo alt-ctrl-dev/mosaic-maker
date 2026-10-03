@@ -82,9 +82,7 @@ function oklabDistance(a: Oklab, b: Oklab): number {
 	return Math.sqrt(deltaL * deltaL + deltaA * deltaA + deltaB * deltaB);
 }
 
-/**
- * Average perceptual distance between two color grids.
- */
+/** Average perceptual distance between two color grids in OKLab units. */
 function averageGridDistance(grid1: ColorGrid, grid2: ColorGrid): number {
 	if (
 		grid1.colors.length !== grid2.colors.length ||
@@ -110,6 +108,14 @@ function averageGridDistance(grid1: ColorGrid, grid2: ColorGrid): number {
 }
 
 /**
+ * OKLab distance threshold for early termination in tessera selection.
+ * When a non-neighbor tessera has a distance below this value (roughly one
+ * JND in OKLab space across all nine grid cells), further scanning cannot
+ * produce a meaningfully different match, so iteration can halt early.
+ */
+const DISTANCE_THRESHOLD = 0.01;
+
+/**
  * Choose the best tessera for a cell, preferring the closest color match but
  * avoiding the tesserae used directly above and to the left when an alternative
  * is within {@link ALTERNATIVE_TOLERANCE} of the best score.
@@ -131,16 +137,27 @@ export function selectTessera<T>(
 			cellGrid,
 			colorGridExtractor(processedTesserae[i]),
 		);
+		const isNeighbor = i === neighborAbove || i === neighborLeft;
 
 		if (distance < bestDistance) {
 			bestDistance = distance;
 			bestIndex = i;
+
+			// Early termination is only safe when the best match is not a neighbor:
+			// neighbor-avoidance may prefer a slightly worse non-neighbor, so
+			// breaking early on a neighbor match could skip a valid alternative.
+			if (distance < DISTANCE_THRESHOLD && !isNeighbor) {
+				break;
+			}
 		}
 
-		const isNeighbor = i === neighborAbove || i === neighborLeft;
 		if (!isNeighbor && distance < bestNonNeighborDistance) {
 			bestNonNeighborDistance = distance;
 			bestNonNeighborIndex = i;
+
+			if (distance < DISTANCE_THRESHOLD) {
+				break;
+			}
 		}
 	}
 
