@@ -1,4 +1,4 @@
-import { Agent, Issue } from "../shared/types";
+import type { Agent, Issue } from "../shared/types.ts";
 import * as sandcastle from "@ai-hero/sandcastle";
 
 export const createImplmentAgent = (sandbox: sandcastle.Sandbox, topIssue: Issue): Agent<number> => {

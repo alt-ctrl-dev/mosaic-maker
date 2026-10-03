@@ -1,4 +1,4 @@
-import { SandboxEnv } from "./types";
+import type { SandboxEnv } from "./types.ts";
 
 export const sandboxEnv: SandboxEnv = {
     OPENROUTER_API_KEY:

@@ -7,7 +7,7 @@ import type { Comment, PR, Thread, PlanAction } from "./types.mts";
 import { BOT_REPLY_PREFIX, PLAN_SCHEMA } from "./types.mts";
 import { getIssueContext, postComment } from "./github.mts";
 import { createReviewAgent } from "../shared/review.mts";
-import { Agent } from "../shared/types";
+import type { Agent } from "../shared/types.ts";
 import { z } from "zod";
 
 type Deps = { dockerSandbox: DockerSandbox };

@@ -1,6 +1,6 @@
 import * as sandcastle from "@ai-hero/sandcastle";
 import { z } from "zod";
-import { Agent, Issue } from "../shared/types";
+import type { Agent, Issue } from "../shared/types.ts";
 import type { DockerSandbox } from "../shared/docker.mts";
 
 const planSchema = z.object({
