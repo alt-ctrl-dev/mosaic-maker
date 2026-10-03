@@ -1,18 +1,22 @@
+import { AppFooter } from "./components/AppFooter";
+import { Dialog } from "./components/Dialog";
+import { ErrorBoundary } from "./components/ErrorBoundary";
+import { ExportMosaic } from "./components/ExportMosaic";
+import { GenerateAndPreview } from "./components/GenerateAndPreview";
+import { GeneratedTesserae } from "./components/GeneratedTesserae";
+import { LegoColorPicker } from "./components/LegoColorPicker";
+import { ModeSelection } from "./components/ModeSelection";
 import { SourceImageSelection } from "./components/SourceImageSelection";
+import { TesseraReview } from "./components/TesseraReview";
 import { TesseraSizeSelection } from "./components/TesseraSizeSelection";
 import { TesseraUpload } from "./components/TesseraUpload";
-import { GeneratedTesserae } from "./components/GeneratedTesserae";
-import { TesseraReview } from "./components/TesseraReview";
-import { GenerateAndPreview } from "./components/GenerateAndPreview";
-import { ExportMosaic } from "./components/ExportMosaic";
-import { AppFooter } from "./components/AppFooter";
-import { ModeSelection } from "./components/ModeSelection";
-import { LegoColorPicker } from "./components/LegoColorPicker";
-import { WorkflowStep as WorkflowStepEnum } from "./engine/workflow-state";
-import { useWorkflowReducer } from "./hooks/useWorkflowReducer";
-import { generateSupplementedTesserae } from "./engine/workflow-state";
 import { resizeTesserae } from "./engine/tessera-processing";
-import { Dialog } from "./components/Dialog";
+import {
+	generateSupplementedTesserae,
+	WorkflowStep as WorkflowStepEnum,
+} from "./engine/workflow-state";
+import { useWorkflowReducer } from "./hooks/useWorkflowReducer";
+import { trackError } from "./telemetry";
 
 const stages = [
 	"Choose mode",
@@ -63,6 +67,10 @@ export function App() {
 			});
 		} catch (error) {
 			console.error("Error resizing tesserae:", error);
+			trackError("tesserae_resize", error as Error, {
+				tesseraCount: workflowState.tesserae.length,
+				targetSize: size,
+			});
 		}
 	}
 
@@ -197,103 +205,117 @@ export function App() {
 				</p>
 			</header>
 
-			<main id="main-content" className="workflow-container">
-				<Dialog
-					dialogId="mobile-workflow-menu"
-					ariaLabel="Toggle workflow steps"
-				>
-					<ol className="workflow-steps">
-						{stages.map((title, index) => {
-							const isCurrent = workflowState.currentStep === index;
-							const isCompleted = index < workflowState.currentStep;
-							const isDisabled = index > workflowState.furthestCompletedStep;
-							return (
-								<li key={title}>
-									<button
-										type="button"
-										className={`workflow-step-button ${isCurrent ? "current" : ""} ${isCompleted ? "completed" : ""}`}
-										aria-current={isCurrent ? "step" : undefined}
-										onClick={() => dispatch({ type: "goToStep", step: index })}
-										disabled={isDisabled}
-										commandfor="mobile-workflow-menu"
-										command="close"
-									>
-										<span className="step-indicator">
-											{isCompleted ? <span>✓</span> : <span>{index + 1}</span>}
-										</span>
-										<span className="step-title">{title}</span>
-									</button>
-								</li>
-							);
-						})}
-					</ol>
-				</Dialog>
+			<ErrorBoundary>
+				<main id="main-content" className="workflow-container">
+					<Dialog
+						dialogId="mobile-workflow-menu"
+						ariaLabel="Toggle workflow steps"
+					>
+						<ol className="workflow-steps">
+							{stages.map((title, index) => {
+								const isCurrent = workflowState.currentStep === index;
+								const isCompleted = index < workflowState.currentStep;
+								const isDisabled = index > workflowState.furthestCompletedStep;
+								return (
+									<li key={title}>
+										<button
+											type="button"
+											className={`workflow-step-button ${isCurrent ? "current" : ""} ${isCompleted ? "completed" : ""}`}
+											aria-current={isCurrent ? "step" : undefined}
+											onClick={() =>
+												dispatch({ type: "goToStep", step: index })
+											}
+											disabled={isDisabled}
+											commandfor="mobile-workflow-menu"
+											command="close"
+										>
+											<span className="step-indicator">
+												{isCompleted ? (
+													<span>✓</span>
+												) : (
+													<span>{index + 1}</span>
+												)}
+											</span>
+											<span className="step-title">{title}</span>
+										</button>
+									</li>
+								);
+							})}
+						</ol>
+					</Dialog>
 
-				<aside className="workflow-sidebar" aria-label="Workflow steps">
-					<ol className="workflow-steps">
-						{stages.map((title, index) => {
-							const isCurrent = workflowState.currentStep === index;
-							const isCompleted = index < workflowState.currentStep;
-							const isDisabled = index > workflowState.furthestCompletedStep;
-							return (
-								<li key={title}>
-									<button
-										type="button"
-										className={`workflow-step-button ${isCurrent ? "current" : ""} ${isCompleted ? "completed" : ""}`}
-										aria-current={isCurrent ? "step" : undefined}
-										onClick={() => dispatch({ type: "goToStep", step: index })}
-										disabled={isDisabled}
-									>
-										<span className="step-indicator">
-											{isCompleted ? <span>✓</span> : <span>{index + 1}</span>}
-										</span>
-										<span className="step-title">{title}</span>
-									</button>
-								</li>
-							);
-						})}
-					</ol>
-				</aside>
+					<aside className="workflow-sidebar" aria-label="Workflow steps">
+						<ol className="workflow-steps">
+							{stages.map((title, index) => {
+								const isCurrent = workflowState.currentStep === index;
+								const isCompleted = index < workflowState.currentStep;
+								const isDisabled = index > workflowState.furthestCompletedStep;
+								return (
+									<li key={title}>
+										<button
+											type="button"
+											className={`workflow-step-button ${isCurrent ? "current" : ""} ${isCompleted ? "completed" : ""}`}
+											aria-current={isCurrent ? "step" : undefined}
+											onClick={() =>
+												dispatch({ type: "goToStep", step: index })
+											}
+											disabled={isDisabled}
+										>
+											<span className="step-indicator">
+												{isCompleted ? (
+													<span>✓</span>
+												) : (
+													<span>{index + 1}</span>
+												)}
+											</span>
+											<span className="step-title">{title}</span>
+										</button>
+									</li>
+								);
+							})}
+						</ol>
+					</aside>
 
-				<div className="workflow-canvas">
-					<div className="workflow-navigation">
-						{showBackButton && (
-							<button
-								type="button"
-								className="secondary"
-								onClick={() =>
-									dispatch({
-										type: "goToStep",
-										step: workflowState.currentStep - 1,
-									})
-								}
-							>
-								← Back
-							</button>
-						)}
-						<span className="workflow-step-counter">
-							Step {workflowState.currentStep + 1} of {stages.length}
-						</span>
-						{showTopNextButton && (
-							<button
-								type="button"
-								onClick={() =>
-									dispatch({
-										type: "goToStep",
-										step: workflowState.currentStep + 1,
-									})
-								}
-							>
-								Next →
-							</button>
-						)}
+					<div className="workflow-canvas">
+						<div className="workflow-navigation">
+							{showBackButton && (
+								<button
+									type="button"
+									className="secondary"
+									onClick={() =>
+										dispatch({
+											type: "goToStep",
+											step: workflowState.currentStep - 1,
+										})
+									}
+								>
+									← Back
+								</button>
+							)}
+							<span className="workflow-step-counter">
+								Step {workflowState.currentStep + 1} of {stages.length}
+							</span>
+							{showTopNextButton && (
+								<button
+									type="button"
+									onClick={() =>
+										dispatch({
+											type: "goToStep",
+											step: workflowState.currentStep + 1,
+										})
+									}
+								>
+									Next →
+								</button>
+							)}
+						</div>
+
+						<div className="workflow-content">
+							{renderStepContent(workflowState.currentStep)}
+						</div>
 					</div>
-
-					<div className="workflow-content">
-						{renderStepContent(workflowState.currentStep)}
-					</div>
-				</div>
-			</main>
+				</main>
+			</ErrorBoundary>
 			<AppFooter />
 		</div>
 	);

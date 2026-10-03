@@ -1,9 +1,9 @@
-import { useState, useEffect, useRef, useCallback } from "react";
-import type { WorkflowState } from "../engine/workflow-state";
+import { useCallback, useEffect, useRef, useState } from "react";
 import { generateMosaic, type ProgressCallback } from "../engine/mosaic-engine";
 import { ANDROID_READBACK_FAILURE } from "../engine/mosaic-shared";
+import type { WorkflowState } from "../engine/workflow-state";
 import type { WorkflowAction } from "../hooks/useWorkflowReducer";
-import { trackMosaicGeneration, trackError, trackStepView } from "../telemetry";
+import { trackError, trackMosaicGeneration, trackStepView } from "../telemetry";
 
 /** Props for {@link GenerateAndPreview}. */
 interface GenerateAndPreviewProps {
@@ -47,11 +47,6 @@ export function GenerateAndPreview({
 		height: number;
 	} | null>(null);
 
-	// Track when the component is viewed/loaded
-	useState(() => {
-		trackStepView("generate_and_preview");
-	});
-
 	const beforeUnloadRef = useRef(onBeforeUnload);
 	const workerRef = useRef<Worker | null>(null);
 	const generationStartTimeRef = useRef<number>(0);
@@ -61,6 +56,10 @@ export function GenerateAndPreview({
 			workerRef.current.terminate();
 			workerRef.current = null;
 		}
+	}, []);
+
+	useEffect(() => {
+		trackStepView("generate_and_preview");
 	}, []);
 
 	useEffect(() => {
@@ -236,6 +235,11 @@ export function GenerateAndPreview({
 			if (fallbackErrorMessage) {
 				console.error("Main-thread fallback failed:", err);
 				setError(fallbackErrorMessage);
+				trackError("mosaic_generation_android_fallback", err as Error, {
+					sourceWidth: sourceImage.width,
+					sourceHeight: sourceImage.height,
+					tesseraSize,
+				});
 			} else if (err instanceof Error) {
 				setError(err.message);
 			} else {

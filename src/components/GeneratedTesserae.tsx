@@ -1,13 +1,13 @@
-import { useState, useEffect } from "react";
+import { useEffect, useState } from "react";
 import { generateNoiseTesseraeFromState } from "../engine/generate-noise-tesserae-helper";
-import {
-	SEED_MAX,
-	type WorkflowState,
-	type TesseraInfo,
-	getVarietyRecommendation,
-} from "../engine/workflow-state";
 import { calculateGridCellCount } from "../engine/tessera-sizing";
-import { trackEvent, trackError, trackStepView } from "../telemetry";
+import {
+	getVarietyRecommendation,
+	SEED_MAX,
+	type TesseraInfo,
+	type WorkflowState,
+} from "../engine/workflow-state";
+import { trackError, trackEvent, trackStepView } from "../telemetry";
 
 /**
  * Compute the default tessera count for a given workflow state.
@@ -52,10 +52,9 @@ export function GeneratedTesserae({
 		computeDefaultTesseraCount(initialState),
 	);
 
-	// Track when the component is viewed/loaded
-	useState(() => {
+	useEffect(() => {
 		trackStepView("generated_tesserae");
-	});
+	}, []);
 
 	useEffect(() => {
 		if (initialState.seed !== null) {

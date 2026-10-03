@@ -1,7 +1,7 @@
 import type React from "react";
-import { useCallback, useState } from "react";
-import type { TesseraInfo } from "../engine/workflow-state";
+import { useCallback, useEffect, useState } from "react";
 import { processTesserae } from "../engine/tessera-processing";
+import type { TesseraInfo } from "../engine/workflow-state";
 import { trackError, trackStepView } from "../telemetry";
 
 /** Props for {@link TesseraUpload}. */
@@ -21,10 +21,9 @@ export function TesseraUpload({
 }: TesseraUploadProps) {
 	const [isProcessing, setIsProcessing] = useState(false);
 
-	// Track when the component is viewed/loaded
-	useState(() => {
+	useEffect(() => {
 		trackStepView("tessera_upload");
-	});
+	}, []);
 
 	const handleFileChange = useCallback(
 		async (files: FileList | null) => {

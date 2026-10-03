@@ -15,36 +15,23 @@ const DialogButtonToggle = ({
 	dialogId,
 	command,
 	children,
-}: PropsWithChildren<DialogButtonProp>) => {
-	const handleClick = () => {
-		// Track mobile workflow menu interactions
-		trackEvent("mobile_workflow_menu_interaction", {
-			action: command,
-			dialogId: dialogId,
-		});
-
-		const button = document.querySelector(
-			`button[command="${command}"][commandfor="${dialogId}"]`,
-		) as HTMLButtonElement | null;
-		if (button) {
-			button.setAttribute("command", command);
-			button.setAttribute("commandfor", dialogId);
-		}
-	};
-
-	return (
-		<button
-			className="workflow-sidebar-toggle-button"
-			aria-label={ariaLabel}
-			type="button"
-			commandfor={dialogId}
-			command={command}
-			onClick={handleClick}
-		>
-			{children}
-		</button>
-	);
-};
+}: PropsWithChildren<DialogButtonProp>) => (
+	<button
+		className="workflow-sidebar-toggle-button"
+		aria-label={ariaLabel}
+		type="button"
+		commandfor={dialogId}
+		command={command}
+		onClick={() => {
+			trackEvent("mobile_workflow_menu_interaction", {
+				action: command,
+				dialogId,
+			});
+		}}
+	>
+		{children}
+	</button>
+);
 
 export const Dialog = ({
 	children,

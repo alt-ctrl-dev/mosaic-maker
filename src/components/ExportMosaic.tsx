@@ -1,9 +1,9 @@
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import type { ExportFormat } from "../engine/export";
 import { exportMosaic } from "../engine/export";
-import type { WorkflowState, ExportSettings } from "../engine/workflow-state";
+import type { ExportSettings, WorkflowState } from "../engine/workflow-state";
 import type { WorkflowAction } from "../hooks/useWorkflowReducer";
-import { trackEvent, trackError, trackStepView } from "../telemetry";
+import { trackError, trackEvent, trackStepView } from "../telemetry";
 
 /** Props for {@link ExportMosaic}. */
 interface ExportMosaicProps {
@@ -182,12 +182,13 @@ function exportButtonLabel(isExporting: boolean, canShare: boolean): string {
 export function ExportMosaic({ state, dispatch }: ExportMosaicProps) {
 	const [isExporting, setIsExporting] = useState(false);
 
-	// Track when the component is viewed/loaded
-	useState(() => {
-		trackStepView("export_mosaic");
-	});
 	const [error, setError] = useState<string | null>(null);
 	const canShare = supportsWebShare();
+
+	useEffect(() => {
+		trackStepView("export_mosaic");
+	}, []);
+
 	const handleExportSettingsChange = (settings: Partial<ExportSettings>) => {
 		dispatch({ type: "exportSettingsChanged", settings });
 	};

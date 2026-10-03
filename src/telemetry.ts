@@ -1,7 +1,7 @@
 import {
-	initializeFaro,
-	getWebInstrumentations,
 	faro,
+	getWebInstrumentations,
+	initializeFaro,
 	LogLevel,
 } from "@grafana/faro-web-sdk";
 import { VERSION_STRING } from "./version";
@@ -141,12 +141,15 @@ export function trackError(
 	error: Error,
 	context?: Record<string, unknown>,
 ): void {
-	trackEvent(`error_${step}`, {
+	const payload: Record<string, unknown> = {
 		errorName: error.name,
 		errorMessage: error.message,
-		context: context ? JSON.stringify(context) : undefined,
 		step,
-	});
+	};
+	if (context !== undefined) {
+		payload.context = JSON.stringify(context);
+	}
+	trackEvent(`error_${step}`, payload);
 }
 
 /**
@@ -156,20 +159,6 @@ export function trackError(
 export function trackStepView(step: string): void {
 	trackEvent(`step_view_${step}`, {
 		step,
-	});
-}
-
-/**
- * Track user interactions like button clicks, form submissions, etc.
- * Provides insight into user behavior and engagement.
- */
-export function trackInteraction(
-	interaction: string,
-	context?: Record<string, unknown>,
-): void {
-	trackEvent(`interaction_${interaction}`, {
-		interaction,
-		context: context ? JSON.stringify(context) : undefined,
 	});
 }
 
