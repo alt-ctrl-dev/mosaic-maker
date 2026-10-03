@@ -327,6 +327,7 @@ export async function trackDeviceAnalytics(): Promise<void> {
  * @param sourceWidth Source image width
  * @param sourceHeight Source image height
  * @param tesseraSize Tessera size
+ * @param mode The mosaic generation mode used
  */
 export function trackMosaicGeneration(
 	success: boolean,

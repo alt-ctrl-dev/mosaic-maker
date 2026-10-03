@@ -118,7 +118,7 @@ export interface WorkflowState {
  * Workflow steps.
  */
 export enum WorkflowStep {
-	CHOOSE_MODE, // New step for mode selection
+	CHOOSE_MODE,
 	CHOOSE_SOURCE_IMAGE,
 	BUILD_TESSERAE,
 	GENERATE_AND_PREVIEW,
@@ -134,9 +134,9 @@ export const SEED_MAX = 1_000_000;
  * Initial workflow state.
  */
 export const INITIAL_WORKFLOW_STATE: WorkflowState = {
-	currentStep: WorkflowStep.CHOOSE_MODE, // Start with mode selection
+	currentStep: WorkflowStep.CHOOSE_MODE,
 	furthestCompletedStep: WorkflowStep.CHOOSE_MODE,
-	mode: "photomosaic", // Default mode
+	mode: "photomosaic",
 	sourceImage: null,
 	requestedTesseraSize: null,
 	adjustedTesseraSize: null,

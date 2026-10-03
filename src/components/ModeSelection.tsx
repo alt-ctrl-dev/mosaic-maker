@@ -66,12 +66,7 @@ export function ModeSelection({
 				})}
 			</div>
 
-			<button
-				type="button"
-				onClick={onContinue}
-				disabled={!mode}
-				className="primary"
-			>
+			<button type="button" onClick={onContinue} className="primary">
 				Continue
 			</button>
 		</div>
