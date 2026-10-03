@@ -24,6 +24,20 @@ const mockState = {
 	exportQuality: 0.9,
 };
 
+/**
+ * Create a mock popup window whose `document` is a real detached HTML document,
+ * so the component can populate it with DOM APIs as it does in the browser.
+ */
+function createMockPopupWindow() {
+	const popupDocument = document.implementation.createHTMLDocument("");
+	return {
+		document: popupDocument,
+		focus: vi.fn(),
+		close: vi.fn(),
+		opener: {} as unknown,
+	};
+}
+
 describe("ExportMosaic", () => {
 	beforeEach(() => {
 		vi.clearAllMocks();
@@ -99,14 +113,7 @@ describe("ExportMosaic", () => {
 				"Mozilla/5.0 (iPad; CPU OS 14_0 like Mac OS X) AppleWebKit/605.1.15",
 		});
 
-		const mockWindow = {
-			document: {
-				write: vi.fn(),
-				close: vi.fn(),
-			},
-			focus: vi.fn(),
-			close: vi.fn(),
-		};
+		const mockWindow = createMockPopupWindow();
 		const mockOpen = vi.fn().mockReturnValue(mockWindow);
 		window.open = mockOpen;
 
@@ -132,7 +139,9 @@ describe("ExportMosaic", () => {
 				"png",
 				0.9,
 			);
-			expect(mockWindow.document.write).toHaveBeenCalled();
+			const img = mockWindow.document.querySelector("img");
+			expect(img).not.toBeNull();
+			expect(img?.getAttribute("src")).toBe(mockBlobUrl);
 		});
 
 		mockExportMosaic.mockRestore();
@@ -149,14 +158,7 @@ describe("ExportMosaic", () => {
 			value: 5,
 		});
 
-		const mockWindow = {
-			document: {
-				write: vi.fn(),
-				close: vi.fn(),
-			},
-			focus: vi.fn(),
-			close: vi.fn(),
-		};
+		const mockWindow = createMockPopupWindow();
 		const mockOpen = vi.fn().mockReturnValue(mockWindow);
 		window.open = mockOpen;
 
@@ -182,7 +184,9 @@ describe("ExportMosaic", () => {
 				"png",
 				0.9,
 			);
-			expect(mockWindow.document.write).toHaveBeenCalled();
+			const img = mockWindow.document.querySelector("img");
+			expect(img).not.toBeNull();
+			expect(img?.getAttribute("src")).toBe(mockBlobUrl);
 		});
 
 		mockExportMosaic.mockRestore();
@@ -222,14 +226,7 @@ describe("ExportMosaic", () => {
 		});
 
 		// Mock window.open to return a valid window object
-		const mockWindow = {
-			document: {
-				write: vi.fn(),
-				close: vi.fn(),
-			},
-			close: vi.fn(),
-			focus: vi.fn(),
-		};
+		const mockWindow = createMockPopupWindow();
 		const mockOpen = vi.fn().mockReturnValue(mockWindow);
 		window.open = mockOpen;
 
@@ -248,6 +245,71 @@ describe("ExportMosaic", () => {
 				screen.getByText(/Could not prepare image for iOS/),
 			).toBeInTheDocument();
 		});
+
+		mockExportMosaic.mockRestore();
+	});
+
+	it("should sever the opener reference on the new tab to prevent reverse tabnabbing", async () => {
+		Object.defineProperty(navigator, "userAgent", {
+			writable: true,
+			value:
+				"Mozilla/5.0 (iPad; CPU OS 14_0 like Mac OS X) AppleWebKit/605.1.15",
+		});
+
+		const mockWindow = createMockPopupWindow();
+		window.open = vi.fn().mockReturnValue(mockWindow);
+
+		vi.spyOn(URL, "createObjectURL").mockReturnValue("blob:opener-test");
+
+		const mockExportMosaic = vi
+			.spyOn(exportEngine, "exportMosaic")
+			.mockResolvedValue(validDataUrl);
+
+		render(<ExportMosaic state={mockState} dispatch={mockDispatch} />);
+
+		fireEvent.click(screen.getByRole("button", { name: "Download" }));
+
+		await waitFor(() => {
+			expect(mockWindow.opener).toBeNull();
+		});
+
+		mockExportMosaic.mockRestore();
+	});
+
+	it("should revoke the blob URL once the image has rendered to avoid leaking it", async () => {
+		Object.defineProperty(navigator, "userAgent", {
+			writable: true,
+			value:
+				"Mozilla/5.0 (iPad; CPU OS 14_0 like Mac OS X) AppleWebKit/605.1.15",
+		});
+
+		const mockWindow = createMockPopupWindow();
+		window.open = vi.fn().mockReturnValue(mockWindow);
+
+		const mockBlobUrl = "blob:revoke-test";
+		vi.spyOn(URL, "createObjectURL").mockReturnValue(mockBlobUrl);
+		const revokeSpy = vi
+			.spyOn(URL, "revokeObjectURL")
+			.mockImplementation(() => {});
+
+		const mockExportMosaic = vi
+			.spyOn(exportEngine, "exportMosaic")
+			.mockResolvedValue(validDataUrl);
+
+		render(<ExportMosaic state={mockState} dispatch={mockDispatch} />);
+
+		fireEvent.click(screen.getByRole("button", { name: "Download" }));
+
+		await waitFor(() => {
+			expect(mockWindow.document.querySelector("img")).not.toBeNull();
+		});
+
+		expect(revokeSpy).not.toHaveBeenCalled();
+
+		const img = mockWindow.document.querySelector("img");
+		img?.dispatchEvent(new Event("load"));
+
+		expect(revokeSpy).toHaveBeenCalledWith(mockBlobUrl);
 
 		mockExportMosaic.mockRestore();
 	});

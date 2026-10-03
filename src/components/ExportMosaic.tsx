@@ -84,28 +84,65 @@ function openNewTabForLaterPopulation(): {
 	}
 
 	const populate = (dataUrl: string) => {
+		let blobUrl: string | null = null;
 		try {
 			const blob = dataUrlToBlob(dataUrl);
-			const blobUrl = URL.createObjectURL(blob);
+			blobUrl = URL.createObjectURL(blob);
 
-			newWindow.document.write(`
-				<!DOCTYPE html>
-				<html>
-				<head>
-					<title>Exported Mosaic</title>
-					<meta name="viewport" content="width=device-width, initial-scale=1">
-				</head>
-				<body style="margin: 0; padding: 20px; display: flex; justify-content: center; align-items: center; min-height: 100vh; background: #f0f0f0;">
-					<img src="${blobUrl}" style="max-width: 100%; max-height: 100vh; box-shadow: 0 2px 10px rgba(0,0,0,0.1);" alt="Exported mosaic">
-					<script>
-						setTimeout(() => URL.revokeObjectURL('${blobUrl}'), 1000);
-					</script>
-				</body>
-				</html>
-			`);
-			newWindow.document.close();
+			// Sever the opener reference so the populated tab cannot navigate or
+			// inspect the originating app window (reverse tabnabbing).
+			try {
+				newWindow.opener = null;
+			} catch {
+				// Some browsers make `opener` read-only; ignore if assignment fails.
+			}
+
+			// Build the document with DOM APIs rather than document.write with an
+			// interpolated HTML string. The blob URL never flows through HTML or
+			// script text, so there is no injection surface even though the blob
+			// URL itself is same-origin and not user-controlled.
+			const doc = newWindow.document;
+			doc.title = "Exported Mosaic";
+
+			const viewport = doc.createElement("meta");
+			viewport.name = "viewport";
+			viewport.content = "width=device-width, initial-scale=1";
+			doc.head.appendChild(viewport);
+
+			const { body } = doc;
+			body.style.margin = "0";
+			body.style.padding = "20px";
+			body.style.display = "flex";
+			body.style.justifyContent = "center";
+			body.style.alignItems = "center";
+			body.style.minHeight = "100vh";
+			body.style.background = "#f0f0f0";
+
+			const img = doc.createElement("img");
+			img.alt = "Exported mosaic";
+			img.style.maxWidth = "100%";
+			img.style.maxHeight = "100vh";
+			img.style.boxShadow = "0 2px 10px rgba(0,0,0,0.1)";
+
+			// Revoke the blob URL once the image has rendered (or failed) instead of
+			// guessing a fixed delay, so the object URL lives exactly as long as it
+			// is needed and is not leaked for the lifetime of the tab.
+			const revoke = () => {
+				if (blobUrl) {
+					URL.revokeObjectURL(blobUrl);
+					blobUrl = null;
+				}
+			};
+			img.addEventListener("load", revoke);
+			img.addEventListener("error", revoke);
+			img.src = blobUrl;
+			body.appendChild(img);
+
 			newWindow.focus();
 		} catch (_error) {
+			if (blobUrl) {
+				URL.revokeObjectURL(blobUrl);
+			}
 			newWindow.close();
 			throw new Error(
 				"Could not prepare image for iOS. Please try a different browser.",
