@@ -332,8 +332,8 @@ function selectTessera(
  * and avoiding visible repetition on horizontal and vertical neighbors.
  *
  * In `photomosaic` mode the source image is blended over each tessera at
- * {@link BLEND_SOURCE_ALPHA}, giving 75% tessera / 25% source per pixel. In
- * `lego` mode no blending occurs, so each cell shows its flat tessera colour.
+ * {@link BLEND_SOURCE_ALPHA}, giving 75% tessera / 25% source per pixel.
+ * Other modes draw tesserae without blending.
  */
 async function generateMosaicCanvas(
 	sourceCanvas: HTMLCanvasElement,
@@ -411,7 +411,7 @@ async function generateMosaicCanvas(
 			resultCtx.globalAlpha = 1;
 			resultCtx.drawImage(processedTesserae[bestMatchIndex].canvas, x, y);
 
-			if (mode !== "lego") {
+			if (mode === "photomosaic") {
 				resultCtx.globalAlpha = BLEND_SOURCE_ALPHA;
 				// Use clamped region size for edge cells to prevent sampling beyond canvas bounds
 				resultCtx.drawImage(

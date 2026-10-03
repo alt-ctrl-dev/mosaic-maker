@@ -17,31 +17,31 @@ const PRESET_PALETTES = [
 	{
 		name: "Classic Lego",
 		colors: [
-			"#FF0000", // Red
-			"#0000FF", // Blue
-			"#FFFF00", // Yellow
-			"#00FF00", // Green
-			"#FFFFFF", // White
-			"#000000", // Black
-			"#FF6600", // Orange
-			"#800080", // Purple
-			"#FFC0CB", // Pink
-			"#8B4513", // Brown
+			"#FF0000",
+			"#0000FF",
+			"#FFFF00",
+			"#00FF00",
+			"#FFFFFF",
+			"#000000",
+			"#FF6600",
+			"#800080",
+			"#FFC0CB",
+			"#8B4513",
 		],
 	},
 	{
 		name: "Pastel Mix",
 		colors: [
-			"#FFB6C1", // Light Pink
-			"#FFD700", // Gold
-			"#E6E6FA", // Lavender
-			"#98FB98", // Mint Green
-			"#87CEEB", // Sky Blue
-			"#FFE4B5", // Moccasin
-			"#DDA0DD", // Plum
-			"#F0E68C", // Khaki
-			"#FAFAD2", // Light Goldenrod
-			"#D8BFD8", // Thistle
+			"#FFB6C1",
+			"#FFD700",
+			"#E6E6FA",
+			"#98FB98",
+			"#87CEEB",
+			"#FFE4B5",
+			"#DDA0DD",
+			"#F0E68C",
+			"#FAFAD2",
+			"#D8BFD8",
 		],
 	},
 ];
@@ -61,14 +61,6 @@ export function LegoColorPicker({
 	const updateColors = (next: string[]) => {
 		setSelectedColors(next);
 		onTesseraeSelected(createLegoTesserae(next));
-	};
-
-	const toggleColor = (color: string) => {
-		if (selectedColors.includes(color)) {
-			updateColors(selectedColors.filter((c) => c !== color));
-		} else if (selectedColors.length < MAX_COLORS) {
-			updateColors([...selectedColors, color]);
-		}
 	};
 
 	const addCustomColor = () => {
@@ -164,29 +156,6 @@ export function LegoColorPicker({
 						Add Custom Color
 					</button>
 				</div>
-			</div>
-
-			<div className="color-grid">
-				<h4>Color Palette</h4>
-				{PRESET_PALETTES.flatMap((palette) => palette.colors)
-					.filter((color, index, self) => self.indexOf(color) === index)
-					.map((color) => (
-						<button
-							key={color}
-							type="button"
-							className={`color-option ${
-								selectedColors.includes(color) ? "selected" : ""
-							}`}
-							onClick={() => toggleColor(color)}
-							aria-label={`Toggle color ${color}`}
-							aria-pressed={selectedColors.includes(color)}
-						>
-							<div
-								className="color-swatch"
-								style={{ backgroundColor: color }}
-							/>
-						</button>
-					))}
 			</div>
 
 			{selectedColors.length < 2 && (

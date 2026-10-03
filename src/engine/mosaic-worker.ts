@@ -296,7 +296,7 @@ async function generateMosaicCanvas(
 			resultCtx.globalAlpha = 1;
 			resultCtx.drawImage(processedTesserae[bestMatchIndex].canvas, x, y);
 
-			if (mode !== "lego") {
+			if (mode === "photomosaic") {
 				resultCtx.globalAlpha = BLEND_SOURCE_ALPHA;
 				resultCtx.drawImage(
 					sourceCanvas,
