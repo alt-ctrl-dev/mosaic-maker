@@ -189,9 +189,9 @@ export function ExportMosaic({ state, dispatch }: ExportMosaicProps) {
 
 	/**
 	 * Share the mosaic via the Web Share API. Returns `false` when the browser
-	 * cannot share the generated file so the caller can fall back to a download.
-	 * Re-throws all failures (network, API errors, user-aborted share sheet)
-	 * so the caller can apply unified error handling.
+	 * reports it cannot share the generated file, letting the caller fall back
+	 * to a download. Lets {@link navigator.share} rejections (network failures,
+	 * API errors, user-aborted share sheet) propagate to the caller.
 	 */
 	const shareExportedMosaic = async (
 		exportedDataUrl: string,
@@ -406,17 +406,15 @@ export function ExportMosaic({ state, dispatch }: ExportMosaicProps) {
 					</details>
 
 					<div className="export-actions">
-						<div className="button-group">
-							<button
-								type="button"
-								onClick={handleExport}
-								disabled={isExporting}
-								aria-busy={isExporting}
-								className="primary"
-							>
-								{exportButtonLabel(isExporting, canShare)}
-							</button>
-						</div>
+						<button
+							type="button"
+							onClick={handleExport}
+							disabled={isExporting}
+							aria-busy={isExporting}
+							className="primary"
+						>
+							{exportButtonLabel(isExporting, canShare)}
+						</button>
 
 						{error && (
 							<article className="error-message" role="alert">

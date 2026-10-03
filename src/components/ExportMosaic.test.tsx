@@ -368,11 +368,7 @@ describe("ExportMosaic", () => {
 		mockExportMosaic.mockRestore();
 	});
 
-	it("should label the single export button Download when Web Share API is not available", async () => {
-		const mockExportMosaic = vi
-			.spyOn(exportEngine, "exportMosaic")
-			.mockResolvedValue(validDataUrl);
-
+	it("should label the single export button Download when Web Share API is not available", () => {
 		render(<ExportMosaic state={mockState} dispatch={mockDispatch} />);
 
 		expect(
@@ -381,8 +377,6 @@ describe("ExportMosaic", () => {
 		expect(
 			screen.queryByRole("button", { name: "Share" }),
 		).not.toBeInTheDocument();
-
-		mockExportMosaic.mockRestore();
 	});
 
 	it("should show an error when the Web Share API fails", async () => {
@@ -426,6 +420,7 @@ describe("ExportMosaic", () => {
 		});
 
 		expect(screen.queryByRole("alert")).not.toBeInTheDocument();
+		expect(screen.getByRole("button", { name: "Share" })).not.toBeDisabled();
 
 		mockExportMosaic.mockRestore();
 	});
