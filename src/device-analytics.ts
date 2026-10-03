@@ -1,3 +1,5 @@
+import { PACKAGE_VERSION } from "./version";
+
 const DEVICE_ID_STORAGE_KEY = "mosaicMaker.deviceId";
 
 /** OS name and, when available, its version string. */
@@ -152,14 +154,15 @@ function generateDeviceId(): string {
 }
 
 /**
- * Logs device analytics (OS name and version, device type, memory,
- * screen/viewport resolution, and a persistent device identifier) to the
- * console as formatted JSON.
+ * Logs device analytics (app version, OS name and version, device type,
+ * memory, screen/viewport resolution, and a persistent device identifier)
+ * to the console as formatted JSON.
  */
 export async function collectDeviceAnalytics(): Promise<void> {
 	const { os, osVersion } = await getOSInfo();
 
 	const analyticsData = {
+		appVersion: PACKAGE_VERSION,
 		os,
 		osVersion,
 		deviceType: getDeviceType(),
