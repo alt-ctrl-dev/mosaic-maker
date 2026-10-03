@@ -83,7 +83,7 @@ export function GeneratedTesserae({
 			});
 		} catch (error) {
 			console.error("Error generating tesserae:", error);
-			trackError("tesserae_generation", error as Error, {
+			trackError("tesserae_generation", error, {
 				seed,
 				count,
 				tesseraSize: initialState.adjustedTesseraSize ?? 0,

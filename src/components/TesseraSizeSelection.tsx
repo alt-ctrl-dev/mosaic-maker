@@ -6,6 +6,7 @@ import {
 	isCoarseGrid,
 	calculateGridCellCount,
 } from "../engine/tessera-sizing";
+import { trackEvent, trackStepView } from "../telemetry";
 
 /** Props for {@link TesseraSizeSelection}. */
 interface TesseraSizeSelectionProps {
@@ -43,6 +44,10 @@ export function TesseraSizeSelection({
 	onSizeSelectedRef.current = onSizeSelected;
 
 	const debounceTimerRef = useRef<NodeJS.Timeout | null>(null);
+
+	useEffect(() => {
+		trackStepView("build_tesserae");
+	}, []);
 
 	// biome-ignore lint/correctness/useExhaustiveDependencies: intentional mount-only effect
 	useEffect(() => {
@@ -95,6 +100,7 @@ export function TesseraSizeSelection({
 
 		debounceTimerRef.current = setTimeout(() => {
 			onSizeSelectedRef.current(newSize);
+			trackEvent("tessera_size_changed", { size: newSize });
 			debounceTimerRef.current = null;
 		}, 150);
 	};

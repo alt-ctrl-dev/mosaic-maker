@@ -321,7 +321,7 @@ export function ExportMosaic({ state, dispatch }: ExportMosaicProps) {
 			const errorMessage =
 				err instanceof Error ? err.message : "Unknown error occurred";
 			setError(errorMessage);
-			trackError("mosaic_export", err as Error, {
+			trackError("mosaic_export", err, {
 				exportFormat: state.exportFormat,
 				exportQuality: state.exportQuality,
 			});

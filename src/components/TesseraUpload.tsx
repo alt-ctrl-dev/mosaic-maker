@@ -37,7 +37,7 @@ export function TesseraUpload({
 				onTesseraeProcessed(tesserae);
 			} catch (error) {
 				console.error("Error processing tesserae:", error);
-				trackError("tessera_processing", error as Error, {
+				trackError("tessera_processing", error, {
 					fileCount: files?.length,
 					adjustedTesseraSize,
 				});

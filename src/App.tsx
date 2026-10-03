@@ -67,7 +67,7 @@ export function App() {
 			});
 		} catch (error) {
 			console.error("Error resizing tesserae:", error);
-			trackError("tesserae_resize", error as Error, {
+			trackError("tesserae_resize", error, {
 				tesseraCount: workflowState.tesserae.length,
 				targetSize: size,
 			});

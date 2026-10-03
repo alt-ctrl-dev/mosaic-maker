@@ -134,16 +134,19 @@ export function trackEvent(
 
 /**
  * Track an error event with additional context.
- * Provides structured error tracking to understand when and where errors occur.
+ * Accepts any caught value and extracts Error properties when available,
+ * ensuring callers never need to unsafely cast `unknown` from catch blocks.
  */
 export function trackError(
 	step: string,
-	error: Error,
+	error: unknown,
 	context?: Record<string, unknown>,
 ): void {
+	const errorInstance =
+		error instanceof Error ? error : new Error(String(error));
 	const payload: Record<string, unknown> = {
-		errorName: error.name,
-		errorMessage: error.message,
+		errorName: errorInstance.name,
+		errorMessage: errorInstance.message,
 		step,
 	};
 	if (context !== undefined) {

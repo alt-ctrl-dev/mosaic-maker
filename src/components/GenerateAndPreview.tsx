@@ -185,7 +185,7 @@ export function GenerateAndPreview({
 					"Web Worker not supported or failed, falling back to main thread",
 					err,
 				);
-				trackError("mosaic_generation_worker_init", err as Error);
+				trackError("mosaic_generation_worker_init", err);
 				await generateOnMainThread(sourceImage, tesseraSize);
 			}
 		} else {
@@ -235,7 +235,7 @@ export function GenerateAndPreview({
 			if (fallbackErrorMessage) {
 				console.error("Main-thread fallback failed:", err);
 				setError(fallbackErrorMessage);
-				trackError("mosaic_generation_android_fallback", err as Error, {
+				trackError("mosaic_generation_android_fallback", err, {
 					sourceWidth: sourceImage.width,
 					sourceHeight: sourceImage.height,
 					tesseraSize,
