@@ -121,6 +121,39 @@ describe("workflowReducer", () => {
 		expect(next.validTesseraCount).toBe(0);
 	});
 
+	it("advances from mode selection to source image on an advanceFromMode action", () => {
+		const next = workflowReducer(INITIAL_WORKFLOW_STATE, {
+			type: "advanceFromMode",
+		});
+
+		expect(next.currentStep).toBe(WorkflowStep.CHOOSE_SOURCE_IMAGE);
+		expect(next.furthestCompletedStep).toBe(WorkflowStep.CHOOSE_SOURCE_IMAGE);
+	});
+
+	it("unblocks navigation up to the source image step after advanceFromMode", () => {
+		const advanced = workflowReducer(INITIAL_WORKFLOW_STATE, {
+			type: "advanceFromMode",
+		});
+
+		const back = workflowReducer(advanced, {
+			type: "goToStep",
+			step: WorkflowStep.CHOOSE_MODE,
+		});
+		expect(back.currentStep).toBe(WorkflowStep.CHOOSE_MODE);
+
+		const forward = workflowReducer(back, {
+			type: "goToStep",
+			step: WorkflowStep.CHOOSE_SOURCE_IMAGE,
+		});
+		expect(forward.currentStep).toBe(WorkflowStep.CHOOSE_SOURCE_IMAGE);
+
+		const blocked = workflowReducer(advanced, {
+			type: "goToStep",
+			step: WorkflowStep.BUILD_TESSERAE,
+		});
+		expect(blocked.currentStep).toBe(WorkflowStep.CHOOSE_SOURCE_IMAGE);
+	});
+
 	it("advances from review to generate-and-preview on an advanceFromReview action", () => {
 		const next = workflowReducer(INITIAL_WORKFLOW_STATE, {
 			type: "advanceFromReview",
@@ -131,31 +164,31 @@ describe("workflowReducer", () => {
 	});
 
 	it("does not allow goToStep to jump ahead of furthest completed step", () => {
-		// Advance to step 1 (BUILD_TESSERAE)
-		const stateAtStep1 = workflowReducer(INITIAL_WORKFLOW_STATE, {
+		// Advance to step 2 (BUILD_TESSERAE)
+		const stateAtBuildTesserae = workflowReducer(INITIAL_WORKFLOW_STATE, {
 			type: "sourceSelected",
 			sourceImage: makeSourceImage(),
 		});
 
-		// Try to jump to step 3 (GENERATE_AND_PREVIEW) - should stay at step 1
-		const next = workflowReducer(stateAtStep1, {
+		// Try to jump to step 3 (GENERATE_AND_PREVIEW) - should stay at step 2
+		const next = workflowReducer(stateAtBuildTesserae, {
 			type: "goToStep",
 			step: WorkflowStep.GENERATE_AND_PREVIEW,
 		});
 
 		expect(next.currentStep).toBe(WorkflowStep.BUILD_TESSERAE);
-		expect(next.currentStep).toBe(stateAtStep1.furthestCompletedStep);
+		expect(next.currentStep).toBe(stateAtBuildTesserae.furthestCompletedStep);
 	});
 
 	it("allows goToStep to go back to a previously completed step", () => {
-		// Advance to step 1 (BUILD_TESSERAE)
-		const stateAtStep1 = workflowReducer(INITIAL_WORKFLOW_STATE, {
+		// Advance to step 2 (BUILD_TESSERAE)
+		const stateAtBuildTesserae = workflowReducer(INITIAL_WORKFLOW_STATE, {
 			type: "sourceSelected",
 			sourceImage: makeSourceImage(),
 		});
 
-		// Go back to step 0 (CHOOSE_SOURCE_IMAGE)
-		const next = workflowReducer(stateAtStep1, {
+		// Go back to step 1 (CHOOSE_SOURCE_IMAGE)
+		const next = workflowReducer(stateAtBuildTesserae, {
 			type: "goToStep",
 			step: WorkflowStep.CHOOSE_SOURCE_IMAGE,
 		});

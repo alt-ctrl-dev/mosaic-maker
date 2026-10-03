@@ -573,6 +573,25 @@ export function updateWorkflowWithGeneratedTesserae(
 }
 
 /**
+ * Advance the workflow from mode selection to the source image step.
+ *
+ * @param state - The current workflow state
+ * @returns Updated workflow state advanced to the source image step
+ */
+export function updateWorkflowAdvanceFromMode(
+	state: WorkflowState,
+): WorkflowState {
+	return {
+		...state,
+		currentStep: WorkflowStep.CHOOSE_SOURCE_IMAGE,
+		furthestCompletedStep: Math.max(
+			state.furthestCompletedStep,
+			WorkflowStep.CHOOSE_SOURCE_IMAGE,
+		),
+	};
+}
+
+/**
  * Advance the workflow from tesserae review to the generate-and-preview
  * step.
  *

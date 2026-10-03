@@ -83,8 +83,7 @@ export function App() {
 						onModeSelected={(mode) => dispatch({ type: "modeSelected", mode })}
 						onContinue={() =>
 							dispatch({
-								type: "goToStep",
-								step: WorkflowStepEnum.CHOOSE_SOURCE_IMAGE,
+								type: "advanceFromMode",
 							})
 						}
 					/>
