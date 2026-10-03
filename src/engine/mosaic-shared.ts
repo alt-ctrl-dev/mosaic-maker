@@ -82,10 +82,7 @@ function oklabDistance(a: Oklab, b: Oklab): number {
 	return Math.sqrt(deltaL * deltaL + deltaA * deltaA + deltaB * deltaB);
 }
 
-/**
- * Average perceptual distance between two color grids.
- * Optimized with early termination and reduced computation for similar grids.
- */
+/** Average perceptual distance between two color grids in OKLab units. */
 function averageGridDistance(grid1: ColorGrid, grid2: ColorGrid): number {
 	if (
 		grid1.colors.length !== grid2.colors.length ||
@@ -97,7 +94,6 @@ function averageGridDistance(grid1: ColorGrid, grid2: ColorGrid): number {
 	let totalDistance = 0;
 	let count = 0;
 
-	// Compute distances and accumulate
 	for (let rowIndex = 0; rowIndex < grid1.colors.length; rowIndex++) {
 		for (let colIndex = 0; colIndex < grid1.colors[0].length; colIndex++) {
 			totalDistance += oklabDistance(
@@ -112,8 +108,10 @@ function averageGridDistance(grid1: ColorGrid, grid2: ColorGrid): number {
 }
 
 /**
- * Threshold for early termination in distance calculation.
- * If a distance is below this threshold, we consider it "good enough".
+ * OKLab distance threshold for early termination in tessera selection.
+ * When a non-neighbor tessera has a distance below this value (roughly one
+ * JND in OKLab space across all nine grid cells), further scanning cannot
+ * produce a meaningfully different match, so iteration can halt early.
  */
 const DISTANCE_THRESHOLD = 0.01;
 
@@ -121,7 +119,6 @@ const DISTANCE_THRESHOLD = 0.01;
  * Choose the best tessera for a cell, preferring the closest color match but
  * avoiding the tesserae used directly above and to the left when an alternative
  * is within {@link ALTERNATIVE_TOLERANCE} of the best score.
- * Optimized with early termination when a sufficiently good match is found.
  */
 export function selectTessera<T>(
 	cellGrid: ColorGrid,
@@ -140,24 +137,25 @@ export function selectTessera<T>(
 			cellGrid,
 			colorGridExtractor(processedTesserae[i]),
 		);
+		const isNeighbor = i === neighborAbove || i === neighborLeft;
 
 		if (distance < bestDistance) {
 			bestDistance = distance;
 			bestIndex = i;
 
-			// Early termination: if we found a very good match, we can stop searching
-			if (distance < DISTANCE_THRESHOLD) {
+			// Early termination is only safe when the best match is not a neighbor:
+			// neighbor-avoidance may prefer a slightly worse non-neighbor, so
+			// breaking early on a neighbor match could skip a valid alternative.
+			if (distance < DISTANCE_THRESHOLD && !isNeighbor) {
 				break;
 			}
 		}
 
-		const isNeighbor = i === neighborAbove || i === neighborLeft;
 		if (!isNeighbor && distance < bestNonNeighborDistance) {
 			bestNonNeighborDistance = distance;
 			bestNonNeighborIndex = i;
 
-			// Early termination for non-neighbor as well
-			if (distance < DISTANCE_THRESHOLD && bestNonNeighborIndex !== null) {
+			if (distance < DISTANCE_THRESHOLD) {
 				break;
 			}
 		}
