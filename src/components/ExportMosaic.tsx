@@ -224,42 +224,22 @@ export function ExportMosaic({ state, dispatch }: ExportMosaicProps) {
 	};
 
 	/**
-	 * Download the mosaic to the device, using a direct anchor download where
-	 * supported and falling back to populating a pre-opened tab on iOS/iPadOS.
+	 * Deliver an already-exported mosaic to the device, using a direct anchor
+	 * download where supported and falling back to populating a tab that was
+	 * pre-opened within the user gesture on iOS/iPadOS.
 	 *
-	 * @param mosaicResult - The mosaic result to export
-	 * @param preExportedDataUrl - An already-exported data URL to use instead of
-	 *   re-exporting. When provided the export step is skipped entirely.
+	 * @param exportedDataUrl - The already-exported mosaic data URL to deliver
+	 * @param mosaicResult - The mosaic result, used for telemetry dimensions
+	 * @param useAnchorDownload - Whether a direct anchor download is supported
+	 * @param tabPopulator - Callback that fills the pre-opened tab with the
+	 *   image, used when anchor downloads are unavailable
 	 */
-	const downloadExportedMosaic = async (
+	const downloadExportedMosaic = (
+		exportedDataUrl: string,
 		mosaicResult: NonNullable<WorkflowState["mosaicResult"]>,
-		preExportedDataUrl?: string,
-	): Promise<void> => {
-		const useAnchorDownload = browserSupportsAnchorDownload();
-		let tabPopulator: ((dataUrl: string) => void) | null = null;
-		let deliveryMethod: "anchor" | "new-tab-populated" = "anchor";
-
-		if (!useAnchorDownload) {
-			const { populate, error } = openNewTabForLaterPopulation();
-			if (error) {
-				setError(error);
-				return;
-			}
-
-			tabPopulator = populate;
-			deliveryMethod = "new-tab-populated";
-		}
-
-		const exportedDataUrl =
-			preExportedDataUrl ??
-			(await exportMosaic(
-				mosaicResult.dataUrl,
-				mosaicResult.width,
-				mosaicResult.height,
-				state.exportFormat,
-				state.exportQuality,
-			));
-
+		useAnchorDownload: boolean,
+		tabPopulator: ((dataUrl: string) => void) | null,
+	): void => {
 		if (useAnchorDownload) {
 			downloadFile(exportedDataUrl, `mosaic.${state.exportFormat}`);
 		} else if (tabPopulator) {
@@ -271,7 +251,7 @@ export function ExportMosaic({ state, dispatch }: ExportMosaicProps) {
 			quality: state.exportQuality,
 			width: mosaicResult.width,
 			height: mosaicResult.height,
-			delivery: deliveryMethod,
+			delivery: useAnchorDownload ? "anchor" : "new-tab-populated",
 		});
 	};
 
@@ -285,28 +265,47 @@ export function ExportMosaic({ state, dispatch }: ExportMosaicProps) {
 		setIsExporting(true);
 		setError(null);
 
-		try {
-			if (canShare) {
-				const exportedDataUrl = await exportMosaic(
-					mosaicResult.dataUrl,
-					mosaicResult.width,
-					mosaicResult.height,
-					state.exportFormat,
-					state.exportQuality,
-				);
+		// Prepare the download delivery path up front. On iOS/iPadOS a tab must be
+		// opened synchronously within the user gesture, before the async export,
+		// so the browser does not treat it as a blocked popup.
+		const useAnchorDownload = browserSupportsAnchorDownload();
+		let tabPopulator: ((dataUrl: string) => void) | null = null;
+		if (!canShare && !useAnchorDownload) {
+			const { populate, error } = openNewTabForLaterPopulation();
+			if (error) {
+				setError(error);
+				setIsExporting(false);
+				return;
+			}
+			tabPopulator = populate;
+		}
 
+		try {
+			// Export exactly once per user action and reuse the result for both the
+			// share and download delivery paths.
+			const exportedDataUrl = await exportMosaic(
+				mosaicResult.dataUrl,
+				mosaicResult.width,
+				mosaicResult.height,
+				state.exportFormat,
+				state.exportQuality,
+			);
+
+			if (canShare) {
 				const shared = await shareExportedMosaic(exportedDataUrl, mosaicResult);
 				if (shared) {
 					return;
 				}
-
 				// Sharing failed (unsupported file type). Fall through to download
 				// using the already-exported data URL to avoid re-exporting.
-				await downloadExportedMosaic(mosaicResult, exportedDataUrl);
-				return;
 			}
 
-			await downloadExportedMosaic(mosaicResult);
+			downloadExportedMosaic(
+				exportedDataUrl,
+				mosaicResult,
+				useAnchorDownload,
+				tabPopulator,
+			);
 		} catch (err) {
 			// User cancelling the native share sheet is not an error.
 			if (err instanceof DOMException && err.name === "AbortError") {
