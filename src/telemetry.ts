@@ -83,8 +83,7 @@ export function initializeTelemetry(): void {
 			instrumentations: [
 				...getWebInstrumentations({
 					captureConsole: true,
-					// @ts-expect-error webVitalsInstrumentation is not in the type definition
-					// but it's a valid option for configuring web vitals reporting
+					// @ts-expect-error webVitalsInstrumentation is not in the public type definitions
 					webVitalsInstrumentation: {
 						reportAllChanges: true,
 					},
