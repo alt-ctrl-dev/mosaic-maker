@@ -165,6 +165,17 @@ function browserSupportsAnchorDownload(): boolean {
 }
 
 /**
+ * Compute the label for the primary export button based on the current
+ * exporting state and whether the Web Share API is available.
+ */
+function exportButtonLabel(isExporting: boolean, canShare: boolean): string {
+	if (isExporting) {
+		return canShare ? "Sharing..." : "Exporting...";
+	}
+	return canShare ? "Share" : "Download";
+}
+
+/**
  * Export step that lets the user configure format, quality, and alt text,
  * preview the mosaic, and trigger a file download.
  */
@@ -179,8 +190,8 @@ export function ExportMosaic({ state, dispatch }: ExportMosaicProps) {
 	/**
 	 * Share the mosaic via the Web Share API. Returns `false` when the browser
 	 * cannot share the generated file so the caller can fall back to a download.
-	 * Throws on any other failure (including a user-cancelled share sheet) so the
-	 * unified handler can apply its shared error handling.
+	 * Re-throws all failures (network, API errors, user-aborted share sheet)
+	 * so the caller can apply unified error handling.
 	 */
 	const shareExportedMosaic = async (
 		exportedDataUrl: string,
@@ -215,9 +226,14 @@ export function ExportMosaic({ state, dispatch }: ExportMosaicProps) {
 	/**
 	 * Download the mosaic to the device, using a direct anchor download where
 	 * supported and falling back to populating a pre-opened tab on iOS/iPadOS.
+	 *
+	 * @param mosaicResult - The mosaic result to export
+	 * @param preExportedDataUrl - An already-exported data URL to use instead of
+	 *   re-exporting. When provided the export step is skipped entirely.
 	 */
 	const downloadExportedMosaic = async (
 		mosaicResult: NonNullable<WorkflowState["mosaicResult"]>,
+		preExportedDataUrl?: string,
 	): Promise<void> => {
 		const useAnchorDownload = browserSupportsAnchorDownload();
 		let tabPopulator: ((dataUrl: string) => void) | null = null;
@@ -234,13 +250,15 @@ export function ExportMosaic({ state, dispatch }: ExportMosaicProps) {
 			deliveryMethod = "new-tab-populated";
 		}
 
-		const exportedDataUrl = await exportMosaic(
-			mosaicResult.dataUrl,
-			mosaicResult.width,
-			mosaicResult.height,
-			state.exportFormat,
-			state.exportQuality,
-		);
+		const exportedDataUrl =
+			preExportedDataUrl ??
+			(await exportMosaic(
+				mosaicResult.dataUrl,
+				mosaicResult.width,
+				mosaicResult.height,
+				state.exportFormat,
+				state.exportQuality,
+			));
 
 		if (useAnchorDownload) {
 			downloadFile(exportedDataUrl, `mosaic.${state.exportFormat}`);
@@ -268,7 +286,7 @@ export function ExportMosaic({ state, dispatch }: ExportMosaicProps) {
 		setError(null);
 
 		try {
-			if (supportsWebShare()) {
+			if (canShare) {
 				const exportedDataUrl = await exportMosaic(
 					mosaicResult.dataUrl,
 					mosaicResult.width,
@@ -281,6 +299,11 @@ export function ExportMosaic({ state, dispatch }: ExportMosaicProps) {
 				if (shared) {
 					return;
 				}
+
+				// Sharing failed (unsupported file type). Fall through to download
+				// using the already-exported data URL to avoid re-exporting.
+				await downloadExportedMosaic(mosaicResult, exportedDataUrl);
+				return;
 			}
 
 			await downloadExportedMosaic(mosaicResult);
@@ -392,13 +415,7 @@ export function ExportMosaic({ state, dispatch }: ExportMosaicProps) {
 								aria-busy={isExporting}
 								className="primary"
 							>
-								{isExporting
-									? canShare
-										? "Sharing..."
-										: "Exporting..."
-									: canShare
-										? "Share"
-										: "Download"}
+								{exportButtonLabel(isExporting, canShare)}
 							</button>
 						</div>
 
