@@ -327,7 +327,6 @@ describe("ExportMosaic", () => {
 
 		render(<ExportMosaic state={mockState} dispatch={mockDispatch} />);
 
-		// Should show both Download and Share buttons
 		expect(
 			screen.getByRole("button", { name: "Download" }),
 		).toBeInTheDocument();
@@ -370,7 +369,6 @@ describe("ExportMosaic", () => {
 
 		render(<ExportMosaic state={mockState} dispatch={mockDispatch} />);
 
-		// Should only show Download button
 		expect(
 			screen.getByRole("button", { name: "Download" }),
 		).toBeInTheDocument();
@@ -394,10 +392,32 @@ describe("ExportMosaic", () => {
 		const shareButton = screen.getByRole("button", { name: "Share" });
 		fireEvent.click(shareButton);
 
-		// Should show error message
 		await waitFor(() => {
 			expect(screen.getByText(/Share failed/)).toBeInTheDocument();
 		});
+
+		mockExportMosaic.mockRestore();
+	});
+
+	it("should not show error when user cancels the native share sheet", async () => {
+		mockNavigatorCanShare.mockReturnValue(true);
+		const abortError = new DOMException("Share cancelled", "AbortError");
+		mockNavigatorShare.mockRejectedValue(abortError);
+
+		const mockExportMosaic = vi
+			.spyOn(exportEngine, "exportMosaic")
+			.mockResolvedValue(validDataUrl);
+
+		render(<ExportMosaic state={mockState} dispatch={mockDispatch} />);
+
+		const shareButton = screen.getByRole("button", { name: "Share" });
+		fireEvent.click(shareButton);
+
+		await waitFor(() => {
+			expect(mockNavigatorShare).toHaveBeenCalled();
+		});
+
+		expect(screen.queryByRole("alert")).not.toBeInTheDocument();
 
 		mockExportMosaic.mockRestore();
 	});

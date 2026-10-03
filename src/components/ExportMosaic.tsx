@@ -28,7 +28,7 @@ function isIOSOrIPadOS(): boolean {
 	return navigator.maxTouchPoints > 1 && /Macintosh/.test(navigator.userAgent);
 }
 
-/** Check if the Web Share API is supported and can share files */
+/** Check if the Web Share API surface is present in the browser. */
 function supportsWebShare(): boolean {
 	return !!navigator.share && !!navigator.canShare;
 }
@@ -193,13 +193,11 @@ export function ExportMosaic({ state, dispatch }: ExportMosaicProps) {
 				state.exportQuality,
 			);
 
-			// Convert data URL to Blob for sharing
 			const blob = dataUrlToBlob(exportedDataUrl);
 			const file = new File([blob], `mosaic.${state.exportFormat}`, {
 				type: blob.type,
 			});
 
-			// Check if we can share this file
 			if (navigator.canShare?.({ files: [file] })) {
 				await navigator.share({
 					files: [file],
@@ -207,16 +205,22 @@ export function ExportMosaic({ state, dispatch }: ExportMosaicProps) {
 					text: "Check out this mosaic I created!",
 				});
 
-				trackEvent("mosaic_share", {
+				trackEvent("mosaic_download", {
 					format: state.exportFormat,
 					quality: state.exportQuality,
 					width: state.mosaicResult.width,
 					height: state.mosaicResult.height,
+					delivery: "share",
 				});
 			} else {
 				throw new Error("Your browser cannot share this type of file.");
 			}
 		} catch (err) {
+			// User cancelling the native share sheet is not an error.
+			if (err instanceof DOMException && err.name === "AbortError") {
+				return;
+			}
+
 			const errorMessage =
 				err instanceof Error ? err.message : "Unknown error occurred";
 			setError(errorMessage);
