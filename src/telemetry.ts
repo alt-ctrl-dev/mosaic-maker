@@ -80,6 +80,9 @@ export function initializeTelemetry(): void {
 			sessionTracking: {
 				samplingRate,
 			},
+			webVitalsInstrumentation: {
+				reportAllChanges: true,
+			},
 			instrumentations: [
 				...getWebInstrumentations({
 					captureConsole: true,

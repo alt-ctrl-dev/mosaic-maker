@@ -10,10 +10,10 @@ import {
 
 describe("telemetry", () => {
 	beforeEach(() => {
+		vi.resetModules();
+		vi.restoreAllMocks();
 		localStorage.clear();
 		sessionStorage.clear();
-		vi.restoreAllMocks();
-		// Tests assume no Faro config; .env may provide one, so clear it.
 		vi.stubEnv("VITE_FARO_URL", "");
 		vi.stubEnv("VITE_FARO_APP_NAME", "");
 	});
@@ -69,6 +69,31 @@ describe("telemetry", () => {
 			initializeTelemetry();
 			expect(consoleLogSpy).toHaveBeenCalledWith(
 				"Faro configuration not found, running in log-only mode",
+			);
+		});
+
+		it("should enable CLS reporting via webVitalsInstrumentation", async () => {
+			vi.stubEnv("VITE_FARO_URL", "http://localhost:1234/collect");
+			vi.stubEnv("VITE_FARO_APP_NAME", "test-app");
+			setTelemetryConsent(true);
+
+			const mockInitializeFaro = vi.fn();
+			vi.doMock("@grafana/faro-web-sdk", async () => {
+				const actual = await vi.importActual("@grafana/faro-web-sdk");
+				return {
+					...actual,
+					initializeFaro: mockInitializeFaro,
+					getWebInstrumentations: vi.fn(() => []),
+				};
+			});
+
+			const { initializeTelemetry } = await import("./telemetry");
+			initializeTelemetry();
+
+			expect(mockInitializeFaro).toHaveBeenCalledWith(
+				expect.objectContaining({
+					webVitalsInstrumentation: { reportAllChanges: true },
+				}),
 			);
 		});
 	});
