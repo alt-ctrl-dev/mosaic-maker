@@ -2,29 +2,30 @@ import { type Dispatch, useReducer } from "react";
 import type { SourceImageInfo } from "../engine/image-processing";
 import type { MosaicResult } from "../engine/mosaic-engine";
 import {
-	INITIAL_WORKFLOW_STATE,
-	WorkflowStep,
 	type ExportSettings,
-	type TesseraInfo,
-	type WorkflowState,
+	INITIAL_WORKFLOW_STATE,
 	type MosaicMode,
+	type TesseraInfo,
 	updateWorkflowAdvanceFromReview,
 	updateWorkflowClearAllTesserae,
 	updateWorkflowExportSettings,
 	updateWorkflowOnCancellationOrFailure,
 	updateWorkflowRemoveTessera,
 	updateWorkflowWithGeneratedTesserae,
-	updateWorkflowWithMosaicResult,
 	updateWorkflowWithMode,
+	updateWorkflowWithMosaicResult,
 	updateWorkflowWithSourceImage,
 	updateWorkflowWithSourceImageError,
 	updateWorkflowWithSupplementedTesserae,
-	updateWorkflowWithTesseraSize,
 	updateWorkflowWithTesserae,
+	updateWorkflowWithTesseraSize,
+	type WorkflowState,
+	WorkflowStep,
 } from "../engine/workflow-state";
 import { trackEvent } from "../telemetry";
 
 const WORKFLOW_STEP_NAMES = [
+	"choose_mode",
 	"choose_source_image",
 	"build_tesserae",
 	"generate_and_preview",

@@ -1,6 +1,6 @@
-import { describe, it, expect, vi } from "vitest";
-import { offscreenCanvasToDataUrl } from "./mosaic-worker";
+import { describe, expect, it, vi } from "vitest";
 import { ANDROID_READBACK_FAILURE } from "./mosaic-shared";
+import { offscreenCanvasToDataUrl } from "./mosaic-worker";
 
 interface MockOffscreenCanvas {
 	width: number;

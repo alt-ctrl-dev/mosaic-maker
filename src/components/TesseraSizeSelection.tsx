@@ -1,11 +1,11 @@
 import type React from "react";
-import { useState, useEffect, useRef } from "react";
-import type { WorkflowState } from "../engine/workflow-state";
+import { useEffect, useRef, useState } from "react";
 import {
 	calculateAdjustedTesseraSize,
-	isCoarseGrid,
 	calculateGridCellCount,
+	isCoarseGrid,
 } from "../engine/tessera-sizing";
+import type { WorkflowState } from "../engine/workflow-state";
 import { trackEvent, trackStepView } from "../telemetry";
 
 /** Props for {@link TesseraSizeSelection}. */

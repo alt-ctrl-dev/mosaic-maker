@@ -1,13 +1,13 @@
-import { describe, it, expect, beforeEach, afterEach, vi } from "vitest";
+import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 import {
-	hasTelemetryConsent,
-	setTelemetryConsent,
-	initializeTelemetry,
-	trackEvent,
-	trackError,
-	trackStepView,
-	trackMosaicGeneration,
 	getWorkflowSessionId,
+	hasTelemetryConsent,
+	initializeTelemetry,
+	setTelemetryConsent,
+	trackError,
+	trackEvent,
+	trackMosaicGeneration,
+	trackStepView,
 } from "./telemetry";
 import { VERSION_STRING } from "./version";
 
@@ -519,7 +519,7 @@ describe("telemetry", () => {
 				(args) => args[0] === "[Telemetry] error_mosaic_export:",
 			);
 			expect(call).toBeDefined();
-			const payload = JSON.parse(call![1] as string);
+			const payload = JSON.parse(call?.[1] as string);
 			expect(payload.step).toBe("mosaic_export");
 			expect(payload.errorName).toBe("Error");
 			expect(payload.errorMessage).toBe("canvas failed");
@@ -539,7 +539,7 @@ describe("telemetry", () => {
 				(args) => args[0] === "[Telemetry] error_tesserae_generation:",
 			);
 			expect(call).toBeDefined();
-			const payload = JSON.parse(call![1] as string);
+			const payload = JSON.parse(call?.[1] as string);
 			expect(payload.context).toBeDefined();
 			const context = JSON.parse(payload.context);
 			expect(context.seed).toBe(42);
@@ -570,7 +570,7 @@ describe("telemetry", () => {
 				(args) => args[0] === "[Telemetry] error_source_image_load:",
 			);
 			expect(call).toBeDefined();
-			const payload = JSON.parse(call![1] as string);
+			const payload = JSON.parse(call?.[1] as string);
 			expect(payload.errorMessage).toBe("just a string");
 		});
 
@@ -585,7 +585,7 @@ describe("telemetry", () => {
 				(args) => args[0] === "[Telemetry] error_mosaic_export:",
 			);
 			expect(call).toBeDefined();
-			const payload = JSON.parse(call![1] as string);
+			const payload = JSON.parse(call?.[1] as string);
 			expect(payload.errorMessage).toBe("undefined");
 		});
 	});
@@ -607,7 +607,7 @@ describe("telemetry", () => {
 				(args) => args[0] === "[Telemetry] step_view_choose_source_image:",
 			);
 			expect(call).toBeDefined();
-			const payload = JSON.parse(call![1] as string);
+			const payload = JSON.parse(call?.[1] as string);
 			expect(payload.step).toBe("choose_source_image");
 		});
 

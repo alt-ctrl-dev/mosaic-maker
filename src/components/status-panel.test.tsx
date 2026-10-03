@@ -1,6 +1,14 @@
 import { readFileSync } from "node:fs";
 import { resolve } from "node:path";
 import {
+	cleanup,
+	fireEvent,
+	type RenderResult,
+	render,
+	screen,
+	waitFor,
+} from "@testing-library/react";
+import {
 	afterAll,
 	afterEach,
 	beforeAll,
@@ -9,21 +17,13 @@ import {
 	it,
 	vi,
 } from "vitest";
-import {
-	cleanup,
-	fireEvent,
-	render,
-	screen,
-	waitFor,
-	type RenderResult,
-} from "@testing-library/react";
-import { SourceImageSelection } from "./SourceImageSelection";
+import type { WorkflowState } from "../engine/workflow-state";
 import { GenerateAndPreview } from "./GenerateAndPreview";
 import { GeneratedTesserae } from "./GeneratedTesserae";
+import { SourceImageSelection } from "./SourceImageSelection";
 import { TesseraReview } from "./TesseraReview";
 import { TesseraSizeSelection } from "./TesseraSizeSelection";
 import { TesseraUpload } from "./TesseraUpload";
-import type { WorkflowState } from "../engine/workflow-state";
 
 // Status panels must delegate their styling to Pico's <article> element rather
 // than declaring background-color or color themselves. These tests mock the

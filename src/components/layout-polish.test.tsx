@@ -1,7 +1,7 @@
 import { render, screen } from "@testing-library/react";
+import { INITIAL_WORKFLOW_STATE } from "../engine/workflow-state";
 import { GeneratedTesserae } from "./GeneratedTesserae";
 import { TesseraUpload } from "./TesseraUpload";
-import { INITIAL_WORKFLOW_STATE } from "../engine/workflow-state";
 
 describe("Layout polish requirements", () => {
 	it("renders GeneratedTesserae within a tessera-inputs container", () => {

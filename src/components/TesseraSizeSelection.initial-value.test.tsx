@@ -1,7 +1,7 @@
-import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 import { cleanup, fireEvent, render, screen } from "@testing-library/react";
-import { TesseraSizeSelection } from "./TesseraSizeSelection";
+import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 import type { WorkflowState } from "../engine/workflow-state";
+import { TesseraSizeSelection } from "./TesseraSizeSelection";
 
 describe("TesseraSizeSelection initial value registration", () => {
 	const onSizeSelectedMock = vi.fn();

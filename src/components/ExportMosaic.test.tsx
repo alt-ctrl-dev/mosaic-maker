@@ -1,8 +1,8 @@
-import { describe, expect, it, vi, beforeEach, afterEach } from "vitest";
-import { render, screen, fireEvent, waitFor } from "@testing-library/react";
-import { ExportMosaic } from "./ExportMosaic";
+import { fireEvent, render, screen, waitFor } from "@testing-library/react";
+import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 import * as exportEngine from "../engine/export";
 import { INITIAL_WORKFLOW_STATE, WorkflowStep } from "../engine/workflow-state";
+import { ExportMosaic } from "./ExportMosaic";
 
 const mockDispatch = vi.fn();
 

@@ -1,10 +1,10 @@
-import { describe, expect, it, vi, beforeEach, afterEach } from "vitest";
-import { render, screen, fireEvent, waitFor } from "@testing-library/react";
-import { GenerateAndPreview } from "./GenerateAndPreview";
+import { fireEvent, render, screen, waitFor } from "@testing-library/react";
+import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 import * as mosaicEngine from "../engine/mosaic-engine";
 import { ANDROID_READBACK_FAILURE } from "../engine/mosaic-shared";
-import { INITIAL_WORKFLOW_STATE, WorkflowStep } from "../engine/workflow-state";
 import type { WorkflowState } from "../engine/workflow-state";
+import { INITIAL_WORKFLOW_STATE, WorkflowStep } from "../engine/workflow-state";
+import { GenerateAndPreview } from "./GenerateAndPreview";
 
 class MockWorker {
 	onmessage: ((event: MessageEvent) => void) | null = null;

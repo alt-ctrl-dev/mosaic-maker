@@ -1,12 +1,12 @@
-import { describe, it, expect } from "vitest";
+import { describe, expect, it } from "vitest";
+import type { SourceImageInfo } from "./image-processing";
 import {
 	INITIAL_WORKFLOW_STATE,
-	updateWorkflowWithTesserae,
-	updateWorkflowWithSupplementedTesserae,
 	updateWorkflowWithSourceImage,
+	updateWorkflowWithSupplementedTesserae,
+	updateWorkflowWithTesserae,
 	updateWorkflowWithTesseraSize,
 } from "./workflow-state";
-import type { SourceImageInfo } from "./image-processing";
 
 describe("workflow-state supplement functionality", () => {
 	const mockSourceImage: SourceImageInfo = {

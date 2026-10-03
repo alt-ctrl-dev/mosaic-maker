@@ -1,7 +1,7 @@
-import { describe, it, expect, vi } from "vitest";
 import { render, screen } from "@testing-library/react";
-import { TesseraReview } from "./TesseraReview";
+import { describe, expect, it, vi } from "vitest";
 import type { TesseraInfo } from "../engine/workflow-state";
+import { TesseraReview } from "./TesseraReview";
 
 const MOCK_PREVIEW =
 	"data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAYAAAAfFcSJAAAADUlEQVR42mP8/5+hHgAHggJ/PchI7wAAAABJRU5ErkJggg==";

@@ -1,12 +1,12 @@
 import { render, screen } from "@testing-library/react";
 import { expect, test } from "vitest";
-import { GeneratedTesserae } from "./GeneratedTesserae";
+import { calculateGridCellCount } from "../engine/tessera-sizing";
 import {
+	getVarietyRecommendation,
 	INITIAL_WORKFLOW_STATE,
 	type WorkflowState,
 } from "../engine/workflow-state";
-import { calculateGridCellCount } from "../engine/tessera-sizing";
-import { getVarietyRecommendation } from "../engine/workflow-state";
+import { GeneratedTesserae } from "./GeneratedTesserae";
 
 function createMockStateWithGrid(
 	width: number,

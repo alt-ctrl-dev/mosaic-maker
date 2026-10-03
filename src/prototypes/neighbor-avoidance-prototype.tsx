@@ -3,7 +3,7 @@
  * Compares four tolerances: none, 10%, 5%, and adaptive.
  */
 
-import { useState, useEffect } from "react";
+import { useEffect, useState } from "react";
 
 interface Tessera {
 	id: number;
