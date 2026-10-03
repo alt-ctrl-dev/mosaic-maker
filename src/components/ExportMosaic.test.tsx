@@ -92,19 +92,23 @@ describe("ExportMosaic", () => {
 		mockExportMosaic.mockRestore();
 	});
 
-	it("should open image via blob URL on iOS devices", async () => {
+	it("should open image in new tab immediately on iOS devices to preserve user gesture", async () => {
 		Object.defineProperty(navigator, "userAgent", {
 			writable: true,
 			value:
 				"Mozilla/5.0 (iPad; CPU OS 14_0 like Mac OS X) AppleWebKit/605.1.15",
 		});
 
-		const mockBlobUrl = "blob:ios-test";
-		const createObjectURLMock = vi
-			.spyOn(URL, "createObjectURL")
-			.mockReturnValue(mockBlobUrl);
-
-		const mockOpen = vi.fn();
+		// Mock window.open to return a valid window object
+		const mockWindow = {
+			document: {
+				write: vi.fn(),
+				close: vi.fn(),
+			},
+			focus: vi.fn(),
+			close: vi.fn(),
+		};
+		const mockOpen = vi.fn().mockReturnValue(mockWindow);
 		window.open = mockOpen;
 
 		const mockExportMosaic = vi
@@ -116,16 +120,25 @@ describe("ExportMosaic", () => {
 		const downloadButton = screen.getByRole("button", { name: "Download" });
 		fireEvent.click(downloadButton);
 
+		// Verify that window.open is called immediately (within the same tick)
+		expect(mockOpen).toHaveBeenCalledWith("", "_blank");
+
+		// Wait for the export to complete and the window to be populated
 		await waitFor(() => {
-			expect(createObjectURLMock).toHaveBeenCalled();
-			expect(mockOpen).toHaveBeenCalledWith(mockBlobUrl, "_blank");
+			expect(mockExportMosaic).toHaveBeenCalledWith(
+				mockMosaicResult.dataUrl,
+				mockMosaicResult.width,
+				mockMosaicResult.height,
+				"png",
+				0.9,
+			);
+			expect(mockWindow.document.write).toHaveBeenCalled();
 		});
 
 		mockExportMosaic.mockRestore();
-		createObjectURLMock.mockRestore();
 	});
 
-	it("should open image via blob URL on iPadOS 13+ devices", async () => {
+	it("should open image in new tab immediately on iPadOS 13+ devices to preserve user gesture", async () => {
 		Object.defineProperty(navigator, "userAgent", {
 			writable: true,
 			value:
@@ -136,12 +149,16 @@ describe("ExportMosaic", () => {
 			value: 5,
 		});
 
-		const mockBlobUrl = "blob:ipados-test";
-		const createObjectURLMock = vi
-			.spyOn(URL, "createObjectURL")
-			.mockReturnValue(mockBlobUrl);
-
-		const mockOpen = vi.fn();
+		// Mock window.open to return a valid window object
+		const mockWindow = {
+			document: {
+				write: vi.fn(),
+				close: vi.fn(),
+			},
+			focus: vi.fn(),
+			close: vi.fn(),
+		};
+		const mockOpen = vi.fn().mockReturnValue(mockWindow);
 		window.open = mockOpen;
 
 		const mockExportMosaic = vi
@@ -153,13 +170,22 @@ describe("ExportMosaic", () => {
 		const downloadButton = screen.getByRole("button", { name: "Download" });
 		fireEvent.click(downloadButton);
 
+		// Verify that window.open is called immediately (within the same tick)
+		expect(mockOpen).toHaveBeenCalledWith("", "_blank");
+
+		// Wait for the export to complete and the window to be populated
 		await waitFor(() => {
-			expect(createObjectURLMock).toHaveBeenCalled();
-			expect(mockOpen).toHaveBeenCalledWith(mockBlobUrl, "_blank");
+			expect(mockExportMosaic).toHaveBeenCalledWith(
+				mockMosaicResult.dataUrl,
+				mockMosaicResult.width,
+				mockMosaicResult.height,
+				"png",
+				0.9,
+			);
+			expect(mockWindow.document.write).toHaveBeenCalled();
 		});
 
 		mockExportMosaic.mockRestore();
-		createObjectURLMock.mockRestore();
 	});
 
 	it("should show error when popup is blocked on iOS", async () => {
@@ -169,8 +195,7 @@ describe("ExportMosaic", () => {
 				"Mozilla/5.0 (iPad; CPU OS 14_0 like Mac OS X) AppleWebKit/605.1.15",
 		});
 
-		const mockBlobUrl = "blob:popup-blocked-test";
-		vi.spyOn(URL, "createObjectURL").mockReturnValue(mockBlobUrl);
+		// Mock window.open to return null (blocked)
 		window.open = vi.fn().mockReturnValue(null);
 
 		const mockExportMosaic = vi
@@ -196,6 +221,18 @@ describe("ExportMosaic", () => {
 				"Mozilla/5.0 (iPhone; CPU iPhone OS 14_0 like Mac OS X) AppleWebKit/605.1.15",
 		});
 
+		// Mock window.open to return a valid window object
+		const mockWindow = {
+			document: {
+				write: vi.fn(),
+				close: vi.fn(),
+			},
+			close: vi.fn(),
+			focus: vi.fn(),
+		};
+		const mockOpen = vi.fn().mockReturnValue(mockWindow);
+		window.open = mockOpen;
+
 		// Use invalid base64 to trigger conversion failure
 		const mockExportMosaic = vi
 			.spyOn(exportEngine, "exportMosaic")
@@ -215,20 +252,23 @@ describe("ExportMosaic", () => {
 		mockExportMosaic.mockRestore();
 	});
 
-	it("should open image with blob URL on iOS to avoid blank tab issue", async () => {
+	it("should open image in new tab and populate it on iOS to avoid blank tab issue", async () => {
 		Object.defineProperty(navigator, "userAgent", {
 			writable: true,
 			value:
 				"Mozilla/5.0 (iPhone; CPU iPhone OS 14_0 like Mac OS X) AppleWebKit/605.1.15",
 		});
 
-		const mockObjectUrl = "blob:test-url";
-		const createObjectURLMock = vi
-			.spyOn(URL, "createObjectURL")
-			.mockReturnValue(mockObjectUrl);
-		const revokeObjectURLMock = vi.spyOn(URL, "revokeObjectURL");
-
-		const mockOpen = vi.fn().mockReturnValue({ document: { write: vi.fn() } });
+		// Mock window.open to return a valid window object
+		const mockWindow = {
+			document: {
+				write: vi.fn(),
+				close: vi.fn(),
+			},
+			focus: vi.fn(),
+			close: vi.fn(),
+		};
+		const mockOpen = vi.fn().mockReturnValue(mockWindow);
 		window.open = mockOpen;
 
 		const mockExportMosaic = vi
@@ -240,13 +280,21 @@ describe("ExportMosaic", () => {
 		const downloadButton = screen.getByRole("button", { name: "Download" });
 		fireEvent.click(downloadButton);
 
+		// Verify that window.open is called immediately with blank page
+		expect(mockOpen).toHaveBeenCalledWith("", "_blank");
+
+		// Wait for the export to complete and the window to be populated
 		await waitFor(() => {
-			expect(createObjectURLMock).toHaveBeenCalled();
-			expect(mockOpen).toHaveBeenCalledWith(mockObjectUrl, "_blank");
+			expect(mockExportMosaic).toHaveBeenCalledWith(
+				mockMosaicResult.dataUrl,
+				mockMosaicResult.width,
+				mockMosaicResult.height,
+				"png",
+				0.9,
+			);
+			expect(mockWindow.document.write).toHaveBeenCalled();
 		});
 
 		mockExportMosaic.mockRestore();
-		createObjectURLMock.mockRestore();
-		revokeObjectURLMock.mockRestore();
 	});
 });

@@ -96,6 +96,70 @@ function openImageInNewTab(dataUrl: string): {
 }
 
 /**
+ * Open a new tab immediately within user gesture and populate it later with image data.
+ * This preserves the user activation context to avoid popup blocking on iOS/iPadOS.
+ *
+ * @returns An object with `window` (may be null if blocked) and `populate` function
+ */
+function openNewTabForLaterPopulation(): {
+	window: Window | null;
+	populate: (dataUrl: string) => void;
+	error?: string;
+} {
+	// Open a blank tab immediately within the user gesture
+	const newWindow = window.open("", "_blank");
+
+	if (!newWindow) {
+		return {
+			window: null,
+			populate: () => {},
+			error:
+				'Popup blocked. To save the image, please tap the share button and choose "Save Image".',
+		};
+	}
+
+	// Return a function to populate the window with content later
+	const populate = (dataUrl: string) => {
+		if (isIOSOrIPadOS()) {
+			try {
+				const blob = dataUrlToBlob(dataUrl);
+				const blobUrl = URL.createObjectURL(blob);
+
+				// Write HTML with the image
+				newWindow.document.write(`
+					<!DOCTYPE html>
+					<html>
+					<head>
+						<title>Exported Mosaic</title>
+						<meta name="viewport" content="width=device-width, initial-scale=1">
+					</head>
+					<body style="margin: 0; padding: 20px; display: flex; justify-content: center; align-items: center; min-height: 100vh; background: #f0f0f0;">
+						<img src="${blobUrl}" style="max-width: 100%; max-height: 100vh; box-shadow: 0 2px 10px rgba(0,0,0,0.1);" alt="Exported mosaic">
+						<script>
+							setTimeout(() => URL.revokeObjectURL('${blobUrl}'), 1000);
+						</script>
+					</body>
+					</html>
+				`);
+				newWindow.document.close();
+				newWindow.focus();
+			} catch (_error) {
+				newWindow.close();
+				throw new Error(
+					"Could not prepare image for iOS. Please try a different browser.",
+				);
+			}
+		} else {
+			// For non-iOS, redirect to the data URL
+			newWindow.location.href = dataUrl;
+			newWindow.focus();
+		}
+	};
+
+	return { window: newWindow, populate };
+}
+
+/**
  * Detect whether the browser can reliably handle programmatic anchor
  * downloads. iOS Safari and WebKit-based browsers frequently fail.
  */
@@ -123,6 +187,31 @@ export function ExportMosaic({ state, dispatch }: ExportMosaicProps) {
 		setIsExporting(true);
 		setError(null);
 
+		// For iOS/iPadOS, open the tab immediately to preserve user gesture
+		let tabPopulator: ((dataUrl: string) => void) | null = null;
+		let _tabError: string | undefined;
+		let deliveryMethod: "anchor" | "new-tab" | "new-tab-populated" = "anchor";
+
+		if (!browserSupportsAnchorDownload()) {
+			const { window, populate, error } = openNewTabForLaterPopulation();
+			if (error) {
+				setError(error);
+				setIsExporting(false);
+				return;
+			}
+
+			if (!window) {
+				setError(
+					'Popup blocked. To save the image, please tap the share button and choose "Save Image".',
+				);
+				setIsExporting(false);
+				return;
+			}
+
+			tabPopulator = populate;
+			deliveryMethod = "new-tab-populated";
+		}
+
 		try {
 			const exportedDataUrl = await exportMosaic(
 				state.mosaicResult.dataUrl,
@@ -134,6 +223,9 @@ export function ExportMosaic({ state, dispatch }: ExportMosaicProps) {
 
 			if (browserSupportsAnchorDownload()) {
 				downloadFile(exportedDataUrl, `mosaic.${state.exportFormat}`);
+			} else if (tabPopulator) {
+				// Populate the already-opened tab with the exported image
+				tabPopulator(exportedDataUrl);
 			} else {
 				const { opened, error: openError } = openImageInNewTab(exportedDataUrl);
 				if (openError) {
@@ -143,6 +235,8 @@ export function ExportMosaic({ state, dispatch }: ExportMosaicProps) {
 						'Popup blocked. To save the image, please tap the share button and choose "Save Image".',
 					);
 				}
+				// Update delivery method for tracking
+				deliveryMethod = "new-tab";
 			}
 
 			trackEvent("mosaic_download", {
@@ -150,7 +244,7 @@ export function ExportMosaic({ state, dispatch }: ExportMosaicProps) {
 				quality: state.exportQuality,
 				width: state.mosaicResult.width,
 				height: state.mosaicResult.height,
-				delivery: browserSupportsAnchorDownload() ? "anchor" : "new-tab",
+				delivery: deliveryMethod,
 			});
 		} catch (err) {
 			const errorMessage =
