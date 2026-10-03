@@ -59,40 +59,96 @@ function dataUrlToBlob(dataUrl: string): Blob {
 }
 
 /**
- * Open the exported image in a new tab.
- * For iOS devices, converts data URL to Blob URL to avoid blank tab issue.
+ * Open a blank tab immediately within the user gesture so the browser does
+ * not treat it as a popup, then return a callback to populate the tab with
+ * the mosaic image after the async export completes. Only used on iOS/iPadOS
+ * where programmatic anchor downloads are unreliable.
  *
- * @returns An object with `opened` indicating whether the tab opened, and an
- *   optional `error` string if blob conversion failed.
+ * @returns An object with `populate` (a callback to fill the tab with the
+ *   exported image) and an optional `error` if the popup was blocked.
  */
-function openImageInNewTab(dataUrl: string): {
-	opened: boolean;
+function openNewTabForLaterPopulation(): {
+	populate: (dataUrl: string) => void;
 	error?: string;
 } {
-	let urlToOpen = dataUrl;
-	let blobUrl: string | null = null;
+	const newWindow = window.open("", "_blank");
 
-	if (isIOSOrIPadOS()) {
+	if (!newWindow) {
+		return {
+			populate: () => {},
+			error:
+				'Popup blocked. To save the image, please tap the share button and choose "Save Image".',
+		};
+	}
+
+	const populate = (dataUrl: string) => {
+		let blobUrl: string | null = null;
 		try {
 			const blob = dataUrlToBlob(dataUrl);
 			blobUrl = URL.createObjectURL(blob);
-			urlToOpen = blobUrl;
-		} catch (_error) {
-			return {
-				opened: false,
-				error:
-					"Could not prepare image for iOS. Please try a different browser.",
+
+			// Sever the opener reference so the populated tab cannot navigate or
+			// inspect the originating app window (reverse tabnabbing).
+			try {
+				newWindow.opener = null;
+			} catch {
+				// Some browsers make `opener` read-only; ignore if assignment fails.
+			}
+
+			// Build the document with DOM APIs rather than document.write with an
+			// interpolated HTML string. The blob URL never flows through HTML or
+			// script text, so there is no injection surface even though the blob
+			// URL itself is same-origin and not user-controlled.
+			const doc = newWindow.document;
+			doc.title = "Exported Mosaic";
+
+			const viewport = doc.createElement("meta");
+			viewport.name = "viewport";
+			viewport.content = "width=device-width, initial-scale=1";
+			doc.head.appendChild(viewport);
+
+			const { body } = doc;
+			body.style.margin = "0";
+			body.style.padding = "20px";
+			body.style.display = "flex";
+			body.style.justifyContent = "center";
+			body.style.alignItems = "center";
+			body.style.minHeight = "100vh";
+			body.style.background = "#f0f0f0";
+
+			const img = doc.createElement("img");
+			img.alt = "Exported mosaic";
+			img.style.maxWidth = "100%";
+			img.style.maxHeight = "100vh";
+			img.style.boxShadow = "0 2px 10px rgba(0,0,0,0.1)";
+
+			// Revoke the blob URL once the image has rendered (or failed) instead of
+			// guessing a fixed delay, so the object URL lives exactly as long as it
+			// is needed and is not leaked for the lifetime of the tab.
+			const revoke = () => {
+				if (blobUrl) {
+					URL.revokeObjectURL(blobUrl);
+					blobUrl = null;
+				}
 			};
+			img.addEventListener("load", revoke);
+			img.addEventListener("error", revoke);
+			img.src = blobUrl;
+			body.appendChild(img);
+
+			newWindow.focus();
+		} catch (_error) {
+			if (blobUrl) {
+				URL.revokeObjectURL(blobUrl);
+			}
+			newWindow.close();
+			throw new Error(
+				"Could not prepare image for iOS. Please try a different browser.",
+			);
 		}
-	}
+	};
 
-	const newWindow = window.open(urlToOpen, "_blank");
-
-	if (blobUrl) {
-		setTimeout(() => URL.revokeObjectURL(blobUrl), 1000);
-	}
-
-	return { opened: newWindow !== null };
+	return { populate };
 }
 
 /**
@@ -123,6 +179,22 @@ export function ExportMosaic({ state, dispatch }: ExportMosaicProps) {
 		setIsExporting(true);
 		setError(null);
 
+		const useAnchorDownload = browserSupportsAnchorDownload();
+		let tabPopulator: ((dataUrl: string) => void) | null = null;
+		let deliveryMethod: "anchor" | "new-tab-populated" = "anchor";
+
+		if (!useAnchorDownload) {
+			const { populate, error } = openNewTabForLaterPopulation();
+			if (error) {
+				setError(error);
+				setIsExporting(false);
+				return;
+			}
+
+			tabPopulator = populate;
+			deliveryMethod = "new-tab-populated";
+		}
+
 		try {
 			const exportedDataUrl = await exportMosaic(
 				state.mosaicResult.dataUrl,
@@ -132,17 +204,10 @@ export function ExportMosaic({ state, dispatch }: ExportMosaicProps) {
 				state.exportQuality,
 			);
 
-			if (browserSupportsAnchorDownload()) {
+			if (useAnchorDownload) {
 				downloadFile(exportedDataUrl, `mosaic.${state.exportFormat}`);
-			} else {
-				const { opened, error: openError } = openImageInNewTab(exportedDataUrl);
-				if (openError) {
-					setError(openError);
-				} else if (!opened) {
-					setError(
-						'Popup blocked. To save the image, please tap the share button and choose "Save Image".',
-					);
-				}
+			} else if (tabPopulator) {
+				tabPopulator(exportedDataUrl);
 			}
 
 			trackEvent("mosaic_download", {
@@ -150,7 +215,7 @@ export function ExportMosaic({ state, dispatch }: ExportMosaicProps) {
 				quality: state.exportQuality,
 				width: state.mosaicResult.width,
 				height: state.mosaicResult.height,
-				delivery: browserSupportsAnchorDownload() ? "anchor" : "new-tab",
+				delivery: deliveryMethod,
 			});
 		} catch (err) {
 			const errorMessage =
