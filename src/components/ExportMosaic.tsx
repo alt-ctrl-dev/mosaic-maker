@@ -64,11 +64,10 @@ function dataUrlToBlob(dataUrl: string): Blob {
  * the mosaic image after the async export completes. Only used on iOS/iPadOS
  * where programmatic anchor downloads are unreliable.
  *
- * @returns An object with `window` (null if the popup is blocked) and
- *   `populate` (a callback to fill the tab with the exported image).
+ * @returns An object with `populate` (a callback to fill the tab with the
+ *   exported image) and an optional `error` if the popup was blocked.
  */
 function openNewTabForLaterPopulation(): {
-	window: Window | null;
 	populate: (dataUrl: string) => void;
 	error?: string;
 } {
@@ -76,7 +75,6 @@ function openNewTabForLaterPopulation(): {
 
 	if (!newWindow) {
 		return {
-			window: null,
 			populate: () => {},
 			error:
 				'Popup blocked. To save the image, please tap the share button and choose "Save Image".',
@@ -150,7 +148,7 @@ function openNewTabForLaterPopulation(): {
 		}
 	};
 
-	return { window: newWindow, populate };
+	return { populate };
 }
 
 /**

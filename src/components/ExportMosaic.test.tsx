@@ -199,23 +199,15 @@ describe("ExportMosaic", () => {
 				"Mozilla/5.0 (iPad; CPU OS 14_0 like Mac OS X) AppleWebKit/605.1.15",
 		});
 
-		// Mock window.open to return null (blocked)
 		window.open = vi.fn().mockReturnValue(null);
-
-		const mockExportMosaic = vi
-			.spyOn(exportEngine, "exportMosaic")
-			.mockResolvedValue(validDataUrl);
 
 		render(<ExportMosaic state={mockState} dispatch={mockDispatch} />);
 
-		const downloadButton = screen.getByRole("button", { name: "Download" });
-		fireEvent.click(downloadButton);
+		fireEvent.click(screen.getByRole("button", { name: "Download" }));
 
 		await waitFor(() => {
 			expect(screen.getByText(/Popup blocked/)).toBeInTheDocument();
 		});
-
-		mockExportMosaic.mockRestore();
 	});
 
 	it("should show error when blob conversion fails on iOS", async () => {
@@ -225,20 +217,19 @@ describe("ExportMosaic", () => {
 				"Mozilla/5.0 (iPhone; CPU iPhone OS 14_0 like Mac OS X) AppleWebKit/605.1.15",
 		});
 
-		// Mock window.open to return a valid window object
 		const mockWindow = createMockPopupWindow();
 		const mockOpen = vi.fn().mockReturnValue(mockWindow);
 		window.open = mockOpen;
 
-		// Use invalid base64 to trigger conversion failure
 		const mockExportMosaic = vi
 			.spyOn(exportEngine, "exportMosaic")
 			.mockResolvedValue("data:image/png;base64,!!!not-valid-base64!!!");
 
 		render(<ExportMosaic state={mockState} dispatch={mockDispatch} />);
 
-		const downloadButton = screen.getByRole("button", { name: "Download" });
-		fireEvent.click(downloadButton);
+		fireEvent.click(screen.getByRole("button", { name: "Download" }));
+
+		expect(mockOpen).toHaveBeenCalledWith("", "_blank");
 
 		await waitFor(() => {
 			expect(
@@ -257,7 +248,8 @@ describe("ExportMosaic", () => {
 		});
 
 		const mockWindow = createMockPopupWindow();
-		window.open = vi.fn().mockReturnValue(mockWindow);
+		const mockOpen = vi.fn().mockReturnValue(mockWindow);
+		window.open = mockOpen;
 
 		vi.spyOn(URL, "createObjectURL").mockReturnValue("blob:opener-test");
 
@@ -268,6 +260,8 @@ describe("ExportMosaic", () => {
 		render(<ExportMosaic state={mockState} dispatch={mockDispatch} />);
 
 		fireEvent.click(screen.getByRole("button", { name: "Download" }));
+
+		expect(mockOpen).toHaveBeenCalledWith("", "_blank");
 
 		await waitFor(() => {
 			expect(mockWindow.opener).toBeNull();
