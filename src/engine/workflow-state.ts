@@ -26,14 +26,6 @@ export interface ExportSettings {
 export type MosaicMode = "photomosaic" | "lego";
 
 /**
- * Color palette for lego mode.
- */
-export interface LegoColorPalette {
-	colors: string[]; // Array of hex color values
-	name: string; // Name of the palette
-}
-
-/**
  * Information about a tessera that has been processed for the mosaic.
  */
 export interface TesseraInfo {

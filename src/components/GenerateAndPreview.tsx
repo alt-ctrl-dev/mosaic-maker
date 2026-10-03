@@ -263,6 +263,7 @@ export function GenerateAndPreview({
 					state.sourceImage.width,
 					state.sourceImage.height,
 					state.adjustedTesseraSize,
+					state.mode,
 				);
 			}
 		} else if (state.sourceImage && state.adjustedTesseraSize) {
@@ -272,6 +273,7 @@ export function GenerateAndPreview({
 				state.sourceImage.width,
 				state.sourceImage.height,
 				state.adjustedTesseraSize,
+				state.mode,
 			);
 		}
 		terminateWorker();
@@ -285,7 +287,9 @@ export function GenerateAndPreview({
 	const canGenerate =
 		state.sourceImage !== null &&
 		state.adjustedTesseraSize !== null &&
-		state.tesserae.length > 0;
+		(state.mode === "lego"
+			? state.legoColors !== null && state.legoColors.length >= 2
+			: state.tesserae.length > 0);
 
 	return (
 		<div className="generate-preview-step">

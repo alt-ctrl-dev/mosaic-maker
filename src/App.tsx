@@ -93,53 +93,61 @@ export function App() {
 						initialState={workflowState}
 					/>
 				);
-			case WorkflowStepEnum.BUILD_TESSERAE:
+			case WorkflowStepEnum.BUILD_TESSERAE: {
+				const isPhotomosaic = workflowState.mode === "photomosaic";
+				const isLego = workflowState.mode === "lego";
+				const hasPhotomosaicTesserae =
+					isPhotomosaic && workflowState.tesserae.length > 0;
+				const hasLegoColors =
+					isLego &&
+					workflowState.legoColors !== null &&
+					workflowState.legoColors.length >= 2;
+				const canReview = hasPhotomosaicTesserae || hasLegoColors;
+
 				return (
 					<div className="build-tesserae-container">
 						<TesseraSizeSelection
 							onSizeSelected={handleSizeSelected}
 							initialState={workflowState}
 						/>
-						{workflowState.mode === "photomosaic" ? (
-							<div className="tessera-inputs">
-								<TesseraUpload
-									onTesseraeProcessed={(tesserae) =>
-										dispatch({ type: "tesseraeProcessed", tesserae })
-									}
-									adjustedTesseraSize={resolvedTesseraSize}
-								/>
-								<p>OR</p>
-								<GeneratedTesserae
-									onTesseraeGenerated={(tesserae) =>
-										dispatch({ type: "tesseraeGenerated", tesserae })
-									}
-									initialState={workflowState}
-								/>
-							</div>
-						) : workflowState.mode === "lego" ? (
+						{isPhotomosaic && (
+							<>
+								<div className="tessera-inputs">
+									<TesseraUpload
+										onTesseraeProcessed={(tesserae) =>
+											dispatch({ type: "tesseraeProcessed", tesserae })
+										}
+										adjustedTesseraSize={resolvedTesseraSize}
+									/>
+									<p>OR</p>
+									<GeneratedTesserae
+										onTesseraeGenerated={(tesserae) =>
+											dispatch({ type: "tesseraeGenerated", tesserae })
+										}
+										initialState={workflowState}
+									/>
+								</div>
+								{hasPhotomosaicTesserae && (
+									<button
+										type="button"
+										onClick={() => dispatch({ type: "clearAllTesserae" })}
+										className="secondary"
+										style={{ marginBottom: "1rem" }}
+									>
+										Clear all tiles
+									</button>
+								)}
+							</>
+						)}
+						{isLego && (
 							<LegoColorPicker
 								onColorsSelected={(colors) =>
 									dispatch({ type: "legoColorsSelected", colors })
 								}
 								initialColors={workflowState.legoColors || []}
 							/>
-						) : null}
-						{workflowState.mode === "photomosaic" &&
-							workflowState.tesserae.length > 0 && (
-								<button
-									type="button"
-									onClick={() => dispatch({ type: "clearAllTesserae" })}
-									className="secondary"
-									style={{ marginBottom: "1rem" }}
-								>
-									Clear all tiles
-								</button>
-							)}
-						{(workflowState.mode === "photomosaic" &&
-							workflowState.tesserae.length > 0) ||
-						(workflowState.mode === "lego" &&
-							workflowState.legoColors &&
-							workflowState.legoColors.length >= 2) ? (
+						)}
+						{canReview && (
 							<TesseraReview
 								tesserae={workflowState.tesserae}
 								onRemoveTessera={(index) =>
@@ -153,9 +161,10 @@ export function App() {
 									workflowState.hasAcceptedSupplementation
 								}
 							/>
-						) : null}
+						)}
 					</div>
 				);
+			}
 			case WorkflowStepEnum.GENERATE_AND_PREVIEW:
 				return <GenerateAndPreview state={workflowState} dispatch={dispatch} />;
 			case WorkflowStepEnum.EXPORT_MOSAIC:

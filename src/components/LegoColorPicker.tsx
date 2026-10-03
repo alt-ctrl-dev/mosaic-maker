@@ -1,11 +1,17 @@
-import { useState, useEffect } from "react";
+import { useState } from "react";
 
+/** Props for {@link LegoColorPicker}. */
 interface LegoColorPickerProps {
+	/** Called with the updated array of selected hex color values. */
 	onColorsSelected: (colors: string[]) => void;
+	/** Previously selected colors to restore when revisiting this step. */
 	initialColors?: string[];
 }
 
-// Predefined color palettes
+/** Maximum number of colors the user can select. */
+const MAX_COLORS = 15;
+
+/** Preset color palettes the user can choose from. */
 const PRESET_PALETTES = [
 	{
 		name: "Classic Lego",
@@ -39,6 +45,10 @@ const PRESET_PALETTES = [
 	},
 ];
 
+/**
+ * Color picker for Lego mosaic mode that lets the user select 2-15 colors
+ * from preset palettes or a custom color wheel.
+ */
 export function LegoColorPicker({
 	onColorsSelected,
 	initialColors = [],
@@ -47,44 +57,48 @@ export function LegoColorPicker({
 	const [customColor, setCustomColor] = useState("#FF0000");
 	const [activePalette, setActivePalette] = useState<number | null>(null);
 
-	useEffect(() => {
-		onColorsSelected(selectedColors);
-	}, [selectedColors, onColorsSelected]);
+	const updateColors = (next: string[]) => {
+		setSelectedColors(next);
+		onColorsSelected(next);
+	};
 
 	const toggleColor = (color: string) => {
 		if (selectedColors.includes(color)) {
-			setSelectedColors(selectedColors.filter((c) => c !== color));
-		} else if (selectedColors.length < 15) {
-			setSelectedColors([...selectedColors, color]);
+			updateColors(selectedColors.filter((c) => c !== color));
+		} else if (selectedColors.length < MAX_COLORS) {
+			updateColors([...selectedColors, color]);
 		}
 	};
 
 	const addCustomColor = () => {
-		if (!selectedColors.includes(customColor) && selectedColors.length < 15) {
-			setSelectedColors([...selectedColors, customColor]);
+		if (
+			!selectedColors.includes(customColor) &&
+			selectedColors.length < MAX_COLORS
+		) {
+			updateColors([...selectedColors, customColor]);
 		}
 	};
 
 	const removeColor = (color: string) => {
-		setSelectedColors(selectedColors.filter((c) => c !== color));
+		updateColors(selectedColors.filter((c) => c !== color));
 	};
 
 	const selectPalette = (paletteIndex: number) => {
 		const palette = PRESET_PALETTES[paletteIndex];
-		setSelectedColors(palette.colors.slice(0, 15)); // Limit to 15 colors
+		updateColors(palette.colors.slice(0, MAX_COLORS));
 		setActivePalette(paletteIndex);
 	};
 
 	return (
 		<div className="lego-color-picker">
-			<h3>Select Colors (2-15 colors required)</h3>
+			<h3>Select Colors (2-{MAX_COLORS} colors required)</h3>
 
 			{selectedColors.length > 0 && (
 				<div className="selected-colors">
 					<h4>Selected Colors:</h4>
 					<div className="color-list">
-						{selectedColors.map((color, index) => (
-							<div key={index} className="selected-color-item">
+						{selectedColors.map((color) => (
+							<div key={color} className="selected-color-item">
 								<div
 									className="color-swatch"
 									style={{ backgroundColor: color }}
@@ -107,7 +121,7 @@ export function LegoColorPicker({
 			<div className="preset-palettes">
 				<h4>Preset Palettes</h4>
 				{PRESET_PALETTES.map((palette, index) => (
-					<div key={index} className="palette-option">
+					<div key={palette.name} className="palette-option">
 						<button
 							type="button"
 							onClick={() => selectPalette(index)}
@@ -116,9 +130,9 @@ export function LegoColorPicker({
 							{palette.name}
 						</button>
 						<div className="palette-colors">
-							{palette.colors.map((color, colorIndex) => (
+							{palette.colors.map((color) => (
 								<div
-									key={colorIndex}
+									key={color}
 									className="palette-color"
 									style={{ backgroundColor: color }}
 									title={color}
@@ -143,7 +157,7 @@ export function LegoColorPicker({
 						onClick={addCustomColor}
 						disabled={
 							selectedColors.includes(customColor) ||
-							selectedColors.length >= 15
+							selectedColors.length >= MAX_COLORS
 						}
 					>
 						Add Custom Color
@@ -154,36 +168,31 @@ export function LegoColorPicker({
 			<div className="color-grid">
 				<h4>Color Palette</h4>
 				{PRESET_PALETTES.flatMap((palette) => palette.colors)
-					.filter((color, index, self) => self.indexOf(color) === index) // Unique colors only
-					.map((color, index) => (
-						<div
-							key={index}
+					.filter((color, index, self) => self.indexOf(color) === index)
+					.map((color) => (
+						<button
+							key={color}
+							type="button"
 							className={`color-option ${
 								selectedColors.includes(color) ? "selected" : ""
 							}`}
 							onClick={() => toggleColor(color)}
-							onKeyDown={(e) => {
-								if (e.key === "Enter" || e.key === " ") {
-									toggleColor(color);
-								}
-							}}
-							role="button"
-							tabIndex={0}
 							aria-label={`Toggle color ${color}`}
+							aria-pressed={selectedColors.includes(color)}
 						>
 							<div
 								className="color-swatch"
 								style={{ backgroundColor: color }}
 							/>
-						</div>
+						</button>
 					))}
 			</div>
 
 			{selectedColors.length < 2 && (
 				<p className="warning">Please select at least 2 colors</p>
 			)}
-			{selectedColors.length >= 15 && (
-				<p className="info">Maximum of 15 colors reached</p>
+			{selectedColors.length >= MAX_COLORS && (
+				<p className="info">Maximum of {MAX_COLORS} colors reached</p>
 			)}
 		</div>
 	);
