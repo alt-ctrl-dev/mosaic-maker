@@ -1,5 +1,5 @@
 import * as sandcastle from "@ai-hero/sandcastle";
-import { Agent } from "./types";
+import type { Agent } from "./types.ts";
 
 /**
  * Creates a review agent that inspects a branch's diff against the target
