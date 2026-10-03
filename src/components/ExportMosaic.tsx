@@ -28,6 +28,11 @@ function isIOSOrIPadOS(): boolean {
 	return navigator.maxTouchPoints > 1 && /Macintosh/.test(navigator.userAgent);
 }
 
+/** Check if the Web Share API is supported and can share files */
+function supportsWebShare(): boolean {
+	return !!navigator.share && !!navigator.canShare;
+}
+
 /**
  * Trigger a file download by creating and clicking a temporary anchor element.
  */
@@ -168,6 +173,56 @@ export function ExportMosaic({ state, dispatch }: ExportMosaicProps) {
 	const [error, setError] = useState<string | null>(null);
 	const handleExportSettingsChange = (settings: Partial<ExportSettings>) => {
 		dispatch({ type: "exportSettingsChanged", settings });
+	};
+
+	const handleShare = async () => {
+		if (!state.mosaicResult) {
+			setError("No mosaic to share");
+			return;
+		}
+
+		setIsExporting(true);
+		setError(null);
+
+		try {
+			const exportedDataUrl = await exportMosaic(
+				state.mosaicResult.dataUrl,
+				state.mosaicResult.width,
+				state.mosaicResult.height,
+				state.exportFormat,
+				state.exportQuality,
+			);
+
+			// Convert data URL to Blob for sharing
+			const blob = dataUrlToBlob(exportedDataUrl);
+			const file = new File([blob], `mosaic.${state.exportFormat}`, {
+				type: blob.type,
+			});
+
+			// Check if we can share this file
+			if (navigator.canShare?.({ files: [file] })) {
+				await navigator.share({
+					files: [file],
+					title: "Mosaic Image",
+					text: "Check out this mosaic I created!",
+				});
+
+				trackEvent("mosaic_share", {
+					format: state.exportFormat,
+					quality: state.exportQuality,
+					width: state.mosaicResult.width,
+					height: state.mosaicResult.height,
+				});
+			} else {
+				throw new Error("Your browser cannot share this type of file.");
+			}
+		} catch (err) {
+			const errorMessage =
+				err instanceof Error ? err.message : "Unknown error occurred";
+			setError(errorMessage);
+		} finally {
+			setIsExporting(false);
+		}
 	};
 
 	const handleDownload = async () => {
@@ -312,15 +367,29 @@ export function ExportMosaic({ state, dispatch }: ExportMosaicProps) {
 					</details>
 
 					<div className="export-actions">
-						<button
-							type="button"
-							onClick={handleDownload}
-							disabled={isExporting}
-							aria-busy={isExporting}
-							className="primary"
-						>
-							{isExporting ? "Exporting..." : "Download"}
-						</button>
+						<div className="button-group">
+							<button
+								type="button"
+								onClick={handleDownload}
+								disabled={isExporting}
+								aria-busy={isExporting}
+								className="secondary"
+							>
+								{isExporting ? "Exporting..." : "Download"}
+							</button>
+
+							{supportsWebShare() && (
+								<button
+									type="button"
+									onClick={handleShare}
+									disabled={isExporting}
+									aria-busy={isExporting}
+									className="primary"
+								>
+									{isExporting ? "Sharing..." : "Share"}
+								</button>
+							)}
+						</div>
 
 						{error && (
 							<article className="error-message" role="alert">
