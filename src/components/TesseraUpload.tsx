@@ -2,6 +2,7 @@ import type React from "react";
 import { useCallback, useState } from "react";
 import type { TesseraInfo } from "../engine/workflow-state";
 import { processTesserae } from "../engine/tessera-processing";
+import { trackError, trackStepView } from "../telemetry";
 
 /** Props for {@link TesseraUpload}. */
 interface TesseraUploadProps {
@@ -20,6 +21,11 @@ export function TesseraUpload({
 }: TesseraUploadProps) {
 	const [isProcessing, setIsProcessing] = useState(false);
 
+	// Track when the component is viewed/loaded
+	useState(() => {
+		trackStepView("tessera_upload");
+	});
+
 	const handleFileChange = useCallback(
 		async (files: FileList | null) => {
 			if (!files || files.length === 0) return;
@@ -32,6 +38,10 @@ export function TesseraUpload({
 				onTesseraeProcessed(tesserae);
 			} catch (error) {
 				console.error("Error processing tesserae:", error);
+				trackError("tessera_processing", error as Error, {
+					fileCount: files?.length,
+					adjustedTesseraSize,
+				});
 			} finally {
 				setIsProcessing(false);
 			}

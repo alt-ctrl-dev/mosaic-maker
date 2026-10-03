@@ -3,7 +3,7 @@ import type { WorkflowState } from "../engine/workflow-state";
 import { generateMosaic, type ProgressCallback } from "../engine/mosaic-engine";
 import { ANDROID_READBACK_FAILURE } from "../engine/mosaic-shared";
 import type { WorkflowAction } from "../hooks/useWorkflowReducer";
-import { trackMosaicGeneration } from "../telemetry";
+import { trackMosaicGeneration, trackError, trackStepView } from "../telemetry";
 
 /** Props for {@link GenerateAndPreview}. */
 interface GenerateAndPreviewProps {
@@ -46,6 +46,11 @@ export function GenerateAndPreview({
 		width: number;
 		height: number;
 	} | null>(null);
+
+	// Track when the component is viewed/loaded
+	useState(() => {
+		trackStepView("generate_and_preview");
+	});
 
 	const beforeUnloadRef = useRef(onBeforeUnload);
 	const workerRef = useRef<Worker | null>(null);
@@ -181,6 +186,7 @@ export function GenerateAndPreview({
 					"Web Worker not supported or failed, falling back to main thread",
 					err,
 				);
+				trackError("mosaic_generation_worker_init", err as Error);
 				await generateOnMainThread(sourceImage, tesseraSize);
 			}
 		} else {

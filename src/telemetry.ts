@@ -132,6 +132,47 @@ export function trackEvent(
 	faro.api.pushEvent(name, attributes);
 }
 
+/**
+ * Track an error event with additional context.
+ * Provides structured error tracking to understand when and where errors occur.
+ */
+export function trackError(
+	step: string,
+	error: Error,
+	context?: Record<string, unknown>,
+): void {
+	trackEvent(`error_${step}`, {
+		errorName: error.name,
+		errorMessage: error.message,
+		context: context ? JSON.stringify(context) : undefined,
+		step,
+	});
+}
+
+/**
+ * Track when a user views/navigates to a step in the workflow.
+ * Helps understand user progression and drop-off points.
+ */
+export function trackStepView(step: string): void {
+	trackEvent(`step_view_${step}`, {
+		step,
+	});
+}
+
+/**
+ * Track user interactions like button clicks, form submissions, etc.
+ * Provides insight into user behavior and engagement.
+ */
+export function trackInteraction(
+	interaction: string,
+	context?: Record<string, unknown>,
+): void {
+	trackEvent(`interaction_${interaction}`, {
+		interaction,
+		context: context ? JSON.stringify(context) : undefined,
+	});
+}
+
 /** OS name and, when available, its version string. */
 interface OsInfo {
 	os: string;

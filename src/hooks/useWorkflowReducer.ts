@@ -22,6 +22,7 @@ import {
 	updateWorkflowWithTesseraSize,
 	updateWorkflowWithTesserae,
 } from "../engine/workflow-state";
+import { trackEvent } from "../telemetry";
 
 /** Count of workflow steps derived from the enum's string-key members. */
 const WORKFLOW_STEP_COUNT = Object.keys(WorkflowStep).filter((key) =>
@@ -96,7 +97,23 @@ export function workflowReducer(
 				Math.min(action.step, WORKFLOW_STEP_COUNT - 1),
 			);
 			if (clamped <= state.furthestCompletedStep) {
-				return { ...state, currentStep: clamped };
+				const newState = { ...state, currentStep: clamped };
+
+				// Track step navigation
+				const stepNames = [
+					"choose_source_image",
+					"build_tesserae",
+					"generate_and_preview",
+					"export_mosaic",
+				];
+				trackEvent("workflow_step_navigate", {
+					fromStep: stepNames[state.currentStep] || `step_${state.currentStep}`,
+					toStep: stepNames[clamped] || `step_${clamped}`,
+					isForward: clamped > state.currentStep,
+					isBackward: clamped < state.currentStep,
+				});
+
+				return newState;
 			}
 			return state;
 		}
