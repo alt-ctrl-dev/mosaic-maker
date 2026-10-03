@@ -166,6 +166,141 @@ describe("telemetry", () => {
 		});
 	});
 
+	describe("trackDeviceAnalytics", () => {
+		const WINDOWS_USER_AGENT =
+			"Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36";
+
+		function setUserAgent(value: string): void {
+			Object.defineProperty(navigator, "userAgent", {
+				value,
+				configurable: true,
+			});
+		}
+
+		function loggedDeviceAttributes(
+			calls: unknown[][],
+		): Record<string, unknown> {
+			const call = calls.find(
+				(args) => args[0] === "[Telemetry] device_analytics:",
+			);
+			if (!call) {
+				throw new Error("device_analytics event was not logged");
+			}
+			return JSON.parse(call[1] as string);
+		}
+
+		beforeEach(() => {
+			Object.defineProperty(navigator, "userAgentData", {
+				value: undefined,
+				configurable: true,
+			});
+			setUserAgent(WINDOWS_USER_AGENT);
+			Object.defineProperty(navigator, "deviceMemory", {
+				value: 8,
+				configurable: true,
+			});
+			Object.defineProperty(screen, "width", {
+				value: 1920,
+				configurable: true,
+			});
+			Object.defineProperty(screen, "height", {
+				value: 1080,
+				configurable: true,
+			});
+			Object.defineProperty(window, "innerWidth", {
+				value: 1200,
+				configurable: true,
+			});
+			Object.defineProperty(window, "innerHeight", {
+				value: 800,
+				configurable: true,
+			});
+		});
+
+		it("tracks a device_analytics event with device info as attributes", async () => {
+			const { trackDeviceAnalytics } = await import("./telemetry");
+			const consoleLogSpy = vi
+				.spyOn(console, "log")
+				.mockImplementation(() => {});
+
+			await trackDeviceAnalytics();
+
+			const attributes = loggedDeviceAttributes(consoleLogSpy.mock.calls);
+			expect(attributes.appVersion).toBe(VERSION_STRING);
+			expect(attributes.sessionId).toBe(getWorkflowSessionId());
+			expect(attributes.os).toBe("Windows");
+			expect(attributes.deviceType).toBe("Desktop");
+			expect(attributes.memory).toBe("8");
+			expect(attributes.screenResolution).toBe("1920×1080");
+			expect(attributes.viewportResolution).toBe("1200×800");
+			expect(typeof attributes.deviceId).toBe("string");
+		});
+
+		it("collects device analytics only once per app session", async () => {
+			const { trackDeviceAnalytics } = await import("./telemetry");
+			const consoleLogSpy = vi
+				.spyOn(console, "log")
+				.mockImplementation(() => {});
+
+			await trackDeviceAnalytics();
+			await trackDeviceAnalytics();
+
+			const deviceEvents = consoleLogSpy.mock.calls.filter(
+				(args) => args[0] === "[Telemetry] device_analytics:",
+			);
+			expect(deviceEvents).toHaveLength(1);
+		});
+
+		it("uses navigator.userAgentData high-entropy values for OS detail", async () => {
+			Object.defineProperty(navigator, "userAgentData", {
+				value: {
+					getHighEntropyValues: vi.fn().mockResolvedValue({
+						platform: "Windows",
+						platformVersion: "15.0.0",
+					}),
+				},
+				configurable: true,
+			});
+			const { trackDeviceAnalytics } = await import("./telemetry");
+			const consoleLogSpy = vi
+				.spyOn(console, "log")
+				.mockImplementation(() => {});
+
+			await trackDeviceAnalytics();
+
+			const attributes = loggedDeviceAttributes(consoleLogSpy.mock.calls);
+			expect(attributes.os).toBe("Windows");
+			expect(attributes.osVersion).toBe("15.0.0");
+		});
+
+		it("omits osVersion when falling back to user agent parsing", async () => {
+			const { trackDeviceAnalytics } = await import("./telemetry");
+			const consoleLogSpy = vi
+				.spyOn(console, "log")
+				.mockImplementation(() => {});
+
+			await trackDeviceAnalytics();
+
+			const attributes = loggedDeviceAttributes(consoleLogSpy.mock.calls);
+			expect(attributes.osVersion).toBeUndefined();
+		});
+
+		it("persists the device id in localStorage under mosaicMaker.deviceId", async () => {
+			const { trackDeviceAnalytics } = await import("./telemetry");
+			const consoleLogSpy = vi
+				.spyOn(console, "log")
+				.mockImplementation(() => {});
+
+			await trackDeviceAnalytics();
+
+			const storedId = localStorage.getItem("mosaicMaker.deviceId");
+			expect(storedId).not.toBeNull();
+			expect(loggedDeviceAttributes(consoleLogSpy.mock.calls).deviceId).toBe(
+				storedId,
+			);
+		});
+	});
+
 	describe("trackMosaicGeneration", () => {
 		it("should track mosaic generation event with provided parameters", () => {
 			const consoleLogSpy = vi
