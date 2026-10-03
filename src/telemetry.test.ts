@@ -299,6 +299,179 @@ describe("telemetry", () => {
 				storedId,
 			);
 		});
+
+		it("reuses the persisted device id across sessions", async () => {
+			localStorage.setItem("mosaicMaker.deviceId", "persisted-device-id");
+			const { trackDeviceAnalytics } = await import("./telemetry");
+
+			await trackDeviceAnalytics();
+
+			expect(localStorage.getItem("mosaicMaker.deviceId")).toBe(
+				"persisted-device-id",
+			);
+		});
+
+		it("reports memory as -1 when device memory is unavailable", async () => {
+			// @ts-expect-error deviceMemory is not in all browsers
+			delete navigator.deviceMemory;
+			const { trackDeviceAnalytics } = await import("./telemetry");
+			const consoleLogSpy = vi
+				.spyOn(console, "log")
+				.mockImplementation(() => {});
+
+			await trackDeviceAnalytics();
+
+			expect(loggedDeviceAttributes(consoleLogSpy.mock.calls).memory).toBe(
+				"-1",
+			);
+		});
+
+		it("detects MacOS from a macOS user agent", async () => {
+			setUserAgent(
+				"Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36",
+			);
+			const { trackDeviceAnalytics } = await import("./telemetry");
+			const consoleLogSpy = vi
+				.spyOn(console, "log")
+				.mockImplementation(() => {});
+
+			await trackDeviceAnalytics();
+
+			expect(loggedDeviceAttributes(consoleLogSpy.mock.calls).os).toBe("MacOS");
+		});
+
+		it("classifies an Android user agent as a Mobile device", async () => {
+			setUserAgent(
+				"Mozilla/5.0 (Linux; Android 14; Pixel 8) AppleWebKit/537.36 Mobile Safari/537.36",
+			);
+			const { trackDeviceAnalytics } = await import("./telemetry");
+			const consoleLogSpy = vi
+				.spyOn(console, "log")
+				.mockImplementation(() => {});
+
+			await trackDeviceAnalytics();
+
+			const attributes = loggedDeviceAttributes(consoleLogSpy.mock.calls);
+			expect(attributes.os).toBe("Linux");
+			expect(attributes.deviceType).toBe("Mobile");
+		});
+
+		it("classifies an iPad user agent as a Tablet device", async () => {
+			setUserAgent(
+				"Mozilla/5.0 (iPad; CPU OS 17_0 like Mac OS X) AppleWebKit/605.1.15",
+			);
+			const { trackDeviceAnalytics } = await import("./telemetry");
+			const consoleLogSpy = vi
+				.spyOn(console, "log")
+				.mockImplementation(() => {});
+
+			await trackDeviceAnalytics();
+
+			expect(loggedDeviceAttributes(consoleLogSpy.mock.calls).deviceType).toBe(
+				"Tablet",
+			);
+		});
+
+		it("reports os as Unknown for an unrecognized user agent", async () => {
+			setUserAgent("CustomBot/1.0");
+			const { trackDeviceAnalytics } = await import("./telemetry");
+			const consoleLogSpy = vi
+				.spyOn(console, "log")
+				.mockImplementation(() => {});
+
+			await trackDeviceAnalytics();
+
+			const attributes = loggedDeviceAttributes(consoleLogSpy.mock.calls);
+			expect(attributes.os).toBe("Unknown");
+			expect(attributes.deviceType).toBe("Unknown");
+		});
+
+		it("falls back to user agent parsing when high-entropy values reject", async () => {
+			Object.defineProperty(navigator, "userAgentData", {
+				value: {
+					getHighEntropyValues: vi
+						.fn()
+						.mockRejectedValue(new Error("not allowed")),
+				},
+				configurable: true,
+			});
+			const { trackDeviceAnalytics } = await import("./telemetry");
+			const consoleLogSpy = vi
+				.spyOn(console, "log")
+				.mockImplementation(() => {});
+
+			await trackDeviceAnalytics();
+
+			expect(loggedDeviceAttributes(consoleLogSpy.mock.calls).os).toBe(
+				"Windows",
+			);
+		});
+
+		it("falls back to user agent parsing when high-entropy platform is absent", async () => {
+			Object.defineProperty(navigator, "userAgentData", {
+				value: {
+					getHighEntropyValues: vi.fn().mockResolvedValue({}),
+				},
+				configurable: true,
+			});
+			const { trackDeviceAnalytics } = await import("./telemetry");
+			const consoleLogSpy = vi
+				.spyOn(console, "log")
+				.mockImplementation(() => {});
+
+			await trackDeviceAnalytics();
+
+			expect(loggedDeviceAttributes(consoleLogSpy.mock.calls).os).toBe(
+				"Windows",
+			);
+		});
+
+		it("omits osVersion when high-entropy values expose no platform version", async () => {
+			Object.defineProperty(navigator, "userAgentData", {
+				value: {
+					getHighEntropyValues: vi.fn().mockResolvedValue({
+						platform: "Windows",
+						platformVersion: "",
+					}),
+				},
+				configurable: true,
+			});
+			const { trackDeviceAnalytics } = await import("./telemetry");
+			const consoleLogSpy = vi
+				.spyOn(console, "log")
+				.mockImplementation(() => {});
+
+			await trackDeviceAnalytics();
+
+			const attributes = loggedDeviceAttributes(consoleLogSpy.mock.calls);
+			expect(attributes.os).toBe("Windows");
+			expect(attributes.osVersion).toBeUndefined();
+		});
+
+		it("generates a non-persistent device id when localStorage is unavailable", async () => {
+			const originalGetItem = Storage.prototype.getItem;
+			const getItem = vi
+				.spyOn(Storage.prototype, "getItem")
+				.mockImplementation(function (this: Storage, key: string) {
+					if (this === localStorage && key === "mosaicMaker.deviceId") {
+						throw new Error("localStorage blocked");
+					}
+					return originalGetItem.call(this, key);
+				});
+			const { trackDeviceAnalytics } = await import("./telemetry");
+			const consoleLogSpy = vi
+				.spyOn(console, "log")
+				.mockImplementation(() => {});
+
+			await trackDeviceAnalytics();
+
+			const deviceId = loggedDeviceAttributes(consoleLogSpy.mock.calls)
+				.deviceId as string;
+			expect(typeof deviceId).toBe("string");
+			expect(deviceId).not.toBe("");
+
+			getItem.mockRestore();
+		});
 	});
 
 	describe("trackMosaicGeneration", () => {

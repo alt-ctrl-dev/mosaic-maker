@@ -151,7 +151,7 @@ function getUserAgentData(): HighEntropyUserAgentData | undefined {
 
 /**
  * Parses the operating system name from the user agent string.
- * @returns OS name (Windows, MacOS, Linux, Android, iOS) or "Unknown"
+ * @returns OS name (Windows, MacOS, Linux) or "Unknown"
  */
 function parseOSFromUserAgent(): string {
 	const userAgent = navigator.userAgent;
