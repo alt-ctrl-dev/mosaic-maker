@@ -116,6 +116,7 @@ export function trackEvent(
 ): void {
 	const attributes: Record<string, string> = {
 		sessionId: getWorkflowSessionId(),
+		appVersion: PACKAGE_VERSION,
 	};
 	for (const [key, value] of Object.entries(payload)) {
 		attributes[key] = String(value);
