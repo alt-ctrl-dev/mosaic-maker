@@ -59,54 +59,19 @@ function dataUrlToBlob(dataUrl: string): Blob {
 }
 
 /**
- * Open the exported image in a new tab.
- * For iOS devices, converts data URL to Blob URL to avoid blank tab issue.
+ * Open a blank tab immediately within the user gesture so the browser does
+ * not treat it as a popup, then return a callback to populate the tab with
+ * the mosaic image after the async export completes. Only used on iOS/iPadOS
+ * where programmatic anchor downloads are unreliable.
  *
- * @returns An object with `opened` indicating whether the tab opened, and an
- *   optional `error` string if blob conversion failed.
- */
-function openImageInNewTab(dataUrl: string): {
-	opened: boolean;
-	error?: string;
-} {
-	let urlToOpen = dataUrl;
-	let blobUrl: string | null = null;
-
-	if (isIOSOrIPadOS()) {
-		try {
-			const blob = dataUrlToBlob(dataUrl);
-			blobUrl = URL.createObjectURL(blob);
-			urlToOpen = blobUrl;
-		} catch (_error) {
-			return {
-				opened: false,
-				error:
-					"Could not prepare image for iOS. Please try a different browser.",
-			};
-		}
-	}
-
-	const newWindow = window.open(urlToOpen, "_blank");
-
-	if (blobUrl) {
-		setTimeout(() => URL.revokeObjectURL(blobUrl), 1000);
-	}
-
-	return { opened: newWindow !== null };
-}
-
-/**
- * Open a new tab immediately within user gesture and populate it later with image data.
- * This preserves the user activation context to avoid popup blocking on iOS/iPadOS.
- *
- * @returns An object with `window` (may be null if blocked) and `populate` function
+ * @returns An object with `window` (null if the popup is blocked) and
+ *   `populate` (a callback to fill the tab with the exported image).
  */
 function openNewTabForLaterPopulation(): {
 	window: Window | null;
 	populate: (dataUrl: string) => void;
 	error?: string;
 } {
-	// Open a blank tab immediately within the user gesture
 	const newWindow = window.open("", "_blank");
 
 	if (!newWindow) {
@@ -118,41 +83,33 @@ function openNewTabForLaterPopulation(): {
 		};
 	}
 
-	// Return a function to populate the window with content later
 	const populate = (dataUrl: string) => {
-		if (isIOSOrIPadOS()) {
-			try {
-				const blob = dataUrlToBlob(dataUrl);
-				const blobUrl = URL.createObjectURL(blob);
+		try {
+			const blob = dataUrlToBlob(dataUrl);
+			const blobUrl = URL.createObjectURL(blob);
 
-				// Write HTML with the image
-				newWindow.document.write(`
-					<!DOCTYPE html>
-					<html>
-					<head>
-						<title>Exported Mosaic</title>
-						<meta name="viewport" content="width=device-width, initial-scale=1">
-					</head>
-					<body style="margin: 0; padding: 20px; display: flex; justify-content: center; align-items: center; min-height: 100vh; background: #f0f0f0;">
-						<img src="${blobUrl}" style="max-width: 100%; max-height: 100vh; box-shadow: 0 2px 10px rgba(0,0,0,0.1);" alt="Exported mosaic">
-						<script>
-							setTimeout(() => URL.revokeObjectURL('${blobUrl}'), 1000);
-						</script>
-					</body>
-					</html>
-				`);
-				newWindow.document.close();
-				newWindow.focus();
-			} catch (_error) {
-				newWindow.close();
-				throw new Error(
-					"Could not prepare image for iOS. Please try a different browser.",
-				);
-			}
-		} else {
-			// For non-iOS, redirect to the data URL
-			newWindow.location.href = dataUrl;
+			newWindow.document.write(`
+				<!DOCTYPE html>
+				<html>
+				<head>
+					<title>Exported Mosaic</title>
+					<meta name="viewport" content="width=device-width, initial-scale=1">
+				</head>
+				<body style="margin: 0; padding: 20px; display: flex; justify-content: center; align-items: center; min-height: 100vh; background: #f0f0f0;">
+					<img src="${blobUrl}" style="max-width: 100%; max-height: 100vh; box-shadow: 0 2px 10px rgba(0,0,0,0.1);" alt="Exported mosaic">
+					<script>
+						setTimeout(() => URL.revokeObjectURL('${blobUrl}'), 1000);
+					</script>
+				</body>
+				</html>
+			`);
+			newWindow.document.close();
 			newWindow.focus();
+		} catch (_error) {
+			newWindow.close();
+			throw new Error(
+				"Could not prepare image for iOS. Please try a different browser.",
+			);
 		}
 	};
 
@@ -187,23 +144,14 @@ export function ExportMosaic({ state, dispatch }: ExportMosaicProps) {
 		setIsExporting(true);
 		setError(null);
 
-		// For iOS/iPadOS, open the tab immediately to preserve user gesture
+		const useAnchorDownload = browserSupportsAnchorDownload();
 		let tabPopulator: ((dataUrl: string) => void) | null = null;
-		let _tabError: string | undefined;
-		let deliveryMethod: "anchor" | "new-tab" | "new-tab-populated" = "anchor";
+		let deliveryMethod: "anchor" | "new-tab-populated" = "anchor";
 
-		if (!browserSupportsAnchorDownload()) {
-			const { window, populate, error } = openNewTabForLaterPopulation();
+		if (!useAnchorDownload) {
+			const { populate, error } = openNewTabForLaterPopulation();
 			if (error) {
 				setError(error);
-				setIsExporting(false);
-				return;
-			}
-
-			if (!window) {
-				setError(
-					'Popup blocked. To save the image, please tap the share button and choose "Save Image".',
-				);
 				setIsExporting(false);
 				return;
 			}
@@ -221,22 +169,10 @@ export function ExportMosaic({ state, dispatch }: ExportMosaicProps) {
 				state.exportQuality,
 			);
 
-			if (browserSupportsAnchorDownload()) {
+			if (useAnchorDownload) {
 				downloadFile(exportedDataUrl, `mosaic.${state.exportFormat}`);
 			} else if (tabPopulator) {
-				// Populate the already-opened tab with the exported image
 				tabPopulator(exportedDataUrl);
-			} else {
-				const { opened, error: openError } = openImageInNewTab(exportedDataUrl);
-				if (openError) {
-					setError(openError);
-				} else if (!opened) {
-					setError(
-						'Popup blocked. To save the image, please tap the share button and choose "Save Image".',
-					);
-				}
-				// Update delivery method for tracking
-				deliveryMethod = "new-tab";
 			}
 
 			trackEvent("mosaic_download", {

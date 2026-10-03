@@ -99,7 +99,6 @@ describe("ExportMosaic", () => {
 				"Mozilla/5.0 (iPad; CPU OS 14_0 like Mac OS X) AppleWebKit/605.1.15",
 		});
 
-		// Mock window.open to return a valid window object
 		const mockWindow = {
 			document: {
 				write: vi.fn(),
@@ -111,6 +110,9 @@ describe("ExportMosaic", () => {
 		const mockOpen = vi.fn().mockReturnValue(mockWindow);
 		window.open = mockOpen;
 
+		const mockBlobUrl = "blob:ios-test";
+		vi.spyOn(URL, "createObjectURL").mockReturnValue(mockBlobUrl);
+
 		const mockExportMosaic = vi
 			.spyOn(exportEngine, "exportMosaic")
 			.mockResolvedValue(validDataUrl);
@@ -120,10 +122,8 @@ describe("ExportMosaic", () => {
 		const downloadButton = screen.getByRole("button", { name: "Download" });
 		fireEvent.click(downloadButton);
 
-		// Verify that window.open is called immediately (within the same tick)
 		expect(mockOpen).toHaveBeenCalledWith("", "_blank");
 
-		// Wait for the export to complete and the window to be populated
 		await waitFor(() => {
 			expect(mockExportMosaic).toHaveBeenCalledWith(
 				mockMosaicResult.dataUrl,
@@ -149,7 +149,6 @@ describe("ExportMosaic", () => {
 			value: 5,
 		});
 
-		// Mock window.open to return a valid window object
 		const mockWindow = {
 			document: {
 				write: vi.fn(),
@@ -161,6 +160,9 @@ describe("ExportMosaic", () => {
 		const mockOpen = vi.fn().mockReturnValue(mockWindow);
 		window.open = mockOpen;
 
+		const mockBlobUrl = "blob:ipados-test";
+		vi.spyOn(URL, "createObjectURL").mockReturnValue(mockBlobUrl);
+
 		const mockExportMosaic = vi
 			.spyOn(exportEngine, "exportMosaic")
 			.mockResolvedValue(validDataUrl);
@@ -170,10 +172,8 @@ describe("ExportMosaic", () => {
 		const downloadButton = screen.getByRole("button", { name: "Download" });
 		fireEvent.click(downloadButton);
 
-		// Verify that window.open is called immediately (within the same tick)
 		expect(mockOpen).toHaveBeenCalledWith("", "_blank");
 
-		// Wait for the export to complete and the window to be populated
 		await waitFor(() => {
 			expect(mockExportMosaic).toHaveBeenCalledWith(
 				mockMosaicResult.dataUrl,
@@ -247,52 +247,6 @@ describe("ExportMosaic", () => {
 			expect(
 				screen.getByText(/Could not prepare image for iOS/),
 			).toBeInTheDocument();
-		});
-
-		mockExportMosaic.mockRestore();
-	});
-
-	it("should open image in new tab and populate it on iOS to avoid blank tab issue", async () => {
-		Object.defineProperty(navigator, "userAgent", {
-			writable: true,
-			value:
-				"Mozilla/5.0 (iPhone; CPU iPhone OS 14_0 like Mac OS X) AppleWebKit/605.1.15",
-		});
-
-		// Mock window.open to return a valid window object
-		const mockWindow = {
-			document: {
-				write: vi.fn(),
-				close: vi.fn(),
-			},
-			focus: vi.fn(),
-			close: vi.fn(),
-		};
-		const mockOpen = vi.fn().mockReturnValue(mockWindow);
-		window.open = mockOpen;
-
-		const mockExportMosaic = vi
-			.spyOn(exportEngine, "exportMosaic")
-			.mockResolvedValue(validDataUrl);
-
-		render(<ExportMosaic state={mockState} dispatch={mockDispatch} />);
-
-		const downloadButton = screen.getByRole("button", { name: "Download" });
-		fireEvent.click(downloadButton);
-
-		// Verify that window.open is called immediately with blank page
-		expect(mockOpen).toHaveBeenCalledWith("", "_blank");
-
-		// Wait for the export to complete and the window to be populated
-		await waitFor(() => {
-			expect(mockExportMosaic).toHaveBeenCalledWith(
-				mockMosaicResult.dataUrl,
-				mockMosaicResult.width,
-				mockMosaicResult.height,
-				"png",
-				0.9,
-			);
-			expect(mockWindow.document.write).toHaveBeenCalled();
 		});
 
 		mockExportMosaic.mockRestore();
