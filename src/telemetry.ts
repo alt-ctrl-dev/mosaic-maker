@@ -4,7 +4,7 @@ import {
 	faro,
 	LogLevel,
 } from "@grafana/faro-web-sdk";
-import { PACKAGE_VERSION } from "./version";
+import { VERSION_STRING } from "./version";
 
 const CONSENT_KEY = "telemetry-consent";
 const SESSION_KEY = "telemetry-session";
@@ -74,7 +74,7 @@ export function initializeTelemetry(): void {
 			url: faroUrl,
 			app: {
 				name: appName,
-				version: PACKAGE_VERSION,
+				version: VERSION_STRING,
 				environment,
 			},
 			sessionTracking: {
@@ -116,7 +116,7 @@ export function trackEvent(
 ): void {
 	const attributes: Record<string, string> = {
 		sessionId: getWorkflowSessionId(),
-		appVersion: PACKAGE_VERSION,
+		appVersion: VERSION_STRING,
 	};
 	for (const [key, value] of Object.entries(payload)) {
 		attributes[key] = String(value);

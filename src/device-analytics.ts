@@ -1,4 +1,4 @@
-import { PACKAGE_VERSION } from "./version";
+import { VERSION_STRING } from "./version";
 
 const DEVICE_ID_STORAGE_KEY = "mosaicMaker.deviceId";
 
@@ -162,7 +162,7 @@ export async function collectDeviceAnalytics(): Promise<void> {
 	const { os, osVersion } = await getOSInfo();
 
 	const analyticsData = {
-		appVersion: PACKAGE_VERSION,
+		appVersion: VERSION_STRING,
 		os,
 		osVersion,
 		deviceType: getDeviceType(),

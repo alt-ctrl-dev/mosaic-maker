@@ -7,7 +7,7 @@ import {
 	trackMosaicGeneration,
 	getWorkflowSessionId,
 } from "./telemetry";
-import { PACKAGE_VERSION } from "./version";
+import { VERSION_STRING } from "./version";
 
 describe("telemetry", () => {
 	beforeEach(() => {
@@ -122,7 +122,7 @@ describe("telemetry", () => {
 				JSON.stringify(
 					{
 						sessionId: getWorkflowSessionId(),
-						appVersion: PACKAGE_VERSION,
+						appVersion: VERSION_STRING,
 						test: "data",
 					},
 					null,
@@ -141,7 +141,7 @@ describe("telemetry", () => {
 			trackEvent("mosaic_download", { format: "png" });
 			for (const call of consoleLogSpy.mock.calls) {
 				expect(call[1]).toContain(sessionId);
-				expect(call[1]).toContain(PACKAGE_VERSION);
+				expect(call[1]).toContain(VERSION_STRING);
 			}
 		});
 
@@ -156,7 +156,7 @@ describe("telemetry", () => {
 				JSON.stringify(
 					{
 						sessionId: getWorkflowSessionId(),
-						appVersion: PACKAGE_VERSION,
+						appVersion: VERSION_STRING,
 						test: "data",
 					},
 					null,
@@ -177,7 +177,7 @@ describe("telemetry", () => {
 				JSON.stringify(
 					{
 						sessionId: getWorkflowSessionId(),
-						appVersion: PACKAGE_VERSION,
+						appVersion: VERSION_STRING,
 						success: "true",
 						duration: "1000",
 						sourceWidth: "1920",

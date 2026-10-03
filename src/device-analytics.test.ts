@@ -1,6 +1,6 @@
 import { describe, it, expect, vi, beforeEach, afterEach } from "vitest";
 import { collectDeviceAnalytics } from "./device-analytics";
-import { PACKAGE_VERSION } from "./version";
+import { VERSION_STRING } from "./version";
 
 const WINDOWS_USER_AGENT =
 	"Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36";
@@ -64,7 +64,7 @@ describe("Device Analytics", () => {
 
 		const logData = lastLoggedData();
 
-		expect(logData.appVersion).toBe(PACKAGE_VERSION);
+		expect(logData.appVersion).toBe(VERSION_STRING);
 		expect(logData.os).toBe("Windows");
 		expect(logData.deviceType).toBe("Desktop");
 		expect(logData.memory).toBe(8);
