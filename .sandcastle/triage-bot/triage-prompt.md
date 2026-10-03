@@ -27,5 +27,6 @@ In both cases, also apply the appropriate category label (`bug` or `enhancement`
 - Do not make git commits.
 - Do not close the issue.
 - If prior AI triage notes exist and nothing has changed since, make no duplicate comment. Output <promise>COMPLETE</promise> immediately.
+- Never post both ready-for-agent and needs-info
 
 When done, output <promise>COMPLETE</promise>.
