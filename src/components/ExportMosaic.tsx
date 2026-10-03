@@ -171,73 +171,54 @@ function browserSupportsAnchorDownload(): boolean {
 export function ExportMosaic({ state, dispatch }: ExportMosaicProps) {
 	const [isExporting, setIsExporting] = useState(false);
 	const [error, setError] = useState<string | null>(null);
+	const canShare = supportsWebShare();
 	const handleExportSettingsChange = (settings: Partial<ExportSettings>) => {
 		dispatch({ type: "exportSettingsChanged", settings });
 	};
 
-	const handleShare = async () => {
-		if (!state.mosaicResult) {
-			setError("No mosaic to share");
-			return;
+	/**
+	 * Share the mosaic via the Web Share API. Returns `false` when the browser
+	 * cannot share the generated file so the caller can fall back to a download.
+	 * Throws on any other failure (including a user-cancelled share sheet) so the
+	 * unified handler can apply its shared error handling.
+	 */
+	const shareExportedMosaic = async (
+		exportedDataUrl: string,
+		mosaicResult: NonNullable<WorkflowState["mosaicResult"]>,
+	): Promise<boolean> => {
+		const blob = dataUrlToBlob(exportedDataUrl);
+		const file = new File([blob], `mosaic.${state.exportFormat}`, {
+			type: blob.type,
+		});
+
+		if (!navigator.canShare?.({ files: [file] })) {
+			return false;
 		}
 
-		setIsExporting(true);
-		setError(null);
+		await navigator.share({
+			files: [file],
+			title: "Mosaic Image",
+			text: "Check out this mosaic I created!",
+		});
 
-		try {
-			const exportedDataUrl = await exportMosaic(
-				state.mosaicResult.dataUrl,
-				state.mosaicResult.width,
-				state.mosaicResult.height,
-				state.exportFormat,
-				state.exportQuality,
-			);
+		trackEvent("mosaic_download", {
+			format: state.exportFormat,
+			quality: state.exportQuality,
+			width: mosaicResult.width,
+			height: mosaicResult.height,
+			delivery: "share",
+		});
 
-			const blob = dataUrlToBlob(exportedDataUrl);
-			const file = new File([blob], `mosaic.${state.exportFormat}`, {
-				type: blob.type,
-			});
-
-			if (navigator.canShare?.({ files: [file] })) {
-				await navigator.share({
-					files: [file],
-					title: "Mosaic Image",
-					text: "Check out this mosaic I created!",
-				});
-
-				trackEvent("mosaic_download", {
-					format: state.exportFormat,
-					quality: state.exportQuality,
-					width: state.mosaicResult.width,
-					height: state.mosaicResult.height,
-					delivery: "share",
-				});
-			} else {
-				throw new Error("Your browser cannot share this type of file.");
-			}
-		} catch (err) {
-			// User cancelling the native share sheet is not an error.
-			if (err instanceof DOMException && err.name === "AbortError") {
-				return;
-			}
-
-			const errorMessage =
-				err instanceof Error ? err.message : "Unknown error occurred";
-			setError(errorMessage);
-		} finally {
-			setIsExporting(false);
-		}
+		return true;
 	};
 
-	const handleDownload = async () => {
-		if (!state.mosaicResult) {
-			setError("No mosaic to export");
-			return;
-		}
-
-		setIsExporting(true);
-		setError(null);
-
+	/**
+	 * Download the mosaic to the device, using a direct anchor download where
+	 * supported and falling back to populating a pre-opened tab on iOS/iPadOS.
+	 */
+	const downloadExportedMosaic = async (
+		mosaicResult: NonNullable<WorkflowState["mosaicResult"]>,
+	): Promise<void> => {
 		const useAnchorDownload = browserSupportsAnchorDownload();
 		let tabPopulator: ((dataUrl: string) => void) | null = null;
 		let deliveryMethod: "anchor" | "new-tab-populated" = "anchor";
@@ -246,7 +227,6 @@ export function ExportMosaic({ state, dispatch }: ExportMosaicProps) {
 			const { populate, error } = openNewTabForLaterPopulation();
 			if (error) {
 				setError(error);
-				setIsExporting(false);
 				return;
 			}
 
@@ -254,29 +234,62 @@ export function ExportMosaic({ state, dispatch }: ExportMosaicProps) {
 			deliveryMethod = "new-tab-populated";
 		}
 
-		try {
-			const exportedDataUrl = await exportMosaic(
-				state.mosaicResult.dataUrl,
-				state.mosaicResult.width,
-				state.mosaicResult.height,
-				state.exportFormat,
-				state.exportQuality,
-			);
+		const exportedDataUrl = await exportMosaic(
+			mosaicResult.dataUrl,
+			mosaicResult.width,
+			mosaicResult.height,
+			state.exportFormat,
+			state.exportQuality,
+		);
 
-			if (useAnchorDownload) {
-				downloadFile(exportedDataUrl, `mosaic.${state.exportFormat}`);
-			} else if (tabPopulator) {
-				tabPopulator(exportedDataUrl);
+		if (useAnchorDownload) {
+			downloadFile(exportedDataUrl, `mosaic.${state.exportFormat}`);
+		} else if (tabPopulator) {
+			tabPopulator(exportedDataUrl);
+		}
+
+		trackEvent("mosaic_download", {
+			format: state.exportFormat,
+			quality: state.exportQuality,
+			width: mosaicResult.width,
+			height: mosaicResult.height,
+			delivery: deliveryMethod,
+		});
+	};
+
+	const handleExport = async () => {
+		const mosaicResult = state.mosaicResult;
+		if (!mosaicResult) {
+			setError("No mosaic to export");
+			return;
+		}
+
+		setIsExporting(true);
+		setError(null);
+
+		try {
+			if (supportsWebShare()) {
+				const exportedDataUrl = await exportMosaic(
+					mosaicResult.dataUrl,
+					mosaicResult.width,
+					mosaicResult.height,
+					state.exportFormat,
+					state.exportQuality,
+				);
+
+				const shared = await shareExportedMosaic(exportedDataUrl, mosaicResult);
+				if (shared) {
+					return;
+				}
 			}
 
-			trackEvent("mosaic_download", {
-				format: state.exportFormat,
-				quality: state.exportQuality,
-				width: state.mosaicResult.width,
-				height: state.mosaicResult.height,
-				delivery: deliveryMethod,
-			});
+			await downloadExportedMosaic(mosaicResult);
 		} catch (err) {
+			// User cancelling the native share sheet is not an error.
+			if (err instanceof DOMException && err.name === "AbortError") {
+				return;
+			}
+
 			const errorMessage =
 				err instanceof Error ? err.message : "Unknown error occurred";
 			setError(errorMessage);
@@ -374,25 +387,19 @@ export function ExportMosaic({ state, dispatch }: ExportMosaicProps) {
 						<div className="button-group">
 							<button
 								type="button"
-								onClick={handleDownload}
+								onClick={handleExport}
 								disabled={isExporting}
 								aria-busy={isExporting}
-								className="secondary"
+								className="primary"
 							>
-								{isExporting ? "Exporting..." : "Download"}
+								{isExporting
+									? canShare
+										? "Sharing..."
+										: "Exporting..."
+									: canShare
+										? "Share"
+										: "Download"}
 							</button>
-
-							{supportsWebShare() && (
-								<button
-									type="button"
-									onClick={handleShare}
-									disabled={isExporting}
-									aria-busy={isExporting}
-									className="primary"
-								>
-									{isExporting ? "Sharing..." : "Share"}
-								</button>
-							)}
 						</div>
 
 						{error && (

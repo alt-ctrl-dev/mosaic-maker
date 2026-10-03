@@ -43,9 +43,8 @@ function createMockPopupWindow() {
 }
 
 describe("ExportMosaic", () => {
-	beforeEach(() => {
-		vi.clearAllMocks();
-		// Reset navigator.share and navigator.canShare mocks
+	/** Enable the Web Share API surface for tests that exercise sharing. */
+	function enableWebShare() {
 		Object.defineProperty(navigator, "share", {
 			writable: true,
 			value: mockNavigatorShare,
@@ -53,6 +52,20 @@ describe("ExportMosaic", () => {
 		Object.defineProperty(navigator, "canShare", {
 			writable: true,
 			value: mockNavigatorCanShare,
+		});
+	}
+
+	beforeEach(() => {
+		vi.clearAllMocks();
+		// Default to no Web Share support so the single export button behaves as a
+		// download. Tests that exercise sharing opt in via enableWebShare().
+		Object.defineProperty(navigator, "share", {
+			writable: true,
+			value: undefined,
+		});
+		Object.defineProperty(navigator, "canShare", {
+			writable: true,
+			value: undefined,
 		});
 	});
 
@@ -321,19 +334,21 @@ describe("ExportMosaic", () => {
 		mockExportMosaic.mockRestore();
 	});
 
-	it("should show Share button when Web Share API is available and working", async () => {
+	it("should label the single export button Share when Web Share API is available", async () => {
+		enableWebShare();
 		mockNavigatorCanShare.mockReturnValue(true);
 		mockNavigatorShare.mockResolvedValue(undefined);
 
 		render(<ExportMosaic state={mockState} dispatch={mockDispatch} />);
 
-		expect(
-			screen.getByRole("button", { name: "Download" }),
-		).toBeInTheDocument();
 		expect(screen.getByRole("button", { name: "Share" })).toBeInTheDocument();
+		expect(
+			screen.queryByRole("button", { name: "Download" }),
+		).not.toBeInTheDocument();
 	});
 
 	it("should use Web Share API when Share button is clicked", async () => {
+		enableWebShare();
 		mockNavigatorCanShare.mockReturnValue(true);
 		mockNavigatorShare.mockResolvedValue(undefined);
 
@@ -353,16 +368,7 @@ describe("ExportMosaic", () => {
 		mockExportMosaic.mockRestore();
 	});
 
-	it("should fall back to download when Web Share API is not available", async () => {
-		Object.defineProperty(navigator, "share", {
-			writable: true,
-			value: undefined,
-		});
-		Object.defineProperty(navigator, "canShare", {
-			writable: true,
-			value: undefined,
-		});
-
+	it("should label the single export button Download when Web Share API is not available", async () => {
 		const mockExportMosaic = vi
 			.spyOn(exportEngine, "exportMosaic")
 			.mockResolvedValue(validDataUrl);
@@ -379,7 +385,8 @@ describe("ExportMosaic", () => {
 		mockExportMosaic.mockRestore();
 	});
 
-	it("should fall back to download when Web Share API fails", async () => {
+	it("should show an error when the Web Share API fails", async () => {
+		enableWebShare();
 		mockNavigatorCanShare.mockReturnValue(true);
 		mockNavigatorShare.mockRejectedValue(new Error("Share failed"));
 
@@ -400,6 +407,7 @@ describe("ExportMosaic", () => {
 	});
 
 	it("should not show error when user cancels the native share sheet", async () => {
+		enableWebShare();
 		mockNavigatorCanShare.mockReturnValue(true);
 		const abortError = new DOMException("Share cancelled", "AbortError");
 		mockNavigatorShare.mockRejectedValue(abortError);
