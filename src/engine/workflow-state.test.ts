@@ -1,5 +1,7 @@
 import { describe, expect, it } from "vitest";
 import {
+	createLegoTessera,
+	createLegoTesserae,
 	INITIAL_WORKFLOW_STATE,
 	type TesseraInfo,
 	updateWorkflowWithGeneratedTesserae,
@@ -67,6 +69,28 @@ describe("workflow-state", () => {
 			expect(newState.validTesseraCount).toBe(3);
 			expect(newState.rejectedTesseraCount).toBe(1);
 			expect(newState.totalTesseraCount).toBe(4);
+		});
+	});
+
+	describe("createLegoTessera", () => {
+		it("creates a valid synthetic tessera with a flat colour and no image", () => {
+			const tessera = createLegoTessera("#FF0000");
+
+			expect(tessera.color).toBe("#FF0000");
+			expect(tessera.isValid).toBe(true);
+			expect(tessera.previewUrl).toBeNull();
+			expect(tessera.file).toBeUndefined();
+			expect(tessera.fileName).toBe("lego-#FF0000");
+		});
+	});
+
+	describe("createLegoTesserae", () => {
+		it("creates one synthetic tessera per colour", () => {
+			const tesserae = createLegoTesserae(["#FF0000", "#0000FF"]);
+
+			expect(tesserae).toHaveLength(2);
+			expect(tesserae.map((t) => t.color)).toEqual(["#FF0000", "#0000FF"]);
+			expect(tesserae.every((t) => t.isValid)).toBe(true);
 		});
 	});
 });

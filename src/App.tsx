@@ -6,6 +6,8 @@ import { TesseraReview } from "./components/TesseraReview";
 import { GenerateAndPreview } from "./components/GenerateAndPreview";
 import { ExportMosaic } from "./components/ExportMosaic";
 import { AppFooter } from "./components/AppFooter";
+import { ModeSelection } from "./components/ModeSelection";
+import { LegoColorPicker } from "./components/LegoColorPicker";
 import { WorkflowStep as WorkflowStepEnum } from "./engine/workflow-state";
 import { useWorkflowReducer } from "./hooks/useWorkflowReducer";
 import { generateSupplementedTesserae } from "./engine/workflow-state";
@@ -13,6 +15,7 @@ import { resizeTesserae } from "./engine/tessera-processing";
 import { Dialog } from "./components/Dialog";
 
 const stages = [
+	"Choose mode",
 	"Choose source image",
 	"Build tesserae",
 	"Generate and preview",
@@ -65,6 +68,19 @@ export function App() {
 
 	function renderStepContent(stepIndex: number) {
 		switch (stepIndex) {
+			case WorkflowStepEnum.CHOOSE_MODE:
+				return (
+					<ModeSelection
+						mode={workflowState.mode}
+						onModeSelected={(mode) => dispatch({ type: "modeSelected", mode })}
+						onContinue={() =>
+							dispatch({
+								type: "goToStep",
+								step: WorkflowStepEnum.CHOOSE_SOURCE_IMAGE,
+							})
+						}
+					/>
+				);
 			case WorkflowStepEnum.CHOOSE_SOURCE_IMAGE:
 				return (
 					<SourceImageSelection
@@ -77,53 +93,77 @@ export function App() {
 						initialState={workflowState}
 					/>
 				);
-			case WorkflowStepEnum.BUILD_TESSERAE:
+			case WorkflowStepEnum.BUILD_TESSERAE: {
+				const isPhotomosaic = workflowState.mode === "photomosaic";
+				const isLego = workflowState.mode === "lego";
+				const hasPhotomosaicTesserae =
+					isPhotomosaic && workflowState.tesserae.length > 0;
+				const hasLegoColors = isLego && workflowState.tesserae.length >= 2;
+				const canReview = hasPhotomosaicTesserae || hasLegoColors;
+
 				return (
 					<div className="build-tesserae-container">
 						<TesseraSizeSelection
 							onSizeSelected={handleSizeSelected}
 							initialState={workflowState}
 						/>
-						<div className="tessera-inputs">
-							<TesseraUpload
-								onTesseraeProcessed={(tesserae) =>
+						{isPhotomosaic && (
+							<>
+								<div className="tessera-inputs">
+									<TesseraUpload
+										onTesseraeProcessed={(tesserae) =>
+											dispatch({ type: "tesseraeProcessed", tesserae })
+										}
+										adjustedTesseraSize={resolvedTesseraSize}
+									/>
+									<p>OR</p>
+									<GeneratedTesserae
+										onTesseraeGenerated={(tesserae) =>
+											dispatch({ type: "tesseraeGenerated", tesserae })
+										}
+										initialState={workflowState}
+									/>
+								</div>
+								{hasPhotomosaicTesserae && (
+									<button
+										type="button"
+										onClick={() => dispatch({ type: "clearAllTesserae" })}
+										className="secondary"
+										style={{ marginBottom: "1rem" }}
+									>
+										Clear all tiles
+									</button>
+								)}
+							</>
+						)}
+						{isLego && (
+							<LegoColorPicker
+								onTesseraeSelected={(tesserae) =>
 									dispatch({ type: "tesseraeProcessed", tesserae })
 								}
-								adjustedTesseraSize={resolvedTesseraSize}
+								initialColors={workflowState.tesserae
+									.map((tessera) => tessera.color)
+									.filter((color): color is string => color !== undefined)}
 							/>
-							<p>OR</p>
-							<GeneratedTesserae
-								onTesseraeGenerated={(tesserae) =>
-									dispatch({ type: "tesseraeGenerated", tesserae })
-								}
-								initialState={workflowState}
-							/>
-						</div>
-						{workflowState.tesserae.length > 0 && (
-							<button
-								type="button"
-								onClick={() => dispatch({ type: "clearAllTesserae" })}
-								className="secondary"
-								style={{ marginBottom: "1rem" }}
-							>
-								Clear all tiles
-							</button>
 						)}
-						<TesseraReview
-							tesserae={workflowState.tesserae}
-							onRemoveTessera={(index) =>
-								dispatch({ type: "removeTessera", index })
-							}
-							onAcceptSupplementation={handleAcceptSupplementation}
-							onContinue={() => dispatch({ type: "advanceFromReview" })}
-							isLowVariety={workflowState.isLowVarietyCollection}
-							varietyRecommendation={workflowState.varietyRecommendation}
-							hasAcceptedSupplementation={
-								workflowState.hasAcceptedSupplementation
-							}
-						/>
+						{canReview && (
+							<TesseraReview
+								tesserae={workflowState.tesserae}
+								onRemoveTessera={(index) =>
+									dispatch({ type: "removeTessera", index })
+								}
+								onAcceptSupplementation={handleAcceptSupplementation}
+								onContinue={() => dispatch({ type: "advanceFromReview" })}
+								isLowVariety={workflowState.isLowVarietyCollection}
+								varietyRecommendation={workflowState.varietyRecommendation}
+								hasAcceptedSupplementation={
+									workflowState.hasAcceptedSupplementation
+								}
+							/>
+						)}
 					</div>
 				);
+			}
 			case WorkflowStepEnum.GENERATE_AND_PREVIEW:
 				return <GenerateAndPreview state={workflowState} dispatch={dispatch} />;
 			case WorkflowStepEnum.EXPORT_MOSAIC:

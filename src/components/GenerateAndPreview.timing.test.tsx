@@ -46,6 +46,7 @@ describe("GenerateAndPreview Timing", () => {
 	const mockState: WorkflowState = {
 		currentStep: 2,
 		furthestCompletedStep: 2,
+		mode: "photomosaic",
 		sourceImage: mockSourceImage,
 		tesserae: mockTesserae,
 		requestedTesseraSize: 10,
@@ -104,6 +105,7 @@ describe("GenerateAndPreview Timing", () => {
 				100,
 				100,
 				10,
+				"photomosaic",
 			);
 		} finally {
 			window.Worker = originalWorker;
@@ -135,6 +137,7 @@ describe("GenerateAndPreview Timing", () => {
 				100,
 				100,
 				10,
+				"photomosaic",
 			);
 		} finally {
 			window.Worker = originalWorker;

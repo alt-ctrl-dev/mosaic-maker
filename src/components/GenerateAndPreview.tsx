@@ -112,6 +112,7 @@ export function GenerateAndPreview({
 								sourceImage.width,
 								sourceImage.height,
 								tesseraSize,
+								state.mode,
 							);
 							if (success) {
 								setPreviewUrl(data.dataUrl);
@@ -155,6 +156,7 @@ export function GenerateAndPreview({
 									sourceImage.width,
 									sourceImage.height,
 									tesseraSize,
+									state.mode,
 								);
 								terminateWorker();
 							}
@@ -169,8 +171,10 @@ export function GenerateAndPreview({
 						fileName: tessera.fileName,
 						isValid: tessera.isValid,
 						previewUrl: tessera.previewUrl,
+						color: tessera.color,
 					})),
 					tesseraSize,
+					mode: state.mode,
 				});
 			} catch (err) {
 				console.warn(
@@ -200,6 +204,7 @@ export function GenerateAndPreview({
 				sourceImage,
 				state.tesserae,
 				tesseraSize,
+				state.mode,
 				undefined,
 				undefined,
 				progressCallback,
@@ -213,6 +218,7 @@ export function GenerateAndPreview({
 				sourceImage.width,
 				sourceImage.height,
 				tesseraSize,
+				state.mode,
 			);
 
 			setProgress({ percent: 100, message: "Mosaic generated successfully" });
@@ -239,6 +245,7 @@ export function GenerateAndPreview({
 				sourceImage.width,
 				sourceImage.height,
 				tesseraSize,
+				state.mode,
 			);
 		} finally {
 			setIsGenerating(false);
@@ -255,6 +262,7 @@ export function GenerateAndPreview({
 					state.sourceImage.width,
 					state.sourceImage.height,
 					state.adjustedTesseraSize,
+					state.mode,
 				);
 			}
 		} else if (state.sourceImage && state.adjustedTesseraSize) {
@@ -264,6 +272,7 @@ export function GenerateAndPreview({
 				state.sourceImage.width,
 				state.sourceImage.height,
 				state.adjustedTesseraSize,
+				state.mode,
 			);
 		}
 		terminateWorker();
@@ -277,7 +286,9 @@ export function GenerateAndPreview({
 	const canGenerate =
 		state.sourceImage !== null &&
 		state.adjustedTesseraSize !== null &&
-		state.tesserae.length > 0;
+		(state.mode === "lego"
+			? state.tesserae.length >= 2
+			: state.tesserae.length > 0);
 
 	return (
 		<div className="generate-preview-step">

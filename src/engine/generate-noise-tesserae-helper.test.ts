@@ -39,6 +39,7 @@ describe("generateNoiseTesseraeFromState", () => {
 		const mockState: WorkflowState = {
 			currentStep: 0,
 			furthestCompletedStep: 0,
+			mode: "photomosaic",
 			sourceImage: {
 				width: 100,
 				height: 100,
@@ -81,6 +82,7 @@ describe("generateNoiseTesseraeFromState", () => {
 		const mockState: WorkflowState = {
 			currentStep: 0,
 			furthestCompletedStep: 0,
+			mode: "photomosaic",
 			sourceImage: {
 				width: 100,
 				height: 100,
@@ -121,6 +123,7 @@ describe("generateNoiseTesseraeFromState", () => {
 		const mockState: WorkflowState = {
 			currentStep: 0,
 			furthestCompletedStep: 0,
+			mode: "photomosaic",
 			sourceImage: null,
 			requestedTesseraSize: 10,
 			adjustedTesseraSize: 10,
@@ -152,6 +155,7 @@ describe("generateNoiseTesseraeFromState", () => {
 		const mockState: WorkflowState = {
 			currentStep: 0,
 			furthestCompletedStep: 0,
+			mode: "photomosaic",
 			sourceImage: {
 				width: 100,
 				height: 100,

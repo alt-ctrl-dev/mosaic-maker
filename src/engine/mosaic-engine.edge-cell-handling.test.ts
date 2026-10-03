@@ -51,6 +51,7 @@ describe("mosaic-engine edge cell handling", () => {
 			mockSourceImage,
 			mockTesserae,
 			10,
+			"photomosaic",
 			mockCanvasCreator,
 			mockImageLoader,
 		);

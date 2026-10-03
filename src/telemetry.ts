@@ -5,6 +5,7 @@ import {
 	LogLevel,
 } from "@grafana/faro-web-sdk";
 import { VERSION_STRING } from "./version";
+import type { MosaicMode } from "./engine/workflow-state";
 
 const CONSENT_KEY = "telemetry-consent";
 const SESSION_KEY = "telemetry-session";
@@ -326,6 +327,7 @@ export async function trackDeviceAnalytics(): Promise<void> {
  * @param sourceWidth Source image width
  * @param sourceHeight Source image height
  * @param tesseraSize Tessera size
+ * @param mode The mosaic generation mode used
  */
 export function trackMosaicGeneration(
 	success: boolean,
@@ -333,6 +335,7 @@ export function trackMosaicGeneration(
 	sourceWidth: number,
 	sourceHeight: number,
 	tesseraSize: number,
+	mode: MosaicMode = "photomosaic",
 ): void {
 	trackEvent("mosaic_generation", {
 		success,
@@ -340,5 +343,6 @@ export function trackMosaicGeneration(
 		sourceWidth,
 		sourceHeight,
 		tesseraSize,
+		mode,
 	});
 }

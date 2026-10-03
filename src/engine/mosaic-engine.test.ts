@@ -49,7 +49,31 @@ function createFakeCanvas(width: number, height: number): HTMLCanvasElement {
 			globalAlpha = value;
 		},
 		fillStyle: "",
-		fillRect: () => {},
+		fillRect: (fx: number, fy: number, fw: number, fh: number) => {
+			const [r, g, b] = parseHexColor(context.fillStyle);
+			for (let y = 0; y < fh; y++) {
+				for (let x = 0; x < fw; x++) {
+					const destX = fx + x;
+					const destY = fy + y;
+					if (
+						destX < 0 ||
+						destY < 0 ||
+						destX >= raster.width ||
+						destY >= raster.height
+					) {
+						continue;
+					}
+					const destOffset = (destY * raster.width + destX) * 4;
+					raster.data[destOffset] =
+						r * globalAlpha + raster.data[destOffset] * (1 - globalAlpha);
+					raster.data[destOffset + 1] =
+						g * globalAlpha + raster.data[destOffset + 1] * (1 - globalAlpha);
+					raster.data[destOffset + 2] =
+						b * globalAlpha + raster.data[destOffset + 2] * (1 - globalAlpha);
+					raster.data[destOffset + 3] = 255;
+				}
+			}
+		},
 		clearRect: () => {},
 		drawImage: (source: { raster: Raster }, ...args: number[]) => {
 			const src = source.raster;
@@ -122,6 +146,16 @@ function createFakeCanvas(width: number, height: number): HTMLCanvasElement {
 	} as unknown as HTMLCanvasElement;
 }
 
+/** Parse a `#rrggbb` hex string into an RGB triple. */
+function parseHexColor(hex: string): [number, number, number] {
+	const value = hex.replace(/^#/, "");
+	return [
+		parseInt(value.slice(0, 2), 16),
+		parseInt(value.slice(2, 4), 16),
+		parseInt(value.slice(4, 6), 16),
+	];
+}
+
 const RED: [number, number, number] = [255, 0, 0];
 const BLUE: [number, number, number] = [0, 0, 255];
 
@@ -161,6 +195,18 @@ function generate(tesserae: TesseraInfo[], tesseraSize = 2) {
 		sourceImage,
 		tesserae,
 		tesseraSize,
+		"photomosaic",
+		createFakeCanvas,
+		fakeImageLoader,
+	);
+}
+
+function generateLego(tesserae: TesseraInfo[], tesseraSize = 2) {
+	return generateMosaic(
+		sourceImage,
+		tesserae,
+		tesseraSize,
+		"lego",
 		createFakeCanvas,
 		fakeImageLoader,
 	);
@@ -235,6 +281,42 @@ describe("Mosaic Engine", () => {
 		expect(first.dataUrl).toBe(second.dataUrl);
 	});
 
+	it("renders synthetic lego tesserae as flat colours with no blending", async () => {
+		const result = await generateLego([
+			makeTessera({
+				fileName: "lego-#ff0000",
+				previewUrl: null,
+				file: undefined,
+				color: "#ff0000",
+			}),
+			makeTessera({
+				fileName: "lego-#0000ff",
+				previewUrl: null,
+				file: undefined,
+				color: "#0000ff",
+			}),
+		]);
+
+		// Each half matches its colour and, with no source blending, stays pure.
+		expect(pixelAt(result.dataUrl, 0, 0, 4)).toEqual([255, 0, 0]);
+		expect(pixelAt(result.dataUrl, 3, 3, 4)).toEqual([0, 0, 255]);
+	});
+
+	it("does not blend the source into a mismatched lego cell", async () => {
+		// Only a red lego tessera is available; without blending the blue half
+		// stays pure red rather than the 75/25 blend photomosaic mode produces.
+		const result = await generateLego([
+			makeTessera({
+				fileName: "lego-#ff0000",
+				previewUrl: null,
+				file: undefined,
+				color: "#ff0000",
+			}),
+		]);
+
+		expect(pixelAt(result.dataUrl, 3, 3, 4)).toEqual([255, 0, 0]);
+	});
+
 	it("validates tessera size inputs", async () => {
 		await expect(generate([makeTessera()], 0)).rejects.toThrow(
 			"Tessera size must be positive",
@@ -250,6 +332,7 @@ describe("Mosaic Engine", () => {
 				{ ...sourceImage, width: 0, height: 0 },
 				[makeTessera()],
 				2,
+				"photomosaic",
 				createFakeCanvas,
 				fakeImageLoader,
 			),

@@ -21,10 +21,22 @@ export interface ExportSettings {
 }
 
 /**
+ * Available mosaic generation modes.
+ */
+export type MosaicMode = "photomosaic" | "lego";
+
+/**
  * Information about a tessera that has been processed for the mosaic.
+ *
+ * Photomosaic tesserae carry an uploaded or generated image via
+ * {@link TesseraInfo.file} and {@link TesseraInfo.previewUrl}. Lego-mode
+ * tesserae are synthetic: they carry only a flat {@link TesseraInfo.color}
+ * and have no backing image, so the generation engine renders them as a
+ * solid colour fill.
  */
 export interface TesseraInfo {
-	file: File;
+	/** Backing image file for photomosaic tesserae; absent for synthetic lego tesserae. */
+	file?: File;
 	fileName: string;
 	isValid: boolean;
 	error: string | null;
@@ -32,6 +44,38 @@ export interface TesseraInfo {
 	previewUrl: string | null;
 	/** Whether the tessera is supplemented (generated) */
 	isSupplemented?: boolean;
+	/** Flat hex colour for synthetic lego-mode tesserae; absent for photomosaic tesserae. */
+	color?: string;
+}
+
+/**
+ * Create a synthetic tessera representing a single flat lego colour.
+ *
+ * Synthetic tesserae have no backing image file; the generation engine fills
+ * the tessera with {@link TesseraInfo.color} instead of drawing an image.
+ *
+ * @param color - Hex colour value (e.g. `#FF0000`) for the lego tessera
+ * @returns A valid synthetic tessera for the given colour
+ */
+export function createLegoTessera(color: string): TesseraInfo {
+	return {
+		fileName: `lego-${color}`,
+		isValid: true,
+		error: null,
+		isLowResolution: false,
+		previewUrl: null,
+		color,
+	};
+}
+
+/**
+ * Create synthetic tesserae for a collection of lego colours.
+ *
+ * @param colors - Hex colour values selected by the user
+ * @returns One synthetic tessera per colour
+ */
+export function createLegoTesserae(colors: string[]): TesseraInfo[] {
+	return colors.map(createLegoTessera);
 }
 
 /**
@@ -41,6 +85,8 @@ export interface WorkflowState {
 	currentStep: WorkflowStep;
 	/** The furthest step the user has completed */
 	furthestCompletedStep: WorkflowStep;
+	/** Selected mosaic generation mode */
+	mode: MosaicMode;
 	sourceImage: SourceImageInfo | null;
 	requestedTesseraSize: number | null;
 	adjustedTesseraSize: number | null;
@@ -72,6 +118,7 @@ export interface WorkflowState {
  * Workflow steps.
  */
 export enum WorkflowStep {
+	CHOOSE_MODE,
 	CHOOSE_SOURCE_IMAGE,
 	BUILD_TESSERAE,
 	GENERATE_AND_PREVIEW,
@@ -87,8 +134,9 @@ export const SEED_MAX = 1_000_000;
  * Initial workflow state.
  */
 export const INITIAL_WORKFLOW_STATE: WorkflowState = {
-	currentStep: WorkflowStep.CHOOSE_SOURCE_IMAGE,
-	furthestCompletedStep: WorkflowStep.CHOOSE_SOURCE_IMAGE,
+	currentStep: WorkflowStep.CHOOSE_MODE,
+	furthestCompletedStep: WorkflowStep.CHOOSE_MODE,
+	mode: "photomosaic",
 	sourceImage: null,
 	requestedTesseraSize: null,
 	adjustedTesseraSize: null,
@@ -675,6 +723,41 @@ export function updateWorkflowOnCancellationOrFailure(
 		mosaicResult: null,
 		needsRegeneration: false,
 	};
+}
+
+/**
+ * Update workflow state with a selected mode.
+ * When mode changes, reset tesserae selection but keep source image.
+ *
+ * @param state - The current workflow state
+ * @param mode - The selected mosaic mode
+ * @returns Updated workflow state with new mode and reset tesserae selection
+ */
+export function updateWorkflowWithMode(
+	state: WorkflowState,
+	mode: MosaicMode,
+): WorkflowState {
+	// If mode changed, reset tesserae selection but keep source image
+	if (state.mode !== mode) {
+		return {
+			...state,
+			mode,
+			// Reset tesserae-related state
+			tesserae: [],
+			validTesseraCount: 0,
+			rejectedTesseraCount: 0,
+			totalTesseraCount: 0,
+			isLowVarietyCollection: false,
+			varietyRecommendation: null,
+			hasAcceptedSupplementation: false,
+			seed: null,
+			generatedTesseraCount: null,
+			needsRegeneration: false,
+			// Clear any generated mosaic
+			mosaicResult: null,
+		};
+	}
+	return { ...state, mode };
 }
 
 /**

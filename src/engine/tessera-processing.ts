@@ -42,6 +42,10 @@ export async function processTesserae(
 /**
  * Resize existing tesserae to a new target size.
  *
+ * Synthetic lego tesserae have no backing image file and render as a flat
+ * colour at any size, so they pass through unchanged; only file-backed
+ * photomosaic tesserae are re-processed.
+ *
  * @param tesserae - Array of existing tesserae to resize
  * @param targetSize - The new target size for each tessera
  * @returns A promise that resolves to an array of resized tesserae
@@ -50,8 +54,12 @@ export async function resizeTesserae(
 	tesserae: TesseraInfo[],
 	targetSize: number,
 ): Promise<TesseraInfo[]> {
-	const files = tesserae.map((t) => t.file);
-	return processTesserae(files, targetSize);
+	const syntheticTesserae = tesserae.filter((t) => t.file === undefined);
+	const files = tesserae
+		.map((t) => t.file)
+		.filter((file): file is File => file !== undefined);
+	const resized = await processTesserae(files, targetSize);
+	return [...syntheticTesserae, ...resized];
 }
 
 /**

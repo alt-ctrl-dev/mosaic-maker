@@ -491,6 +491,7 @@ describe("telemetry", () => {
 						sourceWidth: "1920",
 						sourceHeight: "1080",
 						tesseraSize: "16",
+						mode: "photomosaic",
 					},
 					null,
 					2,

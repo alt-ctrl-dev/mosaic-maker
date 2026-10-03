@@ -7,6 +7,7 @@ import {
 	type ExportSettings,
 	type TesseraInfo,
 	type WorkflowState,
+	type MosaicMode,
 	updateWorkflowAdvanceFromReview,
 	updateWorkflowClearAllTesserae,
 	updateWorkflowExportSettings,
@@ -14,6 +15,7 @@ import {
 	updateWorkflowRemoveTessera,
 	updateWorkflowWithGeneratedTesserae,
 	updateWorkflowWithMosaicResult,
+	updateWorkflowWithMode,
 	updateWorkflowWithSourceImage,
 	updateWorkflowWithSourceImageError,
 	updateWorkflowWithSupplementedTesserae,
@@ -32,6 +34,7 @@ const WORKFLOW_STEP_COUNT = Object.keys(WorkflowStep).filter((key) =>
  * corresponding {@link WorkflowState} transition.
  */
 export type WorkflowAction =
+	| { type: "modeSelected"; mode: MosaicMode }
 	| { type: "sourceSelected"; sourceImage: SourceImageInfo }
 	| { type: "sourceError"; errorMessage: string }
 	| { type: "sizeSelected"; size: number }
@@ -61,6 +64,8 @@ export function workflowReducer(
 	action: WorkflowAction,
 ): WorkflowState {
 	switch (action.type) {
+		case "modeSelected":
+			return updateWorkflowWithMode(state, action.mode);
 		case "sourceSelected":
 			return updateWorkflowWithSourceImage(state, action.sourceImage);
 		case "sourceError":

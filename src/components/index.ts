@@ -3,3 +3,5 @@ export * from "./TesseraSizeSelection";
 export * from "./TesseraUpload";
 export * from "./GeneratedTesserae";
 export * from "./TesseraReview";
+export * from "./ModeSelection";
+export * from "./LegoColorPicker";

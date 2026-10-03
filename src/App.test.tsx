@@ -23,12 +23,13 @@ describe("Mosaic Maker workflow", () => {
 				(button) =>
 					within(button)
 						.getByText(
-							/^(Choose source image|Build tesserae|Generate and preview|Export mosaic)$/,
+							/^(Choose mode|Choose source image|Build tesserae|Generate and preview|Export mosaic)$/,
 						)
 						.textContent?.trim() ?? "",
 			);
 
 		expect(stages).toEqual([
+			"Choose mode",
 			"Choose source image",
 			"Build tesserae",
 			"Generate and preview",
