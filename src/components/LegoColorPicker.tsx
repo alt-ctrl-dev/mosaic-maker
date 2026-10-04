@@ -1,5 +1,6 @@
 import { useState } from "react";
 import { createLegoTesserae, type TesseraInfo } from "../engine/workflow-state";
+import { renderLegoBrick } from "../engine/lego-brick";
 
 /** Props for {@link LegoColorPicker}. */
 interface LegoColorPickerProps {
@@ -63,11 +64,13 @@ export function LegoColorPicker({
 		onTesseraeSelected(createLegoTesserae(next));
 	};
 
+	// Case-insensitive check: <input type="color"> emits lowercase hex
+	// while preset palettes use uppercase, so plain includes() misses dupes.
+	const hasColor = (color: string) =>
+		selectedColors.some((c) => c.toLowerCase() === color.toLowerCase());
+
 	const addCustomColor = () => {
-		if (
-			!selectedColors.includes(customColor) &&
-			selectedColors.length < MAX_COLORS
-		) {
+		if (!hasColor(customColor) && selectedColors.length < MAX_COLORS) {
 			updateColors([...selectedColors, customColor]);
 		}
 	};
@@ -92,11 +95,12 @@ export function LegoColorPicker({
 					<div className="color-list">
 						{selectedColors.map((color) => (
 							<div key={color} className="selected-color-item">
-								<div
+								<img
 									className="color-swatch"
-									style={{ backgroundColor: color }}
+									src={renderLegoBrick(color)}
+									alt={`Lego tessera ${color}`}
+									title={color}
 								/>
-								<span>{color}</span>
 								<button
 									type="button"
 									onClick={() => removeColor(color)}
@@ -149,8 +153,7 @@ export function LegoColorPicker({
 						type="button"
 						onClick={addCustomColor}
 						disabled={
-							selectedColors.includes(customColor) ||
-							selectedColors.length >= MAX_COLORS
+							hasColor(customColor) || selectedColors.length >= MAX_COLORS
 						}
 					>
 						Add Custom Color
