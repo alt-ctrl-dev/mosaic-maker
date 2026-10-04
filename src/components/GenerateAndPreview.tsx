@@ -49,7 +49,12 @@ export function GenerateAndPreview({
 
 	const beforeUnloadRef = useRef(onBeforeUnload);
 	const workerRef = useRef<Worker | null>(null);
-	const generationStartTimeRef = useRef<number>(0);
+	const generationStartTimeRef = useRef(0);
+	const generationIdRef = useRef(0);
+	const generationPathRef = useRef<{
+		executionPath: "worker" | "main_thread";
+		fallbackReason?: "android_readback" | "worker_unavailable";
+	}>({ executionPath: "worker" });
 
 	const terminateWorker = useCallback(() => {
 		if (workerRef.current) {
@@ -85,22 +90,32 @@ export function GenerateAndPreview({
 
 		const sourceImage = state.sourceImage;
 		const tesseraSize = state.adjustedTesseraSize;
+		const generationId = ++generationIdRef.current;
+		generationStartTimeRef.current = performance.now();
 
 		setIsGenerating(true);
 		setError(null);
 		setProgress(null);
 		setPreviewUrl(null);
 		setPreviewDimensions(null);
-		generationStartTimeRef.current = Date.now();
+		generationPathRef.current =
+			typeof Worker !== "undefined"
+				? { executionPath: "worker" }
+				: {
+						executionPath: "main_thread",
+						fallbackReason: "worker_unavailable",
+					};
 
 		if (typeof Worker !== "undefined") {
 			try {
 				const WorkerConstructor = (
 					await import("../engine/mosaic-worker.ts?worker")
 				).default;
+				if (generationId !== generationIdRef.current) return;
 				workerRef.current = new WorkerConstructor();
 
 				workerRef.current.onmessage = (event) => {
+					if (generationId !== generationIdRef.current) return;
 					const { type, ...data } = event.data;
 
 					switch (type) {
@@ -109,7 +124,8 @@ export function GenerateAndPreview({
 							break;
 						case "result": {
 							const success = Boolean(data.dataUrl);
-							const duration = Date.now() - generationStartTimeRef.current;
+							const duration =
+								performance.now() - generationStartTimeRef.current;
 							trackMosaicGeneration(
 								success,
 								duration,
@@ -117,6 +133,7 @@ export function GenerateAndPreview({
 								sourceImage.height,
 								tesseraSize,
 								state.mode,
+								"worker",
 							);
 							if (success) {
 								setPreviewUrl(data.dataUrl);
@@ -148,6 +165,8 @@ export function GenerateAndPreview({
 								generateOnMainThread(
 									sourceImage,
 									tesseraSize,
+									"android_readback",
+									generationId,
 									ANDROID_FALLBACK_ERROR_MESSAGE,
 								);
 							} else {
@@ -156,11 +175,12 @@ export function GenerateAndPreview({
 								setIsGenerating(false);
 								trackMosaicGeneration(
 									false,
-									Date.now() - generationStartTimeRef.current,
+									performance.now() - generationStartTimeRef.current,
 									sourceImage.width,
 									sourceImage.height,
 									tesseraSize,
 									state.mode,
+									"worker",
 								);
 								terminateWorker();
 							}
@@ -181,27 +201,45 @@ export function GenerateAndPreview({
 					mode: state.mode,
 				});
 			} catch (err) {
+				if (generationId !== generationIdRef.current) return;
+				terminateWorker();
 				console.warn(
 					"Web Worker not supported or failed, falling back to main thread",
 					err,
 				);
 				trackError("mosaic_generation_worker_init", err);
-				await generateOnMainThread(sourceImage, tesseraSize);
+				await generateOnMainThread(
+					sourceImage,
+					tesseraSize,
+					"worker_unavailable",
+					generationId,
+				);
 			}
 		} else {
-			await generateOnMainThread(sourceImage, tesseraSize);
+			await generateOnMainThread(
+				sourceImage,
+				tesseraSize,
+				"worker_unavailable",
+				generationId,
+			);
 		}
 	};
 
 	const generateOnMainThread = async (
 		sourceImage: NonNullable<WorkflowState["sourceImage"]>,
 		tesseraSize: NonNullable<WorkflowState["adjustedTesseraSize"]>,
+		fallbackReason: "android_readback" | "worker_unavailable",
+		generationId: number,
 		fallbackErrorMessage?: string,
 	) => {
-		const startTime = performance.now();
+		generationPathRef.current = {
+			executionPath: "main_thread",
+			fallbackReason,
+		};
 
 		const progressCallback: ProgressCallback = (percent, message) => {
-			setProgress({ percent, message });
+			if (generationId === generationIdRef.current)
+				setProgress({ percent, message });
 		};
 
 		try {
@@ -215,7 +253,8 @@ export function GenerateAndPreview({
 				progressCallback,
 			);
 
-			const totalTime = performance.now() - startTime;
+			if (generationId !== generationIdRef.current) return;
+			const totalTime = performance.now() - generationStartTimeRef.current;
 
 			trackMosaicGeneration(
 				true,
@@ -224,6 +263,8 @@ export function GenerateAndPreview({
 				sourceImage.height,
 				tesseraSize,
 				state.mode,
+				"main_thread",
+				fallbackReason,
 			);
 
 			setProgress({ percent: 100, message: "Mosaic generated successfully" });
@@ -232,6 +273,7 @@ export function GenerateAndPreview({
 
 			dispatch({ type: "mosaicGenerated", mosaicResult: result });
 		} catch (err) {
+			if (generationId !== generationIdRef.current) return;
 			if (fallbackErrorMessage) {
 				console.error("Main-thread fallback failed:", err);
 				setError(fallbackErrorMessage);
@@ -247,7 +289,7 @@ export function GenerateAndPreview({
 			}
 			dispatch({ type: "generationCancelledOrFailed" });
 
-			const totalTime = performance.now() - startTime;
+			const totalTime = performance.now() - generationStartTimeRef.current;
 
 			trackMosaicGeneration(
 				false,
@@ -256,33 +298,27 @@ export function GenerateAndPreview({
 				sourceImage.height,
 				tesseraSize,
 				state.mode,
+				"main_thread",
+				fallbackReason,
 			);
 		} finally {
-			setIsGenerating(false);
+			if (generationId === generationIdRef.current) setIsGenerating(false);
 		}
 	};
 
 	const handleCancel = () => {
-		if (workerRef.current) {
-			workerRef.current.postMessage({ type: "cancel" });
-			if (state.sourceImage && state.adjustedTesseraSize) {
-				trackMosaicGeneration(
-					false,
-					Date.now() - generationStartTimeRef.current,
-					state.sourceImage.width,
-					state.sourceImage.height,
-					state.adjustedTesseraSize,
-					state.mode,
-				);
-			}
-		} else if (state.sourceImage && state.adjustedTesseraSize) {
+		++generationIdRef.current;
+		workerRef.current?.postMessage({ type: "cancel" });
+		if (state.sourceImage && state.adjustedTesseraSize) {
 			trackMosaicGeneration(
 				false,
-				Date.now() - generationStartTimeRef.current,
+				performance.now() - generationStartTimeRef.current,
 				state.sourceImage.width,
 				state.sourceImage.height,
 				state.adjustedTesseraSize,
 				state.mode,
+				generationPathRef.current.executionPath,
+				generationPathRef.current.fallbackReason,
 			);
 		}
 		terminateWorker();

@@ -481,7 +481,16 @@ describe("telemetry", () => {
 			const consoleLogSpy = vi
 				.spyOn(console, "log")
 				.mockImplementation(() => {});
-			trackMosaicGeneration(true, 1000, 1920, 1080, 16);
+			trackMosaicGeneration(
+				true,
+				1000,
+				1920,
+				1080,
+				16,
+				"photomosaic",
+				"main_thread",
+				"android_readback",
+			);
 			expect(consoleLogSpy).toHaveBeenCalledWith(
 				"[Telemetry] mosaic_generation:",
 				JSON.stringify(
@@ -494,11 +503,23 @@ describe("telemetry", () => {
 						sourceHeight: "1080",
 						tesseraSize: "16",
 						mode: "photomosaic",
+						executionPath: "main_thread",
+						fallbackReason: "android_readback",
 					},
 					null,
 					2,
 				),
 			);
+		});
+
+		it("omits the fallback reason for worker generation", () => {
+			const consoleLogSpy = vi
+				.spyOn(console, "log")
+				.mockImplementation(() => {});
+			trackMosaicGeneration(true, 1000, 1920, 1080, 16, "lego", "worker");
+			const payload = JSON.parse(consoleLogSpy.mock.calls[0][1] as string);
+			expect(payload.executionPath).toBe("worker");
+			expect(payload).not.toHaveProperty("fallbackReason");
 		});
 	});
 

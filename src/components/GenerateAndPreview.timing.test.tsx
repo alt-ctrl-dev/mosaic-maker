@@ -78,14 +78,19 @@ describe("GenerateAndPreview Timing", () => {
 		vi.restoreAllMocks();
 	});
 
-	it("should track generation timing for successful main thread generation", async () => {
+	it("reports elapsed time since Generate was clicked for a main-thread mosaic", async () => {
 		const mockResult = {
 			dataUrl: "result-data-url",
 			width: 100,
 			height: 100,
 		};
-
-		vi.spyOn(mosaicEngine, "generateMosaic").mockResolvedValue(mockResult);
+		let finish!: (result: typeof mockResult) => void;
+		vi.spyOn(mosaicEngine, "generateMosaic").mockReturnValue(
+			new Promise((resolve) => {
+				finish = resolve;
+			}),
+		);
+		vi.spyOn(performance, "now").mockReturnValue(100);
 
 		const originalWorker = window.Worker;
 		// @ts-expect-error - intentionally removing Worker
@@ -98,14 +103,18 @@ describe("GenerateAndPreview Timing", () => {
 			await act(async () => {
 				generateButton.click();
 			});
+			vi.spyOn(performance, "now").mockReturnValue(1120);
+			await act(async () => finish(mockResult));
 
 			expect(telemetry.trackMosaicGeneration).toHaveBeenCalledWith(
 				true,
-				expect.any(Number),
+				1020,
 				100,
 				100,
 				10,
 				"photomosaic",
+				"main_thread",
+				"worker_unavailable",
 			);
 		} finally {
 			window.Worker = originalWorker;
@@ -138,7 +147,50 @@ describe("GenerateAndPreview Timing", () => {
 				100,
 				10,
 				"photomosaic",
+				"main_thread",
+				"worker_unavailable",
 			);
+		} finally {
+			window.Worker = originalWorker;
+		}
+	});
+
+	it("reports main-thread cancellation only once with elapsed time", async () => {
+		let finish!: (
+			result: Awaited<ReturnType<typeof mosaicEngine.generateMosaic>>,
+		) => void;
+		vi.spyOn(mosaicEngine, "generateMosaic").mockReturnValue(
+			new Promise((resolve) => {
+				finish = resolve;
+			}),
+		);
+		vi.spyOn(performance, "now").mockReturnValue(100);
+		const originalWorker = window.Worker;
+		// @ts-expect-error - intentionally removing Worker
+		delete window.Worker;
+		try {
+			render(<GenerateAndPreview state={mockState} dispatch={mockDispatch} />);
+			await act(async () =>
+				screen.getByRole("button", { name: "Generate Mosaic" }).click(),
+			);
+			vi.spyOn(performance, "now").mockReturnValue(140);
+			await act(async () =>
+				screen.getByRole("button", { name: "Cancel" }).click(),
+			);
+			expect(telemetry.trackMosaicGeneration).toHaveBeenCalledWith(
+				false,
+				40,
+				100,
+				100,
+				10,
+				"photomosaic",
+				"main_thread",
+				"worker_unavailable",
+			);
+			await act(async () =>
+				finish({ dataUrl: "late", width: 100, height: 100 }),
+			);
+			expect(telemetry.trackMosaicGeneration).toHaveBeenCalledTimes(1);
 		} finally {
 			window.Worker = originalWorker;
 		}
