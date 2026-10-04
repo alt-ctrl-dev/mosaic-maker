@@ -57,3 +57,14 @@ body {
 .warning-message {
 	margin: 1rem 0;
 }
+
+.error-boundary {
+	display: flex;
+	flex-direction: column;
+	align-items: center;
+	justify-content: center;
+	min-height: 100vh;
+	gap: 1rem;
+	padding: 2rem;
+	text-align: center;
+}
