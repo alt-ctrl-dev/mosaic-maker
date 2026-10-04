@@ -65,10 +65,10 @@ export function LegoColorPicker({
 	};
 
 	const addCustomColor = () => {
-		if (
-			!selectedColors.includes(customColor) &&
-			selectedColors.length < MAX_COLORS
-		) {
+		// Check if color already exists to avoid duplicates
+		const colorExists = selectedColors.includes(customColor);
+
+		if (!colorExists && selectedColors.length < MAX_COLORS) {
 			updateColors([...selectedColors, customColor]);
 		}
 	};
