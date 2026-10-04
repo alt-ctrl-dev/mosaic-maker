@@ -32,13 +32,13 @@ export function TesseraSizeSelection({
 
 	const isCoarse = gridCellCount !== null && isCoarseGrid(gridCellCount);
 
-	const maxTesseraSize =
-		initialState.sourceImage && initialState.hasValidSourceDimensions
-			? Math.min(
-					initialState.sourceImage.width,
-					initialState.sourceImage.height,
-				)
-			: 100;
+	const maxTesseraSize = 250;
+	// initialState.sourceImage && initialState.hasValidSourceDimensions
+	// 	? Math.min(
+	// 			initialState.sourceImage.width,
+	// 			initialState.sourceImage.height,
+	// 		)
+	// 	: 100;
 
 	const onSizeSelectedRef = useRef(onSizeSelected);
 	onSizeSelectedRef.current = onSizeSelected;
