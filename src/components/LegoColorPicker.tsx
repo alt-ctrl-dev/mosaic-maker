@@ -64,11 +64,13 @@ export function LegoColorPicker({
 		onTesseraeSelected(createLegoTesserae(next));
 	};
 
-	const addCustomColor = () => {
-		// Check if color already exists to avoid duplicates
-		const colorExists = selectedColors.includes(customColor);
+	// Case-insensitive check: <input type="color"> emits lowercase hex
+	// while preset palettes use uppercase, so plain includes() misses dupes.
+	const hasColor = (color: string) =>
+		selectedColors.some((c) => c.toLowerCase() === color.toLowerCase());
 
-		if (!colorExists && selectedColors.length < MAX_COLORS) {
+	const addCustomColor = () => {
+		if (!hasColor(customColor) && selectedColors.length < MAX_COLORS) {
 			updateColors([...selectedColors, customColor]);
 		}
 	};
@@ -151,8 +153,7 @@ export function LegoColorPicker({
 						type="button"
 						onClick={addCustomColor}
 						disabled={
-							selectedColors.includes(customColor) ||
-							selectedColors.length >= MAX_COLORS
+							hasColor(customColor) || selectedColors.length >= MAX_COLORS
 						}
 					>
 						Add Custom Color
