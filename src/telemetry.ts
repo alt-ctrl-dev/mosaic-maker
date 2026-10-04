@@ -4,8 +4,8 @@ import {
 	initializeFaro,
 	LogLevel,
 } from "@grafana/faro-web-sdk";
-import { VERSION_STRING } from "./version";
 import type { MosaicMode } from "./engine/workflow-state";
+import { VERSION_STRING } from "./version";
 
 const CONSENT_KEY = "telemetry-consent";
 const SESSION_KEY = "telemetry-session";
@@ -361,6 +361,8 @@ export async function trackDeviceAnalytics(): Promise<void> {
  * @param sourceHeight Source image height
  * @param tesseraSize Tessera size
  * @param mode The mosaic generation mode used
+ * @param executionPath Where the generation ran
+ * @param fallbackReason Why generation moved to the main thread, if applicable
  */
 export function trackMosaicGeneration(
 	success: boolean,
@@ -368,7 +370,9 @@ export function trackMosaicGeneration(
 	sourceWidth: number,
 	sourceHeight: number,
 	tesseraSize: number,
-	mode: MosaicMode = "photomosaic",
+	mode: MosaicMode,
+	executionPath: "worker" | "main_thread",
+	fallbackReason?: "android_readback" | "worker_unavailable",
 ): void {
 	trackEvent("mosaic_generation", {
 		success,
@@ -377,5 +381,7 @@ export function trackMosaicGeneration(
 		sourceHeight,
 		tesseraSize,
 		mode,
+		executionPath,
+		...(fallbackReason && { fallbackReason }),
 	});
 }
