@@ -73,12 +73,12 @@ describe("workflow-state", () => {
 	});
 
 	describe("createLegoTessera", () => {
-		it("creates a valid synthetic tessera with a flat colour and no image", () => {
+		it("creates a valid synthetic tessera with a rendered brick preview", () => {
 			const tessera = createLegoTessera("#FF0000");
 
 			expect(tessera.color).toBe("#FF0000");
 			expect(tessera.isValid).toBe(true);
-			expect(tessera.previewUrl).toBeNull();
+			expect(tessera.previewUrl).toMatch(/^data:/);
 			expect(tessera.file).toBeUndefined();
 			expect(tessera.fileName).toBe("lego-#FF0000");
 		});

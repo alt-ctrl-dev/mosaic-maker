@@ -8,6 +8,7 @@ import {
 	hasValidTesseraSizes,
 	isCoarseGrid,
 } from "./tessera-sizing";
+import { renderLegoBrick } from "./lego-brick";
 
 export type { MosaicResult };
 
@@ -63,7 +64,7 @@ export function createLegoTessera(color: string): TesseraInfo {
 		isValid: true,
 		error: null,
 		isLowResolution: false,
-		previewUrl: null,
+		previewUrl: renderLegoBrick(color),
 		color,
 	};
 }

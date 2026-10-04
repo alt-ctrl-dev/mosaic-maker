@@ -1,5 +1,6 @@
 import { useState } from "react";
 import { createLegoTesserae, type TesseraInfo } from "../engine/workflow-state";
+import { renderLegoBrick } from "../engine/lego-brick";
 
 /** Props for {@link LegoColorPicker}. */
 interface LegoColorPickerProps {
@@ -92,11 +93,12 @@ export function LegoColorPicker({
 					<div className="color-list">
 						{selectedColors.map((color) => (
 							<div key={color} className="selected-color-item">
-								<div
+								<img
 									className="color-swatch"
-									style={{ backgroundColor: color }}
+									src={renderLegoBrick(color)}
+									alt={`Lego tessera ${color}`}
+									title={color}
 								/>
-								<span>{color}</span>
 								<button
 									type="button"
 									onClick={() => removeColor(color)}
