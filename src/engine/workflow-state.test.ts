@@ -72,6 +72,38 @@ describe("workflow-state", () => {
 		});
 	});
 
+	describe("variety metrics by mode", () => {
+		const stateWithSource = {
+			...INITIAL_WORKFLOW_STATE,
+			adjustedTesseraSize: 16,
+			sourceImage: {
+				width: 1000,
+				height: 1000,
+				orientation: 1,
+				url: "blob:source",
+			},
+		};
+
+		it("flags low variety in photomosaic mode", () => {
+			const newState = updateWorkflowWithGeneratedTesserae(stateWithSource, [
+				makeTessera("only.jpg", true),
+			]);
+
+			expect(newState.isLowVarietyCollection).toBe(true);
+			expect(newState.varietyRecommendation).not.toBeNull();
+		});
+
+		it("never flags low variety in lego mode", () => {
+			const newState = updateWorkflowWithGeneratedTesserae(
+				{ ...stateWithSource, mode: "lego" },
+				createLegoTesserae(["#FF0000"]),
+			);
+
+			expect(newState.isLowVarietyCollection).toBe(false);
+			expect(newState.varietyRecommendation).toBeNull();
+		});
+	});
+
 	describe("createLegoTessera", () => {
 		it("creates a valid synthetic tessera with a rendered brick preview", () => {
 			const tessera = createLegoTessera("#FF0000");

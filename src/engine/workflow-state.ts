@@ -196,7 +196,13 @@ function recalculateVarietyMetrics(
 	state: WorkflowState,
 	validCount: number,
 ): { isLowVariety: boolean; varietyRecommendation: number | null } {
-	if (!state.adjustedTesseraSize || !state.sourceImage) {
+	if (
+		state.mode === "lego" ||
+		!state.adjustedTesseraSize ||
+		!state.sourceImage
+	) {
+		// Lego mode uses a fixed palette of flat colours, so variety
+		// recommendations for photomosaic image collections don't apply.
 		return { isLowVariety: false, varietyRecommendation: null };
 	}
 
