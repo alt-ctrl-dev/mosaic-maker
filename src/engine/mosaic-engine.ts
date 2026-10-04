@@ -45,7 +45,7 @@ interface ProcessedTessera {
  * @param sourceImage - Information about the source image
  * @param tesserae - Array of tesserae to use in the mosaic
  * @param tesseraSize - The size of each tessera in pixels
- * @param mode - The mosaic generation mode. In `lego` mode the source image is
+ * @param mode - The mosaic generation mode. In `brick` mode the source image is
  *   not blended over the tesserae, so each cell shows its flat tessera colour.
  * @param canvasCreator - Optional factory for creating canvas elements (for testing)
  * @param imageLoader - Optional image loading function (for testing)
@@ -222,7 +222,7 @@ async function createCanvasFromSource(
 /**
  * Render a tessera onto a square canvas at the mosaic's tessera size.
  *
- * Synthetic lego tesserae have a preview image from renderLegoBrick; photomosaic tesserae draw their preview image.
+ * Synthetic brick tesserae have a preview image from renderBrick; photomosaic tesserae draw their preview image.
  */
 async function renderTessera(
 	tessera: TesseraInfo,

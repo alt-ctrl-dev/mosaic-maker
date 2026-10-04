@@ -30,7 +30,7 @@ interface WorkerTessera {
 	fileName: string;
 	isValid: boolean;
 	previewUrl: string | null;
-	/** Flat hex colour for synthetic lego-mode tesserae; absent for photomosaic tesserae. */
+	/** Flat hex colour for synthetic brick-mode tesserae; absent for photomosaic tesserae. */
 	color?: string;
 }
 

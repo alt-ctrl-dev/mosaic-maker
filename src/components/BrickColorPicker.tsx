@@ -1,9 +1,12 @@
 import { useState } from "react";
-import { createLegoTesserae, type TesseraInfo } from "../engine/workflow-state";
-import { renderLegoBrick } from "../engine/lego-brick";
+import {
+	createBrickTesserae,
+	type TesseraInfo,
+} from "../engine/workflow-state";
+import { renderBrick } from "../engine/brick";
 
-/** Props for {@link LegoColorPicker}. */
-interface LegoColorPickerProps {
+/** Props for {@link BrickColorPicker}. */
+interface BrickColorPickerProps {
 	/** Called with synthetic tesserae for the updated set of selected colors. */
 	onTesseraeSelected: (tesserae: TesseraInfo[]) => void;
 	/** Previously selected colors to restore when revisiting this step. */
@@ -16,7 +19,7 @@ const MAX_COLORS = 15;
 /** Preset color palettes the user can choose from. */
 const PRESET_PALETTES = [
 	{
-		name: "Classic Lego",
+		name: "Classic Bricks",
 		colors: [
 			"#FF0000",
 			"#0000FF",
@@ -48,20 +51,20 @@ const PRESET_PALETTES = [
 ];
 
 /**
- * Color picker for Lego mosaic mode that lets the user select 2-15 colors
+ * Color picker for Brick mosaic mode that lets the user select 2-15 colors
  * from preset palettes or a custom color wheel.
  */
-export function LegoColorPicker({
+export function BrickColorPicker({
 	onTesseraeSelected,
 	initialColors = [],
-}: LegoColorPickerProps) {
+}: BrickColorPickerProps) {
 	const [selectedColors, setSelectedColors] = useState<string[]>(initialColors);
 	const [customColor, setCustomColor] = useState("#FF0000");
 	const [activePalette, setActivePalette] = useState<number | null>(null);
 
 	const updateColors = (next: string[]) => {
 		setSelectedColors(next);
-		onTesseraeSelected(createLegoTesserae(next));
+		onTesseraeSelected(createBrickTesserae(next));
 	};
 
 	// Case-insensitive check: <input type="color"> emits lowercase hex
@@ -86,7 +89,7 @@ export function LegoColorPicker({
 	};
 
 	return (
-		<div className="lego-color-picker">
+		<div className="brick-color-picker">
 			<h3>Select Colors (2-{MAX_COLORS} colors required)</h3>
 
 			{selectedColors.length > 0 && (
@@ -97,8 +100,8 @@ export function LegoColorPicker({
 							<div key={color} className="selected-color-item">
 								<img
 									className="color-swatch"
-									src={renderLegoBrick(color)}
-									alt={`Lego tessera ${color}`}
+									src={renderBrick(color)}
+									alt={`Brick tessera ${color}`}
 									title={color}
 								/>
 								<button

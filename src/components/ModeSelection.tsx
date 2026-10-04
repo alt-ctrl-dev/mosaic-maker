@@ -14,21 +14,22 @@ interface ModeSelectionProps {
 const MODE_DESCRIPTIONS: Record<MosaicMode, string> = {
 	photomosaic:
 		"Create a traditional photomosaic using your uploaded images as tesserae",
-	lego: "Create a mosaic using a limited color palette, rendered as flat squares",
+	brick:
+		"Create a mosaic using a limited color palette, rendered as flat squares",
 };
 
 /** Display titles for each mosaic mode. */
 const MODE_TITLES: Record<MosaicMode, string> = {
 	photomosaic: "Photomosaic (Default)",
-	lego: "Lego Style",
+	brick: "Brick Style",
 };
 
 /** All available modes as a typed array for safe iteration. */
-const MODES: MosaicMode[] = ["photomosaic", "lego"];
+const MODES: MosaicMode[] = ["photomosaic", "brick"];
 
 /**
  * First workflow step that lets the user choose between photomosaic and
- * lego mosaic generation modes before proceeding to source image selection.
+ * brick mosaic generation modes before proceeding to source image selection.
  */
 export function ModeSelection({
 	mode,

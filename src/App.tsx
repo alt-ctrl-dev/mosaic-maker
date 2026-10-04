@@ -4,7 +4,7 @@ import { ErrorBoundary } from "./components/ErrorBoundary";
 import { ExportMosaic } from "./components/ExportMosaic";
 import { GenerateAndPreview } from "./components/GenerateAndPreview";
 import { GeneratedTesserae } from "./components/GeneratedTesserae";
-import { LegoColorPicker } from "./components/LegoColorPicker";
+import { BrickColorPicker } from "./components/BrickColorPicker";
 import { ModeSelection } from "./components/ModeSelection";
 import { SourceImageSelection } from "./components/SourceImageSelection";
 import { TesseraReview } from "./components/TesseraReview";
@@ -102,11 +102,11 @@ export function App() {
 				);
 			case WorkflowStepEnum.BUILD_TESSERAE: {
 				const isPhotomosaic = workflowState.mode === "photomosaic";
-				const isLego = workflowState.mode === "lego";
+				const isBrick = workflowState.mode === "brick";
 				const hasPhotomosaicTesserae =
 					isPhotomosaic && workflowState.tesserae.length > 0;
-				const hasLegoColors = isLego && workflowState.tesserae.length >= 2;
-				const canReview = hasPhotomosaicTesserae || hasLegoColors;
+				const hasBrickColors = isBrick && workflowState.tesserae.length >= 2;
+				const canReview = hasPhotomosaicTesserae || hasBrickColors;
 
 				return (
 					<div className="build-tesserae-container">
@@ -143,8 +143,8 @@ export function App() {
 								)}
 							</>
 						)}
-						{isLego && (
-							<LegoColorPicker
+						{isBrick && (
+							<BrickColorPicker
 								onTesseraeSelected={(tesserae) =>
 									dispatch({ type: "tesseraeProcessed", tesserae })
 								}

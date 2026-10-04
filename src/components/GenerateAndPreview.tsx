@@ -332,7 +332,7 @@ export function GenerateAndPreview({
 	const canGenerate =
 		state.sourceImage !== null &&
 		state.adjustedTesseraSize !== null &&
-		(state.mode === "lego"
+		(state.mode === "brick"
 			? state.tesserae.length >= 2
 			: state.tesserae.length > 0);
 
