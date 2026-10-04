@@ -222,8 +222,7 @@ async function createCanvasFromSource(
 /**
  * Render a tessera onto a square canvas at the mosaic's tessera size.
  *
- * Synthetic lego tesserae have no preview image and are filled with their flat
- * {@link TesseraInfo.color}; photomosaic tesserae draw their preview image.
+ * Synthetic lego tesserae have a preview image from renderLegoBrick; photomosaic tesserae draw their preview image.
  */
 async function renderTessera(
 	tessera: TesseraInfo,
