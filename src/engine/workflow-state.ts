@@ -8,7 +8,7 @@ import {
 	hasValidTesseraSizes,
 	isCoarseGrid,
 } from "./tessera-sizing";
-import { renderLegoBrick } from "./lego-brick";
+import { renderBrick } from "./brick";
 
 export type { MosaicResult };
 
@@ -24,19 +24,19 @@ export interface ExportSettings {
 /**
  * Available mosaic generation modes.
  */
-export type MosaicMode = "photomosaic" | "lego";
+export type MosaicMode = "photomosaic" | "brick";
 
 /**
  * Information about a tessera that has been processed for the mosaic.
  *
  * Photomosaic tesserae carry an uploaded or generated image via
- * {@link TesseraInfo.file} and {@link TesseraInfo.previewUrl}. Lego-mode
+ * {@link TesseraInfo.file} and {@link TesseraInfo.previewUrl}. Brick-mode
  * tesserae are synthetic: they carry only a flat {@link TesseraInfo.color}
  * and have no backing image, so the generation engine renders them as a
  * solid colour fill.
  */
 export interface TesseraInfo {
-	/** Backing image file for photomosaic tesserae; absent for synthetic lego tesserae. */
+	/** Backing image file for photomosaic tesserae; absent for synthetic brick tesserae. */
 	file?: File;
 	fileName: string;
 	isValid: boolean;
@@ -45,38 +45,38 @@ export interface TesseraInfo {
 	previewUrl: string | null;
 	/** Whether the tessera is supplemented (generated) */
 	isSupplemented?: boolean;
-	/** Flat hex colour for synthetic lego-mode tesserae; absent for photomosaic tesserae. */
+	/** Flat hex colour for synthetic brick-mode tesserae; absent for photomosaic tesserae. */
 	color?: string;
 }
 
 /**
- * Create a synthetic tessera representing a single flat lego colour.
+ * Create a synthetic tessera representing a single flat brick colour.
  *
  * Synthetic tesserae have no backing image file; the generation engine fills
  * the tessera with {@link TesseraInfo.color} instead of drawing an image.
  *
- * @param color - Hex colour value (e.g. `#FF0000`) for the lego tessera
+ * @param color - Hex colour value (e.g. `#FF0000`) for the brick tessera
  * @returns A valid synthetic tessera for the given colour
  */
-export function createLegoTessera(color: string): TesseraInfo {
+export function createBrickTessera(color: string): TesseraInfo {
 	return {
-		fileName: `lego-${color}`,
+		fileName: `brick-${color}`,
 		isValid: true,
 		error: null,
 		isLowResolution: false,
-		previewUrl: renderLegoBrick(color),
+		previewUrl: renderBrick(color),
 		color,
 	};
 }
 
 /**
- * Create synthetic tesserae for a collection of lego colours.
+ * Create synthetic tesserae for a collection of brick colours.
  *
  * @param colors - Hex colour values selected by the user
  * @returns One synthetic tessera per colour
  */
-export function createLegoTesserae(colors: string[]): TesseraInfo[] {
-	return colors.map(createLegoTessera);
+export function createBrickTesserae(colors: string[]): TesseraInfo[] {
+	return colors.map(createBrickTessera);
 }
 
 /**
@@ -197,11 +197,11 @@ function recalculateVarietyMetrics(
 	validCount: number,
 ): { isLowVariety: boolean; varietyRecommendation: number | null } {
 	if (
-		state.mode === "lego" ||
+		state.mode === "brick" ||
 		!state.adjustedTesseraSize ||
 		!state.sourceImage
 	) {
-		// Lego mode uses a fixed palette of flat colours, so variety
+		// Brick mode uses a fixed palette of flat colours, so variety
 		// recommendations for photomosaic image collections don't apply.
 		return { isLowVariety: false, varietyRecommendation: null };
 	}

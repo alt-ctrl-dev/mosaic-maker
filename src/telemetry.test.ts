@@ -516,7 +516,7 @@ describe("telemetry", () => {
 			const consoleLogSpy = vi
 				.spyOn(console, "log")
 				.mockImplementation(() => {});
-			trackMosaicGeneration(true, 1000, 1920, 1080, 16, "lego", "worker");
+			trackMosaicGeneration(true, 1000, 1920, 1080, 16, "brick", "worker");
 			const payload = JSON.parse(consoleLogSpy.mock.calls[0][1] as string);
 			expect(payload.executionPath).toBe("worker");
 			expect(payload).not.toHaveProperty("fallbackReason");

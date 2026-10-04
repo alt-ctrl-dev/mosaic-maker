@@ -1,14 +1,14 @@
 /**
- * Renders a Lego brick-like tile as a data URL.
+ * Renders a studded brick-like tessera as a data URL.
  *
  * For browser environments, generates a PNG. For test environments (jsdom)
  * without canvas, falls back to an SVG data URL.
  *
  * @param color - The hex color value, e.g. "#FF0000"
- * @param size - The size of the tile in pixels (default: 128)
- * @returns A data URL for an image of a Lego brick
+ * @param size - The size of the tessera in pixels (default: 128)
+ * @returns A data URL for an image of a studded brick
  */
-export function renderLegoBrick(color: string, size = 128): string {
+export function renderBrick(color: string, size = 128): string {
 	// If canvas is available (browser), generate PNG
 	if (typeof document !== "undefined" && document.createElement) {
 		const canvas = document.createElement("canvas");
@@ -16,23 +16,23 @@ export function renderLegoBrick(color: string, size = 128): string {
 		canvas.height = size;
 		const ctx = canvas.getContext("2d");
 		if (ctx) {
-			return renderLegoBrickOnCanvas(ctx, color, size);
+			return renderBrickOnCanvas(ctx, color, size);
 		}
 	}
 
 	// Fallback: generate SVG data URL for tests or any environment without canvas
-	return renderLegoBrickAsSvg(color, size);
+	return renderBrickAsSvg(color, size);
 }
 
 /**
- * Renders a Lego brick as a PNG data URL by drawing on a canvas.
+ * Renders a studded brick as a PNG data URL by drawing on a canvas.
  *
  * @param ctx - Canvas 2D context
  * @param color - The hex color value, e.g. "#FF0000"
- * @param size - The size of the tile in pixels (default: 128)
+ * @param size - The size of the tessera in pixels (default: 128)
  * @returns PNG data URL of the brick
  */
-function renderLegoBrickOnCanvas(
+function renderBrickOnCanvas(
 	ctx: CanvasRenderingContext2D,
 	color: string,
 	size = 128,
@@ -98,13 +98,13 @@ function renderLegoBrickOnCanvas(
 }
 
 /**
- * Renders a Lego brick as an SVG data URL.
+ * Renders a studded brick as an SVG data URL.
  *
  * @param color - The hex color value, e.g. "#FF0000"
- * @param size - The size of the tile in pixels (default: 128)
+ * @param size - The size of the tessera in pixels (default: 128)
  * @returns SVG data URL of the brick
  */
-function renderLegoBrickAsSvg(color: string, size = 128): string {
+function renderBrickAsSvg(color: string, size = 128): string {
 	// For now, simpler SVG with rectangular base and simple circular stud
 	const svg = `<?xml version="1.0" encoding="UTF-8" standalone="no"?>
 <svg xmlns="http://www.w3.org/2000/svg" width="${size}" height="${size}" viewBox="0 0 100 100">

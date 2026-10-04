@@ -201,12 +201,12 @@ function generate(tesserae: TesseraInfo[], tesseraSize = 2) {
 	);
 }
 
-function generateLego(tesserae: TesseraInfo[], tesseraSize = 2) {
+function generateBrick(tesserae: TesseraInfo[], tesseraSize = 2) {
 	return generateMosaic(
 		sourceImage,
 		tesserae,
 		tesseraSize,
-		"lego",
+		"brick",
 		createFakeCanvas,
 		fakeImageLoader,
 	);
@@ -281,16 +281,16 @@ describe("Mosaic Engine", () => {
 		expect(first.dataUrl).toBe(second.dataUrl);
 	});
 
-	it("renders synthetic lego tesserae as flat colours with no blending", async () => {
-		const result = await generateLego([
+	it("renders synthetic brick tesserae as flat colours with no blending", async () => {
+		const result = await generateBrick([
 			makeTessera({
-				fileName: "lego-#ff0000",
+				fileName: "brick-#ff0000",
 				previewUrl: null,
 				file: undefined,
 				color: "#ff0000",
 			}),
 			makeTessera({
-				fileName: "lego-#0000ff",
+				fileName: "brick-#0000ff",
 				previewUrl: null,
 				file: undefined,
 				color: "#0000ff",
@@ -302,12 +302,12 @@ describe("Mosaic Engine", () => {
 		expect(pixelAt(result.dataUrl, 3, 3, 4)).toEqual([0, 0, 255]);
 	});
 
-	it("does not blend the source into a mismatched lego cell", async () => {
-		// Only a red lego tessera is available; without blending the blue half
+	it("does not blend the source into a mismatched brick cell", async () => {
+		// Only a red brick tessera is available; without blending the blue half
 		// stays pure red rather than the 75/25 blend photomosaic mode produces.
-		const result = await generateLego([
+		const result = await generateBrick([
 			makeTessera({
-				fileName: "lego-#ff0000",
+				fileName: "brick-#ff0000",
 				previewUrl: null,
 				file: undefined,
 				color: "#ff0000",

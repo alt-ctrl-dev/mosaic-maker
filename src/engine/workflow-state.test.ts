@@ -1,7 +1,7 @@
 import { describe, expect, it } from "vitest";
 import {
-	createLegoTessera,
-	createLegoTesserae,
+	createBrickTessera,
+	createBrickTesserae,
 	INITIAL_WORKFLOW_STATE,
 	type TesseraInfo,
 	updateWorkflowWithGeneratedTesserae,
@@ -93,10 +93,10 @@ describe("workflow-state", () => {
 			expect(newState.varietyRecommendation).not.toBeNull();
 		});
 
-		it("never flags low variety in lego mode", () => {
+		it("never flags low variety in brick mode", () => {
 			const newState = updateWorkflowWithGeneratedTesserae(
-				{ ...stateWithSource, mode: "lego" },
-				createLegoTesserae(["#FF0000"]),
+				{ ...stateWithSource, mode: "brick" },
+				createBrickTesserae(["#FF0000"]),
 			);
 
 			expect(newState.isLowVarietyCollection).toBe(false);
@@ -104,21 +104,21 @@ describe("workflow-state", () => {
 		});
 	});
 
-	describe("createLegoTessera", () => {
+	describe("createBrickTessera", () => {
 		it("creates a valid synthetic tessera with a rendered brick preview", () => {
-			const tessera = createLegoTessera("#FF0000");
+			const tessera = createBrickTessera("#FF0000");
 
 			expect(tessera.color).toBe("#FF0000");
 			expect(tessera.isValid).toBe(true);
 			expect(tessera.previewUrl).toMatch(/^data:/);
 			expect(tessera.file).toBeUndefined();
-			expect(tessera.fileName).toBe("lego-#FF0000");
+			expect(tessera.fileName).toBe("brick-#FF0000");
 		});
 	});
 
-	describe("createLegoTesserae", () => {
+	describe("createBrickTesserae", () => {
 		it("creates one synthetic tessera per colour", () => {
-			const tesserae = createLegoTesserae(["#FF0000", "#0000FF"]);
+			const tesserae = createBrickTesserae(["#FF0000", "#0000FF"]);
 
 			expect(tesserae).toHaveLength(2);
 			expect(tesserae.map((t) => t.color)).toEqual(["#FF0000", "#0000FF"]);

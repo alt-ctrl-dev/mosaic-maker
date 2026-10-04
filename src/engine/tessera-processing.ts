@@ -42,7 +42,7 @@ export async function processTesserae(
 /**
  * Resize existing tesserae to a new target size.
  *
- * Synthetic lego tesserae have no backing image file and render as a flat
+ * Synthetic brick tesserae have no backing image file and render as a flat
  * colour at any size, so they pass through unchanged; only file-backed
  * photomosaic tesserae are re-processed.
  *
