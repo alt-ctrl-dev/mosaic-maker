@@ -31,8 +31,8 @@ importers:
         specifier: 2.5.14
         version: 2.5.14
       '@grafana/faro-rollup-plugin':
-        specifier: 0.12.0
-        version: 0.12.0
+        specifier: 0.13.0
+        version: 0.13.0
       '@testing-library/jest-dom':
         specifier: 7.0.1
         version: 7.0.1(@testing-library/dom@10.4.1)(vitest@5.0.1(@opentelemetry/api@1.9.1)(@types/node@26.2.0)(jsdom@30.1.1)(vite@8.3.0(@types/node@26.2.0)(yaml@2.9.0)))
@@ -221,14 +221,14 @@ packages:
       '@noble/hashes':
         optional: true
 
-  '@grafana/faro-bundlers-shared@0.12.0':
-    resolution: {integrity: sha512-X/QulhlO55W4Tgw9C4RSFyTVo8Aus0ChuGHH6iuVZAB1d1UZkcy6hjBCP7esdQ8vHNphmevsdcbX5ql4pA3wng==}
+  '@grafana/faro-bundlers-shared@0.13.0':
+    resolution: {integrity: sha512-HQ2MvEQNIxM3S0UaBwgHQ8O/HY1J9NESCVYE5UTqPLRyWOkoqxYJMBDPoJtJhwu8GTOFksm2JjK/fPmIb19pKQ==}
 
   '@grafana/faro-core@2.12.1':
     resolution: {integrity: sha512-Pg0vjgsR1BxdmLzzX9r8YcZ8rI4aXLlDGtreppZev++BbnH2utKBwCI16Vx+IzfQqHKRT+7WGc63HOue8/9J6Q==}
 
-  '@grafana/faro-rollup-plugin@0.12.0':
-    resolution: {integrity: sha512-8VOlM9L3ZQIyz80GmZGzkoUDi4hKe9tqvavu+kJMY+en+wZ/gQY+MQ24AFBLf9e9UDFUaoiWgzk38buCXOAV2A==}
+  '@grafana/faro-rollup-plugin@0.13.0':
+    resolution: {integrity: sha512-TzPWuAMs8a0I0/YJEBfiDU381W0f/U/FxEELa3Wz4x8eRzL1tYQg8GaI4HFtFtr5wlLU5gIEa8nNR37N0THB8Q==}
 
   '@grafana/faro-web-sdk@2.12.1':
     resolution: {integrity: sha512-JnpZy/ztfkP3UZ3AW0DzUxVgMRTBvYz+m0oZuVi+KRpGTYz0GGF0umi0S0pAemnaUbQBo6umGdCm5CL6n8BAWQ==}
@@ -1226,20 +1226,20 @@ snapshots:
 
   '@exodus/bytes@1.16.0': {}
 
-  '@grafana/faro-bundlers-shared@0.12.0':
+  '@grafana/faro-bundlers-shared@0.13.0':
     dependencies:
       ansis: 4.4.0
       tar: 7.5.22
-      undici: 8.10.2
+      undici: 8.11.2
 
   '@grafana/faro-core@2.12.1':
     dependencies:
       '@opentelemetry/api': 1.9.1
       '@opentelemetry/otlp-transformer': 0.222.0(@opentelemetry/api@1.9.1)
 
-  '@grafana/faro-rollup-plugin@0.12.0':
+  '@grafana/faro-rollup-plugin@0.13.0':
     dependencies:
-      '@grafana/faro-bundlers-shared': 0.12.0
+      '@grafana/faro-bundlers-shared': 0.13.0
       magic-string: 0.30.21
 
   '@grafana/faro-web-sdk@2.12.1':
