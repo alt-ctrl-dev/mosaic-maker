@@ -23,6 +23,7 @@
 	"dependencies": {
 		"@grafana/faro-web-sdk": "2.12.1",
 		"@picocss/pico": "2.1.1",
+		"jotai": "3.0.1",
 		"react": "19.3.0",
 		"react-dom": "19.3.0",
 		"zod": "4.4.3"

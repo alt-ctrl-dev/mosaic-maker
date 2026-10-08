@@ -1,9 +1,10 @@
-import { type Dispatch, useReducer } from "react";
+import { atom, useAtomValue, useSetAtom } from "jotai";
+import type { Dispatch } from "react";
+import { workflowStateAtom } from "../atoms/workflow-atoms";
 import type { SourceImageInfo } from "../engine/image-processing";
 import type { MosaicResult } from "../engine/mosaic-engine";
 import {
 	type ExportSettings,
-	INITIAL_WORKFLOW_STATE,
 	type MosaicMode,
 	type TesseraInfo,
 	updateWorkflowAdvanceFromMode,
@@ -130,16 +131,14 @@ export function workflowReducer(
 	}
 }
 
-/**
- * React hook that manages {@link WorkflowState} with {@link workflowReducer}.
- *
- * @param initialState - The starting workflow state, defaulting to
- *   {@link INITIAL_WORKFLOW_STATE}
- * @returns A tuple of the current workflow state and a dispatch function for
- *   {@link WorkflowAction} values
- */
-export function useWorkflowReducer(
-	initialState: WorkflowState = INITIAL_WORKFLOW_STATE,
-): [WorkflowState, Dispatch<WorkflowAction>] {
-	return useReducer(workflowReducer, initialState);
+const dispatchWorkflowAtom = atom(null, (get, set, action: WorkflowAction) => {
+	set(workflowStateAtom, workflowReducer(get(workflowStateAtom), action));
+});
+
+/** Read and dispatch workflow transitions within the current App Provider. */
+export function useWorkflowReducer(): [
+	WorkflowState,
+	Dispatch<WorkflowAction>,
+] {
+	return [useAtomValue(workflowStateAtom), useSetAtom(dispatchWorkflowAtom)];
 }

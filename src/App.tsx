@@ -1,10 +1,11 @@
+import { Provider } from "jotai";
 import { AppFooter } from "./components/AppFooter";
+import { BrickColorPicker } from "./components/BrickColorPicker";
 import { Dialog } from "./components/Dialog";
 import { ErrorBoundary } from "./components/ErrorBoundary";
 import { ExportMosaic } from "./components/ExportMosaic";
 import { GenerateAndPreview } from "./components/GenerateAndPreview";
 import { GeneratedTesserae } from "./components/GeneratedTesserae";
-import { BrickColorPicker } from "./components/BrickColorPicker";
 import { ModeSelection } from "./components/ModeSelection";
 import { SourceImageSelection } from "./components/SourceImageSelection";
 import { TesseraReview } from "./components/TesseraReview";
@@ -33,6 +34,14 @@ const DEFAULT_TESSERA_SIZE = 16;
  * Root application component for the Mosaic Maker workflow.
  */
 export function App() {
+	return (
+		<Provider>
+			<WorkflowApp />
+		</Provider>
+	);
+}
+
+function WorkflowApp() {
 	const [workflowState, dispatch] = useWorkflowReducer();
 
 	const resolvedTesseraSize =

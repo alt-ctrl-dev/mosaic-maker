@@ -1,4 +1,10 @@
-import { cleanup, render, screen, within } from "@testing-library/react";
+import {
+	cleanup,
+	fireEvent,
+	render,
+	screen,
+	within,
+} from "@testing-library/react";
 import { afterEach, describe, expect, it, vi } from "vitest";
 import { App } from "./App";
 
@@ -35,6 +41,45 @@ describe("Mosaic Maker workflow", () => {
 			"Generate and preview",
 			"Export mosaic",
 		]);
+	});
+
+	it("keeps mode selection and step navigation in sync", () => {
+		render(<App />);
+
+		fireEvent.click(
+			screen.getByRole("radio", { name: /Select Brick Style mode/ }),
+		);
+		expect(
+			screen.getByRole("radio", { name: /Select Brick Style mode/ }),
+		).toBeChecked();
+		fireEvent.click(screen.getByRole("button", { name: "Continue" }));
+
+		expect(screen.getByText("Step 2 of 5")).toBeInTheDocument();
+		fireEvent.click(screen.getByRole("button", { name: "← Back" }));
+		expect(
+			screen.getByRole("radio", { name: /Select Brick Style mode/ }),
+		).toBeChecked();
+	});
+
+	it("starts each mounted workflow with independent state", () => {
+		const first = render(<App />);
+		fireEvent.click(
+			screen.getByRole("radio", { name: /Select Brick Style mode/ }),
+		);
+		fireEvent.click(screen.getByRole("button", { name: "Continue" }));
+
+		const second = render(<App />);
+		expect(
+			within(second.container).getByText("Step 1 of 5"),
+		).toBeInTheDocument();
+		expect(
+			within(second.container).getByRole("radio", {
+				name: /Select Photomosaic \(Default\) mode/,
+			}),
+		).toBeChecked();
+		expect(
+			within(first.container).getByText("Step 2 of 5"),
+		).toBeInTheDocument();
 	});
 
 	it("hides Next button on first load", () => {
