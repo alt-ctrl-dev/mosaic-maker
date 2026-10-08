@@ -38,7 +38,6 @@ const styles = stylex.create({
 		padding: "1rem",
 		border: "1px solid var(--border)",
 		borderRadius: "var(--radius)",
-		cursor: "pointer",
 	},
 	selected: {
 		borderColor: "var(--primary)",

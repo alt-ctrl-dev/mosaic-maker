@@ -19,8 +19,8 @@ const styles = stylex.create({
 		fontWeight: 600,
 		lineHeight: 1.5,
 		padding: "0.65rem 1rem",
+		minWidth: "2.75rem",
 		textAlign: "center",
-		":disabled": { opacity: 0.5, cursor: "not-allowed" },
 	},
 	secondary: {
 		color: "var(--on-secondary)",
@@ -41,6 +41,7 @@ const styles = stylex.create({
 
 type Props = ComponentProps<"button"> & { variant?: "secondary" | "outline" };
 
+/** Shared button chrome for workflow actions, preserving native button behavior. */
 export function ActionButton({ className, variant, ...props }: Props) {
 	const { className: stylexClass } = stylex.props(
 		styles.button,

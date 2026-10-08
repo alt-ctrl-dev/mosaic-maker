@@ -53,6 +53,8 @@
 .tessera-review .supplemented-label {
 	font-size: 0.7em;
 	font-weight: bold;
+	color: var(--primary);
+	background: var(--primary-soft);
 	padding: 0.1rem 0.3rem;
 	border-radius: calc(var(--radius) / 2);
 }

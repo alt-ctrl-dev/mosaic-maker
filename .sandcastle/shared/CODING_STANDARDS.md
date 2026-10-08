@@ -21,8 +21,9 @@
 
 ## Styling
 
-- Do not reference undefined CSS variables. Every `var(--pico-*)` (or other custom property) must resolve to a value Pico or the project actually defines; referencing a nonexistent variable silently drops the declaration.
-- Status panels (processing indicators, generation progress/info, and error/warning messages) must delegate their visual container styling to Pico's `<article>` element. Do not declare `background-color` or `color` on these panels; let Pico's article styling supply them so the panels stay consistent across colour schemes.
+- Do not reference undefined CSS variables. Every custom property must resolve to a value the project defines; referencing a nonexistent variable silently drops the declaration.
+- Status panels (processing indicators, generation progress/info, and error/warning messages) must delegate their visual container styling to the shared `<article>` rule in `src/styles/base.css`. Do not declare `background-color` or `color` on these panels so they stay consistent across colour schemes.
+- Use StyleX for shared component controls; keep layout and global element rules in the existing CSS files.
 
 ## Testing
 

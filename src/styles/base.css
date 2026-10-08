@@ -116,7 +116,16 @@ progress {
 	accent-color: var(--primary);
 }
 input[type="color"] {
+	width: 2.75rem;
+	height: 2.75rem;
+	padding: 0.15rem;
+	border: 1px solid var(--border);
+	border-radius: var(--radius);
+	background: var(--surface);
 	cursor: pointer;
+}
+input[type="range"] {
+	width: 100%;
 }
 button {
 	cursor: pointer;
