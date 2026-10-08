@@ -8,6 +8,7 @@ import {
 	type WorkflowState,
 } from "../engine/workflow-state";
 import { trackError, trackEvent, trackStepView } from "../telemetry";
+import { ActionButton } from "./ActionButton";
 
 /**
  * Compute the default tessera count for a given workflow state.
@@ -111,9 +112,13 @@ export function GeneratedTesserae({
 							onChange={(e) => setSeed(Number(e.target.value))}
 							aria-label="Seed value for generation"
 						/>
-						<button type="button" onClick={handleNewSeed}>
+						<ActionButton
+							type="button"
+							onClick={handleNewSeed}
+							variant="secondary"
+						>
 							New Seed
-						</button>
+						</ActionButton>
 					</div>
 				</div>
 
@@ -131,14 +136,14 @@ export function GeneratedTesserae({
 				</div>
 			</fieldset>
 
-			<button
+			<ActionButton
 				type="button"
 				onClick={handleGenerate}
 				disabled={isGenerating}
 				aria-busy={isGenerating}
 			>
 				{isGenerating ? "Generating..." : "Generate tiles"}
-			</button>
+			</ActionButton>
 			{isGenerating && (
 				<article className="generation-info" aria-busy="true">
 					Generating {count} tiles with seed {seed}...

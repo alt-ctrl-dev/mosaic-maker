@@ -6,6 +6,6 @@
 .source-image-selection .preview-image {
 	max-width: 100%;
 	height: auto;
-	border-radius: var(--pico-border-radius);
-	box-shadow: var(--pico-box-shadow);
+	border-radius: var(--radius);
+	box-shadow: var(--shadow);
 }

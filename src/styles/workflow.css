@@ -5,7 +5,7 @@
 
 .workflow-sidebar {
 	flex: 0 0 14rem;
-	border-right: 1px solid var(--pico-muted-border-color);
+	border-right: 1px solid var(--border);
 	padding-right: 1rem;
 }
 
@@ -27,20 +27,20 @@ ol.workflow-steps {
 	padding: 0.75rem 1rem;
 	margin-bottom: 0.5rem;
 	border: none;
-	border-radius: var(--pico-border-radius);
+	border-radius: var(--radius);
 	cursor: pointer;
-	background-color: var(--pico-secondary-background);
-	color: var(--pico-secondary-inverse);
+	background-color: var(--secondary);
+	color: var(--on-secondary);
 	transition: background-color 0.2s;
 }
 
 .workflow-step-button:hover {
-	background-color: var(--pico-dropdown-hover-background-color);
+	background-color: var(--secondary-hover);
 }
 
 .workflow-step-button.current {
-	background-color: var(--pico-primary);
-	color: var(--pico-primary-inverse);
+	background-color: var(--primary);
+	color: var(--surface);
 }
 
 .workflow-step-button.completed {
@@ -60,8 +60,8 @@ ol.workflow-steps {
 }
 
 .workflow-step-button.current .step-indicator {
-	background-color: var(--pico-primary-inverse);
-	color: var(--pico-primary);
+	background-color: var(--surface);
+	color: var(--primary);
 }
 
 .step-title {
@@ -84,11 +84,11 @@ ol.workflow-steps {
 	align-items: center;
 	margin-bottom: 1rem;
 	padding-bottom: 0rem;
-	border-bottom: 1px solid var(--pico-muted-border-color);
+	border-bottom: 1px solid var(--border);
 }
 
 .workflow-step-counter {
-	color: var(--pico-muted-color);
+	color: var(--muted);
 	font-size: 0.9rem;
 }
 
@@ -106,9 +106,10 @@ ol.workflow-steps {
 		height: 3rem;
 		border-radius: 50%;
 		border: none;
+		background: var(--primary);
 		z-index: 1001;
 		cursor: pointer;
-		box-shadow: var(--pico-box-shadow);
+		box-shadow: var(--shadow);
 		padding: 0;
 		line-height: 0;
 	}

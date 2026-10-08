@@ -19,9 +19,9 @@ export function AppFooter() {
 			style={{
 				textAlign: "center",
 				padding: "1rem",
-				color: "var(--pico-muted-color)",
+				color: "var(--muted)",
 				fontSize: "0.85rem",
-				borderTop: "1px solid var(--pico-muted-border-color)",
+				borderTop: "1px solid var(--border)",
 				marginTop: "auto",
 			}}
 		>

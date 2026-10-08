@@ -4,6 +4,7 @@ import { exportMosaic } from "../engine/export";
 import type { ExportSettings, WorkflowState } from "../engine/workflow-state";
 import type { WorkflowAction } from "../hooks/useWorkflowReducer";
 import { trackError, trackEvent, trackStepView } from "../telemetry";
+import { ActionButton } from "./ActionButton";
 
 /** Props for {@link ExportMosaic}. */
 interface ExportMosaicProps {
@@ -416,15 +417,14 @@ export function ExportMosaic({ state, dispatch }: ExportMosaicProps) {
 					</details>
 
 					<div className="export-actions">
-						<button
+						<ActionButton
 							type="button"
 							onClick={handleExport}
 							disabled={isExporting}
 							aria-busy={isExporting}
-							className="primary"
 						>
 							{exportButtonLabel(isExporting, canShare)}
-						</button>
+						</ActionButton>
 
 						{error && (
 							<article className="error-message" role="alert">

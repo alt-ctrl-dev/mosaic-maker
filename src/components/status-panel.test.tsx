@@ -25,8 +25,8 @@ import { TesseraReview } from "./TesseraReview";
 import { TesseraSizeSelection } from "./TesseraSizeSelection";
 import { TesseraUpload } from "./TesseraUpload";
 
-// Status panels must delegate their styling to Pico's <article> element rather
-// than declaring background-color or color themselves. These tests mock the
+// Status panels share the base <article> styling rather than declaring
+// background-color or color themselves. These tests mock the
 // async engine calls so the transient status panels stay mounted long enough to
 // inspect their rendered elements.
 vi.mock("../engine/image-processing", async () => {
@@ -103,7 +103,7 @@ function declaredValuesFor(element: Element, property: string): string[] {
 }
 
 /**
- * Asserts that a status panel is a Pico <article> and does not declare its own
+ * Asserts that a status panel uses the shared <article> styling and does not declare its own
  * background-color or color, either inline or via a matching CSS rule.
  */
 function expectDelegatesStylingToArticle(element: Element): void {
@@ -119,11 +119,7 @@ function expectDelegatesStylingToArticle(element: Element): void {
 
 const noop = () => {};
 
-describe("Status panels delegate styling to Pico article elements", () => {
-	it("does not reference the nonexistent pico-contrast-color variable", () => {
-		expect(styles).not.toContain("var(--pico-contrast-color)");
-	});
-
+describe("Status panels delegate styling to article elements", () => {
 	it("SourceImageSelection error panel is an unstyled article", () => {
 		const state = {
 			sourceImageError: "Something went wrong",

@@ -4,6 +4,7 @@ import {
 	type TesseraInfo,
 } from "../engine/workflow-state";
 import { renderBrick } from "../engine/brick";
+import { ActionButton } from "./ActionButton";
 
 /** Props for {@link BrickColorPicker}. */
 interface BrickColorPickerProps {
@@ -104,13 +105,14 @@ export function BrickColorPicker({
 									alt={`Brick tessera ${color}`}
 									title={color}
 								/>
-								<button
+								<ActionButton
 									type="button"
 									onClick={() => removeColor(color)}
 									aria-label={`Remove color ${color}`}
+									variant="outline"
 								>
 									×
-								</button>
+								</ActionButton>
 							</div>
 						))}
 					</div>
@@ -122,13 +124,14 @@ export function BrickColorPicker({
 				<h4>Preset Palettes</h4>
 				{PRESET_PALETTES.map((palette, index) => (
 					<div key={palette.name} className="palette-option">
-						<button
+						<ActionButton
 							type="button"
 							onClick={() => selectPalette(index)}
 							className={activePalette === index ? "active" : ""}
+							variant={activePalette === index ? undefined : "secondary"}
 						>
 							{palette.name}
-						</button>
+						</ActionButton>
 						<div className="palette-colors">
 							{palette.colors.map((color) => (
 								<div
@@ -152,7 +155,7 @@ export function BrickColorPicker({
 						onChange={(e) => setCustomColor(e.target.value)}
 						aria-label="Select custom color"
 					/>
-					<button
+					<ActionButton
 						type="button"
 						onClick={addCustomColor}
 						disabled={
@@ -160,7 +163,7 @@ export function BrickColorPicker({
 						}
 					>
 						Add Custom Color
-					</button>
+					</ActionButton>
 				</div>
 			</div>
 

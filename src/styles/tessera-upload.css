@@ -5,7 +5,7 @@
 
 .tessera-upload .control-group {
 	margin: 0;
-	border: 1px solid var(--pico-muted-border-color);
-	border-radius: var(--pico-border-radius);
+	border: 1px solid var(--border);
+	border-radius: var(--radius);
 	padding: 1rem;
 }

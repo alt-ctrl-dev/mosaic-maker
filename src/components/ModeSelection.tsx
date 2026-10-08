@@ -1,4 +1,6 @@
+import * as stylex from "@stylexjs/stylex";
 import type { MosaicMode } from "../engine/workflow-state";
+import { ActionButton } from "./ActionButton";
 
 /** Props for {@link ModeSelection}. */
 interface ModeSelectionProps {
@@ -27,6 +29,23 @@ const MODE_TITLES: Record<MosaicMode, string> = {
 /** All available modes as a typed array for safe iteration. */
 const MODES: MosaicMode[] = ["photomosaic", "brick"];
 
+const styles = stylex.create({
+	options: { display: "grid", gap: "1rem", marginBottom: "1.5rem" },
+	option: {
+		display: "flex",
+		alignItems: "flex-start",
+		gap: "0.75rem",
+		padding: "1rem",
+		border: "1px solid var(--border)",
+		borderRadius: "var(--radius)",
+		cursor: "pointer",
+	},
+	selected: {
+		borderColor: "var(--primary)",
+		backgroundColor: "var(--primary-soft)",
+	},
+});
+
 /**
  * First workflow step that lets the user choose between photomosaic and
  * brick mosaic generation modes before proceeding to source image selection.
@@ -41,14 +60,14 @@ export function ModeSelection({
 			<h2>Select Mosaic Style</h2>
 			<p>Choose how you want your mosaic to look:</p>
 
-			<div className="mode-options">
+			<div className="mode-options" {...stylex.props(styles.options)}>
 				{MODES.map((modeValue) => {
 					const title = MODE_TITLES[modeValue];
 					const isSelected = mode === modeValue;
 					return (
 						<div
 							key={modeValue}
-							className={`mode-option ${isSelected ? "selected" : ""}`}
+							{...stylex.props(styles.option, isSelected && styles.selected)}
 						>
 							<input
 								type="radio"
@@ -67,9 +86,9 @@ export function ModeSelection({
 				})}
 			</div>
 
-			<button type="button" onClick={onContinue} className="primary">
+			<ActionButton type="button" onClick={onContinue}>
 				Continue
-			</button>
+			</ActionButton>
 		</div>
 	);
 }

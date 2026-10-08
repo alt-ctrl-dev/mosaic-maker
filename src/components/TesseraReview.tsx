@@ -1,6 +1,7 @@
 import { useEffect } from "react";
 import type { TesseraInfo } from "../engine/workflow-state";
 import { trackEvent } from "../telemetry";
+import { ActionButton } from "./ActionButton";
 
 /** Props for {@link TesseraReview}. */
 interface TesseraReviewProps {
@@ -67,13 +68,13 @@ export function TesseraReview({
 						{varietyRecommendation} are recommended.
 					</p>
 					{onAcceptSupplementation && !hasAcceptedSupplementation && (
-						<button
+						<ActionButton
 							type="button"
 							onClick={onAcceptSupplementation}
-							className="outline"
+							variant="outline"
 						>
 							Add random tiles
-						</button>
+						</ActionButton>
 					)}
 				</article>
 			)}
@@ -113,14 +114,14 @@ export function TesseraReview({
 									<span className="supplemented-label badge">Supplemented</span>
 								)}
 							</div>
-							<button
+							<ActionButton
 								type="button"
 								onClick={() => onRemoveTessera(index)}
 								aria-label={`Remove ${tessera.fileName}`}
-								className="outline"
+								variant="outline"
 							>
 								Remove
-							</button>
+							</ActionButton>
 						</div>
 					))}
 				</div>
@@ -128,14 +129,13 @@ export function TesseraReview({
 
 			{onContinue && (
 				<div className="tessera-review-actions">
-					<button
+					<ActionButton
 						type="button"
 						onClick={onContinue}
 						disabled={validCount === 0}
-						className="primary"
 					>
 						Continue to step 3 →
-					</button>
+					</ActionButton>
 				</div>
 			)}
 		</div>

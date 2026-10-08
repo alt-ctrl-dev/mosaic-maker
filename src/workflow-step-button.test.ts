@@ -13,9 +13,7 @@ describe("workflow-step-button styling", () => {
 		expect(rule).not.toBeNull();
 
 		const ruleBody = rule?.[1] || "";
-		expect(ruleBody).toContain(
-			"background-color: var(--pico-secondary-background)",
-		);
-		expect(ruleBody).toContain("color: var(--pico-secondary-inverse)");
+		expect(ruleBody).toContain("background-color: var(--secondary)");
+		expect(ruleBody).toContain("color: var(--on-secondary)");
 	});
 });

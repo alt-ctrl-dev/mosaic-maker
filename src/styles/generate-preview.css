@@ -9,8 +9,8 @@
 	max-height: 70vh;
 	width: auto;
 	height: auto;
-	border-radius: var(--pico-border-radius);
-	box-shadow: var(--pico-box-shadow);
+	border-radius: var(--radius);
+	box-shadow: var(--shadow);
 }
 
 .generate-preview-step .generation-progress[aria-busy="true"] {
@@ -26,8 +26,8 @@
 .generate-preview-step .spinner {
 	width: 2rem;
 	height: 2rem;
-	border: 3px solid var(--pico-contrast-background);
-	border-top: 3px solid var(--pico-primary);
+	border: 3px solid var(--text);
+	border-top: 3px solid var(--primary);
 	border-radius: 50%;
 	animation: spin 1s linear infinite;
 	margin: 0 auto 1rem;
