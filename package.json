@@ -30,7 +30,7 @@
 	"devDependencies": {
 		"@ai-hero/sandcastle": "0.12.0",
 		"@biomejs/biome": "2.5.14",
-		"@grafana/faro-rollup-plugin": "0.12.0",
+		"@grafana/faro-rollup-plugin": "0.13.0",
 		"@testing-library/jest-dom": "7.0.1",
 		"@testing-library/react": "16.3.2",
 		"@types/node": "26.2.0",
