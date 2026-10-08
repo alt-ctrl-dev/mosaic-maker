@@ -135,7 +135,7 @@ const dispatchWorkflowAtom = atom(null, (get, set, action: WorkflowAction) => {
 	set(workflowStateAtom, workflowReducer(get(workflowStateAtom), action));
 });
 
-/** Read and dispatch workflow transitions through Jotai's app-scoped store. */
+/** Read and dispatch workflow transitions within the current App Provider. */
 export function useWorkflowReducer(): [
 	WorkflowState,
 	Dispatch<WorkflowAction>,
