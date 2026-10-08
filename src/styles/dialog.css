@@ -81,6 +81,10 @@ dialog[popover] {
 	opacity: 1;
 }
 
+dialog[popover]::backdrop {
+	background: #0009;
+}
+
 dialog[popover]:not([open]) {
 	opacity: 0;
 }

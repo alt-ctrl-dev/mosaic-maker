@@ -127,7 +127,6 @@ export function BrickColorPicker({
 						<ActionButton
 							type="button"
 							onClick={() => selectPalette(index)}
-							className={activePalette === index ? "active" : ""}
 							variant={activePalette === index ? undefined : "secondary"}
 						>
 							{palette.name}

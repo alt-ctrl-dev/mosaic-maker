@@ -344,7 +344,7 @@ export function ExportMosaic({ state, dispatch }: ExportMosaicProps) {
 						/>
 					</div>
 					<details>
-						<summary className="outline secondary">Export Settings</summary>
+						<summary>Export Settings</summary>
 						<div className="export-settings">
 							<fieldset className="setting-group">
 								<legend>Format Settings</legend>

@@ -17,7 +17,7 @@ const reactRoot = createRoot(root);
 
 reactRoot.render(
 	<StrictMode>
-		<main className="container" aria-busy="true">
+		<main className="layout-container" aria-busy="true">
 			<article aria-busy="true">Loading…</article>
 		</main>
 	</StrictMode>,

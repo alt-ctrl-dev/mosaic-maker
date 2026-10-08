@@ -80,7 +80,7 @@ export function TesseraReview({
 			)}
 
 			<details>
-				<summary className="tesserae-info outline secondary">
+				<summary className="tesserae-info">
 					Review tesserae ({validCount} valid, {rejectedCount} rejected)
 				</summary>
 
@@ -106,12 +106,10 @@ export function TesseraReview({
 							<div className="tessera-details">
 								<span className="tessera-name">{tessera.fileName}</span>
 								{!tessera.isValid && tessera.error && (
-									<span className="tessera-error secondary">
-										{tessera.error}
-									</span>
+									<span className="tessera-error">{tessera.error}</span>
 								)}
 								{tessera.isSupplemented && (
-									<span className="supplemented-label badge">Supplemented</span>
+									<span className="supplemented-label">Supplemented</span>
 								)}
 							</div>
 							<ActionButton

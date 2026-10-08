@@ -41,7 +41,7 @@ export default defineConfig(({ mode, command }) => {
 						? (html: string) =>
 								html.replace(
 									"</head>",
-									`<link rel="stylesheet" href="${base}stylex.css" /></head>`,
+									`<link rel="stylesheet" href="${base}stylex.css?v=${env.VITE_APP_COMMIT || commitSha}" /></head>`,
 								)
 						: undefined,
 			},

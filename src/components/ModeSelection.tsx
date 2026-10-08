@@ -60,7 +60,7 @@ export function ModeSelection({
 			<h2>Select Mosaic Style</h2>
 			<p>Choose how you want your mosaic to look:</p>
 
-			<div className="mode-options" {...stylex.props(styles.options)}>
+			<div {...stylex.props(styles.options)}>
 				{MODES.map((modeValue) => {
 					const title = MODE_TITLES[modeValue];
 					const isSelected = mode === modeValue;

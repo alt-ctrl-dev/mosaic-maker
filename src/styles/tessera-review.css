@@ -19,7 +19,7 @@
 
 .tessera-review .tessera-item.invalid {
 	border: 2px solid var(--invalid);
-	background-color: var(--invalid);
+	background-color: var(--invalid-soft);
 }
 
 .tessera-review .tessera-item.supplemented {
