@@ -17,16 +17,10 @@ const reactRoot = createRoot(root);
 
 reactRoot.render(
 	<StrictMode>
-		<main className="layout-container" aria-busy="true">
-			<article aria-busy="true">Loading…</article>
-		</main>
+		<App />
 	</StrictMode>,
 );
 
-trackDeviceAnalytics().finally(() => {
-	reactRoot.render(
-		<StrictMode>
-			<App />
-		</StrictMode>,
-	);
+void trackDeviceAnalytics().catch((error: unknown) => {
+	console.error("Failed to track device analytics:", error);
 });
