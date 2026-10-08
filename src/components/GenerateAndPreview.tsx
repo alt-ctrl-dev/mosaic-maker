@@ -4,6 +4,7 @@ import { ANDROID_READBACK_FAILURE } from "../engine/mosaic-shared";
 import type { WorkflowState } from "../engine/workflow-state";
 import type { WorkflowAction } from "../hooks/useWorkflowReducer";
 import { trackError, trackMosaicGeneration, trackStepView } from "../telemetry";
+import { ActionButton } from "./ActionButton";
 
 /** Props for {@link GenerateAndPreview}. */
 interface GenerateAndPreviewProps {
@@ -344,15 +345,14 @@ export function GenerateAndPreview({
 						Ready to generate your mosaic? Press the "Generate Mosaic" button
 						below. You can go back to the previous step anytime if needed.
 					</p>
-					<button
+					<ActionButton
 						type="button"
-						className="primary"
 						onClick={handleGenerate}
 						disabled={!canGenerate || isGenerating}
 						aria-busy={isGenerating}
 					>
 						Generate Mosaic
-					</button>
+					</ActionButton>
 
 					{!canGenerate && (
 						<p className="hint">
@@ -389,9 +389,9 @@ export function GenerateAndPreview({
 							<p>Processing...</p>
 						</div>
 					)}
-					<button type="button" onClick={handleCancel} className="outline">
+					<ActionButton type="button" onClick={handleCancel} variant="outline">
 						Cancel
-					</button>
+					</ActionButton>
 				</article>
 			)}
 

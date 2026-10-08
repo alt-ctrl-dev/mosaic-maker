@@ -66,11 +66,23 @@ dialog[popover]:not([open])
  * transition to be visible during close.
  */
 dialog[popover] {
+	width: min(90vw, 30rem);
+	max-height: 80vh;
+	padding: 1.5rem;
+	border: 1px solid var(--border);
+	border-radius: var(--radius);
+	background: var(--surface);
+	color: var(--text);
+	box-shadow: var(--shadow);
 	transition:
 		opacity 0.3s ease,
 		display 0.3s allow-discrete,
 		overlay 0.3s allow-discrete;
 	opacity: 1;
+}
+
+dialog[popover]::backdrop {
+	background: #0009;
 }
 
 dialog[popover]:not([open]) {

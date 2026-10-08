@@ -3,13 +3,13 @@
 .tessera-upload .drop-zone {
 	width: 100%;
 	height: 200px;
-	border: 2px dashed var(--pico-muted-border-color);
-	border-radius: var(--pico-border-radius);
+	border: 2px dashed var(--border);
+	border-radius: var(--radius);
 	display: flex;
 	align-items: center;
 	justify-content: center;
 	text-align: center;
-	background-color: var(--pico-background-color);
+	background-color: var(--surface);
 	transition: all 0.2s ease;
 	cursor: pointer;
 	position: relative;
@@ -19,13 +19,13 @@
 .source-image-selection .drop-zone[aria-dropeffect="move"],
 .tessera-upload .drop-zone:hover,
 .tessera-upload .drop-zone[aria-dropeffect="move"] {
-	border-color: var(--pico-primary);
-	background-color: var(--pico-primary-background);
+	border-color: var(--primary);
+	background-color: var(--primary-soft);
 }
 
 .tessera-upload[aria-busy="true"] .drop-zone {
-	border-color: var(--pico-primary);
-	background-color: var(--pico-primary-background);
+	border-color: var(--primary);
+	background-color: var(--primary-soft);
 }
 
 .source-image-selection .drop-zone .file-input,

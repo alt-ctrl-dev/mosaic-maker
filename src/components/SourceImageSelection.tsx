@@ -4,6 +4,7 @@ import type { SourceImageInfo } from "../engine/image-processing";
 import { getSourceImageInfo } from "../engine/image-processing";
 import type { WorkflowState } from "../engine/workflow-state";
 import { trackError, trackEvent, trackStepView } from "../telemetry";
+import { ActionButton } from "./ActionButton";
 
 /** Props for {@link ContinueButton}. */
 interface ContinueButtonProps {
@@ -19,13 +20,9 @@ interface ContinueButtonProps {
  */
 function ContinueButton({ sourceImage, onContinue }: ContinueButtonProps) {
 	return (
-		<button
-			type="button"
-			className="primary"
-			onClick={() => onContinue(sourceImage)}
-		>
+		<ActionButton type="button" onClick={() => onContinue(sourceImage)}>
 			Continue to step 2 →
-		</button>
+		</ActionButton>
 	);
 }
 

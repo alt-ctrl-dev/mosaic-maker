@@ -1,4 +1,5 @@
 import { Provider } from "jotai";
+import { ActionButton } from "./components/ActionButton";
 import { AppFooter } from "./components/AppFooter";
 import { BrickColorPicker } from "./components/BrickColorPicker";
 import { Dialog } from "./components/Dialog";
@@ -141,14 +142,14 @@ function WorkflowApp() {
 									/>
 								</div>
 								{hasPhotomosaicTesserae && (
-									<button
+									<ActionButton
 										type="button"
 										onClick={() => dispatch({ type: "clearAllTesserae" })}
-										className="secondary"
+										variant="secondary"
 										style={{ marginBottom: "1rem" }}
 									>
 										Clear all tiles
-									</button>
+									</ActionButton>
 								)}
 							</>
 						)}
@@ -287,9 +288,9 @@ function WorkflowApp() {
 					<div className="workflow-canvas">
 						<div className="workflow-navigation">
 							{showBackButton && (
-								<button
+								<ActionButton
 									type="button"
-									className="secondary"
+									variant="secondary"
 									onClick={() =>
 										dispatch({
 											type: "goToStep",
@@ -298,13 +299,13 @@ function WorkflowApp() {
 									}
 								>
 									← Back
-								</button>
+								</ActionButton>
 							)}
 							<span className="workflow-step-counter">
 								Step {workflowState.currentStep + 1} of {stages.length}
 							</span>
 							{showTopNextButton && (
-								<button
+								<ActionButton
 									type="button"
 									onClick={() =>
 										dispatch({
@@ -314,7 +315,7 @@ function WorkflowApp() {
 									}
 								>
 									Next →
-								</button>
+								</ActionButton>
 							)}
 						</div>
 

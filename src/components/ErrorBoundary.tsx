@@ -1,5 +1,6 @@
 import React from "react";
 import { trackError } from "../telemetry";
+import { ActionButton } from "./ActionButton";
 
 interface ErrorBoundaryProps {
 	children: React.ReactNode;
@@ -46,7 +47,7 @@ export class ErrorBoundary extends React.Component<
 						We're sorry, but an unexpected error occurred. Please try refreshing
 						the page.
 					</p>
-					<button
+					<ActionButton
 						type="button"
 						onClick={() => {
 							this.setState({ hasError: false });
@@ -54,7 +55,7 @@ export class ErrorBoundary extends React.Component<
 						}}
 					>
 						Refresh Page
-					</button>
+					</ActionButton>
 				</div>
 			);
 		}

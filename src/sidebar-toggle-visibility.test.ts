@@ -171,13 +171,8 @@ describe("sidebar toggle visibility", () => {
 		expect(resolveProperty(closeButton, "display", MOBILE_WIDTH)).toBe("block");
 	});
 
-	it("selects toggle buttons by class only so they inherit Pico button styling", () => {
-		const desktopCss = styles.slice(
-			0,
-			styles.indexOf("@media (max-width: 900px)"),
-		);
-		// Selectors use bare class names (no element qualifier) so native
-		// <button> styling from Pico applies freely.
-		expect(desktopCss).toMatch(/\.workflow-sidebar-toggle-button/);
+	it("gives the mobile toggle its own visible background", () => {
+		const mobileCss = styles.slice(styles.indexOf("@media (max-width: 900px)"));
+		expect(mobileCss).toContain("background: var(--primary)");
 	});
 });

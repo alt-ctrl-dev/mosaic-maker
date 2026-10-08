@@ -96,7 +96,7 @@ pnpm exec vitest
 - **React** - UI library
 - **TypeScript** - Type safety
 - **Vite** - Build tool and development server
-- **Pico CSS** - Minimal CSS framework
+- **StyleX** - Shared component styling, alongside local layout CSS
 - **Vitest** - Test runner
 - **GitHub Pages** - Hosting for the demo
 

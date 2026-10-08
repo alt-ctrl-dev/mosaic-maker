@@ -1,4 +1,3 @@
-import "@picocss/pico/css/pico.min.css";
 import { StrictMode } from "react";
 import { createRoot } from "react-dom/client";
 import { App } from "./App";
@@ -18,7 +17,7 @@ const reactRoot = createRoot(root);
 
 reactRoot.render(
 	<StrictMode>
-		<main className="container" aria-busy="true">
+		<main className="layout-container" aria-busy="true">
 			<article aria-busy="true">Loading…</article>
 		</main>
 	</StrictMode>,

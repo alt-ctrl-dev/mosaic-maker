@@ -1,5 +1,6 @@
 import { execSync } from "node:child_process";
 import faroUploader from "@grafana/faro-rollup-plugin";
+import stylexPlugin from "@stylexjs/rollup-plugin";
 import react from "@vitejs/plugin-react";
 import { defineConfig, loadEnv } from "vite";
 import { version as packageVersion } from "./package.json";
@@ -13,9 +14,10 @@ function getGitCommitSha() {
 	}
 }
 
-export default defineConfig(({ mode }) => {
+export default defineConfig(({ mode, command }) => {
 	const env = loadEnv(mode, process.cwd(), "");
 	const commitSha = getGitCommitSha();
+	const base = "/mosaic-maker/";
 
 	const define = {
 		"import.meta.env.VITE_APP_VERSION": JSON.stringify(
@@ -27,9 +29,22 @@ export default defineConfig(({ mode }) => {
 	};
 
 	return {
-		base: "/mosaic-maker/",
+		base,
 		define,
 		plugins: [
+			stylexPlugin({ runtimeInjection: command === "serve" }),
+			// The StyleX Rollup plugin emits CSS separately from Vite's CSS graph.
+			{
+				name: "stylex-stylesheet",
+				transformIndexHtml:
+					command === "build"
+						? (html: string) =>
+								html.replace(
+									"</head>",
+									`<link rel="stylesheet" href="${base}stylex.css?v=${env.VITE_APP_COMMIT || commitSha}" /></head>`,
+								)
+						: undefined,
+			},
 			react(),
 			// Only upload sourcemaps where the token is available (CI).
 			...(env.VITE_FARO_SOURCEMAP_TOKEN

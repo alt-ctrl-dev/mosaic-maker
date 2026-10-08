@@ -54,7 +54,7 @@ describe("TesseraReview", () => {
 	});
 
 	it("renders Continue button outside accordion", () => {
-		const { container } = render(
+		render(
 			<TesseraReview
 				tesserae={mockTesserae}
 				onRemoveTessera={vi.fn()}
@@ -62,8 +62,9 @@ describe("TesseraReview", () => {
 			/>,
 		);
 
-		const continueButton = container.querySelector("button.primary");
-		expect(continueButton).toBeTruthy();
+		const continueButton = screen.getByRole("button", {
+			name: /continue to step 3/i,
+		});
 
 		const details = continueButton?.closest("details");
 		expect(details).toBeNull();
