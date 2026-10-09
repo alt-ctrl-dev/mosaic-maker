@@ -67,6 +67,12 @@
 			"skillPath": "skills/personal/edit-article/SKILL.md",
 			"computedHash": "8d7aec1987245a27e9c7d585b9f11d1129b8bd8ecb3a8596cdd3048974d9e302"
 		},
+		"frontend-ui-engineering": {
+			"source": "addyosmani/agent-skills",
+			"sourceType": "github",
+			"skillPath": "skills/frontend-ui-engineering/SKILL.md",
+			"computedHash": "caada020b47fb51c68ba91f9bf390745e18f9d6c17e4c251b046ba74e43343d7"
+		},
 		"git-guardrails-claude-code": {
 			"source": "mattpocock/skills",
 			"sourceType": "github",
