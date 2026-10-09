@@ -323,6 +323,7 @@ function WorkflowApp() {
 	// The tokens from defineVars are emitted on :root, so no theme class is
 	// needed on the shell; it only carries the former :root/body globals.
 	const rootProps = stylex.props(styles.root);
+	const eyebrowProps = stylex.props(base.paragraph, styles.eyebrow);
 
 	return (
 		<div {...rootProps} className={`layout-container ${rootProps.className}`}>
@@ -330,10 +331,7 @@ function WorkflowApp() {
 				Skip to main content
 			</a>
 			<header {...stylex.props(styles.header)}>
-				<p
-					{...stylex.props(base.paragraph, styles.eyebrow)}
-					className="eyebrow"
-				>
+				<p {...eyebrowProps} className={`eyebrow ${eyebrowProps.className}`}>
 					Private, in-browser image making • Works offline once loaded
 				</p>
 				<h1 {...stylex.props(base.heading, base.h1)}>Mosaic Maker</h1>

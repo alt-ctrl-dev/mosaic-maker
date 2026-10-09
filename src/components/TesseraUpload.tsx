@@ -1,8 +1,22 @@
 import type React from "react";
 import { useCallback, useEffect, useState } from "react";
+import * as stylex from "@stylexjs/stylex";
 import { processTesserae } from "../engine/tessera-processing";
 import type { TesseraInfo } from "../engine/workflow-state";
+import { base } from "../styles/base.stylex";
+import { tokens } from "../styles/tokens.stylex";
 import { trackError, trackStepView } from "../telemetry";
+
+const styles = stylex.create({
+	root: { flex: 1 },
+	controlGroup: {
+		margin: 0,
+		border: `1px solid ${tokens.border}`,
+		borderRadius: tokens.radius,
+		padding: "1rem",
+	},
+	panelSpacing: { marginTop: "1rem", textAlign: "center" },
+});
 
 /** Props for {@link TesseraUpload}. */
 interface TesseraUploadProps {
@@ -62,19 +76,32 @@ export function TesseraUpload({
 		[handleFileChange],
 	);
 
+	const processingProps = stylex.props(
+		base.card,
+		base.busySpinner,
+		styles.panelSpacing,
+	);
+
 	return (
 		<section
-			className="tessera-upload"
+			{...stylex.props(styles.root)}
 			role="region"
 			onDragOver={handleDragOver}
 			onDrop={handleDrop}
 			aria-busy={isProcessing}
 			data-testid="tessera-upload"
 		>
-			<fieldset className="control-group" aria-label="Upload Tesserae">
-				<legend>Upload your own images</legend>
-				<div className="drop-zone">
-					<p>Drop tesserae images here or click below</p>
+			<fieldset
+				{...stylex.props(base.fieldset, styles.controlGroup)}
+				aria-label="Upload Tesserae"
+			>
+				<legend {...stylex.props(base.legend)}>Upload your own images</legend>
+				<div
+					{...stylex.props(base.dropZone, isProcessing && base.dropZoneActive)}
+				>
+					<p {...stylex.props(base.paragraph)}>
+						Drop tesserae images here or click below
+					</p>
 					<input
 						type="file"
 						accept="image/jpeg,image/png,image/webp"
@@ -82,15 +109,21 @@ export function TesseraUpload({
 						multiple
 						disabled={isProcessing}
 						aria-label="Upload tesserae images"
-						className="file-input"
+						{...stylex.props(base.fileInput, base.focusOutline)}
 					/>
 				</div>
 
-				<p className="hint">Supported formats: JPEG, PNG, WebP</p>
+				<p {...stylex.props(base.paragraph)}>
+					Supported formats: JPEG, PNG, WebP
+				</p>
 			</fieldset>
 
 			{isProcessing && (
-				<article className="processing-indicator" aria-busy="true">
+				<article
+					{...processingProps}
+					className={`processing-indicator ${processingProps.className}`}
+					aria-busy="true"
+				>
 					Processing tesserae...
 				</article>
 			)}

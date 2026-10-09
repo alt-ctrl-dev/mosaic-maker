@@ -1,6 +1,21 @@
 import React from "react";
+import * as stylex from "@stylexjs/stylex";
+import { base } from "../styles/base.stylex";
 import { trackError } from "../telemetry";
 import { ActionButton } from "./ActionButton";
+
+const styles = stylex.create({
+	boundary: {
+		display: "flex",
+		flexDirection: "column",
+		alignItems: "center",
+		justifyContent: "center",
+		minHeight: "100vh",
+		gap: "1rem",
+		padding: "2rem",
+		textAlign: "center",
+	},
+});
 
 interface ErrorBoundaryProps {
 	children: React.ReactNode;
@@ -41,9 +56,11 @@ export class ErrorBoundary extends React.Component<
 		if (this.state.hasError) {
 			// Render fallback UI
 			return (
-				<div className="error-boundary">
-					<h2>Something went wrong.</h2>
-					<p>
+				<div {...stylex.props(styles.boundary)}>
+					<h2 {...stylex.props(base.heading, base.h2)}>
+						Something went wrong.
+					</h2>
+					<p {...stylex.props(base.paragraph)}>
 						We're sorry, but an unexpected error occurred. Please try refreshing
 						the page.
 					</p>

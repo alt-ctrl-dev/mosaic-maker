@@ -1,11 +1,13 @@
 import type React from "react";
 import { useEffect, useRef, useState } from "react";
+import * as stylex from "@stylexjs/stylex";
 import {
 	calculateAdjustedTesseraSize,
 	calculateGridCellCount,
 	isCoarseGrid,
 } from "../engine/tessera-sizing";
 import type { WorkflowState } from "../engine/workflow-state";
+import { base } from "../styles/base.stylex";
 import { trackEvent, trackStepView } from "../telemetry";
 
 /** Props for {@link TesseraSizeSelection}. */
@@ -105,10 +107,14 @@ export function TesseraSizeSelection({
 		}, 150);
 	};
 
+	const warningProps = stylex.props(base.card);
+
 	return (
-		<div className="tessera-size-selection">
-			<div className="size-input">
-				<label htmlFor="tessera-size">Tile size (pixels):</label>
+		<div>
+			<div>
+				<label htmlFor="tessera-size" {...stylex.props(base.label)}>
+					Tile size (pixels):
+				</label>
 				<input
 					id="tessera-size"
 					type="range"
@@ -116,17 +122,18 @@ export function TesseraSizeSelection({
 					max={maxTesseraSize}
 					value={requestedSize}
 					onChange={handleSizeChange}
+					{...stylex.props(base.rangeInput, base.focusOutline)}
 				/>
 				<span>{requestedSize}px</span>
 			</div>
 
 			{adjustedSize !== null && (
-				<div className="size-adjustment-info">
-					<p>
+				<div>
+					<p {...stylex.props(base.paragraph)}>
 						Adjusted size: <strong>{adjustedSize}px</strong>
 					</p>
 					{requestedSize !== adjustedSize && (
-						<p className="adjustment-explanation">
+						<p {...stylex.props(base.paragraph)}>
 							Adjusted to fit within the valid tile size range.
 						</p>
 					)}
@@ -134,7 +141,11 @@ export function TesseraSizeSelection({
 			)}
 
 			{isCoarse && (
-				<article className="warning-message" role="alert">
+				<article
+					{...warningProps}
+					className={`warning-message ${warningProps.className}`}
+					role="alert"
+				>
 					Warning: This size produces only {gridCellCount} grid cells, which is
 					fewer than recommended.
 				</article>
