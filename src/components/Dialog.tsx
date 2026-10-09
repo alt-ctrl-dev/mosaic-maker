@@ -1,5 +1,10 @@
-import type { PropsWithChildren } from "react";
+import * as stylex from "@stylexjs/stylex";
+import { useState, type PropsWithChildren } from "react";
+import { tokens } from "../styles/tokens.stylex";
 import { trackEvent } from "../telemetry";
+
+// StyleX only resolves computed conditional keys defined in the same module.
+const REDUCED_MOTION = "@media (prefers-reduced-motion: reduce)";
 
 type DialogProp = {
 	ariaLabel: string;
@@ -10,6 +15,57 @@ type DialogButtonProp = DialogProp & {
 	command: "show-modal" | "close";
 };
 
+const styles = stylex.create({
+	toggleButton: {
+		display: "none",
+		font: "inherit",
+		":focus-visible": {
+			outline: "2px solid currentColor",
+			outlineOffset: "2px",
+		},
+		"@media (max-width: 900px)": {
+			display: "block",
+			position: "fixed",
+			bottom: "1rem",
+			right: "1rem",
+			width: "3rem",
+			height: "3rem",
+			borderRadius: "50%",
+			border: "none",
+			background: tokens.primary,
+			zIndex: 1001,
+			cursor: "pointer",
+			boxShadow: tokens.shadow,
+			padding: 0,
+			lineHeight: 0,
+		},
+	},
+	// ponytail: the old fade-out used @starting-style and
+	// `display ... allow-discrete` transitions, which StyleX cannot express;
+	// the dialog now hides instantly on close. Restore once StyleX supports it.
+	dialog: {
+		width: "min(90vw, 30rem)",
+		maxHeight: "80vh",
+		padding: "1.5rem",
+		border: `1px solid ${tokens.border}`,
+		borderRadius: tokens.radius,
+		backgroundColor: tokens.surface,
+		color: tokens.text,
+		boxShadow: tokens.shadow,
+		"::backdrop": { backgroundColor: "#0009" },
+	},
+	toggleLine: {
+		transformBox: "fill-box",
+		transformOrigin: "center",
+		transition: "transform 0.3s cubic-bezier(0.4, 0, 0.2, 1)",
+		[REDUCED_MOTION]: { transition: "none" },
+	},
+	showLineTopOpen: { transform: "translateY(4px) rotate(45deg)" },
+	showLineBottomOpen: { transform: "translateY(-4px) rotate(-45deg)" },
+	closeLineTopClosed: { transform: "translateY(-4px) rotate(-45deg)" },
+	closeLineBottomClosed: { transform: "translateY(4px) rotate(45deg)" },
+});
+
 const DialogButtonToggle = ({
 	ariaLabel,
 	dialogId,
@@ -17,7 +73,7 @@ const DialogButtonToggle = ({
 	children,
 }: PropsWithChildren<DialogButtonProp>) => (
 	<button
-		className="workflow-sidebar-toggle-button"
+		{...stylex.props(styles.toggleButton)}
 		aria-label={ariaLabel}
 		type="button"
 		commandfor={dialogId}
@@ -38,6 +94,11 @@ export const Dialog = ({
 	ariaLabel,
 	dialogId,
 }: PropsWithChildren<DialogProp>) => {
+	// Drives the hamburger/X icon morph that the old CSS attached to
+	// `body:has(dialog[open])`; the popover's toggle event keeps it in sync
+	// with native opens/closes (Escape, outside click, command buttons).
+	const [isOpen, setIsOpen] = useState(false);
+
 	return (
 		<>
 			<DialogButtonToggle
@@ -57,14 +118,20 @@ export const Dialog = ({
 				>
 					<title>Show modal button icon</title>
 					<path
-						className="toggle-line toggle-line-top"
+						{...stylex.props(
+							styles.toggleLine,
+							isOpen && styles.showLineTopOpen,
+						)}
 						d="M3 8H21"
 						stroke="#fff"
 						strokeWidth="2"
 						strokeLinecap="round"
 					/>
 					<path
-						className="toggle-line toggle-line-bottom"
+						{...stylex.props(
+							styles.toggleLine,
+							isOpen && styles.showLineBottomOpen,
+						)}
 						d="M3 16H21"
 						stroke="#fff"
 						strokeWidth="2"
@@ -72,7 +139,12 @@ export const Dialog = ({
 					/>
 				</svg>
 			</DialogButtonToggle>
-			<dialog id={dialogId} popover="auto">
+			<dialog
+				id={dialogId}
+				popover="auto"
+				{...stylex.props(styles.dialog)}
+				onToggle={(event) => setIsOpen(event.currentTarget.open)}
+			>
 				{children}
 				<DialogButtonToggle
 					ariaLabel={ariaLabel}
@@ -91,14 +163,20 @@ export const Dialog = ({
 					>
 						<title>Close modal button icon</title>
 						<path
-							className="toggle-line toggle-line-top"
+							{...stylex.props(
+								styles.toggleLine,
+								!isOpen && styles.closeLineTopClosed,
+							)}
 							d="M5.64 5.64L18.36 18.36"
 							stroke="#fff"
 							strokeWidth="2"
 							strokeLinecap="round"
 						/>
 						<path
-							className="toggle-line toggle-line-bottom"
+							{...stylex.props(
+								styles.toggleLine,
+								!isOpen && styles.closeLineBottomClosed,
+							)}
 							d="M5.64 18.36L18.36 5.64"
 							stroke="#fff"
 							strokeWidth="2"

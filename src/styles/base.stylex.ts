@@ -1,8 +1,10 @@
 import * as stylex from "@stylexjs/stylex";
 import { tokens } from "./tokens.stylex";
 
-/** Shared media query for users who prefer reduced motion. */
-export const REDUCED_MOTION = "@media (prefers-reduced-motion: reduce)";
+/** Media query for users who prefer reduced motion. Must stay a local
+ * constant in every file: StyleX's compiler only resolves computed
+ * conditional keys defined in the same module. */
+const REDUCED_MOTION = "@media (prefers-reduced-motion: reduce)";
 
 /** Spinner rotation used by busy status panels and the generation spinner. */
 export const busySpin = stylex.keyframes({

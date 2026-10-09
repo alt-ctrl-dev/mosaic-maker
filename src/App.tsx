@@ -1,3 +1,4 @@
+import * as stylex from "@stylexjs/stylex";
 import { Provider } from "jotai";
 import { ActionButton } from "./components/ActionButton";
 import { AppFooter } from "./components/AppFooter";
@@ -18,7 +19,12 @@ import {
 	WorkflowStep as WorkflowStepEnum,
 } from "./engine/workflow-state";
 import { useWorkflowReducer } from "./hooks/useWorkflowReducer";
+import { base } from "./styles/base.stylex";
+import { tokens } from "./styles/tokens.stylex";
 import { trackError } from "./telemetry";
+
+// StyleX only resolves computed conditional keys defined in the same module.
+const REDUCED_MOTION = "@media (prefers-reduced-motion: reduce)";
 
 const stages = [
 	"Choose mode",
@@ -30,6 +36,122 @@ const stages = [
 
 /** Fallback tessera size when no adjusted size has been calculated yet. */
 const DEFAULT_TESSERA_SIZE = 16;
+
+const styles = stylex.create({
+	// Shell chrome formerly provided by :root/body/base.css globals.
+	root: {
+		colorScheme: "light dark",
+		fontFamily: "system-ui, sans-serif",
+		fontSize: "100%",
+		backgroundColor: tokens.background,
+		color: tokens.text,
+		lineHeight: 1.5,
+		paddingInline: "16px",
+		marginInline: "auto",
+		"@media (min-width: 80rem)": { maxWidth: "80rem" },
+	},
+	header: {
+		paddingBlock: "4rem 2rem",
+		textAlign: "center",
+		"@media (max-width: 576px)": {
+			paddingBlockStart: "2rem",
+			textAlign: "left",
+		},
+	},
+	tagline: { maxWidth: "40rem", marginInline: "auto" },
+	eyebrow: {
+		marginBottom: "0.5rem",
+		color: tokens.primary,
+		fontWeight: 700,
+		letterSpacing: "0.08em",
+		textTransform: "uppercase",
+	},
+	workflow: {
+		display: "flex",
+		gap: "2rem",
+		"@media (max-width: 900px)": { flexDirection: "column" },
+	},
+	sidebar: {
+		flex: "0 0 14rem",
+		borderRight: `1px solid ${tokens.border}`,
+		paddingRight: "1rem",
+		"@media (max-width: 900px)": { display: "none" },
+	},
+	stepsList: { listStyle: "none", padding: 0, margin: 0 },
+	stepButton: {
+		boxSizing: "border-box",
+		display: "flex",
+		alignItems: "center",
+		width: "100%",
+		textAlign: "left",
+		padding: "0.75rem 1rem",
+		marginBottom: "0.5rem",
+		border: "none",
+		borderRadius: tokens.radius,
+		cursor: "pointer",
+		backgroundColor: {
+			default: tokens.secondary,
+			":hover": tokens.secondaryHover,
+		},
+		color: tokens.onSecondary,
+		font: "inherit",
+		transition: "background-color 0.2s",
+		":focus-visible": {
+			outline: "2px solid currentColor",
+			outlineOffset: "2px",
+		},
+		":disabled": { cursor: "not-allowed", opacity: 0.5 },
+		"@media (max-width: 900px)": { padding: "1rem" },
+		[REDUCED_MOTION]: { transitionDuration: "0.01ms" },
+	},
+	// Current step keeps its primary color on hover (matches the old cascade).
+	stepButtonCurrent: {
+		backgroundColor: {
+			default: tokens.primary,
+			":hover": tokens.primary,
+		},
+		color: tokens.onPrimary,
+	},
+	stepButtonCompleted: { opacity: 0.55 },
+	stepIndicator: {
+		display: "inline-flex",
+		alignItems: "center",
+		justifyContent: "center",
+		width: "1.75rem",
+		height: "1.75rem",
+		borderRadius: "50%",
+		marginRight: "0.75rem",
+		fontWeight: "bold",
+		flexShrink: 0,
+	},
+	stepIndicatorCurrent: {
+		backgroundColor: tokens.onPrimary,
+		color: tokens.primary,
+	},
+	stepTitle: {
+		fontWeight: 500,
+		"@media (max-width: 900px)": { fontSize: "1rem" },
+	},
+	canvas: { flex: 1, display: "flex", flexDirection: "column" },
+	navigation: {
+		display: "flex",
+		justifyContent: "space-between",
+		alignItems: "center",
+		marginBottom: "1rem",
+		paddingBottom: 0,
+		borderBottom: `1px solid ${tokens.border}`,
+	},
+	stepCounter: { color: tokens.muted, fontSize: "0.9rem" },
+	content: { flex: 1 },
+	buildTesserae: { display: "flex", flexDirection: "column", gap: "2rem" },
+	tesseraInputs: {
+		display: "flex",
+		flexWrap: "wrap",
+		gap: "2rem",
+		alignItems: "flex-start",
+		"@media (max-width: 768px)": { flexDirection: "column" },
+	},
+});
 
 /**
  * Root application component for the Mosaic Maker workflow.
@@ -119,14 +241,14 @@ function WorkflowApp() {
 				const canReview = hasPhotomosaicTesserae || hasBrickColors;
 
 				return (
-					<div className="build-tesserae-container">
+					<div {...stylex.props(styles.buildTesserae)}>
 						<TesseraSizeSelection
 							onSizeSelected={handleSizeSelected}
 							initialState={workflowState}
 						/>
 						{isPhotomosaic && (
 							<>
-								<div className="tessera-inputs">
+								<div {...stylex.props(styles.tesseraInputs)}>
 									<TesseraUpload
 										onTesseraeProcessed={(tesserae) =>
 											dispatch({ type: "tesseraeProcessed", tesserae })
@@ -198,29 +320,36 @@ function WorkflowApp() {
 	const showTopNextButton =
 		canGoForward && workflowState.currentStep > WorkflowStepEnum.BUILD_TESSERAE;
 
+	// The tokens from defineVars are emitted on :root, so no theme class is
+	// needed on the shell; it only carries the former :root/body globals.
+	const rootProps = stylex.props(styles.root);
+
 	return (
-		<div className="layout-container">
-			<a href="#main-content" className="skip-link">
+		<div {...rootProps} className={`layout-container ${rootProps.className}`}>
+			<a href="#main-content" {...stylex.props(base.skipLink)}>
 				Skip to main content
 			</a>
-			<header>
-				<p className="eyebrow">
+			<header {...stylex.props(styles.header)}>
+				<p
+					{...stylex.props(base.paragraph, styles.eyebrow)}
+					className="eyebrow"
+				>
 					Private, in-browser image making • Works offline once loaded
 				</p>
-				<h1>Mosaic Maker</h1>
-				<p>
+				<h1 {...stylex.props(base.heading, base.h1)}>Mosaic Maker</h1>
+				<p {...stylex.props(base.paragraph, styles.tagline)}>
 					Turn a source image into a full-resolution photomosaic. Your source
 					image and tesserae stay on this device.
 				</p>
 			</header>
 
 			<ErrorBoundary>
-				<main id="main-content" className="workflow-container">
+				<main id="main-content" {...stylex.props(styles.workflow)}>
 					<Dialog
 						dialogId="mobile-workflow-menu"
 						ariaLabel="Toggle workflow steps"
 					>
-						<ol className="workflow-steps">
+						<ol {...stylex.props(styles.stepsList)}>
 							{stages.map((title, index) => {
 								const isCurrent = workflowState.currentStep === index;
 								const isCompleted = index < workflowState.currentStep;
@@ -229,7 +358,11 @@ function WorkflowApp() {
 									<li key={title}>
 										<button
 											type="button"
-											className={`workflow-step-button ${isCurrent ? "current" : ""} ${isCompleted ? "completed" : ""}`}
+											{...stylex.props(
+												styles.stepButton,
+												isCurrent && styles.stepButtonCurrent,
+												isCompleted && styles.stepButtonCompleted,
+											)}
 											aria-current={isCurrent ? "step" : undefined}
 											onClick={() =>
 												dispatch({ type: "goToStep", step: index })
@@ -238,14 +371,19 @@ function WorkflowApp() {
 											commandfor="mobile-workflow-menu"
 											command="close"
 										>
-											<span className="step-indicator">
+											<span
+												{...stylex.props(
+													styles.stepIndicator,
+													isCurrent && styles.stepIndicatorCurrent,
+												)}
+											>
 												{isCompleted ? (
 													<span>✓</span>
 												) : (
 													<span>{index + 1}</span>
 												)}
 											</span>
-											<span className="step-title">{title}</span>
+											<span {...stylex.props(styles.stepTitle)}>{title}</span>
 										</button>
 									</li>
 								);
@@ -253,8 +391,8 @@ function WorkflowApp() {
 						</ol>
 					</Dialog>
 
-					<aside className="workflow-sidebar" aria-label="Workflow steps">
-						<ol className="workflow-steps">
+					<aside {...stylex.props(styles.sidebar)} aria-label="Workflow steps">
+						<ol {...stylex.props(styles.stepsList)}>
 							{stages.map((title, index) => {
 								const isCurrent = workflowState.currentStep === index;
 								const isCompleted = index < workflowState.currentStep;
@@ -263,21 +401,30 @@ function WorkflowApp() {
 									<li key={title}>
 										<button
 											type="button"
-											className={`workflow-step-button ${isCurrent ? "current" : ""} ${isCompleted ? "completed" : ""}`}
+											{...stylex.props(
+												styles.stepButton,
+												isCurrent && styles.stepButtonCurrent,
+												isCompleted && styles.stepButtonCompleted,
+											)}
 											aria-current={isCurrent ? "step" : undefined}
 											onClick={() =>
 												dispatch({ type: "goToStep", step: index })
 											}
 											disabled={isDisabled}
 										>
-											<span className="step-indicator">
+											<span
+												{...stylex.props(
+													styles.stepIndicator,
+													isCurrent && styles.stepIndicatorCurrent,
+												)}
+											>
 												{isCompleted ? (
 													<span>✓</span>
 												) : (
 													<span>{index + 1}</span>
 												)}
 											</span>
-											<span className="step-title">{title}</span>
+											<span {...stylex.props(styles.stepTitle)}>{title}</span>
 										</button>
 									</li>
 								);
@@ -285,8 +432,8 @@ function WorkflowApp() {
 						</ol>
 					</aside>
 
-					<div className="workflow-canvas">
-						<div className="workflow-navigation">
+					<div {...stylex.props(styles.canvas)}>
+						<div {...stylex.props(styles.navigation)}>
 							{showBackButton && (
 								<ActionButton
 									type="button"
@@ -301,7 +448,7 @@ function WorkflowApp() {
 									← Back
 								</ActionButton>
 							)}
-							<span className="workflow-step-counter">
+							<span {...stylex.props(styles.stepCounter)}>
 								Step {workflowState.currentStep + 1} of {stages.length}
 							</span>
 							{showTopNextButton && (
@@ -319,7 +466,7 @@ function WorkflowApp() {
 							)}
 						</div>
 
-						<div className="workflow-content">
+						<div {...stylex.props(styles.content)}>
 							{renderStepContent(workflowState.currentStep)}
 						</div>
 					</div>
