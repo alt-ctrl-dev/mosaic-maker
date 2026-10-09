@@ -1,16 +1,17 @@
 import * as stylex from "@stylexjs/stylex";
 import type { ComponentProps } from "react";
+import { tokens } from "../styles/tokens.stylex";
 
 const styles = stylex.create({
 	button: {
 		appearance: "none",
 		border: "1px solid transparent",
-		borderRadius: "var(--radius)",
+		borderRadius: tokens.radius,
 		backgroundColor: {
-			default: "var(--primary)",
-			":hover": "var(--primary-hover)",
+			default: tokens.primary,
+			":hover": tokens.primaryHover,
 		},
-		color: "var(--on-primary)",
+		color: tokens.onPrimary,
 		cursor: "pointer",
 		display: "inline-flex",
 		alignItems: "center",
@@ -21,21 +22,26 @@ const styles = stylex.create({
 		padding: "0.65rem 1rem",
 		minWidth: "2.75rem",
 		textAlign: "center",
+		":focus-visible": {
+			outline: "2px solid currentColor",
+			outlineOffset: "2px",
+		},
+		":disabled": { cursor: "not-allowed", opacity: 0.5 },
 	},
 	secondary: {
-		color: "var(--on-secondary)",
+		color: tokens.onSecondary,
 		backgroundColor: {
-			default: "var(--secondary)",
-			":hover": "var(--secondary-hover)",
+			default: tokens.secondary,
+			":hover": tokens.secondaryHover,
 		},
 	},
 	outline: {
-		borderColor: "var(--primary)",
+		borderColor: tokens.primary,
 		backgroundColor: {
 			default: "transparent",
-			":hover": "var(--primary-soft)",
+			":hover": tokens.primarySoft,
 		},
-		color: "var(--primary)",
+		color: tokens.primary,
 	},
 });
 

@@ -1,4 +1,5 @@
 import { useEffect, useState } from "react";
+import { tokens } from "../styles/tokens.stylex";
 import { hasTelemetryConsent, setTelemetryConsent } from "../telemetry";
 import { VERSION_STRING } from "../version";
 
@@ -19,9 +20,9 @@ export function AppFooter() {
 			style={{
 				textAlign: "center",
 				padding: "1rem",
-				color: "var(--muted)",
+				color: tokens.muted,
 				fontSize: "0.85rem",
-				borderTop: "1px solid var(--border)",
+				borderTop: `1px solid ${tokens.border}`,
 				marginTop: "auto",
 			}}
 		>
