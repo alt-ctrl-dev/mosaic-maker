@@ -2,6 +2,9 @@ import * as stylex from "@stylexjs/stylex";
 import type { ComponentProps } from "react";
 import { tokens } from "../styles/tokens.stylex";
 
+// StyleX only resolves computed conditional keys defined in the same module.
+const REDUCED_MOTION = "@media (prefers-reduced-motion: reduce)";
+
 const styles = stylex.create({
 	button: {
 		appearance: "none",
@@ -24,11 +27,14 @@ const styles = stylex.create({
 		padding: "0.65rem 1rem",
 		minWidth: "2.75rem",
 		textAlign: "center",
+		transition: "transform 0.1s ease",
+		":active": { transform: "scale(0.97)" },
 		":focus-visible": {
 			outline: "2px solid currentColor",
 			outlineOffset: "2px",
 		},
 		":disabled": { cursor: "not-allowed", opacity: 0.5 },
+		[REDUCED_MOTION]: { transitionDuration: "0.01ms" },
 	},
 	secondary: {
 		color: tokens.onSecondary,

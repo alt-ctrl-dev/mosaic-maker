@@ -18,6 +18,13 @@ const spin = stylex.keyframes({
 	to: { transform: "rotate(360deg)" },
 });
 
+/** Pop-in for the finished mosaic preview. Local because StyleX does not
+ * resolve imported keyframe bindings. */
+const previewIn = stylex.keyframes({
+	from: { opacity: 0, transform: "scale(0.98)" },
+	to: { opacity: 1, transform: "none" },
+});
+
 const styles = stylex.create({
 	progressPanel: { textAlign: "center" },
 	progressBar: {
@@ -53,6 +60,10 @@ const styles = stylex.create({
 		height: "auto",
 		borderRadius: tokens.radius,
 		boxShadow: tokens.shadow,
+		animationName: previewIn,
+		animationDuration: "0.3s",
+		animationTimingFunction: "ease-out",
+		[REDUCED_MOTION]: { animationDuration: "0.01ms" },
 	},
 });
 
