@@ -6,6 +6,7 @@ import type { WorkflowState } from "../engine/workflow-state";
 import type { WorkflowAction } from "../hooks/useWorkflowReducer";
 import { base } from "../styles/base.stylex";
 import { tokens } from "../styles/tokens.stylex";
+import { vibrate } from "../haptics";
 import { trackError, trackMosaicGeneration, trackStepView } from "../telemetry";
 import { ActionButton } from "./ActionButton";
 
@@ -81,6 +82,9 @@ interface GenerateAndPreviewProps {
  */
 const ANDROID_FALLBACK_ERROR_MESSAGE =
 	"Unable to generate mosaic on your device. Please try again or use a different browser.";
+
+/** Success haptic pattern for a finished mosaic. */
+const MOSAIC_COMPLETE_VIBRATION = [30, 50, 30];
 
 function onBeforeUnload(event: BeforeUnloadEvent) {
 	event.preventDefault();
@@ -203,6 +207,7 @@ export function GenerateAndPreview({
 									width: data.width,
 									height: data.height,
 								});
+								vibrate(MOSAIC_COMPLETE_VIBRATION);
 								dispatch({
 									type: "mosaicGenerated",
 									mosaicResult: {
@@ -332,6 +337,7 @@ export function GenerateAndPreview({
 			setProgress({ percent: 100, message: "Mosaic generated successfully" });
 			setPreviewUrl(result.dataUrl);
 			setPreviewDimensions({ width: result.width, height: result.height });
+			vibrate(MOSAIC_COMPLETE_VIBRATION);
 
 			dispatch({ type: "mosaicGenerated", mosaicResult: result });
 		} catch (err) {

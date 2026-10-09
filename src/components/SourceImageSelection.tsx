@@ -6,6 +6,7 @@ import { getSourceImageInfo } from "../engine/image-processing";
 import type { WorkflowState } from "../engine/workflow-state";
 import { base } from "../styles/base.stylex";
 import { tokens } from "../styles/tokens.stylex";
+import { vibrate } from "../haptics";
 import { trackError, trackEvent, trackStepView } from "../telemetry";
 import { ActionButton } from "./ActionButton";
 
@@ -102,6 +103,7 @@ export function SourceImageSelection({
 					fileSize: file.size,
 					fileType: file.type,
 				});
+				vibrate(10);
 
 				// Reuse the object URL the engine holds rather than creating a second
 				// one; it lives as long as the source image is in the workflow.
