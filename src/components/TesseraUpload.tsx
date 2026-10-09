@@ -5,6 +5,7 @@ import { processTesserae } from "../engine/tessera-processing";
 import type { TesseraInfo } from "../engine/workflow-state";
 import { base } from "../styles/base.stylex";
 import { tokens } from "../styles/tokens.stylex";
+import { vibrate } from "../haptics";
 import { trackError, trackStepView } from "../telemetry";
 
 const styles = stylex.create({
@@ -51,6 +52,7 @@ export function TesseraUpload({
 			try {
 				const tesserae = await processTesserae(filesArray, adjustedTesseraSize);
 				onTesseraeProcessed(tesserae);
+				vibrate(15);
 			} catch (error) {
 				console.error("Error processing tesserae:", error);
 				trackError("tessera_processing", error, {

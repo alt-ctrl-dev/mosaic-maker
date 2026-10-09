@@ -19,10 +19,13 @@ const styles = stylex.create({
 	toggleButton: {
 		display: "none",
 		font: "inherit",
+		transition: "transform 0.15s ease",
+		":active": { transform: "scale(0.9)" },
 		":focus-visible": {
 			outline: "2px solid currentColor",
 			outlineOffset: "2px",
 		},
+		[REDUCED_MOTION]: { transitionDuration: "0.01ms" },
 		"@media (max-width: 900px)": {
 			display: "block",
 			position: "fixed",

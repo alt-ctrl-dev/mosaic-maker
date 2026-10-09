@@ -6,6 +6,7 @@ import type { WorkflowState } from "../engine/workflow-state";
 import type { WorkflowAction } from "../hooks/useWorkflowReducer";
 import { base } from "../styles/base.stylex";
 import { tokens } from "../styles/tokens.stylex";
+import { vibrate } from "../haptics";
 import { trackError, trackMosaicGeneration, trackStepView } from "../telemetry";
 import { ActionButton } from "./ActionButton";
 
@@ -16,6 +17,13 @@ const REDUCED_MOTION = "@media (prefers-reduced-motion: reduce)";
 // imported keyframe bindings in animation values.
 const spin = stylex.keyframes({
 	to: { transform: "rotate(360deg)" },
+});
+
+/** Pop-in for the finished mosaic preview. Local because StyleX does not
+ * resolve imported keyframe bindings. */
+const previewIn = stylex.keyframes({
+	from: { opacity: 0, transform: "scale(0.98)" },
+	to: { opacity: 1, transform: "none" },
 });
 
 const styles = stylex.create({
@@ -53,6 +61,10 @@ const styles = stylex.create({
 		height: "auto",
 		borderRadius: tokens.radius,
 		boxShadow: tokens.shadow,
+		animationName: previewIn,
+		animationDuration: "0.3s",
+		animationTimingFunction: "ease-out",
+		[REDUCED_MOTION]: { animationDuration: "0.01ms" },
 	},
 });
 
@@ -70,6 +82,9 @@ interface GenerateAndPreviewProps {
  */
 const ANDROID_FALLBACK_ERROR_MESSAGE =
 	"Unable to generate mosaic on your device. Please try again or use a different browser.";
+
+/** Success haptic pattern for a finished mosaic. */
+const MOSAIC_COMPLETE_VIBRATION = [30, 50, 30];
 
 function onBeforeUnload(event: BeforeUnloadEvent) {
 	event.preventDefault();
@@ -192,6 +207,7 @@ export function GenerateAndPreview({
 									width: data.width,
 									height: data.height,
 								});
+								vibrate(MOSAIC_COMPLETE_VIBRATION);
 								dispatch({
 									type: "mosaicGenerated",
 									mosaicResult: {
@@ -321,6 +337,7 @@ export function GenerateAndPreview({
 			setProgress({ percent: 100, message: "Mosaic generated successfully" });
 			setPreviewUrl(result.dataUrl);
 			setPreviewDimensions({ width: result.width, height: result.height });
+			vibrate(MOSAIC_COMPLETE_VIBRATION);
 
 			dispatch({ type: "mosaicGenerated", mosaicResult: result });
 		} catch (err) {

@@ -10,6 +10,7 @@ import {
 } from "../engine/workflow-state";
 import { base } from "../styles/base.stylex";
 import { tokens } from "../styles/tokens.stylex";
+import { vibrate } from "../haptics";
 import { trackError, trackEvent, trackStepView } from "../telemetry";
 import { ActionButton } from "./ActionButton";
 
@@ -106,6 +107,7 @@ export function GeneratedTesserae({
 				tesseraSize: initialState.adjustedTesseraSize ?? 0,
 				seed,
 			});
+			vibrate(15);
 		} catch (error) {
 			console.error("Error generating tesserae:", error);
 			trackError("tesserae_generation", error, {

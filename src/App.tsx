@@ -37,6 +37,13 @@ const stages = [
 /** Fallback tessera size when no adjusted size has been calculated yet. */
 const DEFAULT_TESSERA_SIZE = 16;
 
+/** Spinner keyframe for the step-content entrance. Local because StyleX
+ * does not resolve imported keyframe bindings. */
+const stepEnter = stylex.keyframes({
+	from: { opacity: 0, transform: "translateY(8px)" },
+	to: { opacity: 1, transform: "none" },
+});
+
 const styles = stylex.create({
 	// Shell chrome formerly provided by :root/body/base.css globals.
 	root: {
@@ -99,7 +106,8 @@ const styles = stylex.create({
 		},
 		color: tokens.onSecondary,
 		font: "inherit",
-		transition: "background-color 0.2s",
+		transition: "background-color 0.2s, transform 0.1s ease",
+		":active": { transform: "scale(0.98)" },
 		":focus-visible": {
 			outline: "2px solid currentColor",
 			outlineOffset: "2px",
@@ -149,6 +157,13 @@ const styles = stylex.create({
 	},
 	stepCounter: { color: tokens.muted, fontSize: "0.9rem" },
 	content: { flex: 1 },
+	// Replays whenever the step changes because the element is keyed by step.
+	contentEnter: {
+		animationName: stepEnter,
+		animationDuration: "0.25s",
+		animationTimingFunction: "ease-out",
+		[REDUCED_MOTION]: { animationDuration: "0.01ms" },
+	},
 	buildTesserae: { display: "flex", flexDirection: "column", gap: "2rem" },
 	tesseraInputs: {
 		display: "flex",
@@ -470,7 +485,10 @@ function WorkflowApp() {
 							)}
 						</div>
 
-						<div {...stylex.props(styles.content)}>
+						<div
+							key={workflowState.currentStep}
+							{...stylex.props(styles.content, styles.contentEnter)}
+						>
 							{renderStepContent(workflowState.currentStep)}
 						</div>
 					</div>
