@@ -21,9 +21,9 @@
 
 ## Styling
 
-- Do not reference undefined CSS variables. Every custom property must resolve to a value the project defines; referencing a nonexistent variable silently drops the declaration.
-- Status panels (processing indicators, generation progress/info, and error/warning messages) must delegate their visual container styling to the shared `<article>` rule in `src/styles/base.css`. Do not declare `background-color` or `color` on these panels so they stay consistent across colour schemes.
-- Use StyleX for shared component controls; keep layout and global element rules in the existing CSS files.
+- All styling is StyleX; there are no CSS files. Design tokens live in `src/styles/tokens.stylex.ts` (defined via `stylex.defineVars`, with dark-mode overrides) and shared element styles in `src/styles/base.stylex.ts`. Consume tokens through the exported object; never reference the generated `var(--…)` names directly.
+- Status panels (processing indicators, generation progress/info, and error/warning messages) must delegate their visual container styling to the shared card style in `src/styles/base.stylex.ts`. Do not declare `background-color` or `color` on these panels so they stay consistent across colour schemes.
+- StyleX only resolves computed conditional keys (e.g. `[REDUCED_MOTION]`) when the constant is defined in the same module; keep media-query constants local to each file.
 
 ## Testing
 

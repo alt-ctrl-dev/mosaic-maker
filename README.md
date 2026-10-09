@@ -76,7 +76,7 @@ src/
 ├── hooks/          # Custom React hooks
 ├── App.tsx         # Main application component
 ├── main.tsx        # Application entry point
-└── styles.css      # Global styles
+└── styles/         # StyleX design tokens and shared styles
 ```
 
 ### Testing

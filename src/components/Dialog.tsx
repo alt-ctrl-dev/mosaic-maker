@@ -32,7 +32,7 @@ const styles = stylex.create({
 			height: "3rem",
 			borderRadius: "50%",
 			border: "none",
-			background: tokens.primary,
+			backgroundColor: tokens.primary,
 			zIndex: 1001,
 			cursor: "pointer",
 			boxShadow: tokens.shadow,
