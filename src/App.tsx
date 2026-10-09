@@ -40,6 +40,7 @@ const DEFAULT_TESSERA_SIZE = 16;
 const styles = stylex.create({
 	// Shell chrome formerly provided by :root/body/base.css globals.
 	root: {
+		boxSizing: "border-box",
 		colorScheme: "light dark",
 		fontFamily: "system-ui, sans-serif",
 		fontSize: "100%",
@@ -72,8 +73,11 @@ const styles = stylex.create({
 		"@media (max-width: 900px)": { flexDirection: "column" },
 	},
 	sidebar: {
+		boxSizing: "border-box",
 		flex: "0 0 14rem",
-		borderRight: `1px solid ${tokens.border}`,
+		borderRightWidth: "1px",
+		borderRightStyle: "solid",
+		borderRightColor: tokens.border,
 		paddingRight: "1rem",
 		"@media (max-width: 900px)": { display: "none" },
 	},
@@ -86,7 +90,7 @@ const styles = stylex.create({
 		textAlign: "left",
 		padding: "0.75rem 1rem",
 		marginBottom: "0.5rem",
-		border: "none",
+		borderWidth: 0,
 		borderRadius: tokens.radius,
 		cursor: "pointer",
 		backgroundColor: {
@@ -139,7 +143,9 @@ const styles = stylex.create({
 		alignItems: "center",
 		marginBottom: "1rem",
 		paddingBottom: 0,
-		borderBottom: `1px solid ${tokens.border}`,
+		borderBottomWidth: "1px",
+		borderBottomStyle: "solid",
+		borderBottomColor: tokens.border,
 	},
 	stepCounter: { color: tokens.muted, fontSize: "0.9rem" },
 	content: { flex: 1 },
@@ -255,7 +261,7 @@ function WorkflowApp() {
 										}
 										adjustedTesseraSize={resolvedTesseraSize}
 									/>
-									<p>OR</p>
+									<p {...stylex.props(base.paragraph)}>OR</p>
 									<GeneratedTesserae
 										onTesseraeGenerated={(tesserae) =>
 											dispatch({ type: "tesseraeGenerated", tesserae })

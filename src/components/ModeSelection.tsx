@@ -38,7 +38,9 @@ const styles = stylex.create({
 		alignItems: "flex-start",
 		gap: "0.75rem",
 		padding: "1rem",
-		border: `1px solid ${tokens.border}`,
+		borderWidth: "1px",
+		borderStyle: "solid",
+		borderColor: tokens.border,
 		borderRadius: tokens.radius,
 	},
 	selected: {

@@ -5,7 +5,9 @@ import { tokens } from "../styles/tokens.stylex";
 const styles = stylex.create({
 	button: {
 		appearance: "none",
-		border: "1px solid transparent",
+		borderWidth: "1px",
+		borderStyle: "solid",
+		borderColor: "transparent",
 		borderRadius: tokens.radius,
 		backgroundColor: {
 			default: tokens.primary,

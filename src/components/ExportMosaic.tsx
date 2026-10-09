@@ -15,6 +15,8 @@ const styles = stylex.create({
 	inputGroup: { marginBottom: "1rem" },
 	inputGroupLabel: { display: "block", marginBottom: "0.5rem" },
 	exportPreview: { margin: "2rem 0", textAlign: "center" },
+	// The old stylesheet gave details content a 1rem margin on every side.
+	detailsContent: { margin: "1rem" },
 	mosaicPreview: {
 		maxWidth: "100%",
 		maxHeight: "400px",
@@ -366,7 +368,7 @@ export function ExportMosaic({ state, dispatch }: ExportMosaicProps) {
 					</div>
 					<details {...stylex.props(base.details)}>
 						<summary {...stylex.props(base.summary)}>Export Settings</summary>
-						<div>
+						<div {...stylex.props(styles.detailsContent)}>
 							<fieldset {...stylex.props(base.fieldset, styles.settingGroup)}>
 								<legend {...stylex.props(base.legend, styles.settingLegend)}>
 									Format Settings

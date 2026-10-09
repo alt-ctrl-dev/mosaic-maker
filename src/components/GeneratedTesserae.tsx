@@ -17,7 +17,9 @@ const styles = stylex.create({
 	root: { flex: 1 },
 	controlGroup: {
 		marginBottom: "1.5rem",
-		border: `1px solid ${tokens.border}`,
+		borderWidth: "1px",
+		borderStyle: "solid",
+		borderColor: tokens.border,
 		borderRadius: tokens.radius,
 		padding: "1rem",
 	},

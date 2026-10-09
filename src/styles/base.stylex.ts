@@ -24,7 +24,7 @@ export const base = stylex.create({
 	paragraph: { margin: "0 0 1rem" },
 	label: { fontWeight: 600 },
 	legend: { fontWeight: 600, padding: 0 },
-	fieldset: { border: 0, padding: 0, margin: "0 0 1rem", minWidth: 0 },
+	fieldset: { borderWidth: 0, padding: 0, margin: "0 0 1rem", minWidth: 0 },
 	/** Card chrome shared by status panels, alerts and review items. */
 	card: {
 		margin: "1rem 0",
@@ -42,10 +42,17 @@ export const base = stylex.create({
 			height: "1rem",
 			marginRight: "0.5rem",
 			verticalAlign: "-0.15rem",
-			border: "2px solid currentColor",
+			// ponytail: the border/animation shorthands are spelled out because
+			// this StyleX version silently drops them from compiled output.
+			borderWidth: "2px",
+			borderStyle: "solid",
+			borderColor: "currentColor",
 			borderRightColor: "transparent",
 			borderRadius: "50%",
-			animation: `${busySpin} 0.8s linear infinite`,
+			animationName: busySpin,
+			animationDuration: "0.8s",
+			animationTimingFunction: "linear",
+			animationIterationCount: "infinite",
 		},
 		[REDUCED_MOTION]: {
 			"::before": { animationDuration: "0.01ms", animationIterationCount: 1 },
@@ -56,7 +63,9 @@ export const base = stylex.create({
 		boxSizing: "border-box",
 		width: "100%",
 		padding: "0.65rem 0.75rem",
-		border: `1px solid ${tokens.border}`,
+		borderWidth: "1px",
+		borderStyle: "solid",
+		borderColor: tokens.border,
 		borderRadius: tokens.radius,
 		backgroundColor: tokens.surface,
 		color: tokens.text,
@@ -66,7 +75,9 @@ export const base = stylex.create({
 		width: "2.75rem",
 		height: "2.75rem",
 		padding: "0.15rem",
-		border: `1px solid ${tokens.border}`,
+		borderWidth: "1px",
+		borderStyle: "solid",
+		borderColor: tokens.border,
 		borderRadius: tokens.radius,
 		backgroundColor: tokens.surface,
 		cursor: "pointer",
@@ -82,7 +93,7 @@ export const base = stylex.create({
 		overflow: "hidden",
 		clip: "rect(0, 0, 0, 0)",
 		whiteSpace: "nowrap",
-		border: 0,
+		borderWidth: 0,
 	},
 	skipLink: {
 		position: "absolute",
@@ -96,6 +107,10 @@ export const base = stylex.create({
 		borderRadius: tokens.radius,
 		transition: "none",
 		":focus": { top: "6px" },
+		":focus-visible": {
+			outline: "2px solid currentColor",
+			outlineOffset: "2px",
+		},
 	},
 	focusOutline: {
 		":focus-visible": {
@@ -103,10 +118,11 @@ export const base = stylex.create({
 			outlineOffset: "2px",
 		},
 	},
-	disabledControl: { ":disabled": { cursor: "not-allowed", opacity: 0.5 } },
 	details: {
 		margin: "1rem 0",
-		border: `1px solid ${tokens.border}`,
+		borderWidth: "1px",
+		borderStyle: "solid",
+		borderColor: tokens.border,
 		borderRadius: tokens.radius,
 	},
 	summary: {
@@ -123,7 +139,9 @@ export const base = stylex.create({
 		boxSizing: "border-box",
 		width: "100%",
 		height: "200px",
-		border: `2px dashed ${tokens.border}`,
+		borderWidth: "2px",
+		borderStyle: "dashed",
+		borderColor: tokens.border,
 		borderRadius: tokens.radius,
 		display: "flex",
 		alignItems: "center",

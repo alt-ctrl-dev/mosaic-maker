@@ -21,9 +21,10 @@
 
 ## Styling
 
-- All styling is StyleX; there are no CSS files. Design tokens live in `src/styles/tokens.stylex.ts` (defined via `stylex.defineVars`, with dark-mode overrides) and shared element styles in `src/styles/base.stylex.ts`. Consume tokens through the exported object; never reference the generated `var(--…)` names directly.
+- All styling is StyleX; there are no CSS files. Design tokens live in `src/styles/tokens.stylex.ts` (defined via `stylex.defineVars`, with dark-mode overrides) and shared element styles in `src/styles/base.stylex.ts`. Consume tokens through the exported object; never reference the generated `var(--…)` names directly. Exception: `src/main.tsx` sets the body margin/min-width/background imperatively because StyleX cannot target elements outside the React tree.
 - Status panels (processing indicators, generation progress/info, and error/warning messages) must delegate their visual container styling to the shared card style in `src/styles/base.stylex.ts`. Do not declare `background-color` or `color` on these panels so they stay consistent across colour schemes.
 - StyleX only resolves computed conditional keys (e.g. `[REDUCED_MOTION]`) when the constant is defined in the same module; keep media-query constants local to each file.
+- StyleX (0.19.x) silently drops shorthand declarations for `border`, `border-top/right/bottom/left`, `animation` and `background` from compiled output. Use longhand properties (`borderWidth`/`borderStyle`/`borderColor`, `animationName`/`animationDuration`/…, `backgroundColor`).
 
 ## Testing
 

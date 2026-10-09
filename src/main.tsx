@@ -4,8 +4,9 @@ import { App } from "./App";
 import { tokens } from "./styles/tokens.stylex";
 import { initializeTelemetry, trackDeviceAnalytics } from "./telemetry";
 
-// StyleX styles are scoped to the React tree, so body-level resets that the
-// removed global stylesheet used to provide live here.
+// ponytail: StyleX cannot target elements outside the React tree, so the
+// body-level resets the deleted global stylesheet provided live here.
+// Upgrade if StyleX gains a global-styles story.
 document.body.style.margin = "0";
 document.body.style.minWidth = "20rem";
 document.body.style.backgroundColor = tokens.background;

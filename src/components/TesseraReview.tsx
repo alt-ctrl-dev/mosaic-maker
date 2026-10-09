@@ -26,10 +26,16 @@ const styles = stylex.create({
 		[REDUCED_MOTION]: { transitionDuration: "0.01ms" },
 	},
 	itemInvalid: {
-		border: `2px solid ${tokens.invalid}`,
+		borderWidth: "2px",
+		borderStyle: "solid",
+		borderColor: tokens.invalid,
 		backgroundColor: tokens.invalidSoft,
 	},
-	itemSupplemented: { border: `2px solid ${tokens.valid}` },
+	itemSupplemented: {
+		borderWidth: "2px",
+		borderStyle: "solid",
+		borderColor: tokens.valid,
+	},
 	preview: {
 		width: "100%",
 		height: "100px",

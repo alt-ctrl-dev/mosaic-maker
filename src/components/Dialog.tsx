@@ -31,7 +31,7 @@ const styles = stylex.create({
 			width: "3rem",
 			height: "3rem",
 			borderRadius: "50%",
-			border: "none",
+			borderWidth: 0,
 			backgroundColor: tokens.primary,
 			zIndex: 1001,
 			cursor: "pointer",
@@ -40,14 +40,18 @@ const styles = stylex.create({
 			lineHeight: 0,
 		},
 	},
-	// ponytail: the old fade-out used @starting-style and
+	// ponytail: the old fade used `opacity` + `@starting-style` and
 	// `display ... allow-discrete` transitions, which StyleX cannot express;
-	// the dialog now hides instantly on close. Restore once StyleX supports it.
+	// the dialog now shows and hides instantly on both open and close.
+	// Restore the fade once StyleX supports those conditionals.
 	dialog: {
+		boxSizing: "border-box",
 		width: "min(90vw, 30rem)",
 		maxHeight: "80vh",
 		padding: "1.5rem",
-		border: `1px solid ${tokens.border}`,
+		borderWidth: "1px",
+		borderStyle: "solid",
+		borderColor: tokens.border,
 		borderRadius: tokens.radius,
 		backgroundColor: tokens.surface,
 		color: tokens.text,

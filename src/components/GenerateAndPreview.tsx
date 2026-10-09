@@ -12,8 +12,9 @@ import { ActionButton } from "./ActionButton";
 // StyleX only resolves computed conditional keys defined in the same module.
 const REDUCED_MOTION = "@media (prefers-reduced-motion: reduce)";
 
+// Keyframes must be defined in the same module: StyleX does not resolve
+// imported keyframe bindings in animation values.
 const spin = stylex.keyframes({
-	from: { transform: "rotate(0deg)" },
 	to: { transform: "rotate(360deg)" },
 });
 
@@ -27,10 +28,17 @@ const styles = stylex.create({
 	spinner: {
 		width: "2rem",
 		height: "2rem",
-		border: `3px solid ${tokens.text}`,
-		borderTop: `3px solid ${tokens.primary}`,
+		borderWidth: "3px",
+		borderStyle: "solid",
+		borderColor: tokens.text,
+		borderTopWidth: "3px",
+		borderTopStyle: "solid",
+		borderTopColor: tokens.primary,
 		borderRadius: "50%",
-		animation: `${spin} 1s linear infinite`,
+		animationName: spin,
+		animationDuration: "1s",
+		animationTimingFunction: "linear",
+		animationIterationCount: "infinite",
 		margin: "0 auto 1rem",
 		[REDUCED_MOTION]: {
 			animationDuration: "0.01ms",
