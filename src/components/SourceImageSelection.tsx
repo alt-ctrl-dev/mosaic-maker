@@ -1,10 +1,24 @@
 import type React from "react";
 import { useCallback, useEffect, useState } from "react";
+import * as stylex from "@stylexjs/stylex";
 import type { SourceImageInfo } from "../engine/image-processing";
 import { getSourceImageInfo } from "../engine/image-processing";
 import type { WorkflowState } from "../engine/workflow-state";
+import { base } from "../styles/base.stylex";
+import { tokens } from "../styles/tokens.stylex";
 import { trackError, trackEvent, trackStepView } from "../telemetry";
 import { ActionButton } from "./ActionButton";
+
+const styles = stylex.create({
+	imagePreview: { marginTop: "1rem" },
+	previewImage: {
+		maxWidth: "100%",
+		height: "auto",
+		borderRadius: tokens.radius,
+		boxShadow: tokens.shadow,
+	},
+	panelSpacing: { marginTop: "1rem", textAlign: "center" },
+});
 
 /** Props for {@link ContinueButton}. */
 interface ContinueButtonProps {
@@ -128,38 +142,53 @@ export function SourceImageSelection({
 		[handleFileChange],
 	);
 
+	const errorPanelProps = stylex.props(base.card);
+	const processingProps = stylex.props(
+		base.card,
+		base.busySpinner,
+		styles.panelSpacing,
+	);
+
 	return (
-		<div className="source-image-selection">
+		<div>
 			<button
 				type="button"
 				onDragOver={handleDragOver}
 				onDrop={handleDrop}
-				className="drop-zone"
+				{...stylex.props(base.dropZone, base.focusOutline)}
 				aria-label="Drop images here or click to select"
 			>
-				<p>Drop images here or click below</p>
+				<p {...stylex.props(base.paragraph)}>Drop images here or click below</p>
 				<input
 					type="file"
 					accept="image/jpeg,image/png,image/webp"
 					onChange={(e) => handleFileChange(e.target.files)}
 					disabled={isProcessing}
 					aria-label="Select source image"
-					className="file-input"
+					{...stylex.props(base.fileInput, base.focusOutline)}
 				/>
 			</button>
 
 			{initialState.sourceImageError && (
-				<article className="error-message" role="alert">
+				<article
+					{...errorPanelProps}
+					className={`error-message ${errorPanelProps.className}`}
+					role="alert"
+				>
 					{initialState.sourceImageError}
 				</article>
 			)}
 
 			{previewUrl && (
-				<div className="image-preview">
-					<p>Source image preview:</p>
-					<img src={previewUrl} alt="Source" className="preview-image" />
+				<div {...stylex.props(styles.imagePreview)}>
+					<p {...stylex.props(base.paragraph)}>Source image preview:</p>
+					<img
+						src={previewUrl}
+						alt="Source"
+						{...stylex.props(styles.previewImage)}
+					/>
 					{imageDimensions && (
-						<p>
+						<p {...stylex.props(base.paragraph)}>
 							Dimensions: {imageDimensions.width} × {imageDimensions.height}{" "}
 							pixels
 						</p>
@@ -168,7 +197,11 @@ export function SourceImageSelection({
 			)}
 
 			{isProcessing && (
-				<article className="processing-indicator" aria-busy="true">
+				<article
+					{...processingProps}
+					className={`processing-indicator ${processingProps.className}`}
+					aria-busy="true"
+				>
 					Processing image...
 				</article>
 			)}

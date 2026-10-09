@@ -1,10 +1,60 @@
 import { useCallback, useEffect, useRef, useState } from "react";
+import * as stylex from "@stylexjs/stylex";
 import { generateMosaic, type ProgressCallback } from "../engine/mosaic-engine";
 import { ANDROID_READBACK_FAILURE } from "../engine/mosaic-shared";
 import type { WorkflowState } from "../engine/workflow-state";
 import type { WorkflowAction } from "../hooks/useWorkflowReducer";
+import { base } from "../styles/base.stylex";
+import { tokens } from "../styles/tokens.stylex";
 import { trackError, trackMosaicGeneration, trackStepView } from "../telemetry";
 import { ActionButton } from "./ActionButton";
+
+// StyleX only resolves computed conditional keys defined in the same module.
+const REDUCED_MOTION = "@media (prefers-reduced-motion: reduce)";
+
+// Keyframes must be defined in the same module: StyleX does not resolve
+// imported keyframe bindings in animation values.
+const spin = stylex.keyframes({
+	to: { transform: "rotate(360deg)" },
+});
+
+const styles = stylex.create({
+	progressPanel: { textAlign: "center" },
+	progressBar: {
+		width: "100%",
+		margin: "0.5rem 0",
+		accentColor: tokens.primary,
+	},
+	spinner: {
+		width: "2rem",
+		height: "2rem",
+		borderWidth: "3px",
+		borderStyle: "solid",
+		borderColor: tokens.text,
+		borderTopWidth: "3px",
+		borderTopStyle: "solid",
+		borderTopColor: tokens.primary,
+		borderRadius: "50%",
+		animationName: spin,
+		animationDuration: "1s",
+		animationTimingFunction: "linear",
+		animationIterationCount: "infinite",
+		margin: "0 auto 1rem",
+		[REDUCED_MOTION]: {
+			animationDuration: "0.01ms",
+			animationIterationCount: 1,
+		},
+	},
+	previewContainer: { margin: "1rem 0", textAlign: "center" },
+	mosaicPreview: {
+		maxWidth: "100%",
+		maxHeight: "70vh",
+		width: "auto",
+		height: "auto",
+		borderRadius: tokens.radius,
+		boxShadow: tokens.shadow,
+	},
+});
 
 /** Props for {@link GenerateAndPreview}. */
 interface GenerateAndPreviewProps {
@@ -337,11 +387,18 @@ export function GenerateAndPreview({
 			? state.tesserae.length >= 2
 			: state.tesserae.length > 0);
 
+	const errorPanelProps = stylex.props(base.card);
+	const progressPanelProps = stylex.props(
+		base.card,
+		base.busySpinner,
+		styles.progressPanel,
+	);
+
 	return (
-		<div className="generate-preview-step">
+		<div>
 			{!isGenerating && !previewUrl && (
-				<div className="generate-controls">
-					<p>
+				<div>
+					<p {...stylex.props(base.paragraph)}>
 						Ready to generate your mosaic? Press the "Generate Mosaic" button
 						below. You can go back to the previous step anytime if needed.
 					</p>
@@ -355,14 +412,18 @@ export function GenerateAndPreview({
 					</ActionButton>
 
 					{!canGenerate && (
-						<p className="hint">
+						<p {...stylex.props(base.paragraph)}>
 							Please ensure you have a source image, tessera size, and tesserae
 							before generating.
 						</p>
 					)}
 
 					{error && (
-						<article className="error-message" role="alert">
+						<article
+							{...errorPanelProps}
+							className={`error-message ${errorPanelProps.className}`}
+							role="alert"
+						>
 							<strong>Error:</strong> {error}
 						</article>
 					)}
@@ -370,23 +431,28 @@ export function GenerateAndPreview({
 			)}
 
 			{isGenerating && (
-				<article className="generation-progress" aria-busy="true">
-					<h3>Generating Mosaic...</h3>
+				<article
+					{...progressPanelProps}
+					className={`generation-progress ${progressPanelProps.className}`}
+					aria-busy="true"
+				>
+					<h3 {...stylex.props(base.heading, base.h3)}>Generating Mosaic...</h3>
 					{progress ? (
-						<div className="progress-info">
+						<div>
 							<progress
+								{...stylex.props(styles.progressBar)}
 								value={progress.percent}
 								max="100"
 								aria-label="Generation progress"
 							>
 								{progress.percent}%
 							</progress>
-							<p className="progress-text">{progress.message}</p>
+							<p {...stylex.props(base.paragraph)}>{progress.message}</p>
 						</div>
 					) : (
-						<div className="progress-indicator">
-							<div className="spinner" aria-hidden="true"></div>
-							<p>Processing...</p>
+						<div>
+							<div {...stylex.props(styles.spinner)} aria-hidden="true" />
+							<p {...stylex.props(base.paragraph)}>Processing...</p>
 						</div>
 					)}
 					<ActionButton type="button" onClick={handleCancel} variant="outline">
@@ -396,16 +462,16 @@ export function GenerateAndPreview({
 			)}
 
 			{previewUrl && previewDimensions && (
-				<div className="preview-section">
-					<h3>Preview</h3>
-					<div className="preview-container">
+				<div>
+					<h3 {...stylex.props(base.heading, base.h3)}>Preview</h3>
+					<div {...stylex.props(styles.previewContainer)}>
 						<img
 							src={previewUrl}
 							alt="Generated mosaic preview"
-							className="mosaic-preview"
+							{...stylex.props(styles.mosaicPreview)}
 						/>
 					</div>
-					<p className="preview-info">
+					<p {...stylex.props(base.paragraph)}>
 						Dimensions: {previewDimensions.width} × {previewDimensions.height}{" "}
 						pixels
 					</p>

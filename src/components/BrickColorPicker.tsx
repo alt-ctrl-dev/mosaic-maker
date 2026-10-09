@@ -1,9 +1,11 @@
 import { useState } from "react";
+import * as stylex from "@stylexjs/stylex";
 import {
 	createBrickTesserae,
 	type TesseraInfo,
 } from "../engine/workflow-state";
 import { renderBrick } from "../engine/brick";
+import { base } from "../styles/base.stylex";
 import { ActionButton } from "./ActionButton";
 
 /** Props for {@link BrickColorPicker}. */
@@ -90,17 +92,18 @@ export function BrickColorPicker({
 	};
 
 	return (
-		<div className="brick-color-picker">
-			<h3>Select Colors (2-{MAX_COLORS} colors required)</h3>
+		<div>
+			<h3 {...stylex.props(base.heading, base.h3)}>
+				Select Colors (2-{MAX_COLORS} colors required)
+			</h3>
 
 			{selectedColors.length > 0 && (
-				<div className="selected-colors">
-					<h4>Selected Colors:</h4>
-					<div className="color-list">
+				<div>
+					<h4 {...stylex.props(base.heading, base.h4)}>Selected Colors:</h4>
+					<div>
 						{selectedColors.map((color) => (
-							<div key={color} className="selected-color-item">
+							<div key={color}>
 								<img
-									className="color-swatch"
 									src={renderBrick(color)}
 									alt={`Brick tessera ${color}`}
 									title={color}
@@ -116,14 +119,16 @@ export function BrickColorPicker({
 							</div>
 						))}
 					</div>
-					<p>{selectedColors.length} color(s) selected</p>
+					<p {...stylex.props(base.paragraph)}>
+						{selectedColors.length} color(s) selected
+					</p>
 				</div>
 			)}
 
-			<div className="preset-palettes">
-				<h4>Preset Palettes</h4>
+			<div>
+				<h4 {...stylex.props(base.heading, base.h4)}>Preset Palettes</h4>
 				{PRESET_PALETTES.map((palette, index) => (
-					<div key={palette.name} className="palette-option">
+					<div key={palette.name}>
 						<ActionButton
 							type="button"
 							onClick={() => selectPalette(index)}
@@ -131,11 +136,10 @@ export function BrickColorPicker({
 						>
 							{palette.name}
 						</ActionButton>
-						<div className="palette-colors">
+						<div>
 							{palette.colors.map((color) => (
 								<div
 									key={color}
-									className="palette-color"
 									style={{ backgroundColor: color }}
 									title={color}
 								/>
@@ -145,14 +149,15 @@ export function BrickColorPicker({
 				))}
 			</div>
 
-			<div className="custom-color-section">
-				<h4>Custom Color</h4>
-				<div className="custom-color-controls">
+			<div>
+				<h4 {...stylex.props(base.heading, base.h4)}>Custom Color</h4>
+				<div>
 					<input
 						type="color"
 						value={customColor}
 						onChange={(e) => setCustomColor(e.target.value)}
 						aria-label="Select custom color"
+						{...stylex.props(base.colorInput, base.focusOutline)}
 					/>
 					<ActionButton
 						type="button"
@@ -167,10 +172,12 @@ export function BrickColorPicker({
 			</div>
 
 			{selectedColors.length < 2 && (
-				<p className="warning">Please select at least 2 colors</p>
+				<p {...stylex.props(base.paragraph)}>Please select at least 2 colors</p>
 			)}
 			{selectedColors.length >= MAX_COLORS && (
-				<p className="info">Maximum of {MAX_COLORS} colors reached</p>
+				<p {...stylex.props(base.paragraph)}>
+					Maximum of {MAX_COLORS} colors reached
+				</p>
 			)}
 		</div>
 	);

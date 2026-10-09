@@ -1,5 +1,7 @@
 import * as stylex from "@stylexjs/stylex";
 import type { MosaicMode } from "../engine/workflow-state";
+import { base } from "../styles/base.stylex";
+import { tokens } from "../styles/tokens.stylex";
 import { ActionButton } from "./ActionButton";
 
 /** Props for {@link ModeSelection}. */
@@ -36,12 +38,14 @@ const styles = stylex.create({
 		alignItems: "flex-start",
 		gap: "0.75rem",
 		padding: "1rem",
-		border: "1px solid var(--border)",
-		borderRadius: "var(--radius)",
+		borderWidth: "1px",
+		borderStyle: "solid",
+		borderColor: tokens.border,
+		borderRadius: tokens.radius,
 	},
 	selected: {
-		borderColor: "var(--primary)",
-		backgroundColor: "var(--primary-soft)",
+		borderColor: tokens.primary,
+		backgroundColor: tokens.primarySoft,
 	},
 });
 
@@ -55,9 +59,11 @@ export function ModeSelection({
 	onContinue,
 }: ModeSelectionProps) {
 	return (
-		<div className="mode-selection-container">
-			<h2>Select Mosaic Style</h2>
-			<p>Choose how you want your mosaic to look:</p>
+		<div>
+			<h2 {...stylex.props(base.heading, base.h2)}>Select Mosaic Style</h2>
+			<p {...stylex.props(base.paragraph)}>
+				Choose how you want your mosaic to look:
+			</p>
 
 			<div {...stylex.props(styles.options)}>
 				{MODES.map((modeValue) => {
@@ -75,10 +81,16 @@ export function ModeSelection({
 								checked={isSelected}
 								onChange={() => onModeSelected(modeValue)}
 								aria-label={`Select ${title} mode`}
+								{...stylex.props(base.accentPrimary, base.focusOutline)}
 							/>
-							<label htmlFor={`mode-${modeValue}`}>
-								<h3>{title}</h3>
-								<p>{MODE_DESCRIPTIONS[modeValue]}</p>
+							<label
+								htmlFor={`mode-${modeValue}`}
+								{...stylex.props(base.label)}
+							>
+								<h3 {...stylex.props(base.heading, base.h3)}>{title}</h3>
+								<p {...stylex.props(base.paragraph)}>
+									{MODE_DESCRIPTIONS[modeValue]}
+								</p>
 							</label>
 						</div>
 					);

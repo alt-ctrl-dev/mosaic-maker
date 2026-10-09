@@ -1,5 +1,3 @@
-import { readFileSync } from "node:fs";
-import { resolve } from "node:path";
 import {
 	cleanup,
 	fireEvent,
@@ -8,16 +6,10 @@ import {
 	screen,
 	waitFor,
 } from "@testing-library/react";
-import {
-	afterAll,
-	afterEach,
-	beforeAll,
-	describe,
-	expect,
-	it,
-	vi,
-} from "vitest";
+import { afterEach, describe, expect, it, vi } from "vitest";
 import type { WorkflowState } from "../engine/workflow-state";
+import { tokens } from "../styles/tokens.stylex";
+import { declaredValuesFor } from "../test-utils/style-inspection";
 import { GenerateAndPreview } from "./GenerateAndPreview";
 import { GeneratedTesserae } from "./GeneratedTesserae";
 import { SourceImageSelection } from "./SourceImageSelection";
@@ -25,7 +17,7 @@ import { TesseraReview } from "./TesseraReview";
 import { TesseraSizeSelection } from "./TesseraSizeSelection";
 import { TesseraUpload } from "./TesseraUpload";
 
-// Status panels share the base <article> styling rather than declaring
+// Status panels share the StyleX card style rather than declaring
 // background-color or color themselves. These tests mock the
 // async engine calls so the transient status panels stay mounted long enough to
 // inspect their rendered elements.
@@ -55,72 +47,29 @@ vi.mock("../engine/mosaic-engine", () => ({
 	generateMosaic: () => new Promise(() => {}),
 }));
 
-const styles = readFileSync(resolve(process.cwd(), "src/styles.css"), "utf8");
-
-let styleElement: HTMLStyleElement;
-
-beforeAll(() => {
-	styleElement = document.createElement("style");
-	styleElement.textContent = styles;
-	document.head.appendChild(styleElement);
-});
-
-afterAll(() => {
-	styleElement.remove();
-});
-
 afterEach(cleanup);
 
 /**
- * Returns every CSS declaration for `property` that applies to `element`,
- * gathered by walking the injected stylesheet and matching selectors. jsdom's
- * getComputedStyle does not resolve `var()` references or full cascade, so the
- * raw declared values are inspected directly instead.
+ * Asserts that a status panel uses the shared StyleX card style and does not
+ * declare its own background-color or color inline.
  */
-function declaredValuesFor(element: Element, property: string): string[] {
-	const values: string[] = [];
-	for (const sheet of Array.from(document.styleSheets)) {
-		let rules: CSSRuleList;
-		try {
-			rules = sheet.cssRules;
-		} catch {
-			continue;
-		}
-		for (const rule of Array.from(rules)) {
-			if (!(rule instanceof CSSStyleRule)) continue;
-			let matches = false;
-			try {
-				matches = element.matches(rule.selectorText);
-			} catch {
-				continue;
-			}
-			if (!matches) continue;
-			const value = rule.style.getPropertyValue(property);
-			if (value) values.push(value);
-		}
-	}
-	return values;
-}
-
-/**
- * Asserts that a status panel uses the shared <article> styling and does not declare its own
- * background-color or color, either inline or via a matching CSS rule.
- */
-function expectDelegatesStylingToArticle(element: Element): void {
+function expectUsesSharedPanelStyling(element: Element): void {
 	expect(element.tagName).toBe("ARTICLE");
 
 	const inlineStyle = (element as HTMLElement).style;
 	expect(inlineStyle.backgroundColor).toBe("");
 	expect(inlineStyle.color).toBe("");
 
-	expect(declaredValuesFor(element, "background-color")).toEqual([]);
+	expect(declaredValuesFor(element, "background-color")).toContain(
+		tokens.surface,
+	);
 	expect(declaredValuesFor(element, "color")).toEqual([]);
 }
 
 const noop = () => {};
 
-describe("Status panels delegate styling to article elements", () => {
-	it("SourceImageSelection error panel is an unstyled article", () => {
+describe("Status panels use the shared card styling", () => {
+	it("SourceImageSelection error panel uses the shared card style", () => {
 		const state = {
 			sourceImageError: "Something went wrong",
 		} as unknown as WorkflowState;
@@ -135,10 +84,10 @@ describe("Status panels delegate styling to article elements", () => {
 
 		const panel = container.querySelector(".error-message");
 		expect(panel).not.toBeNull();
-		expectDelegatesStylingToArticle(panel as Element);
+		expectUsesSharedPanelStyling(panel as Element);
 	});
 
-	it("SourceImageSelection processing panel is an unstyled article", async () => {
+	it("SourceImageSelection processing panel uses the shared card style", async () => {
 		const state = { sourceImageError: null } as unknown as WorkflowState;
 
 		const { container } = render(
@@ -158,10 +107,10 @@ describe("Status panels delegate styling to article elements", () => {
 			expect(found).not.toBeNull();
 			return found as Element;
 		});
-		expectDelegatesStylingToArticle(panel);
+		expectUsesSharedPanelStyling(panel);
 	});
 
-	it("TesseraUpload processing panel is an unstyled article", async () => {
+	it("TesseraUpload processing panel uses the shared card style", async () => {
 		const { container } = render(
 			<TesseraUpload onTesseraeProcessed={noop} adjustedTesseraSize={16} />,
 		);
@@ -175,10 +124,10 @@ describe("Status panels delegate styling to article elements", () => {
 			expect(found).not.toBeNull();
 			return found as Element;
 		});
-		expectDelegatesStylingToArticle(panel);
+		expectUsesSharedPanelStyling(panel);
 	});
 
-	it("GeneratedTesserae generation panel is an unstyled article", async () => {
+	it("GeneratedTesserae generation panel uses the shared card style", async () => {
 		const state = {
 			seed: 42,
 			generatedTesseraCount: 20,
@@ -195,10 +144,10 @@ describe("Status panels delegate styling to article elements", () => {
 			expect(found).not.toBeNull();
 			return found as Element;
 		});
-		expectDelegatesStylingToArticle(panel);
+		expectUsesSharedPanelStyling(panel);
 	});
 
-	it("GenerateAndPreview progress panel is an unstyled article", async () => {
+	it("GenerateAndPreview progress panel uses the shared card style", async () => {
 		const state = {
 			sourceImage: { url: "blob:test", width: 100, height: 100 },
 			adjustedTesseraSize: 10,
@@ -216,10 +165,10 @@ describe("Status panels delegate styling to article elements", () => {
 			expect(found).not.toBeNull();
 			return found as Element;
 		});
-		expectDelegatesStylingToArticle(panel);
+		expectUsesSharedPanelStyling(panel);
 	});
 
-	it("TesseraReview warning panel is an unstyled article", () => {
+	it("TesseraReview warning panel uses the shared card style", () => {
 		const { container } = render(
 			<TesseraReview
 				tesserae={[]}
@@ -231,10 +180,10 @@ describe("Status panels delegate styling to article elements", () => {
 
 		const panel = container.querySelector(".warning-message");
 		expect(panel).not.toBeNull();
-		expectDelegatesStylingToArticle(panel as Element);
+		expectUsesSharedPanelStyling(panel as Element);
 	});
 
-	it("TesseraSizeSelection warning panel is an unstyled article", async () => {
+	it("TesseraSizeSelection warning panel uses the shared card style", async () => {
 		const state = {
 			sourceImage: { url: "blob:test", width: 20, height: 20 },
 			hasValidSourceDimensions: true,
@@ -252,6 +201,6 @@ describe("Status panels delegate styling to article elements", () => {
 			expect(found).not.toBeNull();
 			return found as Element;
 		});
-		expectDelegatesStylingToArticle(panel);
+		expectUsesSharedPanelStyling(panel);
 	});
 });

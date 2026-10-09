@@ -1,4 +1,5 @@
 import { useEffect, useState } from "react";
+import * as stylex from "@stylexjs/stylex";
 import { generateNoiseTesseraeFromState } from "../engine/generate-noise-tesserae-helper";
 import { calculateGridCellCount } from "../engine/tessera-sizing";
 import {
@@ -7,8 +8,31 @@ import {
 	type TesseraInfo,
 	type WorkflowState,
 } from "../engine/workflow-state";
+import { base } from "../styles/base.stylex";
+import { tokens } from "../styles/tokens.stylex";
 import { trackError, trackEvent, trackStepView } from "../telemetry";
 import { ActionButton } from "./ActionButton";
+
+const styles = stylex.create({
+	root: { flex: 1 },
+	controlGroup: {
+		marginBottom: "1.5rem",
+		borderWidth: "1px",
+		borderStyle: "solid",
+		borderColor: tokens.border,
+		borderRadius: tokens.radius,
+		padding: "1rem",
+	},
+	control: { marginBottom: "1rem" },
+	controlLabel: {
+		display: "block",
+		marginBottom: "0.5rem",
+		fontWeight: "bold",
+	},
+	inputGroup: { display: "flex", gap: "0.5rem", alignItems: "center" },
+	flexField: { flex: 1 },
+	generationInfo: { marginTop: "1rem", fontSize: "0.9em" },
+});
 
 /**
  * Compute the default tessera count for a given workflow state.
@@ -98,19 +122,31 @@ export function GeneratedTesserae({
 		setSeed(Math.floor(Math.random() * SEED_MAX));
 	};
 
+	const generationInfoProps = stylex.props(
+		base.card,
+		base.busySpinner,
+		styles.generationInfo,
+	);
+
 	return (
-		<div className="generated-tesserae" data-testid="generated-tesserae">
-			<fieldset className="control-group">
-				<legend>Generate random tiles</legend>
-				<div className="seed-control">
-					<label htmlFor="seed">Seed:</label>
-					<div className="input-group">
+		<div {...stylex.props(styles.root)} data-testid="generated-tesserae">
+			<fieldset {...stylex.props(base.fieldset, styles.controlGroup)}>
+				<legend {...stylex.props(base.legend)}>Generate random tiles</legend>
+				<div {...stylex.props(styles.control)}>
+					<label
+						htmlFor="seed"
+						{...stylex.props(base.label, styles.controlLabel)}
+					>
+						Seed:
+					</label>
+					<div {...stylex.props(styles.inputGroup)}>
 						<input
 							id="seed"
 							type="number"
 							value={seed}
 							onChange={(e) => setSeed(Number(e.target.value))}
 							aria-label="Seed value for generation"
+							{...stylex.props(base.field, base.focusOutline, styles.flexField)}
 						/>
 						<ActionButton
 							type="button"
@@ -122,8 +158,13 @@ export function GeneratedTesserae({
 					</div>
 				</div>
 
-				<div className="count-control">
-					<label htmlFor="count">Number of tiles:</label>
+				<div {...stylex.props(styles.control)}>
+					<label
+						htmlFor="count"
+						{...stylex.props(base.label, styles.controlLabel)}
+					>
+						Number of tiles:
+					</label>
 					<input
 						id="count"
 						type="number"
@@ -132,6 +173,7 @@ export function GeneratedTesserae({
 						value={count}
 						onChange={(e) => setCount(Number(e.target.value))}
 						aria-label="Number of tiles to generate"
+						{...stylex.props(base.field, base.focusOutline)}
 					/>
 				</div>
 			</fieldset>
@@ -145,7 +187,11 @@ export function GeneratedTesserae({
 				{isGenerating ? "Generating..." : "Generate tiles"}
 			</ActionButton>
 			{isGenerating && (
-				<article className="generation-info" aria-busy="true">
+				<article
+					{...generationInfoProps}
+					className={`generation-info ${generationInfoProps.className}`}
+					aria-busy="true"
+				>
 					Generating {count} tiles with seed {seed}...
 				</article>
 			)}

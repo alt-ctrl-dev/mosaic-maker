@@ -1,10 +1,31 @@
 import { useEffect, useState } from "react";
+import * as stylex from "@stylexjs/stylex";
 import type { ExportFormat } from "../engine/export";
 import { exportMosaic } from "../engine/export";
 import type { ExportSettings, WorkflowState } from "../engine/workflow-state";
 import type { WorkflowAction } from "../hooks/useWorkflowReducer";
+import { base } from "../styles/base.stylex";
+import { tokens } from "../styles/tokens.stylex";
 import { trackError, trackEvent, trackStepView } from "../telemetry";
 import { ActionButton } from "./ActionButton";
+
+const styles = stylex.create({
+	settingGroup: { marginBottom: "1.5rem" },
+	settingLegend: { fontWeight: "bold", marginBottom: "0.5rem" },
+	inputGroup: { marginBottom: "1rem" },
+	inputGroupLabel: { display: "block", marginBottom: "0.5rem" },
+	exportPreview: { margin: "2rem 0", textAlign: "center" },
+	// The old stylesheet gave details content a 1rem margin on every side.
+	detailsContent: { margin: "1rem" },
+	mosaicPreview: {
+		maxWidth: "100%",
+		maxHeight: "400px",
+		width: "auto",
+		height: "auto",
+		borderRadius: tokens.radius,
+		boxShadow: tokens.shadow,
+	},
+});
 
 /** Props for {@link ExportMosaic}. */
 interface ExportMosaicProps {
@@ -331,25 +352,34 @@ export function ExportMosaic({ state, dispatch }: ExportMosaicProps) {
 		}
 	};
 
+	const errorPanelProps = stylex.props(base.card);
+
 	return (
-		<div className="export-mosaic-step">
+		<div>
 			{state.mosaicResult ? (
 				<>
-					<div className="export-preview">
-						<h3>Preview</h3>
+					<div {...stylex.props(styles.exportPreview)}>
+						<h3 {...stylex.props(base.heading, base.h3)}>Preview</h3>
 						<img
 							src={state.mosaicResult.dataUrl}
 							alt={"Generated mosaic"}
-							className="mosaic-preview"
+							{...stylex.props(styles.mosaicPreview)}
 						/>
 					</div>
-					<details>
-						<summary>Export Settings</summary>
-						<div className="export-settings">
-							<fieldset className="setting-group">
-								<legend>Format Settings</legend>
-								<div className="input-group">
-									<label htmlFor="export-format">Format:</label>
+					<details {...stylex.props(base.details)}>
+						<summary {...stylex.props(base.summary)}>Export Settings</summary>
+						<div {...stylex.props(styles.detailsContent)}>
+							<fieldset {...stylex.props(base.fieldset, styles.settingGroup)}>
+								<legend {...stylex.props(base.legend, styles.settingLegend)}>
+									Format Settings
+								</legend>
+								<div {...stylex.props(styles.inputGroup)}>
+									<label
+										htmlFor="export-format"
+										{...stylex.props(base.label, styles.inputGroupLabel)}
+									>
+										Format:
+									</label>
 									<select
 										id="export-format"
 										value={state.exportFormat}
@@ -360,6 +390,7 @@ export function ExportMosaic({ state, dispatch }: ExportMosaicProps) {
 											}
 										}}
 										disabled={isExporting}
+										{...stylex.props(base.field, base.focusOutline)}
 									>
 										<option value="png">PNG</option>
 										<option value="jpeg">JPEG</option>
@@ -370,10 +401,15 @@ export function ExportMosaic({ state, dispatch }: ExportMosaicProps) {
 
 							{(state.exportFormat === "jpeg" ||
 								state.exportFormat === "webp") && (
-								<fieldset className="setting-group">
-									<legend>Quality Settings</legend>
-									<div className="input-group">
-										<label htmlFor="export-quality">
+								<fieldset {...stylex.props(base.fieldset, styles.settingGroup)}>
+									<legend {...stylex.props(base.legend, styles.settingLegend)}>
+										Quality Settings
+									</legend>
+									<div {...stylex.props(styles.inputGroup)}>
+										<label
+											htmlFor="export-quality"
+											{...stylex.props(base.label, styles.inputGroupLabel)}
+										>
 											Quality: {Math.round(state.exportQuality * 100)}%
 										</label>
 										<input
@@ -389,16 +425,24 @@ export function ExportMosaic({ state, dispatch }: ExportMosaicProps) {
 												})
 											}
 											disabled={isExporting}
+											{...stylex.props(base.rangeInput, base.focusOutline)}
 										/>
 									</div>
 								</fieldset>
 							)}
 
 							{state.exportFormat === "jpeg" && (
-								<fieldset className="setting-group">
-									<legend>Background Settings</legend>
-									<div className="input-group">
-										<label htmlFor="export-background">Background Color:</label>
+								<fieldset {...stylex.props(base.fieldset, styles.settingGroup)}>
+									<legend {...stylex.props(base.legend, styles.settingLegend)}>
+										Background Settings
+									</legend>
+									<div {...stylex.props(styles.inputGroup)}>
+										<label
+											htmlFor="export-background"
+											{...stylex.props(base.label, styles.inputGroupLabel)}
+										>
+											Background Color:
+										</label>
 										<input
 											id="export-background"
 											type="color"
@@ -409,6 +453,7 @@ export function ExportMosaic({ state, dispatch }: ExportMosaicProps) {
 												})
 											}
 											disabled={isExporting}
+											{...stylex.props(base.colorInput, base.focusOutline)}
 										/>
 									</div>
 								</fieldset>
@@ -416,7 +461,7 @@ export function ExportMosaic({ state, dispatch }: ExportMosaicProps) {
 						</div>
 					</details>
 
-					<div className="export-actions">
+					<div>
 						<ActionButton
 							type="button"
 							onClick={handleExport}
@@ -427,15 +472,19 @@ export function ExportMosaic({ state, dispatch }: ExportMosaicProps) {
 						</ActionButton>
 
 						{error && (
-							<article className="error-message" role="alert">
+							<article
+								{...errorPanelProps}
+								className={`error-message ${errorPanelProps.className}`}
+								role="alert"
+							>
 								<strong>Error:</strong> {error}
 							</article>
 						)}
 					</div>
 				</>
 			) : (
-				<div className="no-mosaic">
-					<p>
+				<div>
+					<p {...stylex.props(base.paragraph)}>
 						No mosaic has been generated yet. Please go back to the previous
 						step to generate a mosaic.
 					</p>
