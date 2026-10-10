@@ -1,5 +1,5 @@
 import * as stylex from "@stylexjs/stylex";
-import { useEffect, useState } from "react";
+import { useState } from "react";
 import { base } from "../styles/base.stylex";
 import { tokens } from "../styles/tokens.stylex";
 import { hasTelemetryConsent, setTelemetryConsent } from "../telemetry";
@@ -28,13 +28,12 @@ const styles = stylex.create({
 
 /** Application footer showing the build version. */
 export function AppFooter() {
-	const [consent, setConsent] = useState(hasTelemetryConsent());
-
-	useEffect(() => {
-		setTelemetryConsent(consent);
-	}, [consent]);
+	// Checked only for an affirmative versioned record; fresh visits, legacy
+	// values and refusals all render unchecked until the user chooses.
+	const [consent, setConsent] = useState(() => hasTelemetryConsent());
 
 	const handleConsentChange = (event: React.ChangeEvent<HTMLInputElement>) => {
+		setTelemetryConsent(event.target.checked);
 		setConsent(event.target.checked);
 	};
 
