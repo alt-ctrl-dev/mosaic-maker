@@ -8,6 +8,7 @@ import type { MosaicMode } from "./engine/workflow-state";
 import { VERSION_STRING } from "./version";
 
 const CONSENT_KEY = "telemetry-consent";
+const CONSENT_VERSION = 1;
 const SESSION_KEY = "telemetry-session";
 const FARO_URL_ENV_VAR = "VITE_FARO_URL";
 const FARO_APP_NAME_ENV_VAR = "VITE_FARO_APP_NAME";
@@ -20,18 +21,81 @@ function isFaroConfigured(): boolean {
 	);
 }
 
-/**
- * Check whether user has consented to telemetry.
- * Defaults to true when no preference has been stored.
- */
-export function hasTelemetryConsent(): boolean {
-	const consent = localStorage.getItem(CONSENT_KEY);
-	return consent === null || consent === "true";
+/** The user's telemetry choice as understood from the stored record. */
+export type ConsentChoice = "granted" | "refused" | "undecided";
+
+interface ConsentRecord {
+	version: number;
+	consent: boolean;
 }
 
-/** Persist user's telemetry consent preference in localStorage. */
+function isConsentRecord(value: unknown): value is ConsentRecord {
+	return (
+		typeof value === "object" &&
+		value !== null &&
+		(value as ConsentRecord).version === CONSENT_VERSION &&
+		typeof (value as ConsentRecord).consent === "boolean"
+	);
+}
+
+/**
+ * Read the stored consent choice. Consent is affirmative-only: a fresh visit,
+ * a legacy value recorded under the old default-on scheme (stored `true`), an
+ * unparseable record, and blocked or throwing storage all resolve to
+ * `"undecided"`, which never enables telemetry. A stored refusal (current or
+ * legacy) remains refusal. Only a versioned record matching
+ * `CONSENT_VERSION` with `consent: true` counts as granted.
+ */
+export function getTelemetryConsent(): ConsentChoice {
+	let raw: string | null;
+	try {
+		raw = localStorage.getItem(CONSENT_KEY);
+	} catch {
+		return "undecided";
+	}
+	if (raw === null) {
+		return "undecided";
+	}
+
+	let parsed: unknown;
+	try {
+		parsed = JSON.parse(raw);
+	} catch {
+		return "undecided";
+	}
+
+	// Legacy scheme stored the raw strings "true"/"false".
+	if (parsed === false) {
+		return "refused";
+	}
+	if (parsed === true) {
+		return "undecided";
+	}
+	if (isConsentRecord(parsed)) {
+		return parsed.consent ? "granted" : "refused";
+	}
+	return "undecided";
+}
+
+/**
+ * Check whether the user has affirmatively consented to telemetry.
+ * False until the user opts in with a versioned consent record.
+ */
+export function hasTelemetryConsent(): boolean {
+	return getTelemetryConsent() === "granted";
+}
+
+/**
+ * Persist the user's telemetry choice as a versioned consent record.
+ * When storage is blocked the choice applies for the current page only.
+ */
 export function setTelemetryConsent(consent: boolean): void {
-	localStorage.setItem(CONSENT_KEY, consent.toString());
+	const record: ConsentRecord = { version: CONSENT_VERSION, consent };
+	try {
+		localStorage.setItem(CONSENT_KEY, JSON.stringify(record));
+	} catch {
+		// Storage unavailable: preference stays in memory for this page.
+	}
 }
 
 /**
@@ -116,6 +180,10 @@ export function trackEvent(
 	name: string,
 	payload: Record<string, unknown>,
 ): void {
+	if (!hasTelemetryConsent()) {
+		return;
+	}
+
 	const attributes: Record<string, string> = {
 		sessionId: getWorkflowSessionId(),
 		appVersion: VERSION_STRING,
@@ -330,6 +398,9 @@ let hasCollectedDeviceAnalytics = false;
  * session; repeated calls after the first are no-ops.
  */
 export async function trackDeviceAnalytics(): Promise<void> {
+	if (!hasTelemetryConsent()) {
+		return;
+	}
 	if (hasCollectedDeviceAnalytics) {
 		return;
 	}

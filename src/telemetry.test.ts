@@ -1,5 +1,6 @@
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 import {
+	getTelemetryConsent,
 	getWorkflowSessionId,
 	hasTelemetryConsent,
 	initializeTelemetry,
@@ -26,33 +27,120 @@ describe("telemetry", () => {
 		vi.unstubAllEnvs();
 	});
 
-	describe("hasTelemetryConsent", () => {
-		it("should return true by default when no consent is stored", () => {
-			expect(hasTelemetryConsent()).toBe(true);
-		});
-
-		it("should return false when consent is explicitly denied", () => {
-			setTelemetryConsent(false);
+	describe("consent record", () => {
+		it("treats a fresh visit as undecided without consent", () => {
+			expect(getTelemetryConsent()).toBe("undecided");
 			expect(hasTelemetryConsent()).toBe(false);
 		});
 
-		it("should return true when consent is explicitly granted", () => {
+		it("stores a versioned affirmative record on opt-in", () => {
 			setTelemetryConsent(true);
+
+			expect(
+				JSON.parse(localStorage.getItem("telemetry-consent") ?? ""),
+			).toEqual({
+				version: 1,
+				consent: true,
+			});
+			expect(getTelemetryConsent()).toBe("granted");
 			expect(hasTelemetryConsent()).toBe(true);
 		});
-	});
 
-	describe("setTelemetryConsent", () => {
-		it("should store consent preference in localStorage", () => {
+		it("stores a versioned refusal record", () => {
 			setTelemetryConsent(false);
-			expect(localStorage.getItem("telemetry-consent")).toBe("false");
 
-			setTelemetryConsent(true);
-			expect(localStorage.getItem("telemetry-consent")).toBe("true");
+			expect(
+				JSON.parse(localStorage.getItem("telemetry-consent") ?? ""),
+			).toEqual({
+				version: 1,
+				consent: false,
+			});
+			expect(getTelemetryConsent()).toBe("refused");
+			expect(hasTelemetryConsent()).toBe(false);
+		});
+
+		it("treats legacy positive values as undecided", () => {
+			localStorage.setItem("telemetry-consent", "true");
+
+			expect(getTelemetryConsent()).toBe("undecided");
+			expect(hasTelemetryConsent()).toBe(false);
+		});
+
+		it("keeps a legacy refusal as refusal", () => {
+			localStorage.setItem("telemetry-consent", "false");
+
+			expect(getTelemetryConsent()).toBe("refused");
+			expect(hasTelemetryConsent()).toBe(false);
+		});
+
+		it("treats unrecognized or differently versioned records as undecided", () => {
+			localStorage.setItem("telemetry-consent", "garbage");
+			expect(getTelemetryConsent()).toBe("undecided");
+
+			localStorage.setItem(
+				"telemetry-consent",
+				JSON.stringify({ version: 99, consent: true }),
+			);
+			expect(getTelemetryConsent()).toBe("undecided");
+		});
+
+		it("defaults to undecided without throwing when storage access throws", () => {
+			const getItem = vi
+				.spyOn(Storage.prototype, "getItem")
+				.mockImplementation(() => {
+					throw new Error("localStorage blocked");
+				});
+
+			expect(getTelemetryConsent()).toBe("undecided");
+			expect(hasTelemetryConsent()).toBe(false);
+
+			getItem.mockRestore();
+		});
+
+		it("does not throw when storage writes are blocked", () => {
+			const setItem = vi
+				.spyOn(Storage.prototype, "setItem")
+				.mockImplementation(() => {
+					throw new Error("localStorage blocked");
+				});
+
+			expect(() => setTelemetryConsent(true)).not.toThrow();
+
+			setItem.mockRestore();
 		});
 	});
 
 	describe("initializeTelemetry", () => {
+		it("should not initialize when no consent is stored", () => {
+			const consoleLogSpy = vi
+				.spyOn(console, "log")
+				.mockImplementation(() => {});
+			initializeTelemetry();
+			expect(consoleLogSpy).toHaveBeenCalledWith(
+				"Telemetry consent not given, skipping initialization",
+			);
+		});
+
+		it("does not initialize Faro on a fresh visit even when configured", async () => {
+			vi.stubEnv("VITE_FARO_URL", "http://localhost:1234/collect");
+			vi.stubEnv("VITE_FARO_APP_NAME", "test-app");
+
+			const mockInitializeFaro = vi.fn();
+			vi.doMock("@grafana/faro-web-sdk", async () => {
+				const actual = await vi.importActual("@grafana/faro-web-sdk");
+				return {
+					...actual,
+					initializeFaro: mockInitializeFaro,
+					getWebInstrumentations: vi.fn(() => []),
+				};
+			});
+
+			const { initializeTelemetry } = await import("./telemetry");
+			initializeTelemetry();
+
+			expect(mockInitializeFaro).not.toHaveBeenCalled();
+		});
+
 		it("should not initialize when consent is denied", () => {
 			const consoleLogSpy = vi
 				.spyOn(console, "log")
@@ -113,24 +201,26 @@ describe("telemetry", () => {
 	});
 
 	describe("trackEvent", () => {
-		it("should log to console when consent is denied", () => {
+		it("logs and sends nothing when consent is missing", () => {
+			const consoleLogSpy = vi
+				.spyOn(console, "log")
+				.mockImplementation(() => {});
+			trackEvent("test_event", { test: "data" });
+			expect(consoleLogSpy).not.toHaveBeenCalled();
+		});
+
+		it("logs and sends nothing when consent is denied", () => {
 			const consoleLogSpy = vi
 				.spyOn(console, "log")
 				.mockImplementation(() => {});
 			setTelemetryConsent(false);
 			trackEvent("test_event", { test: "data" });
-			expect(consoleLogSpy).toHaveBeenCalledWith(
-				"[Telemetry] test_event:",
-				JSON.stringify(
-					{
-						sessionId: getWorkflowSessionId(),
-						appVersion: VERSION_STRING,
-						test: "data",
-					},
-					null,
-					2,
-				),
-			);
+			expect(consoleLogSpy).not.toHaveBeenCalled();
+		});
+
+		it("does not create a workflow session id when consent is missing", () => {
+			trackEvent("test_event", { test: "data" });
+			expect(sessionStorage.getItem("telemetry-session")).toBeNull();
 		});
 
 		it("should stamp every event with the workflow session id and app version", () => {
@@ -217,6 +307,23 @@ describe("telemetry", () => {
 				value: 800,
 				configurable: true,
 			});
+			setTelemetryConsent(true);
+		});
+
+		it("collects nothing without consent", async () => {
+			localStorage.removeItem("telemetry-consent");
+			const { trackDeviceAnalytics } = await import("./telemetry");
+			const consoleLogSpy = vi
+				.spyOn(console, "log")
+				.mockImplementation(() => {});
+
+			await trackDeviceAnalytics();
+
+			expect(consoleLogSpy).not.toHaveBeenCalledWith(
+				"[Telemetry] device_analytics:",
+				expect.anything(),
+			);
+			expect(localStorage.getItem("mosaicMaker.deviceId")).toBeNull();
 		});
 
 		it("tracks a device_analytics event with device info as attributes", async () => {
@@ -477,6 +584,10 @@ describe("telemetry", () => {
 	});
 
 	describe("trackMosaicGeneration", () => {
+		beforeEach(() => {
+			setTelemetryConsent(true);
+		});
+
 		it("should track mosaic generation event with provided parameters", () => {
 			const consoleLogSpy = vi
 				.spyOn(console, "log")
@@ -527,6 +638,7 @@ describe("telemetry", () => {
 		beforeEach(() => {
 			vi.stubEnv("VITE_FARO_URL", "");
 			vi.stubEnv("VITE_FARO_APP_NAME", "");
+			setTelemetryConsent(true);
 		});
 
 		it("emits an error prefixed event with step attribution", () => {
@@ -615,6 +727,7 @@ describe("telemetry", () => {
 		beforeEach(() => {
 			vi.stubEnv("VITE_FARO_URL", "");
 			vi.stubEnv("VITE_FARO_APP_NAME", "");
+			setTelemetryConsent(true);
 		});
 
 		it("emits a step_view event for the given step", () => {
