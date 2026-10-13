@@ -1,18 +1,16 @@
 import { spawnSync } from "child_process";
 
 export const pushBranch = async (branchName: string): Promise<void> => {
-  // Validate branch name to prevent shell injection
-  if (!branchName || typeof branchName !== 'string') {
-    throw new Error('Invalid branch name');
+  if (!branchName || typeof branchName !== "string") {
+    throw new Error("Invalid branch name");
   }
-  
-  // Reject branch names that look like options
-  if (branchName.startsWith('-')) {
-    throw new Error('Branch name cannot start with hyphen');
+
+  if (branchName.startsWith("-")) {
+    throw new Error("Branch name cannot start with hyphen");
   }
-  
+
   try {
-    const result = spawnSync('git', ['push', '--set-upstream', 'origin', branchName, '--force-with-lease'], { 
+    const result = spawnSync("git", ["push", "--set-upstream", "origin", branchName, "--force-with-lease"], { 
       stdio: "inherit",
       encoding: "utf-8"
     });
