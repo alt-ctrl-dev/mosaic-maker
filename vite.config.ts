@@ -47,7 +47,7 @@ export default defineConfig(({ mode, command }) => {
 			},
 			react(),
 			// Only upload sourcemaps where the token is available (CI).
-			...(env.VITE_FARO_SOURCEMAP_TOKEN
+			...(process.env.SOURCEMAP_UPLOADER_CREDENTIAL
 				? [
 						faroUploader({
 							appName: env.VITE_FARO_APP_NAME,
@@ -58,7 +58,7 @@ export default defineConfig(({ mode, command }) => {
 							verbose: true,
 							// instructions on how to obtain your API key are in the documentation
 							// https://grafana.com/docs/grafana-cloud/monitor-applications/frontend-observability/sourcemap-upload-plugins/#obtain-an-api-key
-							apiKey: env.VITE_FARO_SOURCEMAP_TOKEN,
+							apiKey: process.env.SOURCEMAP_UPLOADER_CREDENTIAL,
 							gzipContents: true,
 						}),
 					]
