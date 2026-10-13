@@ -1,4 +1,4 @@
-import { execSync } from "child_process";
+import { spawnSync } from "child_process";
 import { existsSync, readdirSync, unlinkSync } from "fs";
 import { join, resolve } from "path";
 
@@ -19,7 +19,13 @@ export type RegisteredWorktree = { path: string; branch: string | null };
  */
 const getLocalBranches = (): string[] => {
   try {
-    const output = execSync("git branch --format='%(refname:short)'", { encoding: "utf-8" });
+    const result = spawnSync("git", ["branch", "--format=%(refname:short)"], { encoding: "utf-8" });
+    
+    if (result.status !== 0) {
+      throw new Error(`git branch failed with exit code ${result.status}: ${result.stderr}`);
+    }
+    
+    const output = result.stdout;
     const trimmed = output.trim();
     if (trimmed === "") {
       return [];
@@ -39,8 +45,21 @@ const getLocalBranches = (): string[] => {
  * "not closed" so the branch is preserved.
  */
 const isIssueClosed = (issueNumber: number): boolean => {
+  // Validate issue number
+  if (!Number.isInteger(issueNumber) || issueNumber <= 0) {
+    console.error(`Invalid issue number: ${issueNumber}`);
+    return false;
+  }
+  
   try {
-    const output = execSync(`gh issue view ${issueNumber} --json state`, { encoding: "utf-8" });
+    const result = spawnSync("gh", ["issue", "view", String(issueNumber), "--json", "state"], { encoding: "utf-8" });
+    
+    if (result.status !== 0) {
+      console.error(`gh issue view failed with exit code ${result.status}: ${result.stderr}`);
+      return false;
+    }
+    
+    const output = result.stdout;
     const parsed: unknown = JSON.parse(output);
     if (parsed === null || typeof parsed !== "object") {
       console.error(`Unexpected response shape from gh issue view ${issueNumber}`);
@@ -67,11 +86,27 @@ const isIssueClosed = (issueNumber: number): boolean => {
  * PR" so the branch is preserved.
  */
 const hasMergedPR = (branch: string): boolean => {
+  // Validate branch name
+  if (!branch || typeof branch !== 'string') {
+    console.error(`Invalid branch name: ${branch}`);
+    return false;
+  }
+  
+  // Reject branch names that look like options
+  if (branch.startsWith('-')) {
+    console.error(`Branch name cannot start with hyphen: ${branch}`);
+    return false;
+  }
+  
   try {
-    const output = execSync(
-      `gh pr list --head ${JSON.stringify(branch)} --state merged --json number`,
-      { encoding: "utf-8" },
-    );
+    const result = spawnSync("gh", ["pr", "list", "--head", branch, "--state", "merged", "--json", "number"], { encoding: "utf-8" });
+    
+    if (result.status !== 0) {
+      console.error(`gh pr list failed with exit code ${result.status}: ${result.stderr}`);
+      return false;
+    }
+    
+    const output = result.stdout;
     const parsed: unknown = JSON.parse(output);
     if (!Array.isArray(parsed)) {
       console.error(`Unexpected response shape from gh pr list for branch ${branch}`);
@@ -121,8 +156,27 @@ export const parseWorktreePorcelain = (output: string): RegisteredWorktree[] => 
  * or null when no registered worktree matches.
  */
 const findWorktreeForBranch = (branch: string): string | null => {
+  // Validate branch name
+  if (!branch || typeof branch !== 'string') {
+    console.error(`Invalid branch name: ${branch}`);
+    return null;
+  }
+  
+  // Reject branch names that look like options
+  if (branch.startsWith('-')) {
+    console.error(`Branch name cannot start with hyphen: ${branch}`);
+    return null;
+  }
+  
   try {
-    const output = execSync("git worktree list --porcelain", { encoding: "utf-8" });
+    const result = spawnSync("git", ["worktree", "list", "--porcelain"], { encoding: "utf-8" });
+    
+    if (result.status !== 0) {
+      console.error(`git worktree list failed with exit code ${result.status}: ${result.stderr}`);
+      return null;
+    }
+    
+    const output = result.stdout;
     const worktree = parseWorktreePorcelain(output).find((wt) => wt.branch === branch);
     return worktree ? worktree.path : null;
   } catch (error) {
@@ -135,8 +189,26 @@ const findWorktreeForBranch = (branch: string): string | null => {
  * Removes a git worktree at the given path with `git worktree remove --force`.
  */
 const removeWorktree = (worktreePath: string): boolean => {
+  // Validate worktree path
+  if (!worktreePath || typeof worktreePath !== 'string') {
+    console.error(`Invalid worktree path: ${worktreePath}`);
+    return false;
+  }
+  
+  // Reject paths that look like options
+  if (worktreePath.startsWith('-')) {
+    console.error(`Worktree path cannot start with hyphen: ${worktreePath}`);
+    return false;
+  }
+  
   try {
-    execSync(`git worktree remove --force ${JSON.stringify(worktreePath)}`, { stdio: "inherit" });
+    const result = spawnSync("git", ["worktree", "remove", "--force", worktreePath], { stdio: "inherit", encoding: "utf-8" });
+    
+    if (result.status !== 0) {
+      console.error(`git worktree remove failed with exit code ${result.status}: ${result.stderr || ''}`);
+      return false;
+    }
+    
     console.log(`✓ Removed worktree: ${worktreePath}`);
     return true;
   } catch (error) {
@@ -152,8 +224,26 @@ const removeWorktree = (worktreePath: string): boolean => {
  * removed, since the associated issue/PR is already closed.
  */
 const deleteLocalBranch = (branchName: string): boolean => {
+  // Validate branch name
+  if (!branchName || typeof branchName !== 'string') {
+    console.error(`Invalid branch name: ${branchName}`);
+    return false;
+  }
+  
+  // Reject branch names that look like options
+  if (branchName.startsWith('-')) {
+    console.error(`Branch name cannot start with hyphen: ${branchName}`);
+    return false;
+  }
+  
   try {
-    execSync(`git branch -D ${branchName}`, { stdio: "inherit" });
+    const result = spawnSync("git", ["branch", "-D", branchName], { stdio: "inherit", encoding: "utf-8" });
+    
+    if (result.status !== 0) {
+      console.error(`git branch -D failed with exit code ${result.status}: ${result.stderr || ''}`);
+      return false;
+    }
+    
     console.log(`✓ Deleted local branch: ${branchName}`);
     return true;
   } catch (error) {

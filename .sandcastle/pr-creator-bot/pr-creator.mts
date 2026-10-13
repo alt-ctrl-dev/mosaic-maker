@@ -1,9 +1,9 @@
 import { z } from "zod";
 import {  createPr, generatePrDescription } from "../sandcastle-bot/pr.mts";
 import { dockerSandbox } from "../shared/docker.mts";
-import { execSync } from "child_process";
+import { spawnSync } from "child_process";
 
-const currentBranch = execSync("git rev-parse --abbrev-ref HEAD", { encoding: "utf-8" }).trim();
+const currentBranch = spawnSync("git", ["rev-parse", "--abbrev-ref", "HEAD"], { encoding: "utf-8" }).stdout.trim();
 const BRANCH = z.coerce.string().default(currentBranch).parse(process.env.BRANCH);
 const ISSUE_ID = z.coerce.string().default('').parse(process.env.ISSUE_ID);
 const BASE_BRANCH = "main"

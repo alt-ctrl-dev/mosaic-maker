@@ -1,4 +1,4 @@
-import { execSync } from "child_process";
+import { spawnSync } from "child_process";
 import * as sandcastle from "@ai-hero/sandcastle";
 import type { DockerSandbox } from "../shared/docker.mts";
 import { pushBranch } from "../shared/git.mts";
@@ -64,18 +64,38 @@ export const createPr = async (title: string, description: string, branch: {
     console.log("\n================ PR Title ================\n", title);
     console.log("\n============= PR Description =============\n", description);
 
+    // Validate inputs to prevent shell injection
+    if (!title || typeof title !== 'string') {
+        throw new Error('Invalid PR title');
+    }
+    
+    if (!branch.current || typeof branch.current !== 'string') {
+        throw new Error('Invalid branch name');
+    }
+    
+    if (BASE_BRANCH && typeof BASE_BRANCH !== 'string') {
+        throw new Error('Invalid base branch name');
+    }
+    
+    // Reject inputs that look like options
+    if (title.startsWith('-') || branch.current.startsWith('-') || (BASE_BRANCH && BASE_BRANCH.startsWith('-'))) {
+        throw new Error('Inputs cannot start with hyphen');
+    }
+
     try {
-        // Escape quotes in title and body for shell
-        const escapedTitle = title.replace(/"/g, '\\"');
-
-
         await pushBranch(branch.current);
 
         fs.writeFileSync(prDescriptionFileName, description);
-        execSync(
-            `gh pr create --title "${escapedTitle}" --body-file=${prDescriptionFileName} --base ${BASE_BRANCH} --head ${branch.current}`,
-            { stdio: "inherit" }
+        
+        const result = spawnSync(
+            "gh", 
+            ["pr", "create", "--title", title, "--body-file", prDescriptionFileName, "--base", BASE_BRANCH, "--head", branch.current],
+            { stdio: "inherit", encoding: "utf-8" }
         );
+        
+        if (result.status !== 0) {
+            throw new Error(`gh pr create failed with exit code ${result.status}: ${result.stderr || ''}`);
+        }
 
         console.log("Pull request created successfully.");
     } catch (error) {
@@ -84,6 +104,8 @@ export const createPr = async (title: string, description: string, branch: {
         throw error;
     }
     finally {
-        fs.rmSync(prDescriptionFileName)
+        if (fs.existsSync(prDescriptionFileName)) {
+            fs.rmSync(prDescriptionFileName);
+        }
     }
 }
