@@ -48,8 +48,12 @@ Before selecting an in-progress issue, check the open pull requests above. Exclu
 
 Include only unblocked issues. If every issue is blocked, include the single highest-priority candidate (the one with the fewest or weakest dependencies). If there are no issues to work on at all, emit an empty `issues` array — never omit the output block.
 
-Reply with nothing but the output block below (no preamble, no restating these instructions), filling in the real issues:
+Reply with nothing but the output block below (no preamble, no restating these instructions), filling in the real issues.
+
+Output your plan as a JSON object wrapped in `<plan>` tags, exactly like this example:
 
 <plan>
 {"issues": [{"id": "42", "title": "Fix auth bug", "branch": "sandcastle/issue-42"}]}
 </plan>
+
+Do not use markdown code fences; the `<plan>` tags are required. Always emit the `<plan>` tags, even when the `issues` array is empty.
