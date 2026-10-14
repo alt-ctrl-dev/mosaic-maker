@@ -28,10 +28,11 @@ describe("Pull Request Checks Workflow", () => {
 		);
 	});
 
-	it("should skip checks for draft pull requests", () => {
-		expect(workflowContent).toContain(
+	it("should run checks for all non-draft pull requests", () => {
+		expect(workflowContent).not.toContain(
 			"github.event.pull_request.draft == false",
 		);
+		// Checks should run for all non-draft PRs, not filtered by documentation changes
 	});
 
 	it("should cancel in-progress runs", () => {
@@ -55,16 +56,9 @@ describe("Pull Request Checks Workflow", () => {
 		expect(pagesWorkflowContent).toContain("push:");
 	});
 
-	it("should have correct paths-filter configuration format", () => {
-		expect(workflowContent).toContain("added|modified: '*.md'");
-		expect(workflowContent).toContain("added|modified: 'docs/**'");
-		expect(workflowContent).toContain("added|modified: '.github/**/*.md'");
-
-		expect(workflowContent).not.toContain("added|modified:\n");
-	});
-
-	it("should use paths-filter v4", () => {
-		expect(workflowContent).toContain("dorny/paths-filter@v4");
-		expect(workflowContent).not.toContain("dorny/paths-filter@v3");
+	it("should not use documentation-based filtering", () => {
+		expect(workflowContent).not.toContain("added|modified: '*.md'");
+		expect(workflowContent).not.toContain("docs_only");
+		// Documentation-based filtering has been removed
 	});
 });

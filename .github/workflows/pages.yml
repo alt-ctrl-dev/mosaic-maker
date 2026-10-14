@@ -17,9 +17,11 @@ jobs:
   build:
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@v7
-      - uses: pnpm/action-setup@v6
-      - uses: actions/setup-node@v7
+      - uses: actions/checkout@692973e3d937129bcbf40652eb9f2f61becf3332
+        with:
+          persist-credentials: false
+      - uses: pnpm/action-setup@a3252b78c470c02df07e9d59298aecedc3ccdd6d
+      - uses: actions/setup-node@60edb5dd545a775178f52524783378180af0d1f8
         with:
           node-version: 24
           cache: pnpm
@@ -28,8 +30,8 @@ jobs:
         env:
           VITE_FARO_URL: ${{ secrets.VITE_FARO_URL }}
           VITE_FARO_APP_NAME: ${{ secrets.VITE_FARO_APP_NAME }}
-      - uses: actions/configure-pages@v6
-      - uses: actions/upload-pages-artifact@v5
+      - uses: actions/configure-pages@983d7736d9b0ae728b81ab479565c72886d7745b
+      - uses: actions/upload-pages-artifact@0252fc4ba7626f0298f0cf00902a25c6afc77fa8
         with:
           path: dist
 
@@ -42,7 +44,7 @@ jobs:
     steps:
       - name: Deploy to GitHub Pages
         id: deployment
-        uses: actions/deploy-pages@v5
+        uses: actions/deploy-pages@f33f41b675f0ab2dc5a6863c9a170fe83af3571e
       - name: Add deployment link to summary
         run: |
           echo "🚀 [Open Mosaic Maker](${{ steps.deployment.outputs.page_url }})" >> $GITHUB_STEP_SUMMARY
