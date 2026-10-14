@@ -29,13 +29,28 @@ import { createPlanAgent } from "./plan.mts";
 import { createPr, generatePrDescription } from "./pr.mts";
 import { createImplmentAgent } from "./implement.mts";
 import { createReviewAgent } from "../shared/review.mts";
+import { isUserAuthorized } from "../shared/auth.mts";
+import { canStartRequest, startRequestTracking } from "../shared/rate-limit.mts";
 
 console.log(`Running for ${MAX_ITERATIONS} iteration(s)`);
+
+// Check if bot execution is authorized
+const actor = process.env.GITHUB_ACTOR || "unknown";
+if (!isUserAuthorized(actor)) {
+  console.error(`Actor ${actor} is not authorized to run SandCastle bots`);
+  process.exit(1);
+}
 
 const planAgent = createPlanAgent(dockerSandbox);
 
 for (let iteration = 1; iteration <= MAX_ITERATIONS; iteration++) {
   console.log(`\n=== Iteration ${iteration}/${MAX_ITERATIONS} ===\n`);
+
+  // Check rate limits before proceeding
+  if (!canStartRequest()) {
+    console.error("Execution budget exceeded, stopping bot execution");
+    break;
+  }
 
   const currentBranch = execSync("git rev-parse --abbrev-ref HEAD", { encoding: "utf-8" }).trim();
   if (currentBranch !== "main") {
@@ -48,35 +63,44 @@ for (let iteration = 1; iteration <= MAX_ITERATIONS; iteration++) {
   const topIssue = await planAgent.run();
   const branch = topIssue.branch;
 
-  // Create a single sandbox that both the implementer and reviewer share.
-  const sandbox = await sandcastle.createSandbox({
-    branch,
-    sandbox: dockerSandbox,
-    hooks,
-    copyToWorktree,
-  });
-
-  const implementAgent = createImplmentAgent(sandbox, topIssue);
-  const reviewAgent = createReviewAgent(sandbox, branch);
-
+  // Track request for rate limiting
+  const requestId = `sandcastle-${topIssue.id}-${Date.now()}`;
+  const stopTracking = startRequestTracking(requestId);
+  
   try {
-    const commitLength = await implementAgent.run();
+    // Create a single sandbox that both the implementer and reviewer share.
+    const sandbox = await sandcastle.createSandbox({
+      branch,
+      sandbox: dockerSandbox,
+      hooks,
+      copyToWorktree,
+    });
 
-    if (!commitLength) {
-      console.log("Implementation agent made no commits. Stopping.");
-      break;
+    const implementAgent = createImplmentAgent(sandbox, topIssue);
+    const reviewAgent = createReviewAgent(sandbox, branch);
+
+    try {
+      const commitLength = await implementAgent.run();
+
+      if (!commitLength) {
+        console.log("Implementation agent made no commits. Stopping.");
+        break;
+      }
+
+      console.log(`\nImplementation complete on branch: ${branch}`);
+      await reviewAgent.run();
+      console.log("\nReview complete.");
+
+      const branchDetails = { current: topIssue.branch, base: "main" };
+      const { title, description } = await generatePrDescription(dockerSandbox, topIssue.id, branchDetails);
+      await createPr(title, description, branchDetails);
+      console.log("\nCreated PR.");
+    } finally {
+      await sandbox.close();
     }
-
-    console.log(`\nImplementation complete on branch: ${branch}`);
-    await reviewAgent.run();
-    console.log("\nReview complete.");
-
-    const branchDetails = { current: topIssue.branch, base: "main" };
-    const { title, description } = await generatePrDescription(dockerSandbox, topIssue.id, branchDetails);
-    await createPr(title, description, branchDetails);
-    console.log("\nCreated PR.");
   } finally {
-    await sandbox.close();
+    // Stop tracking the request
+    stopTracking();
   }
 }
 
