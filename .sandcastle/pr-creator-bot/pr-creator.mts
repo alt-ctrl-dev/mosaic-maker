@@ -1,6 +1,5 @@
 import { z } from "zod";
 import { createPr, generatePrDescription } from "../sandcastle-bot/pr.mts";
-import { dockerSandbox } from "../shared/docker.mts";
 import { isolatedDockerSandbox } from "../shared/isolated-docker.mts";
 import { enforceSandboxSecurityBoundaries } from "../shared/security-check.mts";
 import { spawnSync } from "child_process";
@@ -29,8 +28,7 @@ if (!BASE_BRANCH) {
     throw new Error("Base branch is required");
 }
 
-// Security check: Ensure sandbox provider meets isolation requirements
-await enforceSandboxSecurityBoundaries(isolatedDockerSandbox, process.cwd());
+await enforceSandboxSecurityBoundaries(isolatedDockerSandbox);
 
 try {
     const branch = {

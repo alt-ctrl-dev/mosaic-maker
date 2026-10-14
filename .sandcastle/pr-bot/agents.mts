@@ -11,8 +11,6 @@ import type { Agent } from "../shared/types.ts";
 import { z } from "zod";
 import type { IsolatedDockerSandbox } from "../shared/isolated-docker.mts";
 
-// Update Deps type to use isolated sandbox
-
 type Deps = { dockerSandbox: IsolatedDockerSandbox };
 
 
