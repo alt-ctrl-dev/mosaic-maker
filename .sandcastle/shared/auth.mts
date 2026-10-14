@@ -1,5 +1,4 @@
 import { spawnSync } from "child_process";
-import { z } from "zod";
 
 /**
  * Permission levels that are authorized to trigger bot execution
@@ -17,7 +16,7 @@ export const MINIMUM_PERMISSION_LEVEL: AuthorizedPermission = "write";
 
 /**
  * Checks if a user has the required permission level for the repository
- * 
+ *
  * @param username The GitHub username to check
  * @param requiredPermission The minimum permission level required
  * @returns true if the user has sufficient permissions, false otherwise
@@ -52,7 +51,7 @@ export const hasRepositoryPermission = (
 
     const output = result.stdout;
     const parsed: unknown = JSON.parse(output);
-    
+
     if (parsed === null || typeof parsed !== "object") {
       console.error("Unexpected response shape from GitHub API");
       return false;
@@ -60,21 +59,21 @@ export const hasRepositoryPermission = (
 
     const permissionObj = parsed as Record<string, unknown>;
     const userPermission = permissionObj.permission;
-    
+
     if (typeof userPermission !== "string") {
       console.error("Unexpected permission field in GitHub API response");
       return false;
     }
 
-    // Check permission hierarchy
-    const permissionHierarchy: Record<AuthorizedPermission, number> = {
-      "write": 1,
-      "maintain": 2,
-      "admin": 3
+    // Unknown permission levels map to 0, so unrecognized roles fail closed.
+    const permissionHierarchy: Record<string, number> = {
+      write: 1,
+      maintain: 2,
+      admin: 3,
     };
 
-    const requiredLevel = permissionHierarchy[requiredPermission] || 1;
-    const userLevel = permissionHierarchy[userPermission as AuthorizedPermission] || 0;
+    const requiredLevel = permissionHierarchy[requiredPermission] ?? 1;
+    const userLevel = permissionHierarchy[userPermission] ?? 0;
 
     return userLevel >= requiredLevel;
   } catch (error) {
@@ -85,24 +84,28 @@ export const hasRepositoryPermission = (
 
 /**
  * Validates that a user is authorized to trigger bot execution
- * 
+ *
  * @param username The GitHub username to validate
  * @returns true if the user is authorized, false otherwise
  */
-export const isUserAuthorized = (username: string): boolean => {
-  // Fail closed if username is invalid
-  if (!username || typeof username !== "string") {
-    console.error("Invalid username provided for authorization check");
-    return false;
-  }
+export const isUserAuthorized = (username: string): boolean =>
+  hasRepositoryPermission(username, MINIMUM_PERMISSION_LEVEL);
 
-  // Check if user has required repository permissions
-  return hasRepositoryPermission(username, MINIMUM_PERMISSION_LEVEL);
+/**
+ * Exits the process unless the GitHub actor that triggered this run has
+ * sufficient repository permission to run SandCastle bots.
+ */
+export const requireAuthorizedActor = (): void => {
+  const actor = process.env.GITHUB_ACTOR || "unknown";
+  if (!isUserAuthorized(actor)) {
+    console.error(`Actor ${actor} is not authorized to run SandCastle bots`);
+    process.exit(1);
+  }
 };
 
 /**
  * Checks if a pull request comes from a fork and requires explicit approval
- * 
+ *
  * @param prNumber The pull request number to check
  * @returns true if the PR is from a fork and requires approval, false otherwise
  */
@@ -115,7 +118,7 @@ export const requiresForkApproval = (prNumber: number): boolean => {
   try {
     const result = spawnSync(
       "gh",
-      ["pr", "view", String(prNumber), "--json", "headRepositoryOwner,isCrossRepository"],
+      ["pr", "view", String(prNumber), "--json", "isCrossRepository"],
       { encoding: "utf-8" }
     );
 
@@ -126,7 +129,7 @@ export const requiresForkApproval = (prNumber: number): boolean => {
 
     const output = result.stdout;
     const parsed: unknown = JSON.parse(output);
-    
+
     if (parsed === null || typeof parsed !== "object") {
       console.error("Unexpected response shape from gh pr view");
       return true; // Fail closed - assume fork requiring approval
@@ -134,7 +137,7 @@ export const requiresForkApproval = (prNumber: number): boolean => {
 
     const prData = parsed as Record<string, unknown>;
     const isCrossRepository = prData.isCrossRepository;
-    
+
     return Boolean(isCrossRepository);
   } catch (error) {
     console.error("Failed to check if PR " + prNumber + " is from a fork:", error);

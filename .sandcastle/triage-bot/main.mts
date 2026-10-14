@@ -10,18 +10,13 @@
 import * as sandcastle from "@ai-hero/sandcastle";
 import { dockerSandbox } from "../shared/docker.mts";
 import { getOpenIssuesNeedingTriage } from "./triage.mts";
-import { isUserAuthorized } from "../shared/auth.mts";
+import { requireAuthorizedActor } from "../shared/auth.mts";
 import { canStartRequest, startRequestTracking } from "../shared/rate-limit.mts";
 
 async function main() {
   console.log("Starting Triage Bot...");
 
-  // Check if bot execution is authorized
-  const actor = process.env.GITHUB_ACTOR || "unknown";
-  if (!isUserAuthorized(actor)) {
-    console.error(`Actor ${actor} is not authorized to run SandCastle bots`);
-    process.exit(1);
-  }
+  requireAuthorizedActor();
 
   const issues = getOpenIssuesNeedingTriage();
 
@@ -45,7 +40,7 @@ async function main() {
       // Track request for rate limiting
       const requestId = `triage-${issue.number}-${Date.now()}`;
       const stopTracking = startRequestTracking(requestId);
-      
+
       try {
         await sandcastle.run({
           sandbox: dockerSandbox,

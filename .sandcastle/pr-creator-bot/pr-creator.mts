@@ -1,15 +1,10 @@
 import { z } from "zod";
-import {  createPr, generatePrDescription } from "../sandcastle-bot/pr.mts";
+import { createPr, generatePrDescription } from "../sandcastle-bot/pr.mts";
 import { dockerSandbox } from "../shared/docker.mts";
 import { spawnSync } from "child_process";
-import { isUserAuthorized } from "../shared/auth.mts";
+import { requireAuthorizedActor } from "../shared/auth.mts";
 
-// Check if bot execution is authorized
-const actor = process.env.GITHUB_ACTOR || "unknown";
-if (!isUserAuthorized(actor)) {
-  console.error(`Actor ${actor} is not authorized to run SandCastle bots`);
-  process.exit(1);
-}
+requireAuthorizedActor();
 
 const revParseResult = spawnSync("git", ["rev-parse", "--abbrev-ref", "HEAD"], { encoding: "utf-8" });
 if (revParseResult.status !== 0) {

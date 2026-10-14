@@ -29,17 +29,12 @@ import { createPlanAgent } from "./plan.mts";
 import { createPr, generatePrDescription } from "./pr.mts";
 import { createImplmentAgent } from "./implement.mts";
 import { createReviewAgent } from "../shared/review.mts";
-import { isUserAuthorized } from "../shared/auth.mts";
+import { requireAuthorizedActor } from "../shared/auth.mts";
 import { canStartRequest, startRequestTracking } from "../shared/rate-limit.mts";
 
 console.log(`Running for ${MAX_ITERATIONS} iteration(s)`);
 
-// Check if bot execution is authorized
-const actor = process.env.GITHUB_ACTOR || "unknown";
-if (!isUserAuthorized(actor)) {
-  console.error(`Actor ${actor} is not authorized to run SandCastle bots`);
-  process.exit(1);
-}
+requireAuthorizedActor();
 
 const planAgent = createPlanAgent(dockerSandbox);
 
@@ -66,7 +61,7 @@ for (let iteration = 1; iteration <= MAX_ITERATIONS; iteration++) {
   // Track request for rate limiting
   const requestId = `sandcastle-${topIssue.id}-${Date.now()}`;
   const stopTracking = startRequestTracking(requestId);
-  
+
   try {
     // Create a single sandbox that both the implementer and reviewer share.
     const sandbox = await sandcastle.createSandbox({

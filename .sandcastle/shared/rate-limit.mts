@@ -1,21 +1,14 @@
 /**
- * Rate limiting utilities for bot execution budgets
+ * Rate limiting utilities for bot execution budgets.
  */
 
-// Default execution limits from the specification
+// Default execution limits from the specification.
 const DEFAULT_CONCURRENT_REQUESTS = 2;
 const DEFAULT_MAX_REQUESTS_PER_INVOCATION = 10;
 const DEFAULT_TIMEOUT_MINUTES = 30;
 
 /**
- * Global counters for tracking execution budgets
- */
-let concurrentRequests = 0;
-const requestCounts = new Map<string, number>(); // Track requests per invocation
-const activeRequests = new Map<string, { startTime: Date; timeoutId: NodeJS.Timeout }>();
-
-/**
- * Configuration for execution budgets
+ * Configuration for execution budgets.
  */
 export type RateLimitConfig = {
   maxConcurrentRequests?: number;
@@ -24,104 +17,103 @@ export type RateLimitConfig = {
 };
 
 /**
- * Default rate limit configuration
+ * Default execution budget limits.
  */
-const defaultConfig: Required<RateLimitConfig> = {
+const DEFAULT_CONFIG: Required<RateLimitConfig> = {
   maxConcurrentRequests: DEFAULT_CONCURRENT_REQUESTS,
   maxRequestsPerInvocation: DEFAULT_MAX_REQUESTS_PER_INVOCATION,
   timeoutMinutes: DEFAULT_TIMEOUT_MINUTES,
 };
 
+let concurrentRequests = 0;
+// Requests accepted in this process run, keyed by invocation.
+const requestCounts = new Map<string, number>();
+// Timeouts for requests currently in flight.
+const activeRequests = new Map<string, NodeJS.Timeout>();
+
 /**
- * Checks if a new request can be started based on rate limits
- * 
- * @param config Rate limiting configuration
- * @returns true if request can proceed, false otherwise
+ * Merges the provided configuration over the default execution budgets.
+ */
+const resolveConfig = (config: RateLimitConfig): Required<RateLimitConfig> => ({
+  ...DEFAULT_CONFIG,
+  ...config,
+});
+
+/**
+ * Returns the identifier shared by every request in this process run.
+ */
+const getInvocationId = (): string => {
+  const date = new Date().toISOString().split("T")[0];
+  return `${date}-${process.pid}`;
+};
+
+/**
+ * Checks whether a new request can start within the configured budgets.
+ *
+ * @param config Overrides for the default execution budgets.
+ * @returns true when a request may start, false when a limit is exhausted.
  */
 export const canStartRequest = (config: RateLimitConfig = {}): boolean => {
-  const effectiveConfig = { ...defaultConfig, ...config };
-  
-  // Check concurrent request limit
+  const effectiveConfig = resolveConfig(config);
+
   if (concurrentRequests >= effectiveConfig.maxConcurrentRequests) {
     console.warn(`Concurrent request limit reached (${effectiveConfig.maxConcurrentRequests})`);
     return false;
   }
-  
-  // Check requests per invocation limit
-  const invocationId = getInvocationId();
-  const currentCount = requestCounts.get(invocationId) || 0;
-  if (currentCount >= effectiveConfig.maxRequestsPerInvocation) {
+
+  const requestsThisInvocation = requestCounts.get(getInvocationId()) ?? 0;
+  if (requestsThisInvocation >= effectiveConfig.maxRequestsPerInvocation) {
     console.warn(`Request limit per invocation reached (${effectiveConfig.maxRequestsPerInvocation})`);
     return false;
   }
-  
+
   return true;
 };
 
 /**
- * Starts tracking a request and enforces timeouts
- * 
- * @param requestId Unique identifier for the request
- * @param config Rate limiting configuration
- * @returns Cleanup function to call when request completes
+ * Registers an in-flight request and returns a cleanup function that releases
+ * its concurrency slot and timeout when the request finishes.
+ *
+ * Callers must check {@link canStartRequest} before registering a request.
+ *
+ * @param requestId Unique identifier for the request.
+ * @param config Overrides for the default execution budgets.
+ * @returns Cleanup function to invoke when the request completes.
  */
 export const startRequestTracking = (
   requestId: string,
-  config: RateLimitConfig = {}
+  config: RateLimitConfig = {},
 ): (() => void) => {
-  const effectiveConfig = { ...defaultConfig, ...config };
-  
-  // Increment counters
+  const effectiveConfig = resolveConfig(config);
+
   concurrentRequests++;
   const invocationId = getInvocationId();
-  const currentCount = requestCounts.get(invocationId) || 0;
-  requestCounts.set(invocationId, currentCount + 1);
-  
-  // Set timeout for the request
-  const startTime = new Date();
+  requestCounts.set(invocationId, (requestCounts.get(invocationId) ?? 0) + 1);
+
   const timeoutId = setTimeout(() => {
     console.error(`Request ${requestId} timed out after ${effectiveConfig.timeoutMinutes} minutes`);
-    // Note: We can't force-terminate the request, but we can log it
+    // Timed-out work cannot be force-terminated here; the timeout is logged so
+    // operators can see when a request overran its budget.
   }, effectiveConfig.timeoutMinutes * 60 * 1000);
-  
-  activeRequests.set(requestId, { startTime, timeoutId });
-  
-  // Return cleanup function
+
+  activeRequests.set(requestId, timeoutId);
+
   return () => {
-    // Decrement concurrent requests
     concurrentRequests = Math.max(0, concurrentRequests - 1);
-    
-    // Clear timeout
-    const requestInfo = activeRequests.get(requestId);
-    if (requestInfo) {
-      clearTimeout(requestInfo.timeoutId);
+
+    const pendingTimeout = activeRequests.get(requestId);
+    if (pendingTimeout !== undefined) {
+      clearTimeout(pendingTimeout);
       activeRequests.delete(requestId);
     }
   };
 };
 
 /**
- * Gets a unique identifier for the current invocation
- * 
- * @returns Invocation identifier based on timestamp and process ID
+ * Returns the current execution budget metrics.
  */
-const getInvocationId = (): string => {
-  const date = new Date().toISOString().split('T')[0]; // YYYY-MM-DD
-  return `${date}-${process.pid}`;
-};
-
-/**
- * Gets current rate limit status
- * 
- * @returns Object with current rate limit metrics
- */
-export const getRateLimitStatus = () => {
-  const invocationId = getInvocationId();
-  const requestsThisInvocation = requestCounts.get(invocationId) || 0;
-  
-  return {
-    concurrentRequests,
-    requestsThisInvocation,
-    activeRequests: Array.from(activeRequests.keys()),
-  };
-};
+export const getRateLimitStatus = () => ({
+  concurrentRequests,
+  requestsThisInvocation: requestCounts.get(getInvocationId()) ?? 0,
+  activeRequests: Array.from(activeRequests.keys()),
+});
