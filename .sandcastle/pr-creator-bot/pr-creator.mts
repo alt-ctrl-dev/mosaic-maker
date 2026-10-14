@@ -1,6 +1,8 @@
 import { z } from "zod";
 import {  createPr, generatePrDescription } from "../sandcastle-bot/pr.mts";
 import { dockerSandbox } from "../shared/docker.mts";
+import { isolatedDockerSandbox } from "../shared/isolated-docker.mts";
+import { enforceSandboxSecurityBoundaries } from "../shared/security-check.mts";
 import { spawnSync } from "child_process";
 
 const revParseResult = spawnSync("git", ["rev-parse", "--abbrev-ref", "HEAD"], { encoding: "utf-8" });
@@ -24,12 +26,15 @@ if (!BASE_BRANCH) {
     throw new Error("Base branch is required");
 }
 
+// Security check: Ensure sandbox provider meets isolation requirements
+await enforceSandboxSecurityBoundaries(isolatedDockerSandbox, process.cwd());
+
 try {
     const branch = {
         current: BRANCH,
         base: BASE_BRANCH
     }
-    const {title, description} = await generatePrDescription(dockerSandbox, ISSUE_ID, branch)
+    const {title, description} = await generatePrDescription(isolatedDockerSandbox, ISSUE_ID, branch)
 
     await createPr(title,description,branch)
 

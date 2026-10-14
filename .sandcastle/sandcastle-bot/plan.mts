@@ -2,6 +2,7 @@ import * as sandcastle from "@ai-hero/sandcastle";
 import { z } from "zod";
 import type { Agent, Issue } from "../shared/types.ts";
 import type { DockerSandbox } from "../shared/docker.mts";
+import type { IsolatedDockerSandbox } from "../shared/isolated-docker.mts";
 
 const planSchema = z.object({
   issues: z.array(
@@ -10,7 +11,7 @@ const planSchema = z.object({
 });
 
 
-export const createPlanAgent = (dockerSandbox: DockerSandbox): Agent<Issue | never> => {
+export const createPlanAgent = (dockerSandbox: IsolatedDockerSandbox): Agent<Issue | never> => {
 const agentName = "planner"
   const planWork = async (): Promise<Issue | never> => {
     // -------------------------------------------------------------------------

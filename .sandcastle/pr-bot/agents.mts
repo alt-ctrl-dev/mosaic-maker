@@ -9,8 +9,11 @@ import { getIssueContext, postComment } from "./github.mts";
 import { createReviewAgent } from "../shared/review.mts";
 import type { Agent } from "../shared/types.ts";
 import { z } from "zod";
+import type { IsolatedDockerSandbox } from "../shared/isolated-docker.mts";
 
-type Deps = { dockerSandbox: DockerSandbox };
+// Update Deps type to use isolated sandbox
+
+type Deps = { dockerSandbox: IsolatedDockerSandbox };
 
 
 const extractIssueNumbersFromPR = (pr: PR): number[] => {

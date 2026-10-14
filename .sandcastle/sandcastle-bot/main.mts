@@ -23,16 +23,21 @@
 
 import { execSync } from "child_process";
 import * as sandcastle from "@ai-hero/sandcastle";
-import { dockerSandbox } from "../shared/docker.mts";
+
+import { isolatedDockerSandbox } from "../shared/isolated-docker.mts";
 import { MAX_ITERATIONS, hooks, copyToWorktree } from "../shared/config.mts";
 import { createPlanAgent } from "./plan.mts";
 import { createPr, generatePrDescription } from "./pr.mts";
 import { createImplmentAgent } from "./implement.mts";
 import { createReviewAgent } from "../shared/review.mts";
+import { enforceSandboxSecurityBoundaries } from "../shared/security-check.mts";
 
 console.log(`Running for ${MAX_ITERATIONS} iteration(s)`);
 
-const planAgent = createPlanAgent(dockerSandbox);
+// Security check: Ensure sandbox provider meets isolation requirements
+await enforceSandboxSecurityBoundaries(isolatedDockerSandbox, process.cwd());
+
+const planAgent = createPlanAgent(isolatedDockerSandbox);
 
 for (let iteration = 1; iteration <= MAX_ITERATIONS; iteration++) {
   console.log(`\n=== Iteration ${iteration}/${MAX_ITERATIONS} ===\n`);
@@ -51,7 +56,7 @@ for (let iteration = 1; iteration <= MAX_ITERATIONS; iteration++) {
   // Create a single sandbox that both the implementer and reviewer share.
   const sandbox = await sandcastle.createSandbox({
     branch,
-    sandbox: dockerSandbox,
+    sandbox: isolatedDockerSandbox,
     hooks,
     copyToWorktree,
   });
@@ -72,7 +77,7 @@ for (let iteration = 1; iteration <= MAX_ITERATIONS; iteration++) {
     console.log("\nReview complete.");
 
     const branchDetails = { current: topIssue.branch, base: "main" };
-    const { title, description } = await generatePrDescription(dockerSandbox, topIssue.id, branchDetails);
+    const { title, description } = await generatePrDescription(isolatedDockerSandbox, topIssue.id, branchDetails);
     await createPr(title, description, branchDetails);
     console.log("\nCreated PR.");
   } finally {

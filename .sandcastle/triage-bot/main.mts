@@ -9,10 +9,15 @@
 
 import * as sandcastle from "@ai-hero/sandcastle";
 import { dockerSandbox } from "../shared/docker.mts";
+import { isolatedDockerSandbox } from "../shared/isolated-docker.mts";
+import { enforceSandboxSecurityBoundaries } from "../shared/security-check.mts";
 import { getOpenIssuesNeedingTriage } from "./triage.mts";
 
 async function main() {
   console.log("Starting Triage Bot...");
+
+  // Security check: Ensure sandbox provider meets isolation requirements
+  await enforceSandboxSecurityBoundaries(isolatedDockerSandbox, process.cwd());
 
   const issues = getOpenIssuesNeedingTriage();
 
@@ -28,7 +33,7 @@ async function main() {
       console.log(`\nTriaging issue #${issue.number}: ${issue.title}`);
 
       await sandcastle.run({
-        sandbox: dockerSandbox,
+        sandbox: isolatedDockerSandbox,
         name: `triage-issue-${issue.number}`,
         agent: sandcastle.pi("openrouter/anthropic/claude-opus-4.8"),
         promptFile: "./.sandcastle/triage-bot/triage-prompt.md",
