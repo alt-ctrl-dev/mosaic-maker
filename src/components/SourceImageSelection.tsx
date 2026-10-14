@@ -98,7 +98,6 @@ export function SourceImageSelection({
 				return;
 			}
 
-			// Check file size limit
 			if (isFileSizeExceeded(file)) {
 				onSourceError(getFileSizeErrorMessage(file.name));
 				return;
@@ -108,7 +107,6 @@ export function SourceImageSelection({
 			try {
 				const sourceImage = await getSourceImageInfo(file);
 
-				// Check dimension limits after decoding
 				if (isDimensionLimitExceeded(sourceImage.width, sourceImage.height)) {
 					onSourceError(
 						getDimensionErrorMessage(sourceImage.width, sourceImage.height),

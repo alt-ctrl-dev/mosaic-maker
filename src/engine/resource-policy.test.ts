@@ -1,4 +1,4 @@
-import { describe, expect, it } from "vitest";
+import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 import {
 	MAX_FILE_SIZE_BYTES,
 	MAX_TOTAL_RETAINED_BYTES,
@@ -8,6 +8,7 @@ import {
 	isTotalRetainedSizeExceeded,
 	isTesseraFileLimitExceeded,
 	isDimensionLimitExceeded,
+	getImageDimensions,
 	getFileSizeErrorMessage,
 	getTotalSizeErrorMessage,
 	getFileCountErrorMessage,
@@ -131,6 +132,91 @@ describe("resource-policy", () => {
 			const message = getDimensionErrorMessage(7000, 7000);
 			expect(message).toContain("too many pixels");
 			expect(message).toContain("40,000,000 maximum");
+		});
+	});
+
+	describe("getImageDimensions", () => {
+		let mockImage: {
+			onload: (() => void) | null;
+			onerror: (() => void) | null;
+			src: string;
+			naturalWidth: number;
+			naturalHeight: number;
+		};
+
+		const mockCreateObjectURL = vi.fn(() => "blob:test");
+		const mockRevokeObjectURL = vi.fn();
+
+		beforeEach(() => {
+			vi.stubGlobal("Image", function MockImage(this: typeof mockImage) {
+				this.onload = null;
+				this.onerror = null;
+				this.src = "";
+				this.naturalWidth = 0;
+				this.naturalHeight = 0;
+				mockImage = this;
+			});
+			vi.stubGlobal("URL", {
+				createObjectURL: mockCreateObjectURL,
+				revokeObjectURL: mockRevokeObjectURL,
+			});
+		});
+
+		afterEach(() => {
+			vi.unstubAllGlobals();
+			mockCreateObjectURL.mockClear();
+			mockRevokeObjectURL.mockClear();
+		});
+
+		it("returns the file's decoded dimensions", async () => {
+			const file = new File(["fake"], "test.png", { type: "image/png" });
+			const promise = getImageDimensions(file);
+
+			mockImage.naturalWidth = 1920;
+			mockImage.naturalHeight = 1080;
+			mockImage.onload?.();
+
+			const dims = await promise;
+			expect(dims).toEqual({ width: 1920, height: 1080 });
+			expect(mockCreateObjectURL).toHaveBeenCalledWith(file);
+			expect(mockRevokeObjectURL).toHaveBeenCalledWith("blob:test");
+		});
+
+		it("rejects when the image cannot be decoded", async () => {
+			const file = new File(["fake"], "corrupt.png", {
+				type: "image/png",
+			});
+			const promise = getImageDimensions(file);
+
+			mockImage.onerror?.();
+
+			await expect(promise).rejects.toThrow(
+				"Failed to decode image: corrupt.png",
+			);
+		});
+
+		it("revokes object URL on successful decode", async () => {
+			const file = new File(["fake"], "test.png", { type: "image/png" });
+			const promise = getImageDimensions(file);
+
+			mockImage.naturalWidth = 100;
+			mockImage.naturalHeight = 100;
+			mockImage.onload?.();
+
+			await promise;
+			expect(mockRevokeObjectURL).toHaveBeenCalledWith("blob:test");
+		});
+
+		it("revokes object URL on decode failure", async () => {
+			const file = new File(["fake"], "corrupt.png", {
+				type: "image/png",
+			});
+			const promise = getImageDimensions(file);
+
+			mockImage.onerror?.();
+
+			await expect(promise).rejects.toThrow();
+			expect(mockRevokeObjectURL).toHaveBeenCalledWith("blob:test");
 		});
 	});
 });

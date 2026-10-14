@@ -12,6 +12,7 @@ import {
 	isTotalRetainedSizeExceeded,
 	isTesseraFileLimitExceeded,
 	isDimensionLimitExceeded,
+	getImageDimensions,
 	getFileSizeErrorMessage,
 	getTotalSizeErrorMessage,
 	getFileCountErrorMessage,
@@ -61,7 +62,6 @@ export function TesseraUpload({
 
 			const filesArray = Array.from(files);
 
-			// Check file count limit
 			if (
 				isTesseraFileLimitExceeded(currentTesserae.length, filesArray.length)
 			) {
@@ -73,7 +73,6 @@ export function TesseraUpload({
 				return;
 			}
 
-			// Check total retained size limit
 			const currentFiles = currentTesserae
 				.map((t) => t.file)
 				.filter((file): file is File => file !== undefined);
@@ -86,7 +85,6 @@ export function TesseraUpload({
 				return;
 			}
 
-			// Check individual file sizes
 			for (const file of filesArray) {
 				if (isFileSizeExceeded(file)) {
 					const error = new Error(getFileSizeErrorMessage(file.name));
@@ -98,54 +96,50 @@ export function TesseraUpload({
 				}
 			}
 
-			setIsProcessing(true);
-			try {
-				const tesserae = await processTesserae(filesArray, adjustedTesseraSize);
+			const dimensionRejected: TesseraInfo[] = [];
+			const validProcessingFiles: File[] = [];
 
-				// Check dimension limits for each tessera after processing
-				for (let i = 0; i < tesserae.length; i++) {
-					const tessera = tesserae[i];
-					if (tessera.isValid && tessera.file) {
-						const img = new Image();
-						const url = URL.createObjectURL(tessera.file);
-
-						try {
-							await new Promise((resolve, reject) => {
-								img.onload = () => {
-									resolve(img);
-								};
-								img.onerror = reject;
-								img.src = url;
-							});
-
-							if (
-								img.width &&
-								img.height &&
-								isDimensionLimitExceeded(img.width, img.height)
-							) {
-								const error = new Error(
-									getDimensionErrorMessage(img.width, img.height),
-								);
-								trackError("tessera_dimension_limit", error, {
-									fileName: tessera.file.name,
-									width: img.width,
-									height: img.height,
-								});
-								// Mark this tessera as invalid due to dimension limits
-								tessera.isValid = false;
-								tessera.error = error.message;
-								tessera.isLowResolution = false;
-								tessera.previewUrl = null;
-							}
-						} catch (error) {
-							// Handle image loading errors
-							console.warn("Failed to load image for dimension check:", error);
-						} finally {
-							URL.revokeObjectURL(url);
-						}
-					}
+			for (const file of filesArray) {
+				let dims: { width: number; height: number };
+				try {
+					dims = await getImageDimensions(file);
+				} catch {
+					validProcessingFiles.push(file);
+					continue;
 				}
 
+				if (isDimensionLimitExceeded(dims.width, dims.height)) {
+					const error = new Error(
+						getDimensionErrorMessage(dims.width, dims.height),
+					);
+					trackError("tessera_dimension_limit", error, {
+						fileName: file.name,
+						width: dims.width,
+						height: dims.height,
+					});
+					dimensionRejected.push({
+						file,
+						fileName: file.name,
+						isValid: false,
+						error: error.message,
+						isLowResolution: false,
+						previewUrl: null,
+					});
+				} else {
+					validProcessingFiles.push(file);
+				}
+			}
+
+			setIsProcessing(true);
+			try {
+				let tesserae = dimensionRejected;
+				if (validProcessingFiles.length > 0) {
+					const processed = await processTesserae(
+						validProcessingFiles,
+						adjustedTesseraSize,
+					);
+					tesserae = [...processed, ...dimensionRejected];
+				}
 				onTesseraeProcessed(tesserae);
 				vibrate(15);
 			} catch (error) {
