@@ -7,6 +7,17 @@ import { base } from "../styles/base.stylex";
 import { tokens } from "../styles/tokens.stylex";
 import { vibrate } from "../haptics";
 import { trackError, trackStepView } from "../telemetry";
+import {
+	isFileSizeExceeded,
+	isTotalRetainedSizeExceeded,
+	isTesseraFileLimitExceeded,
+	isDimensionLimitExceeded,
+	getImageDimensions,
+	getFileSizeErrorMessage,
+	getTotalSizeErrorMessage,
+	getFileCountErrorMessage,
+	getDimensionErrorMessage,
+} from "../engine/resource-policy";
 
 const styles = stylex.create({
 	root: { flex: 1 },
@@ -27,6 +38,8 @@ interface TesseraUploadProps {
 	onTesseraeProcessed: (tesserae: TesseraInfo[]) => void;
 	/** Tessera pixel size to validate uploaded images against. */
 	adjustedTesseraSize: number;
+	/** Current tesserae collection for cumulative size checking. */
+	currentTesserae: TesseraInfo[];
 }
 
 /**
@@ -35,6 +48,7 @@ interface TesseraUploadProps {
 export function TesseraUpload({
 	onTesseraeProcessed,
 	adjustedTesseraSize,
+	currentTesserae,
 }: TesseraUploadProps) {
 	const [isProcessing, setIsProcessing] = useState(false);
 
@@ -48,9 +62,84 @@ export function TesseraUpload({
 
 			const filesArray = Array.from(files);
 
+			if (
+				isTesseraFileLimitExceeded(currentTesserae.length, filesArray.length)
+			) {
+				const error = new Error(getFileCountErrorMessage());
+				trackError("tessera_processing", error, {
+					fileCount: filesArray.length,
+					currentTesseraeCount: currentTesserae.length,
+				});
+				return;
+			}
+
+			const currentFiles = currentTesserae
+				.map((t) => t.file)
+				.filter((file): file is File => file !== undefined);
+			if (isTotalRetainedSizeExceeded(currentFiles, filesArray)) {
+				const error = new Error(getTotalSizeErrorMessage());
+				trackError("tessera_processing", error, {
+					fileCount: filesArray.length,
+					totalFileSize: filesArray.reduce((sum, file) => sum + file.size, 0),
+				});
+				return;
+			}
+
+			for (const file of filesArray) {
+				if (isFileSizeExceeded(file)) {
+					const error = new Error(getFileSizeErrorMessage(file.name));
+					trackError("tessera_processing", error, {
+						fileName: file.name,
+						fileSize: file.size,
+					});
+					return;
+				}
+			}
+
+			const dimensionRejected: TesseraInfo[] = [];
+			const validProcessingFiles: File[] = [];
+
+			for (const file of filesArray) {
+				let dims: { width: number; height: number };
+				try {
+					dims = await getImageDimensions(file);
+				} catch {
+					validProcessingFiles.push(file);
+					continue;
+				}
+
+				if (isDimensionLimitExceeded(dims.width, dims.height)) {
+					const error = new Error(
+						getDimensionErrorMessage(dims.width, dims.height),
+					);
+					trackError("tessera_dimension_limit", error, {
+						fileName: file.name,
+						width: dims.width,
+						height: dims.height,
+					});
+					dimensionRejected.push({
+						file,
+						fileName: file.name,
+						isValid: false,
+						error: error.message,
+						isLowResolution: false,
+						previewUrl: null,
+					});
+				} else {
+					validProcessingFiles.push(file);
+				}
+			}
+
 			setIsProcessing(true);
 			try {
-				const tesserae = await processTesserae(filesArray, adjustedTesseraSize);
+				let tesserae = dimensionRejected;
+				if (validProcessingFiles.length > 0) {
+					const processed = await processTesserae(
+						validProcessingFiles,
+						adjustedTesseraSize,
+					);
+					tesserae = [...processed, ...dimensionRejected];
+				}
 				onTesseraeProcessed(tesserae);
 				vibrate(15);
 			} catch (error) {
@@ -63,7 +152,7 @@ export function TesseraUpload({
 				setIsProcessing(false);
 			}
 		},
-		[adjustedTesseraSize, onTesseraeProcessed],
+		[adjustedTesseraSize, currentTesserae, onTesseraeProcessed],
 	);
 
 	const handleDragOver = useCallback((e: React.DragEvent) => {

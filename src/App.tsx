@@ -275,6 +275,7 @@ function WorkflowApp() {
 											dispatch({ type: "tesseraeProcessed", tesserae })
 										}
 										adjustedTesseraSize={resolvedTesseraSize}
+										currentTesserae={workflowState.tesserae}
 									/>
 									<p {...stylex.props(base.paragraph)}>OR</p>
 									<GeneratedTesserae

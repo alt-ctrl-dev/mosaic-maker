@@ -71,7 +71,11 @@ describe("haptic feedback at workflow milestones", () => {
 
 	it("vibrates briefly when tesserae finish processing", async () => {
 		render(
-			<TesseraUpload onTesseraeProcessed={noop} adjustedTesseraSize={16} />,
+			<TesseraUpload
+				onTesseraeProcessed={noop}
+				adjustedTesseraSize={16}
+				currentTesserae={[]}
+			/>,
 		);
 
 		const input = screen.getByLabelText("Upload tesserae images");

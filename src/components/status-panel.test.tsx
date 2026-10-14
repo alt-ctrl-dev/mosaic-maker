@@ -112,7 +112,11 @@ describe("Status panels use the shared card styling", () => {
 
 	it("TesseraUpload processing panel uses the shared card style", async () => {
 		const { container } = render(
-			<TesseraUpload onTesseraeProcessed={noop} adjustedTesseraSize={16} />,
+			<TesseraUpload
+				onTesseraeProcessed={noop}
+				adjustedTesseraSize={16}
+				currentTesserae={[]}
+			/>,
 		);
 
 		const input = screen.getByLabelText("Upload tesserae images");
