@@ -34,8 +34,7 @@ import { enforceSandboxSecurityBoundaries } from "../shared/security-check.mts";
 
 console.log(`Running for ${MAX_ITERATIONS} iteration(s)`);
 
-// Security check: Ensure sandbox provider meets isolation requirements
-await enforceSandboxSecurityBoundaries(isolatedDockerSandbox, process.cwd());
+await enforceSandboxSecurityBoundaries(isolatedDockerSandbox);
 
 const planAgent = createPlanAgent(isolatedDockerSandbox);
 

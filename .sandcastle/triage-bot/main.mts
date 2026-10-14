@@ -8,7 +8,6 @@
 //   pnpm run sandcastle-triage-bot
 
 import * as sandcastle from "@ai-hero/sandcastle";
-import { dockerSandbox } from "../shared/docker.mts";
 import { isolatedDockerSandbox } from "../shared/isolated-docker.mts";
 import { enforceSandboxSecurityBoundaries } from "../shared/security-check.mts";
 import { getOpenIssuesNeedingTriage } from "./triage.mts";
@@ -16,8 +15,7 @@ import { getOpenIssuesNeedingTriage } from "./triage.mts";
 async function main() {
   console.log("Starting Triage Bot...");
 
-  // Security check: Ensure sandbox provider meets isolation requirements
-  await enforceSandboxSecurityBoundaries(isolatedDockerSandbox, process.cwd());
+  await enforceSandboxSecurityBoundaries(isolatedDockerSandbox);
 
   const issues = getOpenIssuesNeedingTriage();
 

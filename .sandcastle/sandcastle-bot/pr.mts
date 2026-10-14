@@ -1,6 +1,5 @@
 import { spawnSync } from "child_process";
 import * as sandcastle from "@ai-hero/sandcastle";
-import type { DockerSandbox } from "../shared/docker.mts";
 import type { IsolatedDockerSandbox } from "../shared/isolated-docker.mts";
 import { pushBranch } from "../shared/git.mts";
 import fs from 'node:fs';
@@ -18,14 +17,15 @@ Closes #${issueId}
 `
 }
 
-export const generatePrDescription = async (isolatedDockerSandbox: IsolatedDockerSandbox, issueId: string, branch: {
-    base?: string; current: string
-}) => {
-    const BASE_BRANCH = branch.base ?? "main"
-    //Parallelize steps
-    const [prTitle, prDescription] = await Promise.all([
-        sandcastle.run({
-            sandbox: isolatedDockerSandbox,
+export const generatePrDescription = async (
+  sandbox: IsolatedDockerSandbox,
+  issueId: string,
+  branch: { base?: string; current: string },
+) => {
+  const baseBranch = branch.base ?? "main";
+  const [prTitle, prDescription] = await Promise.all([
+    sandcastle.run({
+      sandbox,
             name: "pr-title-generator",
             maxIterations: 1,
             agent: sandcastle.pi("openrouter/anthropic/claude-haiku-4.5"),
@@ -33,23 +33,20 @@ export const generatePrDescription = async (isolatedDockerSandbox: IsolatedDocke
             promptArgs: { BRANCH: branch.current, BASE_BRANCH, },
             output: sandcastle.Output.string({ tag: "pr-title" }),
         }),
-        sandcastle.run({
-            sandbox: isolatedDockerSandbox,
-            name: "pr-description-generator",
-            maxIterations: 1,
-            agent: sandcastle.pi("openrouter/anthropic/claude-haiku-4.5"),
-            promptFile: "./.sandcastle/sandcastle-bot/pr-description-prompt.md",
-            promptArgs: { BRANCH: branch.current, BASE_BRANCH },
-            output: sandcastle.Output.string({ tag: "pr-description" }),
-        })
-    ]);
+    sandcastle.run({
+      sandbox,
+      name: "pr-description-generator",
+      maxIterations: 1,
+      agent: sandcastle.pi("openrouter/anthropic/claude-haiku-4.5"),
+      promptFile: "./.sandcastle/sandcastle-bot/pr-description-prompt.md",
+      promptArgs: { BRANCH: branch.current, BASE_BRANCH: baseBranch },
+      output: sandcastle.Output.string({ tag: "pr-description" }),
+    }),
+  ]);
 
-    const description = maybeAttachIssueId(prDescription.output, issueId)
+  const description = maybeAttachIssueId(prDescription.output, issueId);
 
-    return {
-        title: prTitle.output,
-        description
-    }
+  return { title: prTitle.output, description };
 }
 
 export const createPr = async (title: string, description: string, branch: {
