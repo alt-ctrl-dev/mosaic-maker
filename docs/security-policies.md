@@ -28,7 +28,7 @@ Key aspects:
 - Network connections are restricted to same-origin only (for telemetry when enabled)
 - Web workers can only run same-origin scripts or blob URLs
 - Object embedding is completely disabled
-- Framing is completely disabled via frame-ancestors 'none'
+- Frame-ancestors is declared `'none'` in the meta policy; browsers ignore that directive in meta tags, so live framing protection still requires the response header documented below
 - Base URLs and form actions are completely disabled
 
 ### Referrer Policy
@@ -73,13 +73,12 @@ The current implementation works with static hosting services like GitHub Pages,
 
 ## Testing
 
-Security policies are verified through automated tests in `src/browser-security.test.tsx` that check:
+Security policies are verified through automated tests in `src/browser-security.test.ts` that read the source `index.html` and check:
 
-- Presence and correctness of CSP meta tag directives
-- Proper referrer policy configuration
+- Presence and correctness of the CSP meta tag directives
+- Absence of wildcard and insecure network sources
+- The strict referrer policy value
 - Restricted permissions policy settings
-- Prevention of inline script execution violations
-- Anti-framing measures via frame-ancestors directive
 
 ## Trade-offs
 
