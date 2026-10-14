@@ -11,9 +11,14 @@
 import { getOpenPRs, getUnresolvedSandcastleCommentsForPR } from "./github.mts";
 import { processPRComments } from "./agents.mts";
 import { dockerSandbox } from "../shared/docker.mts";
+import { isolatedDockerSandbox } from "../shared/isolated-docker.mts";
+import { enforceSandboxSecurityBoundaries } from "../shared/security-check.mts";
 
 async function main() {
   console.log("Starting PR Bot...");
+
+  // Security check: Ensure sandbox provider meets isolation requirements
+  await enforceSandboxSecurityBoundaries(isolatedDockerSandbox, process.cwd());
 
   const prs = await getOpenPRs();
 
@@ -26,7 +31,7 @@ async function main() {
 
   for (const pr of prs) {
     const comments = await getUnresolvedSandcastleCommentsForPR(pr.number);
-    await processPRComments(pr, comments, { dockerSandbox });
+    await processPRComments(pr, comments, { dockerSandbox: isolatedDockerSandbox });
     console.log(`Finished processing comments for PR #${pr.number}.`);
   }
 }

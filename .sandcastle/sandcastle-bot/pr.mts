@@ -1,6 +1,7 @@
 import { spawnSync } from "child_process";
 import * as sandcastle from "@ai-hero/sandcastle";
 import type { DockerSandbox } from "../shared/docker.mts";
+import type { IsolatedDockerSandbox } from "../shared/isolated-docker.mts";
 import { pushBranch } from "../shared/git.mts";
 import fs from 'node:fs';
 
@@ -17,14 +18,14 @@ Closes #${issueId}
 `
 }
 
-export const generatePrDescription = async (dockerSandbox: DockerSandbox, issueId: string, branch: {
+export const generatePrDescription = async (isolatedDockerSandbox: IsolatedDockerSandbox, issueId: string, branch: {
     base?: string; current: string
 }) => {
     const BASE_BRANCH = branch.base ?? "main"
     //Parallelize steps
     const [prTitle, prDescription] = await Promise.all([
         sandcastle.run({
-            sandbox: dockerSandbox,
+            sandbox: isolatedDockerSandbox,
             name: "pr-title-generator",
             maxIterations: 1,
             agent: sandcastle.pi("openrouter/anthropic/claude-haiku-4.5"),
@@ -33,7 +34,7 @@ export const generatePrDescription = async (dockerSandbox: DockerSandbox, issueI
             output: sandcastle.Output.string({ tag: "pr-title" }),
         }),
         sandcastle.run({
-            sandbox: dockerSandbox,
+            sandbox: isolatedDockerSandbox,
             name: "pr-description-generator",
             maxIterations: 1,
             agent: sandcastle.pi("openrouter/anthropic/claude-haiku-4.5"),
