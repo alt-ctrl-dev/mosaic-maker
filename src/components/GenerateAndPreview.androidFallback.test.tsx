@@ -4,7 +4,6 @@ import * as mosaicEngine from "../engine/mosaic-engine";
 import { ANDROID_READBACK_FAILURE } from "../engine/mosaic-shared";
 import type { WorkflowState } from "../engine/workflow-state";
 import { INITIAL_WORKFLOW_STATE, WorkflowStep } from "../engine/workflow-state";
-import { setTelemetryConsent } from "../telemetry";
 import { GenerateAndPreview } from "./GenerateAndPreview";
 
 class MockWorker {
@@ -61,8 +60,6 @@ describe("GenerateAndPreview Android readback fallback", () => {
 		vi.stubGlobal("Worker", class {});
 		vi.stubEnv("VITE_FARO_URL", "");
 		vi.stubEnv("VITE_FARO_APP_NAME", "");
-		// Telemetry is default-off; these tests observe generation events.
-		setTelemetryConsent(true);
 	});
 
 	afterEach(() => {
