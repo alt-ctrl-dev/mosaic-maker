@@ -20,7 +20,11 @@ describe("Layout polish requirements", () => {
 	it("renders TesseraUpload within a tessera-inputs container", () => {
 		render(
 			<div className="tessera-inputs">
-				<TesseraUpload onTesseraeProcessed={vi.fn()} adjustedTesseraSize={16} />
+				<TesseraUpload
+					onTesseraeProcessed={vi.fn()}
+					adjustedTesseraSize={16}
+					currentTesserae={[]}
+				/>
 			</div>,
 		);
 
