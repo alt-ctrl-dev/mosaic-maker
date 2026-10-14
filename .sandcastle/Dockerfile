@@ -35,7 +35,7 @@ RUN groupmod -o -g $AGENT_GID node && usermod -o -u $AGENT_UID -g $AGENT_GID -d 
 ENV PNPM_HOME=/pnpm
 ENV PATH=$PNPM_HOME/bin:$PATH
 RUN npm install -g pnpm@11.10.0
-RUN pnpm install -g @mariozechner/pi-coding-agent
+RUN pnpm install -g @mariozechner/pi-coding-agent@0.73.1
 
 USER ${AGENT_UID}:${AGENT_GID}
 
