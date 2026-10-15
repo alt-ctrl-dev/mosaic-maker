@@ -23,7 +23,14 @@ export const isolatedDockerSandbox: IsolatedDockerSandbox = createIsolatedSandbo
     const containerName = `sandcastle-isolated-${Date.now()}-${Math.random().toString(36).substring(2, 11)}`;
     const worktreePath = "/workspace";
 
-    const mergedEnv = { ...sandboxEnv, ...createOptions.env };
+    // Only forward explicitly allowed environment variables to prevent credential leakage
+    const allowedEnvKeys = ["OPENROUTER_API_KEY"];
+    const filteredCreateEnv = Object.fromEntries(
+      Object.entries(createOptions.env || {}).filter(([key]) => 
+        allowedEnvKeys.includes(key)
+      )
+    );
+    const mergedEnv = { ...sandboxEnv, ...filteredCreateEnv };
     const envArgs = Object.entries(mergedEnv)
       .map(([k, v]) => `-e ${k}='${v.replace(/'/g, "'\\''")}'`)
       .join(" ");
@@ -32,7 +39,7 @@ export const isolatedDockerSandbox: IsolatedDockerSandbox = createIsolatedSandbo
       execSync(
         `docker run -d --name ${containerName} ` +
           `-e HOME=/tmp --workdir ${worktreePath} ` +
-          `${envArgs} node:18-bookworm-slim sleep infinity`,
+          `${envArgs} node:24.18.1-bookworm-slim bash -c "apt-get update && apt-get install -y git curl jq && sleep infinity"`,
         { stdio: "pipe" },
       );
       execSync(`docker exec ${containerName} mkdir -p ${worktreePath}`, {
@@ -73,8 +80,18 @@ export const isolatedDockerSandbox: IsolatedDockerSandbox = createIsolatedSandbo
           child.stdin.write(opts.stdin);
           child.stdin.end();
 
+          // Buffer for incomplete lines to handle JSON streaming properly
+          let stdoutBuffer = "";
+          
           child.stdout.on("data", (data: Buffer) => {
-            const lines = data.toString().split("\n");
+            const chunk = data.toString();
+            stdoutBuffer += chunk;
+            
+            // Process complete lines
+            const lines = stdoutBuffer.split("\n");
+            // Keep the last incomplete line in the buffer
+            stdoutBuffer = lines.pop() || "";
+            
             for (const line of lines) {
               if (line.trim()) {
                 stdout += line + "\n";
@@ -83,12 +100,36 @@ export const isolatedDockerSandbox: IsolatedDockerSandbox = createIsolatedSandbo
             }
           });
 
+          // Buffer for incomplete stderr lines
+          let stderrBuffer = "";
+          
           child.stderr.on("data", (data: Buffer) => {
-            stderr += data.toString();
+            const chunk = data.toString();
+            stderrBuffer += chunk;
+            
+            // Process complete lines
+            const lines = stderrBuffer.split("\n");
+            // Keep the last incomplete line in the buffer
+            stderrBuffer = lines.pop() || "";
+            
+            for (const line of lines) {
+              if (line.trim()) {
+                stderr += line + "\n";
+              }
+            }
           });
 
           return new Promise((resolve, reject) => {
             child.on("close", (exitCode) => {
+              // Process any remaining buffered stdout data
+              if (stdoutBuffer.trim()) {
+                stdout += stdoutBuffer;
+                opts.onLine?.(stdoutBuffer.trim());
+              }
+              // Process any remaining buffered stderr data
+              if (stderrBuffer.trim()) {
+                stderr += stderrBuffer;
+              }
               resolve({
                 stdout: stdout.trim(),
                 stderr: stderr.trim(),

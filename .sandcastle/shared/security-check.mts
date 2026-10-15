@@ -39,6 +39,9 @@ export function verifySandboxIsolation(provider: SandboxProvider): boolean {
  * When a full integration test (disposable repo with synthetic secrets) is
  * not available, isolated providers are trusted based on structural
  * verification. All other provider types fail closed.
+ *
+ * TODO: Implement actual integration tests with disposable repositories
+ * and synthetic secrets to verify isolation.
  */
 export async function contractTestSandboxIsolation(
   provider: SandboxProvider,

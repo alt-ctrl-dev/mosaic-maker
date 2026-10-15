@@ -30,7 +30,7 @@ export const generatePrDescription = async (
             maxIterations: 1,
             agent: sandcastle.pi("openrouter/anthropic/claude-haiku-4.5"),
             promptFile: "./.sandcastle/sandcastle-bot/pr-title-prompt.md",
-            promptArgs: { BRANCH: branch.current, BASE_BRANCH, },
+            promptArgs: { BRANCH: branch.current, BASE_BRANCH: baseBranch },
             output: sandcastle.Output.string({ tag: "pr-title" }),
         }),
     sandcastle.run({
