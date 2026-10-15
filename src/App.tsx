@@ -220,6 +220,64 @@ export function App() {
 	);
 }
 
+/**
+ * Renders the ordered list of workflow step buttons.
+ * @param isMobile - When true, adds `commandfor` and `command` attributes
+ *   so the button closes the mobile workflow dialog on click.
+ */
+function WorkflowStepList({
+	isMobile,
+	dispatch,
+	currentStep,
+	furthestCompletedStep,
+}: {
+	isMobile?: boolean;
+	dispatch: ReturnType<typeof useWorkflowReducer>[1];
+	currentStep: number;
+	furthestCompletedStep: number;
+}) {
+	return (
+		<ol {...stylex.props(styles.stepsList)}>
+			{WORKFLOW_STEP_TITLES.map((title, index) => {
+				const isCurrent = currentStep === index;
+				const isCompleted = index < furthestCompletedStep;
+				const isDisabled = index > furthestCompletedStep;
+				return (
+					<li key={title}>
+						<button
+							type="button"
+							{...stylex.props(
+								styles.stepButton,
+								isCurrent && styles.stepButtonCurrent,
+								isCompleted && styles.stepButtonCompleted,
+							)}
+							aria-current={isCurrent ? "step" : undefined}
+							onClick={() => dispatch({ type: "goToStep", step: index })}
+							disabled={isDisabled}
+							{...(isMobile
+								? {
+										commandfor: "mobile-workflow-menu",
+										command: "close",
+									}
+								: {})}
+						>
+							<span
+								{...stylex.props(
+									styles.stepIndicator,
+									isCurrent && styles.stepIndicatorCurrent,
+								)}
+							>
+								{isCompleted ? <span>✓</span> : <span>{index + 1}</span>}
+							</span>
+							<span {...stylex.props(styles.stepTitle)}>{title}</span>
+						</button>
+					</li>
+				);
+			})}
+		</ol>
+	);
+}
+
 /** Internal workflow component exported for testing. */
 export function WorkflowApp() {
 	const [workflowState, dispatch] = useWorkflowReducer();
@@ -430,87 +488,20 @@ export function WorkflowApp() {
 						dialogId="mobile-workflow-menu"
 						ariaLabel="Toggle workflow steps"
 					>
-						<ol {...stylex.props(styles.stepsList)}>
-							{WORKFLOW_STEP_TITLES.map((title, index) => {
-								const isCurrent = workflowState.currentStep === index;
-								const isCompleted = index < workflowState.furthestCompletedStep;
-								const isDisabled = index > workflowState.furthestCompletedStep;
-								return (
-									<li key={title}>
-										<button
-											type="button"
-											{...stylex.props(
-												styles.stepButton,
-												isCurrent && styles.stepButtonCurrent,
-												isCompleted && styles.stepButtonCompleted,
-											)}
-											aria-current={isCurrent ? "step" : undefined}
-											onClick={() =>
-												dispatch({ type: "goToStep", step: index })
-											}
-											disabled={isDisabled}
-											commandfor="mobile-workflow-menu"
-											command="close"
-										>
-											<span
-												{...stylex.props(
-													styles.stepIndicator,
-													isCurrent && styles.stepIndicatorCurrent,
-												)}
-											>
-												{isCompleted ? (
-													<span>✓</span>
-												) : (
-													<span>{index + 1}</span>
-												)}
-											</span>
-											<span {...stylex.props(styles.stepTitle)}>{title}</span>
-										</button>
-									</li>
-								);
-							})}
-						</ol>
+						<WorkflowStepList
+							isMobile
+							dispatch={dispatch}
+							currentStep={workflowState.currentStep}
+							furthestCompletedStep={workflowState.furthestCompletedStep}
+						/>
 					</Dialog>
 
 					<aside {...stylex.props(styles.sidebar)} aria-label="Workflow steps">
-						<ol {...stylex.props(styles.stepsList)}>
-							{WORKFLOW_STEP_TITLES.map((title, index) => {
-								const isCurrent = workflowState.currentStep === index;
-								const isCompleted = index < workflowState.furthestCompletedStep;
-								const isDisabled = index > workflowState.furthestCompletedStep;
-								return (
-									<li key={title}>
-										<button
-											type="button"
-											{...stylex.props(
-												styles.stepButton,
-												isCurrent && styles.stepButtonCurrent,
-												isCompleted && styles.stepButtonCompleted,
-											)}
-											aria-current={isCurrent ? "step" : undefined}
-											onClick={() =>
-												dispatch({ type: "goToStep", step: index })
-											}
-											disabled={isDisabled}
-										>
-											<span
-												{...stylex.props(
-													styles.stepIndicator,
-													isCurrent && styles.stepIndicatorCurrent,
-												)}
-											>
-												{isCompleted ? (
-													<span>✓</span>
-												) : (
-													<span>{index + 1}</span>
-												)}
-											</span>
-											<span {...stylex.props(styles.stepTitle)}>{title}</span>
-										</button>
-									</li>
-								);
-							})}
-						</ol>
+						<WorkflowStepList
+							dispatch={dispatch}
+							currentStep={workflowState.currentStep}
+							furthestCompletedStep={workflowState.furthestCompletedStep}
+						/>
 					</aside>
 
 					<div {...stylex.props(styles.canvas)}>

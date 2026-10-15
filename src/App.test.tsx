@@ -17,7 +17,7 @@ vi.mock("./version", () => ({
 afterEach(cleanup);
 
 describe("Mosaic Maker workflow", () => {
-	it("presents all four stages in order", () => {
+	it("presents all five stages in order", () => {
 		render(<App />);
 
 		const workflow = screen.getByRole("complementary", {
