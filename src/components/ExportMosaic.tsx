@@ -507,7 +507,9 @@ export function ExportMosaic({ state, dispatch }: ExportMosaicProps) {
 							</article>
 						)}
 						{isDelivered && (
-							<div {...stylex.props(styles.confirmation)}>Delivered!</div>
+							<div {...stylex.props(styles.confirmation)} role="status">
+								Delivered!
+							</div>
 						)}
 					</div>
 				</>
