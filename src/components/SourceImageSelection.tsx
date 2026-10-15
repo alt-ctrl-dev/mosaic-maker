@@ -7,7 +7,7 @@ import type { WorkflowState } from "../engine/workflow-state";
 import { base } from "../styles/base.stylex";
 import { tokens } from "../styles/tokens.stylex";
 import { vibrate } from "../haptics";
-import { trackError, trackEvent, trackStepView } from "../telemetry";
+import { getTelemetry } from "../telemetry-service";
 import { ActionButton } from "./ActionButton";
 import {
 	isFileSizeExceeded,
@@ -83,7 +83,7 @@ export function SourceImageSelection({
 	);
 
 	useEffect(() => {
-		trackStepView("choose_source_image");
+		getTelemetry().stepViewed("choose_source_image");
 	}, []);
 
 	const handleFileChange = useCallback(
@@ -116,12 +116,12 @@ export function SourceImageSelection({
 
 				onSourceSelected(sourceImage);
 
-				trackEvent("source_image_upload", {
-					width: sourceImage.width,
-					height: sourceImage.height,
-					fileSize: file.size,
-					fileType: file.type,
-				});
+				getTelemetry().sourceImageUploaded(
+					sourceImage.width,
+					sourceImage.height,
+					file.size,
+					file.type,
+				);
 				vibrate(10);
 
 				// Reuse the object URL the engine holds rather than creating a second
@@ -137,7 +137,7 @@ export function SourceImageSelection({
 						? error.message
 						: "Failed to process the image.";
 				onSourceError(errorMessage);
-				trackError("source_image_load", error, {
+				getTelemetry().errorTracked("source_image_load", error, {
 					fileName: file.name,
 					fileType: file.type,
 					fileSize: file.size,

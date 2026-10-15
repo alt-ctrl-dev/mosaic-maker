@@ -7,7 +7,7 @@ import type { WorkflowAction } from "../hooks/useWorkflowReducer";
 import { base } from "../styles/base.stylex";
 import { tokens } from "../styles/tokens.stylex";
 import { vibrate } from "../haptics";
-import { trackError, trackMosaicGeneration, trackStepView } from "../telemetry";
+import { getTelemetry } from "../telemetry-service";
 import { ActionButton } from "./ActionButton";
 
 // StyleX only resolves computed conditional keys defined in the same module.
@@ -130,7 +130,7 @@ export function GenerateAndPreview({
 	}, []);
 
 	useEffect(() => {
-		trackStepView("generate_and_preview");
+		getTelemetry().stepViewed("generate_and_preview");
 	}, []);
 
 	useEffect(() => {
@@ -192,7 +192,7 @@ export function GenerateAndPreview({
 							const success = Boolean(data.dataUrl);
 							const duration =
 								performance.now() - generationStartTimeRef.current;
-							trackMosaicGeneration(
+							getTelemetry().mosaicGenerated(
 								success,
 								duration,
 								sourceImage.width,
@@ -240,7 +240,7 @@ export function GenerateAndPreview({
 								setError(data.message);
 								dispatch({ type: "generationCancelledOrFailed" });
 								setIsGenerating(false);
-								trackMosaicGeneration(
+								getTelemetry().mosaicGenerated(
 									false,
 									performance.now() - generationStartTimeRef.current,
 									sourceImage.width,
@@ -274,7 +274,7 @@ export function GenerateAndPreview({
 					"Web Worker not supported or failed, falling back to main thread",
 					err,
 				);
-				trackError("mosaic_generation_worker_init", err);
+				getTelemetry().errorTracked("mosaic_generation_worker_init", err);
 				await generateOnMainThread(
 					sourceImage,
 					tesseraSize,
@@ -323,7 +323,7 @@ export function GenerateAndPreview({
 			if (generationId !== generationIdRef.current) return;
 			const totalTime = performance.now() - generationStartTimeRef.current;
 
-			trackMosaicGeneration(
+			getTelemetry().mosaicGenerated(
 				true,
 				totalTime,
 				sourceImage.width,
@@ -345,7 +345,7 @@ export function GenerateAndPreview({
 			if (fallbackErrorMessage) {
 				console.error("Main-thread fallback failed:", err);
 				setError(fallbackErrorMessage);
-				trackError("mosaic_generation_android_fallback", err, {
+				getTelemetry().errorTracked("mosaic_generation_android_fallback", err, {
 					sourceWidth: sourceImage.width,
 					sourceHeight: sourceImage.height,
 					tesseraSize,
@@ -359,7 +359,7 @@ export function GenerateAndPreview({
 
 			const totalTime = performance.now() - generationStartTimeRef.current;
 
-			trackMosaicGeneration(
+			getTelemetry().mosaicGenerated(
 				false,
 				totalTime,
 				sourceImage.width,
@@ -378,7 +378,7 @@ export function GenerateAndPreview({
 		++generationIdRef.current;
 		workerRef.current?.postMessage({ type: "cancel" });
 		if (state.sourceImage && state.adjustedTesseraSize) {
-			trackMosaicGeneration(
+			getTelemetry().mosaicGenerated(
 				false,
 				performance.now() - generationStartTimeRef.current,
 				state.sourceImage.width,

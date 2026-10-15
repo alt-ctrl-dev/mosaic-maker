@@ -2,16 +2,9 @@ import { act, cleanup, render, screen } from "@testing-library/react";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 import * as mosaicEngine from "../engine/mosaic-engine";
 import type { WorkflowState } from "../engine/workflow-state";
-import * as telemetry from "../telemetry";
+import { RecordingTelemetryAdapter } from "../telemetry-recording-adapter";
+import { setTelemetry } from "../telemetry-service";
 import { GenerateAndPreview } from "./GenerateAndPreview";
-
-vi.mock("../telemetry", async () => {
-	const actual = await vi.importActual("../telemetry");
-	return {
-		...actual,
-		trackMosaicGeneration: vi.fn(),
-	};
-});
 
 vi.mock("../engine/mosaic-engine", () => ({
 	generateMosaic: vi.fn(),
@@ -19,6 +12,8 @@ vi.mock("../engine/mosaic-engine", () => ({
 
 describe("GenerateAndPreview Timing", () => {
 	const mockDispatch = vi.fn();
+	let recordingAdapter: RecordingTelemetryAdapter;
+
 	const mockSourceImage = {
 		url: "test-image-url",
 		width: 100,
@@ -71,6 +66,8 @@ describe("GenerateAndPreview Timing", () => {
 
 	beforeEach(() => {
 		vi.clearAllMocks();
+		recordingAdapter = new RecordingTelemetryAdapter();
+		setTelemetry(recordingAdapter);
 	});
 
 	afterEach(() => {
@@ -106,16 +103,21 @@ describe("GenerateAndPreview Timing", () => {
 			vi.spyOn(performance, "now").mockReturnValue(1120);
 			await act(async () => finish(mockResult));
 
-			expect(telemetry.trackMosaicGeneration).toHaveBeenCalledWith(
-				true,
-				1020,
-				100,
-				100,
-				10,
-				"photomosaic",
-				"main_thread",
-				"worker_unavailable",
-			);
+			const mosaicEvents =
+				recordingAdapter.getEventsByName("mosaic_generation");
+			expect(mosaicEvents).toHaveLength(1);
+			expect(mosaicEvents[0].payload).toEqual({
+				sessionId: "test-session-id",
+				appVersion: "test-version",
+				success: "true",
+				duration: "1020",
+				sourceWidth: "100",
+				sourceHeight: "100",
+				tesseraSize: "10",
+				mode: "photomosaic",
+				executionPath: "main_thread",
+				fallbackReason: "worker_unavailable",
+			});
 		} finally {
 			window.Worker = originalWorker;
 		}
@@ -140,16 +142,16 @@ describe("GenerateAndPreview Timing", () => {
 
 			await screen.findByText("Test error");
 
-			expect(telemetry.trackMosaicGeneration).toHaveBeenCalledWith(
-				false,
-				expect.any(Number),
-				100,
-				100,
-				10,
-				"photomosaic",
-				"main_thread",
-				"worker_unavailable",
-			);
+			const mosaicEvents =
+				recordingAdapter.getEventsByName("mosaic_generation");
+			expect(mosaicEvents).toHaveLength(1);
+			expect(mosaicEvents[0].payload.success).toBe("false");
+			expect(mosaicEvents[0].payload.sourceWidth).toBe("100");
+			expect(mosaicEvents[0].payload.sourceHeight).toBe("100");
+			expect(mosaicEvents[0].payload.tesseraSize).toBe("10");
+			expect(mosaicEvents[0].payload.mode).toBe("photomosaic");
+			expect(mosaicEvents[0].payload.executionPath).toBe("main_thread");
+			expect(mosaicEvents[0].payload.fallbackReason).toBe("worker_unavailable");
 		} finally {
 			window.Worker = originalWorker;
 		}
@@ -177,20 +179,19 @@ describe("GenerateAndPreview Timing", () => {
 			await act(async () =>
 				screen.getByRole("button", { name: "Cancel" }).click(),
 			);
-			expect(telemetry.trackMosaicGeneration).toHaveBeenCalledWith(
-				false,
-				40,
-				100,
-				100,
-				10,
-				"photomosaic",
-				"main_thread",
-				"worker_unavailable",
-			);
+			const mosaicEvents =
+				recordingAdapter.getEventsByName("mosaic_generation");
+			expect(mosaicEvents).toHaveLength(1);
+			expect(mosaicEvents[0].payload.success).toBe("false");
+			expect(mosaicEvents[0].payload.duration).toBe("40");
+
 			await act(async () =>
 				finish({ dataUrl: "late", width: 100, height: 100 }),
 			);
-			expect(telemetry.trackMosaicGeneration).toHaveBeenCalledTimes(1);
+			// Still only one event — late completions after cancel don't emit
+			expect(
+				recordingAdapter.getEventsByName("mosaic_generation"),
+			).toHaveLength(1);
 		} finally {
 			window.Worker = originalWorker;
 		}

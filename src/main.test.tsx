@@ -1,14 +1,27 @@
 import { beforeEach, expect, it, vi } from "vitest";
 
-const { render, trackDeviceAnalytics } = vi.hoisted(() => ({
-	render: vi.fn(),
-	trackDeviceAnalytics: vi.fn(),
-}));
+const { render, collectDeviceAnalytics, setTelemetryFn } = vi.hoisted(() => {
+	const collectDeviceAnalyticsFn = vi.fn();
+	return {
+		render: vi.fn(),
+		collectDeviceAnalytics: collectDeviceAnalyticsFn,
+		setTelemetryFn: vi.fn(),
+	};
+});
 
 vi.mock("react-dom/client", () => ({ createRoot: () => ({ render }) }));
-vi.mock("./telemetry", () => ({
-	initializeTelemetry: vi.fn(),
-	trackDeviceAnalytics,
+vi.mock("./telemetry-service", () => ({
+	getTelemetry: () => ({
+		collectDeviceAnalytics,
+	}),
+	setTelemetry: setTelemetryFn,
+}));
+vi.mock("./telemetry-faro-adapter", () => ({
+	FaroTelemetryAdapter: class {},
+	initializeFaroTelemetry: vi.fn(),
+}));
+vi.mock("./telemetry-logonly-adapter", () => ({
+	LogOnlyTelemetryAdapter: class {},
 }));
 vi.mock("./App", () => ({ App: () => null }));
 
@@ -19,19 +32,19 @@ beforeEach(() => {
 });
 
 it("renders the app without waiting for device analytics", async () => {
-	trackDeviceAnalytics.mockReturnValue(new Promise(() => {}));
+	collectDeviceAnalytics.mockReturnValue(new Promise(() => {}));
 
 	await import("./main");
 	const { App } = await import("./App");
 
 	expect(render).toHaveBeenCalledOnce();
 	expect(render.mock.calls[0]?.[0].props.children.type).toBe(App);
-	expect(trackDeviceAnalytics).toHaveBeenCalledOnce();
+	expect(collectDeviceAnalytics).toHaveBeenCalledOnce();
 });
 
 it("keeps the app rendered if device analytics fails", async () => {
 	const error = new Error("analytics unavailable");
-	trackDeviceAnalytics.mockRejectedValue(error);
+	collectDeviceAnalytics.mockRejectedValue(error);
 	const log = vi.spyOn(console, "error").mockImplementation(() => {});
 
 	await import("./main");

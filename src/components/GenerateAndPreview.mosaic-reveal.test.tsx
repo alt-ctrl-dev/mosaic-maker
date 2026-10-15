@@ -10,15 +10,6 @@ import { workflowReducer } from "../hooks/useWorkflowReducer";
 import type { WorkflowAction } from "../hooks/useWorkflowReducer";
 import { GenerateAndPreview } from "./GenerateAndPreview";
 
-vi.mock("../telemetry", async () => {
-	const actual = await vi.importActual("../telemetry");
-	return {
-		...actual,
-		trackMosaicGeneration: vi.fn(),
-		vibrate: vi.fn(),
-	};
-});
-
 vi.mock("../engine/mosaic-engine", () => ({
 	generateMosaic: vi.fn(),
 }));
