@@ -24,15 +24,16 @@ Leisure, at-home, creative sessions on personal devices — desktop and mobile w
 
 ## Capabilities and Constraints
 
-- Two modes: Photomosaic (default) and Brick Style (color-palette bricks).
+- Two modes: Photomosaic (default) and Brick Style (bricks chosen from preset color palettes or a custom color wheel).
 - Tessera sources: user-uploaded image collections or generated tesserae (source-image colors plus seeded noise; seed reproduces results).
 - Resource policy caps: 25 MB per file, 250 MB total, 500 files, 40 MP per file, 16384 px per axis. Tessera size clamped to 8 px floor up to a source-derived ceiling.
 - Web Worker generation with main-thread fallback; cancellation; `beforeunload` guard.
 - Full-resolution export: PNG, JPEG, WebP with quality and background controls; iOS share/popup fallback path.
+- Micro-interactions with milestone haptics where the Vibration API is available (Android Chrome); silent no-op elsewhere.
 - Opt-in telemetry via a telemetry-service contract (errors, web vitals, generation metrics). Never image data or user content.
 - Strict CSP; no backend; deployable as static files (GitHub Pages, subpath base).
 - Glossary vocabulary in `CONTEXT.md` is binding in all user-facing language: source image, tessera, tessera size, generated tessera, mosaic (and the documented avoided synonyms).
-- Undecided: state persistence across refresh, power-user iteration features (re-seed shortcut, presets), tile-size preview tooling.
+- Undecided: state persistence across refresh, power-user iteration features (re-seed shortcut, presets).
 
 ## Brand Commitments
 
