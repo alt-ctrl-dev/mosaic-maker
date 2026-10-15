@@ -9,6 +9,12 @@ import { tokens } from "../styles/tokens.stylex";
 import { vibrate } from "../haptics";
 import { trackError, trackEvent, trackStepView } from "../telemetry";
 import { ActionButton } from "./ActionButton";
+import {
+	isFileSizeExceeded,
+	isDimensionLimitExceeded,
+	getFileSizeErrorMessage,
+	getDimensionErrorMessage,
+} from "../engine/resource-policy";
 
 const styles = stylex.create({
 	imagePreview: { marginTop: "1rem" },
@@ -92,9 +98,22 @@ export function SourceImageSelection({
 				return;
 			}
 
+			if (isFileSizeExceeded(file)) {
+				onSourceError(getFileSizeErrorMessage(file.name));
+				return;
+			}
+
 			setIsProcessing(true);
 			try {
 				const sourceImage = await getSourceImageInfo(file);
+
+				if (isDimensionLimitExceeded(sourceImage.width, sourceImage.height)) {
+					onSourceError(
+						getDimensionErrorMessage(sourceImage.width, sourceImage.height),
+					);
+					return;
+				}
+
 				onSourceSelected(sourceImage);
 
 				trackEvent("source_image_upload", {
