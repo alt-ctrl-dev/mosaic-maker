@@ -135,7 +135,7 @@ export function TesseraReview({
 							onClick={onAcceptSupplementation}
 							variant="outline"
 						>
-							Add random tiles
+							Add random tesserae
 						</ActionButton>
 					)}
 				</article>

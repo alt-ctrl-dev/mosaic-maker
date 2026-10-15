@@ -131,7 +131,7 @@ const styles = stylex.create({
 			outline: "2px solid currentColor",
 			outlineOffset: "2px",
 		},
-		":disabled": { cursor: "not-allowed", opacity: 0.5 },
+		":disabled": { cursor: "not-allowed", opacity: 0.3 },
 		"@media (max-width: 900px)": { padding: "1rem" },
 		[REDUCED_MOTION]: { transitionDuration: "0.01ms" },
 	},
@@ -143,7 +143,7 @@ const styles = stylex.create({
 		},
 		color: tokens.onPrimary,
 	},
-	stepButtonCompleted: { opacity: 0.55 },
+	stepButtonCompleted: { opacity: 0.7 },
 	stepIndicator: {
 		display: "inline-flex",
 		alignItems: "center",
@@ -335,7 +335,7 @@ export function WorkflowApp() {
 										variant="secondary"
 										style={{ marginBottom: "1rem" }}
 									>
-										Clear all tiles
+										Clear all tesserae
 									</ActionButton>
 								)}
 							</>
@@ -440,7 +440,7 @@ export function WorkflowApp() {
 						<ol {...stylex.props(styles.stepsList)}>
 							{stages.map((title, index) => {
 								const isCurrent = workflowState.currentStep === index;
-								const isCompleted = index < workflowState.currentStep;
+								const isCompleted = index < workflowState.furthestCompletedStep;
 								const isDisabled = index > workflowState.furthestCompletedStep;
 								return (
 									<li key={title}>
@@ -483,7 +483,7 @@ export function WorkflowApp() {
 						<ol {...stylex.props(styles.stepsList)}>
 							{stages.map((title, index) => {
 								const isCurrent = workflowState.currentStep === index;
-								const isCompleted = index < workflowState.currentStep;
+								const isCompleted = index < workflowState.furthestCompletedStep;
 								const isDisabled = index > workflowState.furthestCompletedStep;
 								return (
 									<li key={title}>
@@ -549,7 +549,7 @@ export function WorkflowApp() {
 										})
 									}
 								>
-									Next →
+									Continue to {stages[workflowState.currentStep + 1]} →
 								</ActionButton>
 							)}
 						</div>

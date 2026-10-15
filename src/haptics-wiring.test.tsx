@@ -98,7 +98,7 @@ describe("haptic feedback at workflow milestones", () => {
 			<GeneratedTesserae onTesseraeGenerated={noop} initialState={state} />,
 		);
 
-		fireEvent.click(screen.getByRole("button", { name: /generate tiles/i }));
+		fireEvent.click(screen.getByRole("button", { name: /generate tesserae/i }));
 
 		await waitFor(() => expect(vibrate).toHaveBeenCalledWith(15));
 	});
