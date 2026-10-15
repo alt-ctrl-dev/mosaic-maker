@@ -5,7 +5,7 @@ import { tokens } from "./styles/tokens.stylex";
 import { declaredValuesFor } from "./test-utils/style-inspection";
 
 describe("workflow-step-button styling", () => {
-	it("uses secondary background and color for resting state", () => {
+	it("uses surface background and text color for resting state", () => {
 		render(<App />);
 
 		const button = screen.getAllByRole("button", {
@@ -14,9 +14,9 @@ describe("workflow-step-button styling", () => {
 		expect(button).toBeDefined();
 
 		expect(declaredValuesFor(button, "background-color")).toContain(
-			tokens.secondary,
+			tokens.surface,
 		);
-		expect(declaredValuesFor(button, "color")).toContain(tokens.onSecondary);
+		expect(declaredValuesFor(button, "color")).toContain(tokens.text);
 	});
 
 	it("styles completed and disabled steps with distinct opacity", () => {

@@ -23,7 +23,7 @@ describe("TesseraSizeSelection", () => {
 		cleanup();
 	});
 
-	it("renders a range input with min 2 and fixed max 250", () => {
+	it("renders a range input with min 2 and a source-derived max", () => {
 		render(
 			<TesseraSizeSelection
 				onSizeSelected={onSizeSelectedMock}
@@ -34,7 +34,8 @@ describe("TesseraSizeSelection", () => {
 		const rangeInput = screen.getByRole("slider");
 		expect(rangeInput.getAttribute("type")).toBe("range");
 		expect(rangeInput.getAttribute("min")).toBe("2");
-		expect(rangeInput.getAttribute("max")).toBe("250");
+		// Ceiling is the source image's short side (100 × 100 fixture).
+		expect(rangeInput.getAttribute("max")).toBe("100");
 		expect(rangeInput.getAttribute("value")).toBe("16");
 	});
 

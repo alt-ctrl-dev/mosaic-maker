@@ -54,8 +54,11 @@ describe("Mosaic Maker workflow", () => {
 		).toBeChecked();
 		fireEvent.click(screen.getByRole("button", { name: "Continue" }));
 
-		expect(screen.getByText("Step 2 of 5")).toBeInTheDocument();
-		fireEvent.click(screen.getByRole("button", { name: "← Back" }));
+		// The rack is the navigation: the source stage becomes current.
+		expect(
+			screen.getAllByRole("button", { name: /choose source image/i })[0],
+		).toHaveAttribute("aria-current", "step");
+		fireEvent.click(screen.getAllByRole("button", { name: /choose mode/i })[0]);
 		expect(
 			screen.getByRole("radio", { name: /Select Brick Style mode/ }),
 		).toBeChecked();
@@ -70,37 +73,35 @@ describe("Mosaic Maker workflow", () => {
 
 		const second = render(<App />);
 		expect(
-			within(second.container).getByText("Step 1 of 5"),
-		).toBeInTheDocument();
+			within(second.container).getAllByRole("button", {
+				name: /choose mode/i,
+			})[0],
+		).toHaveAttribute("aria-current", "step");
 		expect(
 			within(second.container).getByRole("radio", {
 				name: /Select Photomosaic \(Default\) mode/,
 			}),
 		).toBeChecked();
 		expect(
-			within(first.container).getByText("Step 2 of 5"),
-		).toBeInTheDocument();
+			within(first.container).getAllByRole("button", {
+				name: /choose source image/i,
+			})[0],
+		).toHaveAttribute("aria-current", "step");
 	});
 
-	it("hides the top continue button on first load", () => {
+	it("renders no wizard counter or back/next chrome", () => {
 		render(<App />);
-		expect(screen.queryByText(/^Continue to /)).toBeNull();
-	});
-
-	it("hides Back button on first load", () => {
-		render(<App />);
+		expect(screen.queryByText(/Step \d of \d/)).toBeNull();
 		expect(screen.queryByText("← Back")).toBeNull();
+		expect(screen.queryByText("Next →")).toBeNull();
 	});
 
-	it("displays the header eyebrow text with offline support information", () => {
+	it("displays the privacy note", () => {
 		render(<App />);
 
-		const eyebrow = screen.getByText(
-			/Private, in-browser image making • Works offline once loaded/,
-		);
+		const eyebrow = screen.getByText(/Private · in-browser/);
 		expect(eyebrow).toBeInTheDocument();
 		expect(eyebrow.tagName).toBe("P");
-		expect(eyebrow).toHaveClass("eyebrow");
 	});
 
 	it("displays the version footer with correct information", () => {

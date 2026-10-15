@@ -1,0 +1,40 @@
+/* Self-hosted display face for the Pixel Sprite Grid world (SIL OFL).
+   Remote font hosts are blocked by the app CSP, so the face ships
+   beside the app. */
+@font-face {
+	font-family: "Press Start 2P";
+	src: url("fonts/PressStart2P-Regular.ttf") format("truetype");
+	font-weight: 400;
+	font-style: normal;
+	font-display: swap;
+}
+
+/* Browser surfaces themed from the world palette: the parts of the
+   page the app does not draw still carry the design. */
+html {
+	caret-color: #ffcf3f;
+	scrollbar-color: #2a3040 #12141c;
+}
+
+::selection {
+	background: #ffcf3f;
+	color: #16130a;
+}
+
+::-webkit-scrollbar {
+	width: 12px;
+	height: 12px;
+}
+
+::-webkit-scrollbar-track {
+	background: #12141c;
+}
+
+::-webkit-scrollbar-thumb {
+	background: #2a3040;
+	border: 2px solid #12141c;
+}
+
+::-webkit-scrollbar-thumb:hover {
+	background: #2e374c;
+}

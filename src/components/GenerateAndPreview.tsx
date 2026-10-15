@@ -26,8 +26,40 @@ const previewIn = stylex.keyframes({
 	to: { opacity: 1, transform: "none" },
 });
 
+/** Number of sprite cells in the generation progress grid (16 × 9). */
+const PROGRESS_CELL_COUNT = 144;
+
+/** Stable identities for the static progress cells. */
+const PROGRESS_CELL_IDS = Array.from(
+	{ length: PROGRESS_CELL_COUNT },
+	(_, i) => `progress-cell-${i}`,
+);
+
 const styles = stylex.create({
 	progressPanel: { textAlign: "center" },
+	// Generation progress rendered as sprite cells filling row by row;
+	// the container background forms the 1px keylines between cells.
+	cellGrid: {
+		display: "grid",
+		gridTemplateColumns: "repeat(16, 1fr)",
+		gap: "2px",
+		maxWidth: "20rem",
+		margin: "0.5rem auto",
+		padding: "2px",
+		backgroundColor: tokens.border,
+		borderWidth: "1px",
+		borderStyle: "solid",
+		borderColor: tokens.border,
+	},
+	cell: {
+		aspectRatio: "1",
+		backgroundColor: {
+			default: tokens.surface,
+		},
+		transition: "background-color 0.15s ease-out",
+		[REDUCED_MOTION]: { transitionDuration: "0.01ms" },
+	},
+	cellFilled: { backgroundColor: tokens.valid },
 	progressBar: {
 		width: "100%",
 		margin: "0.5rem 0",
@@ -404,6 +436,10 @@ export function GenerateAndPreview({
 			? state.tesserae.length >= 2
 			: state.tesserae.length > 0);
 
+	const filledProgressCells = progress
+		? Math.round((progress.percent / 100) * PROGRESS_CELL_COUNT)
+		: 0;
+
 	const errorPanelProps = stylex.props(base.card);
 	const progressPanelProps = stylex.props(
 		base.card,
@@ -456,6 +492,17 @@ export function GenerateAndPreview({
 					<h3 {...stylex.props(base.heading, base.h3)}>Generating Mosaic...</h3>
 					{progress ? (
 						<div>
+							<div {...stylex.props(styles.cellGrid)} aria-hidden="true">
+								{PROGRESS_CELL_IDS.map((cellId, index) => (
+									<div
+										key={cellId}
+										{...stylex.props(
+											styles.cell,
+											index < filledProgressCells && styles.cellFilled,
+										)}
+									/>
+								))}
+							</div>
 							<progress
 								{...stylex.props(styles.progressBar)}
 								value={progress.percent}

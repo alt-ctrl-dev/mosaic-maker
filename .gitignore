@@ -7,3 +7,4 @@ dist/
 
 # Corporate TLS-inspection CA certs (machine-specific, see .sandcastle/certs/README.md)
 .sandcastle/certs/*.crt
+.impeccable/

@@ -8,6 +8,7 @@ import {
 } from "../engine/tessera-sizing";
 import type { WorkflowState } from "../engine/workflow-state";
 import { base } from "../styles/base.stylex";
+import { tokens } from "../styles/tokens.stylex";
 import { trackEvent, trackStepView } from "../telemetry";
 
 /** Props for {@link TesseraSizeSelection}. */
@@ -17,6 +18,32 @@ interface TesseraSizeSelectionProps {
 	/** Current workflow state, used for source image dimensions. */
 	initialState: WorkflowState;
 }
+
+const styles = stylex.create({
+	// The source image under its live construction grid: dragging the size
+	// re-solves the grid density against the real image dimensions.
+	gridPreview: {
+		position: "relative",
+		maxWidth: "20rem",
+		marginTop: "1rem",
+		borderWidth: "1px",
+		borderStyle: "solid",
+		borderColor: tokens.border,
+	},
+	gridPreviewImage: { display: "block", width: "100%" },
+	gridOverlay: {
+		position: "absolute",
+		inset: 0,
+		pointerEvents: "none",
+	},
+	gridReadout: {
+		marginTop: "0.5rem",
+		fontFamily: "ui-monospace, monospace",
+		fontSize: "0.8rem",
+		color: tokens.info,
+		fontVariantNumeric: "tabular-nums",
+	},
+});
 
 /**
  * Lets the user pick a tessera pixel size and shows the adjusted size,
@@ -34,13 +61,15 @@ export function TesseraSizeSelection({
 
 	const isCoarse = gridCellCount !== null && isCoarseGrid(gridCellCount);
 
-	const maxTesseraSize = 250;
-	// initialState.sourceImage && initialState.hasValidSourceDimensions
-	// 	? Math.min(
-	// 			initialState.sourceImage.width,
-	// 			initialState.sourceImage.height,
-	// 		)
-	// 	: 100;
+	// The ceiling is engine truth: no tessera larger than the source's
+	// short side. 100 covers the no-image-yet case.
+	const maxTesseraSize =
+		initialState.sourceImage && initialState.hasValidSourceDimensions
+			? Math.min(
+					initialState.sourceImage.width,
+					initialState.sourceImage.height,
+				)
+			: 100;
 
 	const onSizeSelectedRef = useRef(onSizeSelected);
 	onSizeSelectedRef.current = onSizeSelected;
@@ -109,6 +138,28 @@ export function TesseraSizeSelection({
 
 	const warningProps = stylex.props(base.card);
 
+	const sourceImage = initialState.sourceImage;
+	const showGridPreview =
+		sourceImage !== null &&
+		initialState.hasValidSourceDimensions &&
+		adjustedSize !== null;
+	const gridColumns =
+		showGridPreview && sourceImage
+			? Math.ceil(sourceImage.width / adjustedSize)
+			: null;
+	const gridRows =
+		showGridPreview && sourceImage
+			? Math.ceil(sourceImage.height / adjustedSize)
+			: null;
+	const gridCellWidthPct =
+		showGridPreview && sourceImage
+			? (adjustedSize / sourceImage.width) * 100
+			: null;
+	const gridCellHeightPct =
+		showGridPreview && sourceImage
+			? (adjustedSize / sourceImage.height) * 100
+			: null;
+
 	return (
 		<div>
 			<div>
@@ -137,6 +188,30 @@ export function TesseraSizeSelection({
 							Adjusted to fit within the valid tessera size range.
 						</p>
 					)}
+				</div>
+			)}
+
+			{showGridPreview && sourceImage && (
+				<div>
+					<div {...stylex.props(styles.gridPreview)}>
+						<img
+							src={sourceImage.url}
+							alt="Source under the construction grid at the selected tessera size"
+							{...stylex.props(styles.gridPreviewImage)}
+						/>
+						<div
+							{...stylex.props(styles.gridOverlay)}
+							aria-hidden="true"
+							style={{
+								backgroundImage:
+									"linear-gradient(to right, rgba(10, 12, 18, 0.85) 1px, transparent 1px), linear-gradient(to bottom, rgba(10, 12, 18, 0.85) 1px, transparent 1px)",
+								backgroundSize: `${gridCellWidthPct}% ${gridCellHeightPct}%`,
+							}}
+						/>
+					</div>
+					<p {...stylex.props(styles.gridReadout)}>
+						{gridColumns} × {gridRows} cells · {gridCellCount} total
+					</p>
 				</div>
 			)}
 

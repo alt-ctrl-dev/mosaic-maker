@@ -39,12 +39,16 @@ const stepEnter = stylex.keyframes({
 
 const styles = stylex.create({
 	// Shell chrome formerly provided by :root/body/base.css globals.
+	// The workbench field carries a faint construction grid: the app's
+	// output is a grid, and the live tessera-size overlay reads against it.
 	root: {
 		boxSizing: "border-box",
-		colorScheme: "light dark",
+		colorScheme: "dark",
 		fontFamily: "system-ui, sans-serif",
 		fontSize: "100%",
 		backgroundColor: tokens.background,
+		backgroundImage: `linear-gradient(to right, ${tokens.gridline} 1px, transparent 1px), linear-gradient(to bottom, ${tokens.gridline} 1px, transparent 1px)`,
+		backgroundSize: "2rem 2rem",
 		color: tokens.text,
 		lineHeight: 1.5,
 		paddingInline: "16px",
@@ -55,7 +59,7 @@ const styles = stylex.create({
 		display: "flex",
 		alignItems: "center",
 		gap: "0.75rem",
-		marginTop: "1rem",
+		marginTop: "0.75rem",
 		justifyContent: "center",
 		"@media (max-width: 900px)": { justifyContent: "flex-start" },
 	},
@@ -63,27 +67,44 @@ const styles = stylex.create({
 		width: "40px",
 		height: "40px",
 		objectFit: "cover",
-		borderRadius: tokens.radius,
-		boxShadow: tokens.shadow,
+		borderWidth: "1px",
+		borderStyle: "solid",
+		borderColor: tokens.border,
 	},
 	sourceThumbnailDimensions: {
 		fontSize: "0.85rem",
 		color: tokens.muted,
+		fontVariantNumeric: "tabular-nums",
 	},
 	header: {
-		paddingBlock: "4rem 2rem",
-		textAlign: "center",
+		display: "flex",
+		flexWrap: "wrap",
+		alignItems: "baseline",
+		justifyContent: "space-between",
+		gap: "0.5rem 1rem",
+		paddingBlock: "1.5rem 1rem",
+		borderBottomWidth: "1px",
+		borderBottomStyle: "solid",
+		borderBottomColor: tokens.border,
 		"@media (max-width: 576px)": {
-			paddingBlockStart: "2rem",
-			textAlign: "left",
+			paddingBlockStart: "1rem",
 		},
 	},
-	tagline: { maxWidth: "40rem", marginInline: "auto" },
-	eyebrow: {
-		marginBottom: "0.5rem",
+	nameplate: {
+		fontFamily: '"Press Start 2P", monospace',
+		fontSize: "1.25rem",
+		lineHeight: 1.4,
+		letterSpacing: "0.02em",
 		color: tokens.primary,
-		fontWeight: 700,
-		letterSpacing: "0.08em",
+		margin: 0,
+		textTransform: "uppercase",
+	},
+	privacyNote: {
+		margin: 0,
+		color: tokens.valid,
+		fontFamily: "ui-monospace, monospace",
+		fontSize: "0.75rem",
+		letterSpacing: "0.06em",
 		textTransform: "uppercase",
 	},
 	workflow: {
@@ -91,16 +112,20 @@ const styles = stylex.create({
 		gap: "2rem",
 		"@media (max-width: 900px)": { flexDirection: "column" },
 	},
+	// The rack sits to the right of the canvas focal plane; the source
+	// image and its construction grid lead the workspace.
 	sidebar: {
 		boxSizing: "border-box",
 		flex: "0 0 14rem",
-		borderRightWidth: "1px",
-		borderRightStyle: "solid",
-		borderRightColor: tokens.border,
-		paddingRight: "1rem",
+		order: 2,
+		borderLeftWidth: "1px",
+		borderLeftStyle: "solid",
+		borderLeftColor: tokens.border,
+		paddingLeft: "1rem",
 		"@media (max-width: 900px)": { display: "none" },
 	},
 	stepsList: { listStyle: "none", padding: 0, margin: 0 },
+	// Sprite-rack stage cells: hard keylines, square counters, no dimming.
 	stepButton: {
 		boxSizing: "border-box",
 		display: "flex",
@@ -109,65 +134,66 @@ const styles = stylex.create({
 		textAlign: "left",
 		padding: "0.75rem 1rem",
 		marginBottom: "0.5rem",
-		borderWidth: 0,
-		borderRadius: tokens.radius,
+		borderWidth: "1px",
+		borderStyle: "solid",
+		borderColor: tokens.border,
 		cursor: "pointer",
 		backgroundColor: {
-			default: tokens.secondary,
+			default: tokens.surface,
 			":hover": tokens.secondaryHover,
 		},
-		color: tokens.onSecondary,
+		color: tokens.text,
 		font: "inherit",
-		transition: "background-color 0.2s, transform 0.1s ease",
-		":active": { transform: "scale(0.98)" },
+		transition: "background-color 0.2s",
 		":focus-visible": {
 			outline: "2px solid currentColor",
 			outlineOffset: "2px",
 		},
-		":disabled": { cursor: "not-allowed", opacity: 0.3 },
+		":disabled": {
+			cursor: "not-allowed",
+			backgroundColor: tokens.background,
+			color: tokens.muted,
+		},
 		"@media (max-width: 900px)": { padding: "1rem" },
 		[REDUCED_MOTION]: { transitionDuration: "0.01ms" },
 	},
-	// Current step keeps its primary color on hover (matches the old cascade).
+	// The current stage takes a gold keyline and gold ink; the gold fill
+	// stays reserved for the primary action plate.
 	stepButtonCurrent: {
 		backgroundColor: {
-			default: tokens.primary,
-			":hover": tokens.primary,
+			default: tokens.surface,
+			":hover": tokens.secondaryHover,
 		},
-		color: tokens.onPrimary,
+		borderColor: tokens.primary,
+		color: tokens.primary,
 	},
-	stepButtonCompleted: { opacity: 0.7 },
+	stepButtonCompleted: {
+		borderColor: tokens.valid,
+		color: tokens.valid,
+	},
+
 	stepIndicator: {
 		display: "inline-flex",
 		alignItems: "center",
 		justifyContent: "center",
 		width: "1.75rem",
 		height: "1.75rem",
-		borderRadius: "50%",
 		marginRight: "0.75rem",
+		fontFamily: "ui-monospace, monospace",
 		fontWeight: "bold",
 		flexShrink: 0,
+		borderWidth: "1px",
+		borderStyle: "solid",
+		borderColor: "currentColor",
 	},
 	stepIndicatorCurrent: {
-		backgroundColor: tokens.onPrimary,
 		color: tokens.primary,
 	},
 	stepTitle: {
 		fontWeight: 500,
 		"@media (max-width: 900px)": { fontSize: "1rem" },
 	},
-	canvas: { flex: 1, display: "flex", flexDirection: "column" },
-	navigation: {
-		display: "flex",
-		justifyContent: "space-between",
-		alignItems: "center",
-		marginBottom: "1rem",
-		paddingBottom: 0,
-		borderBottomWidth: "1px",
-		borderBottomStyle: "solid",
-		borderBottomColor: tokens.border,
-	},
-	stepCounter: { color: tokens.muted, fontSize: "0.9rem" },
+	canvas: { flex: 1, order: 1, display: "flex", flexDirection: "column" },
 	content: { flex: 1 },
 	// Replays whenever the step changes because the element is keyed by step.
 	contentEnter: {
@@ -267,7 +293,23 @@ function WorkflowStepList({
 									isCurrent && styles.stepIndicatorCurrent,
 								)}
 							>
-								{isCompleted ? <span>✓</span> : <span>{index + 1}</span>}
+								{isCompleted ? (
+									<svg
+										width="12"
+										height="12"
+										viewBox="0 0 12 12"
+										aria-hidden="true"
+									>
+										<path
+											d="M1.5 6.5 4.5 9.5 10.5 2.5"
+											fill="none"
+											stroke="currentColor"
+											strokeWidth="2"
+										/>
+									</svg>
+								) : (
+									<span>{index + 1}</span>
+								)}
 							</span>
 							<span {...stylex.props(styles.stepTitle)}>{title}</span>
 						</button>
@@ -439,18 +481,11 @@ export function WorkflowApp() {
 		}
 	}
 
-	const canGoForward =
-		workflowState.currentStep < workflowState.furthestCompletedStep;
-
-	const showBackButton = workflowState.currentStep > 0;
-
-	const showTopNextButton =
-		canGoForward && workflowState.currentStep > WorkflowStepEnum.BUILD_TESSERAE;
+	// The rack is the navigation: no wizard counter or back/next chrome.
 
 	// The tokens from defineVars are emitted on :root, so no theme class is
 	// needed on the shell; it only carries the former :root/body globals.
 	const rootProps = stylex.props(styles.root);
-	const eyebrowProps = stylex.props(base.paragraph, styles.eyebrow);
 
 	return (
 		<div {...rootProps} className={`layout-container ${rootProps.className}`}>
@@ -458,10 +493,8 @@ export function WorkflowApp() {
 				Skip to main content
 			</a>
 			<header {...stylex.props(styles.header)}>
-				<p {...eyebrowProps} className={`eyebrow ${eyebrowProps.className}`}>
-					Private, in-browser image making • Works offline once loaded
-				</p>
-				<h1 {...stylex.props(base.heading, base.h1)}>Mosaic Maker</h1>
+				<h1 {...stylex.props(styles.nameplate)}>Mosaic Maker</h1>
+				<p {...stylex.props(styles.privacyNote)}>Private · in-browser</p>
 				{workflowState.sourceImage &&
 					workflowState.currentStep > WorkflowStepEnum.CHOOSE_SOURCE_IMAGE && (
 						<div {...stylex.props(styles.sourceThumbnailHeader)}>
@@ -476,10 +509,6 @@ export function WorkflowApp() {
 							</span>
 						</div>
 					)}
-				<p {...stylex.props(base.paragraph, styles.tagline)}>
-					Turn a source image into a full-resolution photomosaic. Your source
-					image and tesserae stay on this device.
-				</p>
 			</header>
 
 			<ErrorBoundary>
@@ -505,40 +534,6 @@ export function WorkflowApp() {
 					</aside>
 
 					<div {...stylex.props(styles.canvas)}>
-						<div {...stylex.props(styles.navigation)}>
-							{showBackButton && (
-								<ActionButton
-									type="button"
-									variant="secondary"
-									onClick={() =>
-										dispatch({
-											type: "goToStep",
-											step: workflowState.currentStep - 1,
-										})
-									}
-								>
-									← Back
-								</ActionButton>
-							)}
-							<span {...stylex.props(styles.stepCounter)}>
-								Step {workflowState.currentStep + 1} of{" "}
-								{WORKFLOW_STEP_TITLES.length}
-							</span>
-							{showTopNextButton && (
-								<ActionButton
-									type="button"
-									onClick={() =>
-										dispatch({
-											type: "goToStep",
-											step: workflowState.currentStep + 1,
-										})
-									}
-								>
-									Continue to{" "}
-									{WORKFLOW_STEP_TITLES[workflowState.currentStep + 1]} →
-								</ActionButton>
-							)}
-						</div>
 
 						<div
 							key={workflowState.currentStep}
