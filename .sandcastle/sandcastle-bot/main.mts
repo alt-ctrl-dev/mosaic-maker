@@ -28,7 +28,7 @@ import { isolatedDockerSandbox } from "../shared/isolated-docker.mts";
 import { MAX_ITERATIONS, hooks, copyToWorktree } from "../shared/config.mts";
 import { createPlanAgent } from "./plan.mts";
 import { createPr, generatePrDescription } from "./pr.mts";
-import { createImplmentAgent } from "./implement.mts";
+import { createImplementAgent } from "./implement.mts";
 import { createReviewAgent } from "../shared/review.mts";
 import { enforceSandboxSecurityBoundaries } from "../shared/security-check.mts";
 import { requireAuthorizedActor } from "../shared/auth.mts";
@@ -76,7 +76,7 @@ for (let iteration = 1; iteration <= MAX_ITERATIONS; iteration++) {
       copyToWorktree,
     });
 
-    const implementAgent = createImplmentAgent(sandbox, topIssue);
+    const implementAgent = createImplementAgent(sandbox, topIssue);
     const reviewAgent = createReviewAgent(sandbox, branch);
 
     try {

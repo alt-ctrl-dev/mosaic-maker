@@ -17,6 +17,10 @@ Closes #${issueId}
 `
 }
 
+/**
+ * Generates a PR title and description by running two parallel sandbox agents
+ * that inspect the diff between the current and base branches.
+ */
 export const generatePrDescription = async (
   sandbox: IsolatedDockerSandbox,
   issueId: string,
@@ -26,13 +30,13 @@ export const generatePrDescription = async (
   const [prTitle, prDescription] = await Promise.all([
     sandcastle.run({
       sandbox,
-            name: "pr-title-generator",
-            maxIterations: 1,
-            agent: sandcastle.pi("openrouter/anthropic/claude-haiku-4.5"),
-            promptFile: "./.sandcastle/sandcastle-bot/pr-title-prompt.md",
-            promptArgs: { BRANCH: branch.current, BASE_BRANCH: baseBranch },
-            output: sandcastle.Output.string({ tag: "pr-title" }),
-        }),
+      name: "pr-title-generator",
+      maxIterations: 1,
+      agent: sandcastle.pi("openrouter/anthropic/claude-haiku-4.5"),
+      promptFile: "./.sandcastle/sandcastle-bot/pr-title-prompt.md",
+      promptArgs: { BRANCH: branch.current, BASE_BRANCH: baseBranch },
+      output: sandcastle.Output.string({ tag: "pr-title" }),
+    }),
     sandcastle.run({
       sandbox,
       name: "pr-description-generator",
@@ -49,6 +53,10 @@ export const generatePrDescription = async (
   return { title: prTitle.output, description };
 }
 
+/**
+ * Creates a GitHub pull request for the given branch, pushing it first
+ * and generating the PR via the GitHub CLI.
+ */
 export const createPr = async (title: string, description: string, branch: {
     base?: string; current: string
 }) => {

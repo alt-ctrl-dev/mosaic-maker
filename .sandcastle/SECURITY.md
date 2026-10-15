@@ -14,11 +14,11 @@ The primary security concern is preventing untrusted code execution from accessi
 
 ### 1. Isolated Docker Sandbox
 
-The `dockerSandbox` configuration in `shared/docker.mts` is specifically configured to prevent access to host Git metadata:
+The `isolatedDockerSandbox` provider in `shared/isolated-docker.mts` is specifically configured to prevent access to host Git metadata:
 
-- **No automatic Git mounts**: By not specifying mounts in the Docker configuration, we prevent the sandcastle library from automatically mounting host `.git` directories
+- **No automatic Git mounts**: The isolated provider does not bind-mount host directories, preventing exposure of host `.git` directories
 - **Separate execution context**: Untrusted code runs in isolated containers without access to host Git configuration
-- **Credential isolation**: Host credentials are not forwarded to the sandbox environment
+- **Credential isolation**: Only explicitly allowed environment variables (e.g., `OPENROUTER_API_KEY`) are forwarded; host credentials like `GH_TOKEN` are excluded
 
 ### 2. Trusted Orchestration Pattern
 

@@ -1,5 +1,9 @@
 import { spawnSync } from "child_process";
 
+/**
+ * Pushes a branch to the remote origin with --force-with-lease for safe
+ * force-pushing. Validates the branch name to prevent injection.
+ */
 export const pushBranch = async (branchName: string): Promise<void> => {
   if (!branchName || typeof branchName !== "string") {
     throw new Error("Invalid branch name");

@@ -1,9 +1,9 @@
 import { createIsolatedSandboxProvider, type IsolatedSandboxProvider } from "@ai-hero/sandcastle";
 import { sandboxEnv } from "./sandbox-env.mts";
-import { execSync, spawn } from "child_process";
+import { execSync, spawn, spawnSync } from "child_process";
 import { stat, unlink } from "fs/promises";
 import { tmpdir } from "os";
-import { join, basename } from "path";
+import { join } from "path";
 
 export type IsolatedDockerSandbox = IsolatedSandboxProvider;
 
@@ -39,7 +39,11 @@ export const isolatedDockerSandbox: IsolatedDockerSandbox = createIsolatedSandbo
       execSync(
         `docker run -d --name ${containerName} ` +
           `-e HOME=/tmp --workdir ${worktreePath} ` +
-          `${envArgs} node:24.18.1-bookworm-slim bash -c "apt-get update && apt-get install -y git curl jq && sleep infinity"`,
+          `${envArgs} node:24.18.1-bookworm-slim bash -c "` +
+          `apt-get update && apt-get install -y git curl jq && ` +
+          `npm install -g pnpm@11.10.0 && ` +
+          `npm install -g @mariozechner/pi-coding-agent && ` +
+          `sleep infinity"`,
         { stdio: "pipe" },
       );
       execSync(`docker exec ${containerName} mkdir -p ${worktreePath}`, {
@@ -140,33 +144,31 @@ export const isolatedDockerSandbox: IsolatedDockerSandbox = createIsolatedSandbo
           });
         }
 
-        try {
-          const result = execSync(
-            `docker exec ${containerName} sh -c 'cd '${cwd.replace(/'/g, "'\\''")}' && ${command}'`,
-            { encoding: "utf8", stdio: "pipe" },
-          );
+        const result = spawnSync(
+          "docker",
+          [
+            "exec",
+            containerName,
+            "sh",
+            "-c",
+            `cd '${cwd.replace(/'/g, "'\\''")}' && ${command}`,
+          ],
+          { encoding: "utf8" },
+        );
 
-          if (opts?.onLine) {
-            for (const line of result.toString().split("\n")) {
-              if (line.trim()) {
-                opts.onLine(line);
-              }
+        if (opts?.onLine) {
+          for (const line of result.stdout.split("\n")) {
+            if (line.trim()) {
+              opts.onLine(line);
             }
           }
-
-          return {
-            stdout: result.toString().trim(),
-            stderr: "",
-            exitCode: 0,
-          };
-        } catch (error: unknown) {
-          const err = error as { stdout?: Buffer; stderr?: Buffer; status?: number };
-          return {
-            stdout: err.stdout?.toString() ?? "",
-            stderr: err.stderr?.toString() ?? String(error),
-            exitCode: err.status ?? 1,
-          };
         }
+
+        return {
+          stdout: result.stdout.trim(),
+          stderr: result.stderr.trim(),
+          exitCode: result.status ?? 0,
+        };
       },
 
       copyIn: async (hostPath: string, sandboxPath: string) => {

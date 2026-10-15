@@ -10,10 +10,14 @@ const planSchema = z.object({
 });
 
 
+/**
+ * Creates a planning agent that reads the open issue list, builds a dependency
+ * graph, and selects the next unblocked issue to work on.
+ */
 export const createPlanAgent = (
   sandbox: IsolatedDockerSandbox,
 ): Agent<Issue | never> => {
-const agentName = "planner"
+  const agentName = "planner";
   const planWork = async (): Promise<Issue | never> => {
     // -------------------------------------------------------------------------
     // Phase: Plan
@@ -51,6 +55,5 @@ const agentName = "planner"
   return {
     run: planWork
   }
-
 }
 

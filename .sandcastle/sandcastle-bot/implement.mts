@@ -1,7 +1,11 @@
 import type { Agent, Issue } from "../shared/types.ts";
 import * as sandcastle from "@ai-hero/sandcastle";
 
-export const createImplmentAgent = (sandbox: sandcastle.Sandbox, topIssue: Issue): Agent<number> => {
+/**
+ * Creates an implementation agent that writes code for a given issue using
+ * test-driven development (red-green-refactor) and commits the result.
+ */
+export const createImplementAgent = (sandbox: sandcastle.Sandbox, topIssue: Issue): Agent<number> => {
     const agentName = "implementor"
 
     const run = async () => {

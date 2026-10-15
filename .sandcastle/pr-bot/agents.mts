@@ -1,6 +1,5 @@
 import { execSync } from "child_process";
 import * as sandcastle from "@ai-hero/sandcastle";
-import type { DockerSandbox } from "../shared/docker.mts";
 import { pushBranch } from "../shared/git.mts";
 import { hooks, copyToWorktree } from "../shared/config.mts";
 import type { Comment, PR, Thread, PlanAction } from "./types.mts";
