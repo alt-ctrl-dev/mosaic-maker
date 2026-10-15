@@ -1,6 +1,5 @@
 import { execSync } from "child_process";
 import * as sandcastle from "@ai-hero/sandcastle";
-import type { DockerSandbox } from "../shared/docker.mts";
 import { pushBranch } from "../shared/git.mts";
 import { hooks, copyToWorktree } from "../shared/config.mts";
 import type { Comment, PR, Thread, PlanAction } from "./types.mts";
@@ -9,8 +8,9 @@ import { getIssueContext, postComment } from "./github.mts";
 import { createReviewAgent } from "../shared/review.mts";
 import type { Agent } from "../shared/types.ts";
 import { z } from "zod";
+import type { IsolatedDockerSandbox } from "../shared/isolated-docker.mts";
 
-type Deps = { dockerSandbox: DockerSandbox };
+type Deps = { dockerSandbox: IsolatedDockerSandbox };
 
 
 const extractIssueNumbersFromPR = (pr: PR): number[] => {
