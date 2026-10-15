@@ -1,66 +1,61 @@
 import { cleanup, fireEvent, render, screen } from "@testing-library/react";
-import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
-import type { WorkflowState } from "../engine/workflow-state";
+import { Provider } from "jotai";
+import { afterEach, describe, expect, it, vi } from "vitest";
+import {
+	createWorkflowStore,
+	requestedTesseraSizeAtom,
+} from "../atoms/workflow-atoms";
 import { TesseraSizeSelection } from "./TesseraSizeSelection";
 
 describe("TesseraSizeSelection initial value registration", () => {
-	const onSizeSelectedMock = vi.fn();
-
 	const mockInitialState = {
 		sourceImage: {
 			url: "blob:test",
 			width: 100,
 			height: 100,
+			orientation: 1,
 		},
-		hasValidSourceDimensions: true,
-	} as unknown as WorkflowState;
+	};
 
-	beforeEach(() => {
-		onSizeSelectedMock.mockReset();
-	});
+	function renderSizeSelection() {
+		const store = createWorkflowStore(mockInitialState);
+		const result = render(
+			<Provider store={store}>
+				<TesseraSizeSelection />
+			</Provider>,
+		);
+		return { store, ...result };
+	}
 
 	afterEach(() => {
 		cleanup();
 	});
 
-	it("calls onSizeSelected on initial render with default value", () => {
-		render(
-			<TesseraSizeSelection
-				onSizeSelected={onSizeSelectedMock}
-				initialState={mockInitialState}
-			/>,
-		);
+	it("commits the default size on initial render", () => {
+		const { store } = renderSizeSelection();
 
 		const rangeInput = screen.getByRole("slider");
 		expect(rangeInput.getAttribute("value")).toBe("16");
 
-		expect(onSizeSelectedMock).toHaveBeenCalledTimes(1);
-		expect(onSizeSelectedMock).toHaveBeenCalledWith(16);
+		expect(store.get(requestedTesseraSizeAtom)).toBe(16);
 	});
 
-	it("debounces onSizeSelected when user changes slider value", () => {
+	it("debounces the size commit when user changes slider value", () => {
 		vi.useFakeTimers();
-		render(
-			<TesseraSizeSelection
-				onSizeSelected={onSizeSelectedMock}
-				initialState={mockInitialState}
-			/>,
-		);
+		const { store } = renderSizeSelection();
 
 		const rangeInput = screen.getByRole("slider");
-		onSizeSelectedMock.mockClear();
 
 		fireEvent.change(rangeInput, { target: { value: "32" } });
 
-		// Should not be called immediately (debounced)
-		expect(onSizeSelectedMock).not.toHaveBeenCalled();
+		// Should not be committed immediately (debounced)
+		expect(store.get(requestedTesseraSizeAtom)).toBe(16);
 
 		// Advance timers to allow debounce to complete
 		vi.advanceTimersByTime(300);
 
-		// Should be called after debounce
-		expect(onSizeSelectedMock).toHaveBeenCalledTimes(1);
-		expect(onSizeSelectedMock).toHaveBeenCalledWith(32);
+		// Should be committed after debounce
+		expect(store.get(requestedTesseraSizeAtom)).toBe(32);
 		vi.useRealTimers();
 	});
 });

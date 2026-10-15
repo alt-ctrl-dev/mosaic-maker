@@ -1,9 +1,15 @@
-import { useEffect, useState } from "react";
 import * as stylex from "@stylexjs/stylex";
+import { useAtom, useAtomValue } from "jotai";
+import { useEffect, useState } from "react";
+import {
+	exportBackgroundColorAtom,
+	exportFormatAtom,
+	exportQualityAtom,
+	mosaicResultAtom,
+} from "../atoms/workflow-atoms";
 import type { ExportFormat } from "../engine/export";
 import { exportMosaic } from "../engine/export";
-import type { ExportSettings, WorkflowState } from "../engine/workflow-state";
-import type { WorkflowAction } from "../hooks/useWorkflowReducer";
+import type { MosaicResult } from "../engine/mosaic-engine";
 import { base } from "../styles/base.stylex";
 import { tokens } from "../styles/tokens.stylex";
 import { trackError, trackEvent, trackStepView } from "../telemetry";
@@ -17,14 +23,6 @@ const styles = stylex.create({
 	exportPreview: { margin: "2rem 0", textAlign: "center" },
 	// The old stylesheet gave details content a 1rem margin on every side.
 	detailsContent: { margin: "1rem" },
-	mosaicPreview: {
-		maxWidth: "100%",
-		maxHeight: "400px",
-		width: "auto",
-		height: "auto",
-		borderRadius: tokens.radius,
-		boxShadow: tokens.shadow,
-	},
 	summary: {
 		textAlign: "center",
 		marginBottom: "1rem",
@@ -37,15 +35,15 @@ const styles = stylex.create({
 		fontSize: "0.875rem",
 		color: tokens.valid,
 	},
+	mosaicPreview: {
+		maxWidth: "100%",
+		maxHeight: "400px",
+		width: "auto",
+		height: "auto",
+		borderRadius: tokens.radius,
+		boxShadow: tokens.shadow,
+	},
 });
-
-/** Props for {@link ExportMosaic}. */
-interface ExportMosaicProps {
-	/** Current workflow state, used for mosaic result and export settings. */
-	state: WorkflowState;
-	/** Dispatches workflow actions for export settings changes. */
-	dispatch: (action: WorkflowAction) => void;
-}
 
 const EXPORT_FORMATS: ReadonlyArray<ExportFormat> = ["png", "jpeg", "webp"];
 
@@ -213,7 +211,13 @@ function exportButtonLabel(isExporting: boolean, canShare: boolean): string {
  * Export step that lets the user configure format, quality, and alt text,
  * preview the mosaic, and trigger a file download.
  */
-export function ExportMosaic({ state, dispatch }: ExportMosaicProps) {
+export function ExportMosaic() {
+	const mosaicResult = useAtomValue(mosaicResultAtom);
+	const [exportFormat, setExportFormat] = useAtom(exportFormatAtom);
+	const [exportQuality, setExportQuality] = useAtom(exportQualityAtom);
+	const [exportBackgroundColor, setExportBackgroundColor] = useAtom(
+		exportBackgroundColorAtom,
+	);
 	const [isExporting, setIsExporting] = useState(false);
 	const [isDelivered, setIsDelivered] = useState(false);
 
@@ -224,10 +228,6 @@ export function ExportMosaic({ state, dispatch }: ExportMosaicProps) {
 		trackStepView("export_mosaic");
 	}, []);
 
-	const handleExportSettingsChange = (settings: Partial<ExportSettings>) => {
-		dispatch({ type: "exportSettingsChanged", settings });
-	};
-
 	/**
 	 * Share the mosaic via the Web Share API. Returns `false` when the browser
 	 * reports it cannot share the generated file, letting the caller fall back
@@ -236,10 +236,10 @@ export function ExportMosaic({ state, dispatch }: ExportMosaicProps) {
 	 */
 	const shareExportedMosaic = async (
 		exportedDataUrl: string,
-		mosaicResult: NonNullable<WorkflowState["mosaicResult"]>,
+		mosaicResult: MosaicResult,
 	): Promise<boolean> => {
 		const blob = dataUrlToBlob(exportedDataUrl);
-		const file = new File([blob], `mosaic.${state.exportFormat}`, {
+		const file = new File([blob], `mosaic.${exportFormat}`, {
 			type: blob.type,
 		});
 
@@ -254,8 +254,8 @@ export function ExportMosaic({ state, dispatch }: ExportMosaicProps) {
 		});
 
 		trackEvent("mosaic_download", {
-			format: state.exportFormat,
-			quality: state.exportQuality,
+			format: exportFormat,
+			quality: exportQuality,
 			width: mosaicResult.width,
 			height: mosaicResult.height,
 			delivery: "share",
@@ -277,19 +277,19 @@ export function ExportMosaic({ state, dispatch }: ExportMosaicProps) {
 	 */
 	const downloadExportedMosaic = (
 		exportedDataUrl: string,
-		mosaicResult: NonNullable<WorkflowState["mosaicResult"]>,
+		mosaicResult: MosaicResult,
 		useAnchorDownload: boolean,
 		tabPopulator: ((dataUrl: string) => void) | null,
 	): void => {
 		if (useAnchorDownload) {
-			downloadFile(exportedDataUrl, `mosaic.${state.exportFormat}`);
+			downloadFile(exportedDataUrl, `mosaic.${exportFormat}`);
 		} else if (tabPopulator) {
 			tabPopulator(exportedDataUrl);
 		}
 
 		trackEvent("mosaic_download", {
-			format: state.exportFormat,
-			quality: state.exportQuality,
+			format: exportFormat,
+			quality: exportQuality,
 			width: mosaicResult.width,
 			height: mosaicResult.height,
 			delivery: useAnchorDownload ? "anchor" : "new-tab-populated",
@@ -297,7 +297,6 @@ export function ExportMosaic({ state, dispatch }: ExportMosaicProps) {
 	};
 
 	const handleExport = async () => {
-		const mosaicResult = state.mosaicResult;
 		if (!mosaicResult) {
 			setError("No mosaic to export");
 			return;
@@ -329,8 +328,8 @@ export function ExportMosaic({ state, dispatch }: ExportMosaicProps) {
 				mosaicResult.dataUrl,
 				mosaicResult.width,
 				mosaicResult.height,
-				state.exportFormat,
-				state.exportQuality,
+				exportFormat,
+				exportQuality,
 			);
 
 			if (canShare) {
@@ -360,8 +359,8 @@ export function ExportMosaic({ state, dispatch }: ExportMosaicProps) {
 				err instanceof Error ? err.message : "Unknown error occurred";
 			setError(errorMessage);
 			trackError("mosaic_export", err, {
-				exportFormat: state.exportFormat,
-				exportQuality: state.exportQuality,
+				exportFormat: exportFormat,
+				exportQuality: exportQuality,
 			});
 		} finally {
 			setIsExporting(false);
@@ -372,26 +371,24 @@ export function ExportMosaic({ state, dispatch }: ExportMosaicProps) {
 
 	return (
 		<div>
-			{state.mosaicResult ? (
+			{mosaicResult ? (
 				<>
 					<div {...stylex.props(styles.exportPreview)}>
 						<h3 {...stylex.props(base.heading, base.h3)}>Preview</h3>
 						<img
-							src={state.mosaicResult.dataUrl}
+							src={mosaicResult.dataUrl}
 							alt={"Generated mosaic"}
 							{...stylex.props(styles.mosaicPreview)}
 						/>
 					</div>
 					<div {...stylex.props(styles.summary)}>
-						{state.exportFormat.toUpperCase()} · {state.mosaicResult.width}×
-						{state.mosaicResult.height} · ~
-						{Math.round((state.mosaicResult.dataUrl.length * 0.75) / 1024)} KB
+						{exportFormat.toUpperCase()} · {mosaicResult.width}×
+						{mosaicResult.height} · ~
+						{Math.round((mosaicResult.dataUrl.length * 0.75) / 1024)} KB
 					</div>
 					<details
 						{...stylex.props(base.details)}
-						open={
-							state.exportFormat === "jpeg" || state.exportFormat === "webp"
-						}
+						open={exportFormat === "jpeg" || exportFormat === "webp"}
 					>
 						<summary {...stylex.props(base.summary)}>Export Settings</summary>
 						<div {...stylex.props(styles.detailsContent)}>
@@ -408,11 +405,11 @@ export function ExportMosaic({ state, dispatch }: ExportMosaicProps) {
 									</label>
 									<select
 										id="export-format"
-										value={state.exportFormat}
+										value={exportFormat}
 										onChange={(e) => {
 											const value = e.target.value;
 											if (isExportFormat(value)) {
-												handleExportSettingsChange({ exportFormat: value });
+												setExportFormat(value);
 											}
 										}}
 										disabled={isExporting}
@@ -425,8 +422,7 @@ export function ExportMosaic({ state, dispatch }: ExportMosaicProps) {
 								</div>
 							</fieldset>
 
-							{(state.exportFormat === "jpeg" ||
-								state.exportFormat === "webp") && (
+							{(exportFormat === "jpeg" || exportFormat === "webp") && (
 								<fieldset {...stylex.props(base.fieldset, styles.settingGroup)}>
 									<legend {...stylex.props(base.legend, styles.settingLegend)}>
 										Quality Settings
@@ -436,7 +432,7 @@ export function ExportMosaic({ state, dispatch }: ExportMosaicProps) {
 											htmlFor="export-quality"
 											{...stylex.props(base.label, styles.inputGroupLabel)}
 										>
-											Quality: {Math.round(state.exportQuality * 100)}%
+											Quality: {Math.round(exportQuality * 100)}%
 										</label>
 										<input
 											id="export-quality"
@@ -444,11 +440,9 @@ export function ExportMosaic({ state, dispatch }: ExportMosaicProps) {
 											min="0"
 											max="1"
 											step="0.01"
-											value={state.exportQuality}
+											value={exportQuality}
 											onChange={(e) =>
-												handleExportSettingsChange({
-													exportQuality: parseFloat(e.target.value),
-												})
+												setExportQuality(parseFloat(e.target.value))
 											}
 											disabled={isExporting}
 											{...stylex.props(base.rangeInput, base.focusOutline)}
@@ -457,7 +451,7 @@ export function ExportMosaic({ state, dispatch }: ExportMosaicProps) {
 								</fieldset>
 							)}
 
-							{state.exportFormat === "jpeg" && (
+							{exportFormat === "jpeg" && (
 								<fieldset {...stylex.props(base.fieldset, styles.settingGroup)}>
 									<legend {...stylex.props(base.legend, styles.settingLegend)}>
 										Background Settings
@@ -472,12 +466,8 @@ export function ExportMosaic({ state, dispatch }: ExportMosaicProps) {
 										<input
 											id="export-background"
 											type="color"
-											value={state.exportBackgroundColor}
-											onChange={(e) =>
-												handleExportSettingsChange({
-													exportBackgroundColor: e.target.value,
-												})
-											}
+											value={exportBackgroundColor}
+											onChange={(e) => setExportBackgroundColor(e.target.value)}
 											disabled={isExporting}
 											{...stylex.props(base.colorInput, base.focusOutline)}
 										/>
@@ -497,6 +487,12 @@ export function ExportMosaic({ state, dispatch }: ExportMosaicProps) {
 							{exportButtonLabel(isExporting, canShare)}
 						</ActionButton>
 
+						{isDelivered && (
+							<div {...stylex.props(styles.confirmation)} role="status">
+								Delivered!
+							</div>
+						)}
+
 						{error && (
 							<article
 								{...errorPanelProps}
@@ -505,11 +501,6 @@ export function ExportMosaic({ state, dispatch }: ExportMosaicProps) {
 							>
 								<strong>Error:</strong> {error}
 							</article>
-						)}
-						{isDelivered && (
-							<div {...stylex.props(styles.confirmation)} role="status">
-								Delivered!
-							</div>
 						)}
 					</div>
 				</>

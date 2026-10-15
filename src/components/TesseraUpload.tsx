@@ -1,23 +1,29 @@
+import * as stylex from "@stylexjs/stylex";
+import { useAtomValue, useSetAtom } from "jotai";
 import type React from "react";
 import { useCallback, useEffect, useState } from "react";
-import * as stylex from "@stylexjs/stylex";
+import {
+	replaceTesseraeAtom,
+	resolvedTesseraSizeAtom,
+	tesseraeAtom,
+} from "../atoms/workflow-atoms";
+import {
+	getDimensionErrorMessage,
+	getFileCountErrorMessage,
+	getFileSizeErrorMessage,
+	getImageDimensions,
+	getTotalSizeErrorMessage,
+	isDimensionLimitExceeded,
+	isFileSizeExceeded,
+	isTesseraFileLimitExceeded,
+	isTotalRetainedSizeExceeded,
+} from "../engine/resource-policy";
 import { processTesserae } from "../engine/tessera-processing";
 import type { TesseraInfo } from "../engine/workflow-state";
+import { vibrate } from "../haptics";
 import { base } from "../styles/base.stylex";
 import { tokens } from "../styles/tokens.stylex";
-import { vibrate } from "../haptics";
 import { trackError, trackStepView } from "../telemetry";
-import {
-	isFileSizeExceeded,
-	isTotalRetainedSizeExceeded,
-	isTesseraFileLimitExceeded,
-	isDimensionLimitExceeded,
-	getImageDimensions,
-	getFileSizeErrorMessage,
-	getTotalSizeErrorMessage,
-	getFileCountErrorMessage,
-	getDimensionErrorMessage,
-} from "../engine/resource-policy";
 
 const styles = stylex.create({
 	root: { flex: 1 },
@@ -36,24 +42,13 @@ const styles = stylex.create({
 	},
 });
 
-/** Props for {@link TesseraUpload}. */
-interface TesseraUploadProps {
-	/** Called with the processed tesserae when upload completes. */
-	onTesseraeProcessed: (tesserae: TesseraInfo[]) => void;
-	/** Tessera pixel size to validate uploaded images against. */
-	adjustedTesseraSize: number;
-	/** Current tesserae collection for cumulative size checking. */
-	currentTesserae: TesseraInfo[];
-}
-
 /**
  * Drop zone and file input for uploading tessera images.
  */
-export function TesseraUpload({
-	onTesseraeProcessed,
-	adjustedTesseraSize,
-	currentTesserae,
-}: TesseraUploadProps) {
+export function TesseraUpload() {
+	const adjustedTesseraSize = useAtomValue(resolvedTesseraSizeAtom);
+	const currentTesserae = useAtomValue(tesseraeAtom);
+	const replaceTesserae = useSetAtom(replaceTesseraeAtom);
 	const [isProcessing, setIsProcessing] = useState(false);
 	const [errorMessage, setErrorMessage] = useState<string | null>(null);
 
@@ -152,7 +147,7 @@ export function TesseraUpload({
 					);
 					tesserae = [...processed, ...dimensionRejected];
 				}
-				onTesseraeProcessed(tesserae);
+				replaceTesserae(tesserae);
 				vibrate(15);
 			} catch (error) {
 				console.error("Error processing tesserae:", error);
@@ -164,7 +159,7 @@ export function TesseraUpload({
 				setIsProcessing(false);
 			}
 		},
-		[adjustedTesseraSize, currentTesserae, onTesseraeProcessed],
+		[adjustedTesseraSize, currentTesserae, replaceTesserae],
 	);
 
 	const handleDragOver = useCallback((e: React.DragEvent) => {

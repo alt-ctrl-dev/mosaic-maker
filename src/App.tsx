@@ -1,5 +1,16 @@
 import * as stylex from "@stylexjs/stylex";
-import { Provider } from "jotai";
+import { Provider, useAtomValue, useSetAtom } from "jotai";
+import {
+	clearTesseraeAtom,
+	currentStepAtom,
+	furthestCompletedStepAtom,
+	goToStepAtom,
+	modeAtom,
+	rejectedTesseraCountAtom,
+	sourceImageAtom,
+	tesseraeAtom,
+	validTesseraCountAtom,
+} from "./atoms/workflow-atoms";
 import { ActionButton } from "./components/ActionButton";
 import { AppFooter } from "./components/AppFooter";
 import { BrickColorPicker } from "./components/BrickColorPicker";
@@ -13,22 +24,19 @@ import { SourceImageSelection } from "./components/SourceImageSelection";
 import { TesseraReview } from "./components/TesseraReview";
 import { TesseraSizeSelection } from "./components/TesseraSizeSelection";
 import { TesseraUpload } from "./components/TesseraUpload";
-import { resizeTesserae } from "./engine/tessera-processing";
-import {
-	generateSupplementedTesserae,
-	WorkflowStep as WorkflowStepEnum,
-	WORKFLOW_STEP_TITLES,
-} from "./engine/workflow-state";
-import { useWorkflowReducer } from "./hooks/useWorkflowReducer";
+import { WorkflowStep as WorkflowStepEnum } from "./engine/workflow-state";
 import { base } from "./styles/base.stylex";
 import { tokens } from "./styles/tokens.stylex";
-import { trackError } from "./telemetry";
 
 // StyleX only resolves computed conditional keys defined in the same module.
 const REDUCED_MOTION = "@media (prefers-reduced-motion: reduce)";
 
-/** Fallback tessera size when no adjusted size has been calculated yet. */
-const DEFAULT_TESSERA_SIZE = 16;
+const stages = [
+	"Choose source image",
+	"Build tiles",
+	"Generate and preview",
+	"Export mosaic",
+] as const;
 
 /** Spinner keyframe for the step-content entrance. Local because StyleX
  * does not resolve imported keyframe bindings. */
@@ -248,173 +256,43 @@ export function App() {
 	);
 }
 
-/**
- * Renders the ordered list of workflow step buttons.
- * @param isMobile - When true, adds `commandfor` and `command` attributes
- *   so the button closes the mobile workflow dialog on click.
- */
-function WorkflowStepList({
-	isMobile,
-	dispatch,
-	currentStep,
-	furthestCompletedStep,
-}: {
-	isMobile?: boolean;
-	dispatch: ReturnType<typeof useWorkflowReducer>[1];
-	currentStep: number;
-	furthestCompletedStep: number;
-}) {
-	return (
-		<ol {...stylex.props(styles.stepsList)}>
-			{WORKFLOW_STEP_TITLES.map((title, index) => {
-				const isCurrent = currentStep === index;
-				const isCompleted = index < furthestCompletedStep;
-				const isDisabled = index > furthestCompletedStep;
-				return (
-					<li key={title}>
-						<button
-							type="button"
-							{...stylex.props(
-								styles.stepButton,
-								isCurrent && styles.stepButtonCurrent,
-								isCompleted && styles.stepButtonCompleted,
-							)}
-							aria-current={isCurrent ? "step" : undefined}
-							onClick={() => dispatch({ type: "goToStep", step: index })}
-							disabled={isDisabled}
-							{...(isMobile
-								? {
-										commandfor: "mobile-workflow-menu",
-										command: "close",
-									}
-								: {})}
-						>
-							<span
-								{...stylex.props(
-									styles.stepIndicator,
-									isCurrent && styles.stepIndicatorCurrent,
-								)}
-							>
-								{isCompleted ? (
-									<svg
-										width="12"
-										height="12"
-										viewBox="0 0 12 12"
-										aria-hidden="true"
-									>
-										<path
-											d="M1.5 6.5 4.5 9.5 10.5 2.5"
-											fill="none"
-											stroke="currentColor"
-											strokeWidth="2"
-										/>
-									</svg>
-								) : (
-									<span>{index + 1}</span>
-								)}
-							</span>
-							<span {...stylex.props(styles.stepTitle)}>{title}</span>
-						</button>
-					</li>
-				);
-			})}
-		</ol>
-	);
-}
-
 /** Internal workflow component exported for testing. */
 export function WorkflowApp() {
-	const [workflowState, dispatch] = useWorkflowReducer();
-
-	const resolvedTesseraSize =
-		workflowState.adjustedTesseraSize ?? DEFAULT_TESSERA_SIZE;
-
-	const handleAcceptSupplementation =
-		workflowState.isLowVarietyCollection &&
-		!workflowState.hasAcceptedSupplementation
-			? async () => {
-					const supplementedTesserae =
-						await generateSupplementedTesserae(workflowState);
-					dispatch({
-						type: "tesseraeSupplemented",
-						tesserae: supplementedTesserae,
-					});
-				}
-			: undefined;
-
-	async function handleSizeSelected(size: number) {
-		dispatch({ type: "sizeSelected", size });
-
-		if (workflowState.tesserae.length === 0) return;
-
-		try {
-			const resizedTesserae = await resizeTesserae(
-				workflowState.tesserae,
-				size,
-			);
-			dispatch({
-				type: "tesseraeResized",
-				tesserae: resizedTesserae,
-			});
-		} catch (error) {
-			console.error("Error resizing tesserae:", error);
-			trackError("tesserae_resize", error, {
-				tesseraCount: workflowState.tesserae.length,
-				targetSize: size,
-			});
-		}
-	}
+	const currentStep = useAtomValue(currentStepAtom);
+	const furthestCompletedStep = useAtomValue(furthestCompletedStepAtom);
+	const sourceImage = useAtomValue(sourceImageAtom);
+	const mode = useAtomValue(modeAtom);
+	const tesserae = useAtomValue(tesseraeAtom);
+	const validTesseraCount = useAtomValue(validTesseraCountAtom);
+	const rejectedTesseraCount = useAtomValue(rejectedTesseraCountAtom);
+	const goToStep = useSetAtom(goToStepAtom);
+	const clearTesserae = useSetAtom(clearTesseraeAtom);
 
 	function renderStepContent(stepIndex: number) {
 		switch (stepIndex) {
 			case WorkflowStepEnum.CHOOSE_SOURCE_IMAGE:
-				return (
-					<SourceImageSelection
-						onSourceSelected={(sourceImage) =>
-							dispatch({ type: "sourceSelected", sourceImage })
-						}
-						onSourceError={(errorMessage) =>
-							dispatch({ type: "sourceError", errorMessage })
-						}
-						initialState={workflowState}
-					/>
-				);
+				return <SourceImageSelection />;
 			case WorkflowStepEnum.BUILD_TESSERAE: {
-				const isPhotomosaic = workflowState.mode === "photomosaic";
-				const isBrick = workflowState.mode === "brick";
-				const hasPhotomosaicTesserae =
-					isPhotomosaic && workflowState.tesserae.length > 0;
-				const hasBrickColors = isBrick && workflowState.tesserae.length >= 2;
+				const isPhotomosaic = mode === "photomosaic";
+				const isBrick = mode === "brick";
+				const hasPhotomosaicTesserae = isPhotomosaic && tesserae.length > 0;
+				const hasBrickColors = isBrick && tesserae.length >= 2;
 				const canReview = hasPhotomosaicTesserae || hasBrickColors;
 
 				return (
 					<div {...stylex.props(styles.buildTesserae)}>
-						<TesseraSizeSelection
-							onSizeSelected={handleSizeSelected}
-							initialState={workflowState}
-						/>
+						<TesseraSizeSelection />
 						{isPhotomosaic && (
 							<>
 								<div {...stylex.props(styles.tesseraInputs)}>
-									<TesseraUpload
-										onTesseraeProcessed={(tesserae) =>
-											dispatch({ type: "tesseraeProcessed", tesserae })
-										}
-										adjustedTesseraSize={resolvedTesseraSize}
-										currentTesserae={workflowState.tesserae}
-									/>
+									<TesseraUpload />
 									<div {...stylex.props(styles.divider)}>OR</div>
-									<GeneratedTesserae
-										onTesseraeGenerated={(tesserae) =>
-											dispatch({ type: "tesseraeGenerated", tesserae })
-										}
-										initialState={workflowState}
-									/>
+									<GeneratedTesserae />
 								</div>
 								{hasPhotomosaicTesserae && (
 									<ActionButton
 										type="button"
-										onClick={() => dispatch({ type: "clearAllTesserae" })}
+										onClick={() => clearTesserae()}
 										variant="secondary"
 										style={{ marginBottom: "1rem" }}
 									>
@@ -423,49 +301,25 @@ export function WorkflowApp() {
 								)}
 							</>
 						)}
-						{isBrick && (
-							<BrickColorPicker
-								onTesseraeSelected={(tesserae) =>
-									dispatch({ type: "tesseraeProcessed", tesserae })
-								}
-								initialColors={workflowState.tesserae
-									.map((tessera) => tessera.color)
-									.filter((color): color is string => color !== undefined)}
-							/>
-						)}
+						{isBrick && <BrickColorPicker />}
 						{canReview && (
 							<div>
 								<div
 									{...stylex.props(base.paragraph)}
 									style={{ fontSize: "0.875rem" }}
 								>
-									{workflowState.tesserae.filter((t) => t.isValid).length} ready
-									· {workflowState.tesserae.filter((t) => !t.isValid).length}{" "}
-									rejected
+									{validTesseraCount} ready · {rejectedTesseraCount} rejected
 								</div>
-								<TesseraReview
-									tesserae={workflowState.tesserae}
-									onRemoveTessera={(index) =>
-										dispatch({ type: "removeTessera", index })
-									}
-									onAcceptSupplementation={handleAcceptSupplementation}
-									onContinue={() => dispatch({ type: "advanceFromReview" })}
-									isLowVariety={workflowState.isLowVarietyCollection}
-									varietyRecommendation={workflowState.varietyRecommendation}
-									hasAcceptedSupplementation={
-										workflowState.hasAcceptedSupplementation
-									}
-									open={workflowState.tesserae.some((t) => !t.isValid)}
-								/>
+								<TesseraReview />
 							</div>
 						)}
 					</div>
 				);
 			}
 			case WorkflowStepEnum.GENERATE_AND_PREVIEW:
-				return <GenerateAndPreview state={workflowState} dispatch={dispatch} />;
+				return <GenerateAndPreview />;
 			case WorkflowStepEnum.EXPORT_MOSAIC:
-				return <ExportMosaic state={workflowState} dispatch={dispatch} />;
+				return <ExportMosaic />;
 			default:
 				return <div>Step {stepIndex + 1} content coming soon</div>;
 		}
@@ -485,27 +339,22 @@ export function WorkflowApp() {
 			<header {...stylex.props(styles.header)}>
 				<h1 {...stylex.props(styles.nameplate)}>Mosaic Maker</h1>
 				<p {...stylex.props(styles.privacyNote)}>Private · in-browser</p>
-				{workflowState.sourceImage &&
-					workflowState.currentStep > WorkflowStepEnum.CHOOSE_SOURCE_IMAGE && (
-						<div {...stylex.props(styles.sourceThumbnailHeader)}>
-							<img
-								src={workflowState.sourceImage.url}
-								alt="Source"
-								{...stylex.props(styles.sourceThumbnailImage)}
-							/>
-							<span {...stylex.props(styles.sourceThumbnailDimensions)}>
-								{workflowState.sourceImage.width} ×{" "}
-								{workflowState.sourceImage.height} pixels
-							</span>
-						</div>
-					)}
+				{sourceImage && currentStep > WorkflowStepEnum.CHOOSE_SOURCE_IMAGE && (
+					<div {...stylex.props(styles.sourceThumbnailHeader)}>
+						<img
+							src={sourceImage.url}
+							alt="Source"
+							{...stylex.props(styles.sourceThumbnailImage)}
+						/>
+						<span {...stylex.props(styles.sourceThumbnailDimensions)}>
+							{sourceImage.width} × {sourceImage.height} pixels
+						</span>
+					</div>
+				)}
 			</header>
 
 			<div {...stylex.props(styles.modeBar)}>
-				<ModeSelection
-					mode={workflowState.mode}
-					onModeSelected={(mode) => dispatch({ type: "modeSelected", mode })}
-				/>
+				<ModeSelection />
 			</div>
 
 			<ErrorBoundary>
@@ -514,29 +363,115 @@ export function WorkflowApp() {
 						dialogId="mobile-workflow-menu"
 						ariaLabel="Toggle workflow steps"
 					>
-						<WorkflowStepList
-							isMobile
-							dispatch={dispatch}
-							currentStep={workflowState.currentStep}
-							furthestCompletedStep={workflowState.furthestCompletedStep}
-						/>
+						<ol {...stylex.props(styles.stepsList)}>
+							{stages.map((title, index) => {
+								const isCurrent = currentStep === index;
+								const isCompleted = index < furthestCompletedStep;
+								const isDisabled = index > furthestCompletedStep;
+								return (
+									<li key={title}>
+										<button
+											type="button"
+											{...stylex.props(
+												styles.stepButton,
+												isCurrent && styles.stepButtonCurrent,
+												isCompleted && styles.stepButtonCompleted,
+											)}
+											aria-current={isCurrent ? "step" : undefined}
+											onClick={() => goToStep(index)}
+											disabled={isDisabled}
+											commandfor="mobile-workflow-menu"
+											command="close"
+										>
+											<span
+												{...stylex.props(
+													styles.stepIndicator,
+													isCurrent && styles.stepIndicatorCurrent,
+												)}
+											>
+												{isCompleted ? (
+													<svg
+														width="12"
+														height="12"
+														viewBox="0 0 12 12"
+														aria-hidden="true"
+													>
+														<path
+															d="M1.5 6.5 4.5 9.5 10.5 2.5"
+															fill="none"
+															stroke="currentColor"
+															strokeWidth="2"
+														/>
+													</svg>
+												) : (
+													<span>{index + 1}</span>
+												)}
+											</span>
+											<span {...stylex.props(styles.stepTitle)}>{title}</span>
+										</button>
+									</li>
+								);
+							})}
+						</ol>
 					</Dialog>
 
 					<aside {...stylex.props(styles.sidebar)} aria-label="Workflow steps">
-						<WorkflowStepList
-							dispatch={dispatch}
-							currentStep={workflowState.currentStep}
-							furthestCompletedStep={workflowState.furthestCompletedStep}
-						/>
+						<ol {...stylex.props(styles.stepsList)}>
+							{stages.map((title, index) => {
+								const isCurrent = currentStep === index;
+								const isCompleted = index < furthestCompletedStep;
+								const isDisabled = index > furthestCompletedStep;
+								return (
+									<li key={title}>
+										<button
+											type="button"
+											{...stylex.props(
+												styles.stepButton,
+												isCurrent && styles.stepButtonCurrent,
+												isCompleted && styles.stepButtonCompleted,
+											)}
+											aria-current={isCurrent ? "step" : undefined}
+											onClick={() => goToStep(index)}
+											disabled={isDisabled}
+										>
+											<span
+												{...stylex.props(
+													styles.stepIndicator,
+													isCurrent && styles.stepIndicatorCurrent,
+												)}
+											>
+												{isCompleted ? (
+													<svg
+														width="12"
+														height="12"
+														viewBox="0 0 12 12"
+														aria-hidden="true"
+													>
+														<path
+															d="M1.5 6.5 4.5 9.5 10.5 2.5"
+															fill="none"
+															stroke="currentColor"
+															strokeWidth="2"
+														/>
+													</svg>
+												) : (
+													<span>{index + 1}</span>
+												)}
+											</span>
+											<span {...stylex.props(styles.stepTitle)}>{title}</span>
+										</button>
+									</li>
+								);
+							})}
+						</ol>
 					</aside>
 
 					<div {...stylex.props(styles.canvas)}>
-
 						<div
-							key={workflowState.currentStep}
+							key={currentStep}
 							{...stylex.props(styles.content, styles.contentEnter)}
 						>
-							{renderStepContent(workflowState.currentStep)}
+							{renderStepContent(currentStep)}
 						</div>
 					</div>
 				</main>

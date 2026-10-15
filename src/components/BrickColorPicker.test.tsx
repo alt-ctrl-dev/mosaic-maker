@@ -1,9 +1,11 @@
-import { render, screen } from "@testing-library/react";
+import { screen } from "@testing-library/react";
+import { createBrickTesserae } from "../engine/workflow-state";
+import { renderWithWorkflow } from "../test-utils/workflow";
 import { BrickColorPicker } from "./BrickColorPicker";
 
 describe("BrickColorPicker", () => {
 	it("renders preset palette swatches with explicit sizes", () => {
-		render(<BrickColorPicker onTesseraeSelected={vi.fn()} />);
+		renderWithWorkflow(<BrickColorPicker />);
 
 		// Find the first preset palette swatch
 		const swatch = screen.getByTitle("#FF0000"); // First color in Classic Bricks palette
@@ -17,12 +19,10 @@ describe("BrickColorPicker", () => {
 	});
 
 	it("renders selected brick images with bounded sizes", () => {
-		render(
-			<BrickColorPicker
-				onTesseraeSelected={vi.fn()}
-				initialColors={["#FF0000"]}
-			/>,
-		);
+		renderWithWorkflow(<BrickColorPicker />, {
+			mode: "brick",
+			tesserae: createBrickTesserae(["#FF0000"]),
+		});
 
 		// Find the selected brick image
 		const brickImage = screen.getByAltText("Brick tile #FF0000");

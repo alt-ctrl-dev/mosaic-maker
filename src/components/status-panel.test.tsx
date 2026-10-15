@@ -1,15 +1,9 @@
-import {
-	cleanup,
-	fireEvent,
-	type RenderResult,
-	render,
-	screen,
-	waitFor,
-} from "@testing-library/react";
+import { cleanup, fireEvent, screen, waitFor } from "@testing-library/react";
 import { afterEach, describe, expect, it, vi } from "vitest";
 import type { WorkflowState } from "../engine/workflow-state";
 import { tokens } from "../styles/tokens.stylex";
 import { declaredValuesFor } from "../test-utils/style-inspection";
+import { renderWithWorkflow } from "../test-utils/workflow";
 import { GenerateAndPreview } from "./GenerateAndPreview";
 import { GeneratedTesserae } from "./GeneratedTesserae";
 import { SourceImageSelection } from "./SourceImageSelection";
@@ -66,21 +60,11 @@ function expectUsesSharedPanelStyling(element: Element): void {
 	expect(declaredValuesFor(element, "color")).toEqual([]);
 }
 
-const noop = () => {};
-
 describe("Status panels use the shared card styling", () => {
 	it("SourceImageSelection error panel uses the shared card style", () => {
-		const state = {
+		const { container } = renderWithWorkflow(<SourceImageSelection />, {
 			sourceImageError: "Something went wrong",
-		} as unknown as WorkflowState;
-
-		const { container } = render(
-			<SourceImageSelection
-				onSourceSelected={noop}
-				onSourceError={noop}
-				initialState={state}
-			/>,
-		);
+		});
 
 		const panel = container.querySelector(".error-message");
 		expect(panel).not.toBeNull();
@@ -88,15 +72,7 @@ describe("Status panels use the shared card styling", () => {
 	});
 
 	it("SourceImageSelection processing panel uses the shared card style", async () => {
-		const state = { sourceImageError: null } as unknown as WorkflowState;
-
-		const { container } = render(
-			<SourceImageSelection
-				onSourceSelected={noop}
-				onSourceError={noop}
-				initialState={state}
-			/>,
-		);
+		const { container } = renderWithWorkflow(<SourceImageSelection />);
 
 		const input = screen.getByLabelText("Select source image");
 		const file = new File(["x"], "source.png", { type: "image/png" });
@@ -111,13 +87,7 @@ describe("Status panels use the shared card styling", () => {
 	});
 
 	it("TesseraUpload processing panel uses the shared card style", async () => {
-		const { container } = render(
-			<TesseraUpload
-				onTesseraeProcessed={noop}
-				adjustedTesseraSize={16}
-				currentTesserae={[]}
-			/>,
-		);
+		const { container } = renderWithWorkflow(<TesseraUpload />);
 
 		const input = screen.getByLabelText("Upload tile images");
 		const file = new File(["x"], "tessera.png", { type: "image/png" });
@@ -132,14 +102,10 @@ describe("Status panels use the shared card styling", () => {
 	});
 
 	it("GeneratedTesserae generation panel uses the shared card style", async () => {
-		const state = {
+		const { container } = renderWithWorkflow(<GeneratedTesserae />, {
 			seed: 42,
 			generatedTesseraCount: 20,
-		} as unknown as WorkflowState;
-
-		const { container } = render(
-			<GeneratedTesserae onTesseraeGenerated={noop} initialState={state} />,
-		);
+		});
 
 		fireEvent.click(screen.getByRole("button", { name: /generate tesserae/i }));
 
@@ -152,15 +118,18 @@ describe("Status panels use the shared card styling", () => {
 	});
 
 	it("GenerateAndPreview progress panel uses the shared card style", async () => {
-		const state = {
-			sourceImage: { url: "blob:test", width: 100, height: 100 },
+		const { container } = renderWithWorkflow(<GenerateAndPreview />, {
+			sourceImage: {
+				url: "blob:test",
+				width: 100,
+				height: 100,
+				orientation: 1,
+			},
 			adjustedTesseraSize: 10,
-			tesserae: [{ isValid: true } as unknown],
-		} as unknown as WorkflowState;
-
-		const { container } = render(
-			<GenerateAndPreview state={state} dispatch={noop} />,
-		);
+			tesserae: [
+				{ isValid: true } as unknown as WorkflowState["tesserae"][number],
+			],
+		});
 
 		fireEvent.click(screen.getByRole("button", { name: /generate mosaic/i }));
 
@@ -173,14 +142,17 @@ describe("Status panels use the shared card styling", () => {
 	});
 
 	it("TesseraReview warning panel uses the shared card style", () => {
-		const { container } = render(
-			<TesseraReview
-				tesserae={[]}
-				onRemoveTessera={noop}
-				isLowVariety
-				varietyRecommendation={20}
-			/>,
-		);
+		// 100x200 source at size 10 gives 200 grid cells, a recommendation of
+		// 20, and an empty collection: low variety.
+		const { container } = renderWithWorkflow(<TesseraReview />, {
+			sourceImage: {
+				url: "blob:test",
+				width: 100,
+				height: 200,
+				orientation: 1,
+			},
+			requestedTesseraSize: 10,
+		});
 
 		const panel = container.querySelector(".warning-message");
 		expect(panel).not.toBeNull();
@@ -188,14 +160,14 @@ describe("Status panels use the shared card styling", () => {
 	});
 
 	it("TesseraSizeSelection warning panel uses the shared card style", async () => {
-		const state = {
-			sourceImage: { url: "blob:test", width: 20, height: 20 },
-			hasValidSourceDimensions: true,
-		} as unknown as WorkflowState;
-
-		const { container }: RenderResult = render(
-			<TesseraSizeSelection onSizeSelected={noop} initialState={state} />,
-		);
+		const { container } = renderWithWorkflow(<TesseraSizeSelection />, {
+			sourceImage: {
+				url: "blob:test",
+				width: 20,
+				height: 20,
+				orientation: 1,
+			},
+		});
 
 		const slider = screen.getByRole("slider");
 		fireEvent.change(slider, { target: { value: "20" } });

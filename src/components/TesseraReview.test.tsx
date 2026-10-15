@@ -1,12 +1,11 @@
-import { render, screen } from "@testing-library/react";
-import { describe, expect, it, vi } from "vitest";
+import { screen } from "@testing-library/react";
+import { tesseraeAtom } from "../atoms/workflow-atoms";
 import type { TesseraInfo } from "../engine/workflow-state";
+import { renderWithWorkflow } from "../test-utils/workflow";
 import { TesseraReview } from "./TesseraReview";
 
 const MOCK_PREVIEW =
 	"data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAYAAAAfFcSJAAAADUlEQVR42mP8/5+hHgAHggJ/PchI7wAAAABJRU5ErkJggg==";
-
-const noop = () => {};
 
 /** Creates a minimal {@link TesseraInfo} for testing, overriding any fields. */
 function mockTessera(overrides: Partial<TesseraInfo> = {}): TesseraInfo {
@@ -32,15 +31,20 @@ const mockTesserae = [
 	mockTessera({ fileName: "supplemented1.png", isSupplemented: true }),
 ];
 
+/**
+ * Source and size chosen so the grid has 100 cells and the variety
+ * recommendation is 10, which the 2-3 valid fixtures fall below.
+ */
+const lowVarietyState = {
+	sourceImage: { width: 100, height: 100, orientation: 1, url: "blob:test" },
+	requestedTesseraSize: 10,
+};
+
 describe("TesseraReview", () => {
-	it("renders collapsed accordion with counts in summary", () => {
-		const { container } = render(
-			<TesseraReview
-				tesserae={mockTesserae}
-				onRemoveTessera={vi.fn()}
-				onContinue={vi.fn()}
-			/>,
-		);
+	it("renders open accordion with counts in summary when invalid tesserae exist", () => {
+		const { container } = renderWithWorkflow(<TesseraReview />, {
+			tesserae: mockTesserae,
+		});
 
 		const summaryElement = container.querySelector("summary");
 		expect(summaryElement).toBeTruthy();
@@ -50,20 +54,15 @@ describe("TesseraReview", () => {
 
 		const detailsElement = container.querySelector("details");
 		expect(detailsElement).toBeTruthy();
-		expect((detailsElement as HTMLDetailsElement).open).toBe(false);
+		// Open by default because the collection contains a rejected tessera.
+		expect((detailsElement as HTMLDetailsElement).open).toBe(true);
 	});
 
 	it("renders Continue button outside accordion", () => {
-		render(
-			<TesseraReview
-				tesserae={mockTesserae}
-				onRemoveTessera={vi.fn()}
-				onContinue={vi.fn()}
-			/>,
-		);
+		renderWithWorkflow(<TesseraReview />, { tesserae: mockTesserae });
 
 		const continueButton = screen.getByRole("button", {
-			name: /continue to generate and preview/i,
+			name: /continue to step 3/i,
 		});
 
 		const details = continueButton?.closest("details");
@@ -71,14 +70,10 @@ describe("TesseraReview", () => {
 	});
 
 	it("renders warnings outside accordion", () => {
-		const { container } = render(
-			<TesseraReview
-				tesserae={mockTesserae}
-				onRemoveTessera={vi.fn()}
-				isLowVariety={true}
-				varietyRecommendation={10}
-			/>,
-		);
+		const { container } = renderWithWorkflow(<TesseraReview />, {
+			...lowVarietyState,
+			tesserae: mockTesserae,
+		});
 
 		const warning = container.querySelector(".warning-message");
 		expect(warning).toBeTruthy();
@@ -96,13 +91,7 @@ describe("TesseraReview", () => {
 			}),
 		];
 
-		render(
-			<TesseraReview
-				tesserae={tesserae}
-				onRemoveTessera={noop}
-				onContinue={noop}
-			/>,
-		);
+		renderWithWorkflow(<TesseraReview />, { tesserae });
 
 		const item = screen
 			.getByText("invalid-tessera.jpg")
@@ -119,13 +108,7 @@ describe("TesseraReview", () => {
 			}),
 		];
 
-		render(
-			<TesseraReview
-				tesserae={tesserae}
-				onRemoveTessera={noop}
-				onContinue={noop}
-			/>,
-		);
+		renderWithWorkflow(<TesseraReview />, { tesserae });
 
 		const item = screen
 			.getByText("supplemented-tessera.jpg")
@@ -133,5 +116,20 @@ describe("TesseraReview", () => {
 		expect(item).toHaveClass("supplemented");
 		expect(item).toBeInTheDocument();
 		expect(screen.getByText("Supplemented")).toBeInTheDocument();
+	});
+
+	it("removes a tessera from the store when Remove is clicked", () => {
+		const { store } = renderWithWorkflow(<TesseraReview />, {
+			tesserae: mockTesserae,
+		});
+
+		screen.getByRole("button", { name: "Remove invalid1.png" }).click();
+
+		const tesserae = store.get(tesseraeAtom);
+		expect(tesserae).toHaveLength(2);
+		expect(tesserae.map((tessera) => tessera.fileName)).toEqual([
+			"valid1.png",
+			"supplemented1.png",
+		]);
 	});
 });

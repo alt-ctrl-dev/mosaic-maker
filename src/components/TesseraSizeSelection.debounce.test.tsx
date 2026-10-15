@@ -1,23 +1,34 @@
 import { cleanup, fireEvent, render, screen } from "@testing-library/react";
+import { Provider } from "jotai";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
-import type { WorkflowState } from "../engine/workflow-state";
+import {
+	createWorkflowStore,
+	requestedTesseraSizeAtom,
+} from "../atoms/workflow-atoms";
 import { TesseraSizeSelection } from "./TesseraSizeSelection";
 
 describe("TesseraSizeSelection debouncing", () => {
-	const onSizeSelectedMock = vi.fn();
-
 	const mockInitialState = {
 		sourceImage: {
 			url: "blob:test",
 			width: 100,
 			height: 100,
+			orientation: 1,
 		},
-		hasValidSourceDimensions: true,
-	} as unknown as WorkflowState;
+	};
+
+	function renderSizeSelection() {
+		const store = createWorkflowStore(mockInitialState);
+		const result = render(
+			<Provider store={store}>
+				<TesseraSizeSelection />
+			</Provider>,
+		);
+		return { store, ...result };
+	}
 
 	beforeEach(() => {
 		vi.useFakeTimers();
-		onSizeSelectedMock.mockReset();
 	});
 
 	afterEach(() => {
@@ -25,16 +36,11 @@ describe("TesseraSizeSelection debouncing", () => {
 		vi.useRealTimers();
 	});
 
-	it("debounces rapid slider changes to reduce callback calls", () => {
-		render(
-			<TesseraSizeSelection
-				onSizeSelected={onSizeSelectedMock}
-				initialState={mockInitialState}
-			/>,
-		);
+	it("debounces rapid slider changes to a single commit", () => {
+		const { store } = renderSizeSelection();
 
-		// Clear the initial mount call
-		onSizeSelectedMock.mockClear();
+		// Clear the initial mount commit
+		store.set(requestedTesseraSizeAtom, null);
 
 		const rangeInput = screen.getByRole("slider");
 
@@ -44,47 +50,41 @@ describe("TesseraSizeSelection debouncing", () => {
 		fireEvent.change(rangeInput, { target: { value: "30" } });
 		fireEvent.change(rangeInput, { target: { value: "35" } });
 
-		// Should not have been called yet (debounced)
-		expect(onSizeSelectedMock).not.toHaveBeenCalled();
+		// Should not have been committed yet (debounced)
+		expect(store.get(requestedTesseraSizeAtom)).toBeNull();
 
 		// Advance timers to allow debounce to complete
 		vi.advanceTimersByTime(300);
 
-		// Should only have been called once with the final value
-		expect(onSizeSelectedMock).toHaveBeenCalledTimes(1);
-		expect(onSizeSelectedMock).toHaveBeenCalledWith(35);
+		// Should have committed only the final value
+		expect(store.get(requestedTesseraSizeAtom)).toBe(35);
 	});
 
-	it("delays callback execution during rapid slider changes", () => {
-		render(
-			<TesseraSizeSelection
-				onSizeSelected={onSizeSelectedMock}
-				initialState={mockInitialState}
-			/>,
-		);
+	it("delays the commit during rapid slider changes", () => {
+		const { store } = renderSizeSelection();
 
-		// Clear the initial mount call
-		onSizeSelectedMock.mockClear();
+		// Clear the initial mount commit
+		store.set(requestedTesseraSizeAtom, null);
 
 		const rangeInput = screen.getByRole("slider");
 
 		// First change should be debounced
 		fireEvent.change(rangeInput, { target: { value: "20" } });
 
-		// Should not have been called yet (debounced)
-		expect(onSizeSelectedMock).not.toHaveBeenCalled();
+		// Should not have been committed yet (debounced)
+		expect(store.get(requestedTesseraSizeAtom)).toBeNull();
 
 		// Rapid subsequent changes should also be debounced
 		fireEvent.change(rangeInput, { target: { value: "25" } });
 		fireEvent.change(rangeInput, { target: { value: "30" } });
 
-		// Should still not have been called
-		expect(onSizeSelectedMock).not.toHaveBeenCalled();
+		// Should still not have been committed
+		expect(store.get(requestedTesseraSizeAtom)).toBeNull();
 
 		// Advance timers to allow debounce to complete
 		vi.advanceTimersByTime(300);
 
-		// Should have been called with the final value
-		expect(onSizeSelectedMock).toHaveBeenCalledWith(30);
+		// Should have committed the final value
+		expect(store.get(requestedTesseraSizeAtom)).toBe(30);
 	});
 });

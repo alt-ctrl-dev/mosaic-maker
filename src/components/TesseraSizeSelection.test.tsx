@@ -1,6 +1,10 @@
 import { cleanup, fireEvent, render, screen } from "@testing-library/react";
-import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
-import type { WorkflowState } from "../engine/workflow-state";
+import { Provider } from "jotai";
+import { afterEach, describe, expect, it, vi } from "vitest";
+import {
+	createWorkflowStore,
+	requestedTesseraSizeAtom,
+} from "../atoms/workflow-atoms";
 import { TesseraSizeSelection } from "./TesseraSizeSelection";
 
 const mockInitialState = {
@@ -8,28 +12,27 @@ const mockInitialState = {
 		url: "blob:test",
 		width: 100,
 		height: 100,
+		orientation: 1,
 	},
-	hasValidSourceDimensions: true,
-} as unknown as WorkflowState;
+};
+
+function renderSizeSelection() {
+	const store = createWorkflowStore(mockInitialState);
+	const result = render(
+		<Provider store={store}>
+			<TesseraSizeSelection />
+		</Provider>,
+	);
+	return { store, ...result };
+}
 
 describe("TesseraSizeSelection", () => {
-	const onSizeSelectedMock = vi.fn();
-
-	beforeEach(() => {
-		onSizeSelectedMock.mockReset();
-	});
-
 	afterEach(() => {
 		cleanup();
 	});
 
 	it("renders a range input with min 2 and a source-derived max", () => {
-		render(
-			<TesseraSizeSelection
-				onSizeSelected={onSizeSelectedMock}
-				initialState={mockInitialState}
-			/>,
-		);
+		renderSizeSelection();
 
 		const rangeInput = screen.getByRole("slider");
 		expect(rangeInput.getAttribute("type")).toBe("range");
@@ -40,41 +43,31 @@ describe("TesseraSizeSelection", () => {
 	});
 
 	it("displays the current size value", () => {
-		render(
-			<TesseraSizeSelection
-				onSizeSelected={onSizeSelectedMock}
-				initialState={mockInitialState}
-			/>,
-		);
+		renderSizeSelection();
 
 		expect(
 			screen.getByText("16px", { selector: "strong" }),
 		).toBeInTheDocument();
 	});
 
-	it("debounces onSizeSelected when the slider value changes", () => {
+	it("debounces the size commit when the slider value changes", () => {
 		vi.useFakeTimers();
-		render(
-			<TesseraSizeSelection
-				onSizeSelected={onSizeSelectedMock}
-				initialState={mockInitialState}
-			/>,
-		);
+		const { store } = renderSizeSelection();
 
-		// Clear the initial mount call
-		onSizeSelectedMock.mockClear();
+		// Clear the initial mount commit
+		store.set(requestedTesseraSizeAtom, null);
 
 		const rangeInput = screen.getByRole("slider");
 		fireEvent.change(rangeInput, { target: { value: "32" } });
 
-		// Should not be called immediately (debounced)
-		expect(onSizeSelectedMock).not.toHaveBeenCalled();
+		// Should not be committed immediately (debounced)
+		expect(store.get(requestedTesseraSizeAtom)).toBeNull();
 
 		// Advance timers to allow debounce to complete
 		vi.advanceTimersByTime(300);
 
-		// Should be called after debounce
-		expect(onSizeSelectedMock).toHaveBeenCalledWith(32);
+		// Should be committed after debounce
+		expect(store.get(requestedTesseraSizeAtom)).toBe(32);
 		vi.useRealTimers();
 	});
 });

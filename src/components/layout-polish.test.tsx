@@ -1,16 +1,13 @@
-import { render, screen } from "@testing-library/react";
-import { INITIAL_WORKFLOW_STATE } from "../engine/workflow-state";
+import { screen } from "@testing-library/react";
+import { renderWithWorkflow } from "../test-utils/workflow";
 import { GeneratedTesserae } from "./GeneratedTesserae";
 import { TesseraUpload } from "./TesseraUpload";
 
 describe("Layout polish requirements", () => {
 	it("renders GeneratedTesserae within a tessera-inputs container", () => {
-		render(
+		renderWithWorkflow(
 			<div className="tessera-inputs">
-				<GeneratedTesserae
-					onTesseraeGenerated={vi.fn()}
-					initialState={INITIAL_WORKFLOW_STATE}
-				/>
+				<GeneratedTesserae />
 			</div>,
 		);
 
@@ -18,13 +15,9 @@ describe("Layout polish requirements", () => {
 	});
 
 	it("renders TesseraUpload within a tessera-inputs container", () => {
-		render(
+		renderWithWorkflow(
 			<div className="tessera-inputs">
-				<TesseraUpload
-					onTesseraeProcessed={vi.fn()}
-					adjustedTesseraSize={16}
-					currentTesserae={[]}
-				/>
+				<TesseraUpload />
 			</div>,
 		);
 

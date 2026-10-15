@@ -1,83 +1,63 @@
-import { describe, expect, it } from "vitest";
+import { describe, expect, it, vi } from "vitest";
+import { generateNoiseTesseraeFromState } from "./generate-noise-tesserae-helper";
 import type { SourceImageInfo } from "./image-processing";
-import {
-	INITIAL_WORKFLOW_STATE,
-	updateWorkflowWithSourceImage,
-	updateWorkflowWithSupplementedTesserae,
-	updateWorkflowWithTesserae,
-	updateWorkflowWithTesseraSize,
-} from "./workflow-state";
+import type { TesseraInfo } from "./workflow-state";
+import { generateSupplementedTesserae } from "./workflow-state";
 
-describe("workflow-state supplement functionality", () => {
-	const mockSourceImage: SourceImageInfo = {
-		url: "data:image/png;base64,",
-		width: 200,
-		height: 100,
-		orientation: 1,
+vi.mock("./generate-noise-tesserae-helper", () => ({
+	generateNoiseTesseraeFromState: vi.fn(),
+}));
+
+const mockSourceImage: SourceImageInfo = {
+	url: "data:image/png;base64,",
+	width: 200,
+	height: 100,
+	orientation: 1,
+};
+
+function makeTessera(fileName: string): TesseraInfo {
+	return {
+		file: new File([], fileName),
+		fileName,
+		isValid: true,
+		error: null,
+		isLowResolution: false,
+		previewUrl: null,
 	};
+}
 
-	it("should supplement tesserae with generated ones and mark them as supplemented", () => {
-		// Set up initial state with source image and tessera size
-		let state = updateWorkflowWithSourceImage(
-			INITIAL_WORKFLOW_STATE,
-			mockSourceImage,
+describe("generateSupplementedTesserae", () => {
+	it("generates enough tesserae to reach the variety recommendation and marks them as supplemented", async () => {
+		vi.mocked(generateNoiseTesseraeFromState).mockResolvedValue([
+			makeTessera("generated1.png"),
+			makeTessera("generated2.png"),
+		]);
+
+		const tesserae = await generateSupplementedTesserae({
+			sourceImage: mockSourceImage,
+			adjustedTesseraSize: 10,
+			varietyRecommendation: 3,
+			validTesseraCount: 1,
+			seed: null,
+		});
+
+		expect(generateNoiseTesseraeFromState).toHaveBeenCalledWith(
+			expect.objectContaining({ generatedTesseraCount: 2 }),
 		);
-		state = updateWorkflowWithTesseraSize(state, 10);
+		expect(tesserae).toHaveLength(2);
+		expect(tesserae.every((tessera) => tessera.isSupplemented)).toBe(true);
+	});
 
-		// Add some initial tesserae
-		const initialTesserae = [
-			{
-				file: new File([], "test1.png"),
-				fileName: "test1.png",
-				isValid: true,
-				error: null,
-				isLowResolution: false,
-				previewUrl: null,
-			},
-		];
-		state = updateWorkflowWithTesserae(state, initialTesserae);
+	it("returns nothing when the collection already meets the recommendation", async () => {
+		const tesserae = await generateSupplementedTesserae({
+			sourceImage: mockSourceImage,
+			adjustedTesseraSize: 10,
+			varietyRecommendation: 3,
+			validTesseraCount: 3,
+			seed: null,
+		});
 
-		// Create supplemented tesserae
-		const supplementedTesserae = [
-			{
-				file: new File([], "generated1.png"),
-				fileName: "generated1.png",
-				isValid: true,
-				error: null,
-				isLowResolution: false,
-				previewUrl: null,
-				isSupplemented: true, // Mark as supplemented
-			},
-			{
-				file: new File([], "generated2.png"),
-				fileName: "generated2.png",
-				isValid: true,
-				error: null,
-				isLowResolution: false,
-				previewUrl: null,
-				isSupplemented: true, // Mark as supplemented
-			},
-		];
-
-		// Apply supplementation
-		const newState = updateWorkflowWithSupplementedTesserae(
-			state,
-			supplementedTesserae,
-		);
-
-		// Verify supplemented tesserae are added
-		expect(newState.tesserae).toHaveLength(3);
-		expect(newState.tesserae[0]).toEqual(initialTesserae[0]);
-		expect(newState.tesserae[1]).toEqual(supplementedTesserae[0]);
-		expect(newState.tesserae[2]).toEqual(supplementedTesserae[1]);
-
-		// Verify all tesserae are marked correctly
-		expect(newState.tesserae[0].isSupplemented).toBeFalsy();
-		expect(newState.tesserae[1].isSupplemented).toBe(true);
-		expect(newState.tesserae[2].isSupplemented).toBe(true);
-
-		// Verify variety metrics are updated
-		expect(newState.validTesseraCount).toBe(3);
-		expect(newState.hasAcceptedSupplementation).toBe(true);
+		expect(tesserae).toHaveLength(0);
+		expect(generateNoiseTesseraeFromState).not.toHaveBeenCalled();
 	});
 });

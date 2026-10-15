@@ -1,15 +1,9 @@
 import * as stylex from "@stylexjs/stylex";
+import { useAtomValue, useSetAtom } from "jotai";
 import { useId } from "react";
+import { modeAtom, selectModeAtom } from "../atoms/workflow-atoms";
 import type { MosaicMode } from "../engine/workflow-state";
 import { tokens } from "../styles/tokens.stylex";
-
-/** Props for {@link ModeSelection}. */
-interface ModeSelectionProps {
-	/** Currently selected mosaic mode from workflow state. */
-	mode: MosaicMode;
-	/** Called when the user selects a different mode. */
-	onModeSelected: (mode: MosaicMode) => void;
-}
 
 /** Display titles for each mosaic mode. */
 const MODE_TITLES: Record<MosaicMode, string> = {
@@ -82,7 +76,9 @@ const styles = stylex.create({
  * Mode is a global setting, not a workflow step: the workflow starts at
  * source image selection.
  */
-export function ModeSelection({ mode, onModeSelected }: ModeSelectionProps) {
+export function ModeSelection() {
+	const mode = useAtomValue(modeAtom);
+	const selectMode = useSetAtom(selectModeAtom);
 	// Instance-unique group name: radios sharing a name across mounted
 	// instances would uncheck each other.
 	const groupName = useId();
@@ -104,7 +100,7 @@ export function ModeSelection({ mode, onModeSelected }: ModeSelectionProps) {
 							type="radio"
 							name={`mosaic-mode-${groupName}`}
 							checked={isSelected}
-							onChange={() => onModeSelected(modeValue)}
+							onChange={() => selectMode(modeValue)}
 							aria-label={`Select ${title} mode`}
 							{...stylex.props(styles.input)}
 						/>

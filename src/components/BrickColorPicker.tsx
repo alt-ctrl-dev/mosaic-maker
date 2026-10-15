@@ -1,20 +1,11 @@
-import { useState } from "react";
 import * as stylex from "@stylexjs/stylex";
-import {
-	createBrickTesserae,
-	type TesseraInfo,
-} from "../engine/workflow-state";
+import { useAtomValue, useSetAtom } from "jotai";
+import { useState } from "react";
+import { replaceTesseraeAtom, tesseraeAtom } from "../atoms/workflow-atoms";
 import { renderBrick } from "../engine/brick";
+import { createBrickTesserae } from "../engine/workflow-state";
 import { base } from "../styles/base.stylex";
 import { ActionButton } from "./ActionButton";
-
-/** Props for {@link BrickColorPicker}. */
-interface BrickColorPickerProps {
-	/** Called with synthetic tesserae for the updated set of selected colors. */
-	onTesseraeSelected: (tesserae: TesseraInfo[]) => void;
-	/** Previously selected colors to restore when revisiting this step. */
-	initialColors?: string[];
-}
 
 /** Maximum number of colors the user can select. */
 const MAX_COLORS = 15;
@@ -57,17 +48,23 @@ const PRESET_PALETTES = [
  * Color picker for Brick mosaic mode that lets the user select 2-15 colors
  * from preset palettes or a custom color wheel.
  */
-export function BrickColorPicker({
-	onTesseraeSelected,
-	initialColors = [],
-}: BrickColorPickerProps) {
-	const [selectedColors, setSelectedColors] = useState<string[]>(initialColors);
+export function BrickColorPicker() {
+	const tesserae = useAtomValue(tesseraeAtom);
+	const replaceTesserae = useSetAtom(replaceTesseraeAtom);
+	// Previously selected colors, restored when revisiting this step. The
+	// lazy initializer captures the first-render collection; the step
+	// content remounts on step changes so it is always current.
+	const [selectedColors, setSelectedColors] = useState<string[]>(() =>
+		tesserae
+			.map((tessera) => tessera.color)
+			.filter((color): color is string => color !== undefined),
+	);
 	const [customColor, setCustomColor] = useState("#FF0000");
 	const [activePalette, setActivePalette] = useState<number | null>(null);
 
 	const updateColors = (next: string[]) => {
 		setSelectedColors(next);
-		onTesseraeSelected(createBrickTesserae(next));
+		replaceTesserae(createBrickTesserae(next));
 	};
 
 	// Case-insensitive check: <input type="color"> emits lowercase hex

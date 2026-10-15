@@ -1,23 +1,21 @@
+import * as stylex from "@stylexjs/stylex";
+import { useAtomValue, useSetAtom } from "jotai";
 import type React from "react";
 import { useEffect, useRef, useState } from "react";
-import * as stylex from "@stylexjs/stylex";
+import {
+	commitTesseraSizeAtom,
+	hasValidSourceDimensionsAtom,
+	requestedTesseraSizeAtom,
+	sourceImageAtom,
+} from "../atoms/workflow-atoms";
 import {
 	calculateAdjustedTesseraSize,
 	calculateGridCellCount,
 	isCoarseGrid,
 } from "../engine/tessera-sizing";
-import type { WorkflowState } from "../engine/workflow-state";
 import { base } from "../styles/base.stylex";
 import { tokens } from "../styles/tokens.stylex";
 import { trackEvent, trackStepView } from "../telemetry";
-
-/** Props for {@link TesseraSizeSelection}. */
-interface TesseraSizeSelectionProps {
-	/** Called when the tessera size changes. */
-	onSizeSelected: (size: number) => void;
-	/** Current workflow state, used for source image dimensions. */
-	initialState: WorkflowState;
-}
 
 const styles = stylex.create({
 	// The source image under its live construction grid: dragging the size
@@ -49,12 +47,13 @@ const styles = stylex.create({
  * Lets the user pick a tessera pixel size and shows the adjusted size,
  * grid cell count, and any coarse-grid warning.
  */
-export function TesseraSizeSelection({
-	onSizeSelected,
-	initialState,
-}: TesseraSizeSelectionProps) {
+export function TesseraSizeSelection() {
+	const sourceImage = useAtomValue(sourceImageAtom);
+	const hasValidSourceDimensions = useAtomValue(hasValidSourceDimensionsAtom);
+	const initialRequestedSize = useAtomValue(requestedTesseraSizeAtom);
+	const commitTesseraSize = useSetAtom(commitTesseraSizeAtom);
 	const [requestedSize, setRequestedSize] = useState<number>(
-		initialState.requestedTesseraSize ?? 16,
+		() => initialRequestedSize ?? 16,
 	);
 	const [adjustedSize, setAdjustedSize] = useState<number | null>(null);
 	const [gridCellCount, setGridCellCount] = useState<number | null>(null);
@@ -64,15 +63,9 @@ export function TesseraSizeSelection({
 	// The ceiling is engine truth: no tessera larger than the source's
 	// short side. 100 covers the no-image-yet case.
 	const maxTesseraSize =
-		initialState.sourceImage && initialState.hasValidSourceDimensions
-			? Math.min(
-					initialState.sourceImage.width,
-					initialState.sourceImage.height,
-				)
+		sourceImage && hasValidSourceDimensions
+			? Math.min(sourceImage.width, sourceImage.height)
 			: 100;
-
-	const onSizeSelectedRef = useRef(onSizeSelected);
-	onSizeSelectedRef.current = onSizeSelected;
 
 	const debounceTimerRef = useRef<NodeJS.Timeout | null>(null);
 
@@ -82,7 +75,7 @@ export function TesseraSizeSelection({
 
 	// biome-ignore lint/correctness/useExhaustiveDependencies: intentional mount-only effect
 	useEffect(() => {
-		onSizeSelectedRef.current(requestedSize);
+		commitTesseraSize(requestedSize);
 	}, []);
 
 	useEffect(() => {
@@ -94,11 +87,11 @@ export function TesseraSizeSelection({
 	}, []);
 
 	useEffect(() => {
-		if (initialState.sourceImage && initialState.hasValidSourceDimensions) {
+		if (sourceImage && hasValidSourceDimensions) {
 			const adjusted = calculateAdjustedTesseraSize(
 				requestedSize,
-				initialState.sourceImage.width,
-				initialState.sourceImage.height,
+				sourceImage.width,
+				sourceImage.height,
 			);
 
 			setAdjustedSize(adjusted);
@@ -106,8 +99,8 @@ export function TesseraSizeSelection({
 			if (adjusted !== null) {
 				const cellCount = calculateGridCellCount(
 					adjusted,
-					initialState.sourceImage.width,
-					initialState.sourceImage.height,
+					sourceImage.width,
+					sourceImage.height,
 				);
 
 				setGridCellCount(cellCount);
@@ -115,11 +108,7 @@ export function TesseraSizeSelection({
 				setGridCellCount(null);
 			}
 		}
-	}, [
-		requestedSize,
-		initialState.sourceImage,
-		initialState.hasValidSourceDimensions,
-	]);
+	}, [requestedSize, sourceImage, hasValidSourceDimensions]);
 
 	const handleSizeChange = (e: React.ChangeEvent<HTMLInputElement>) => {
 		const newSize = Number(e.target.value);
@@ -130,7 +119,7 @@ export function TesseraSizeSelection({
 		}
 
 		debounceTimerRef.current = setTimeout(() => {
-			onSizeSelectedRef.current(newSize);
+			commitTesseraSize(newSize);
 			trackEvent("tessera_size_changed", { size: newSize });
 			debounceTimerRef.current = null;
 		}, 150);
@@ -138,11 +127,8 @@ export function TesseraSizeSelection({
 
 	const warningProps = stylex.props(base.card);
 
-	const sourceImage = initialState.sourceImage;
 	const showGridPreview =
-		sourceImage !== null &&
-		initialState.hasValidSourceDimensions &&
-		adjustedSize !== null;
+		sourceImage !== null && hasValidSourceDimensions && adjustedSize !== null;
 	const gridColumns =
 		showGridPreview && sourceImage
 			? Math.ceil(sourceImage.width / adjustedSize)

@@ -1,24 +1,25 @@
+import * as stylex from "@stylexjs/stylex";
+import { useAtomValue, useSetAtom } from "jotai";
 import type React from "react";
 import { useCallback, useEffect, useState } from "react";
-import * as stylex from "@stylexjs/stylex";
-import type { SourceImageInfo } from "../engine/image-processing";
+import {
+	reportSourceErrorAtom,
+	selectSourceImageAtom,
+	sourceImageAtom,
+	sourceImageErrorAtom,
+} from "../atoms/workflow-atoms";
 import { getSourceImageInfo } from "../engine/image-processing";
 import {
-	type WorkflowState,
-	WORKFLOW_STEP_TITLES,
-	WorkflowStep,
-} from "../engine/workflow-state";
+	getDimensionErrorMessage,
+	getFileSizeErrorMessage,
+	isDimensionLimitExceeded,
+	isFileSizeExceeded,
+} from "../engine/resource-policy";
+import { vibrate } from "../haptics";
 import { base } from "../styles/base.stylex";
 import { tokens } from "../styles/tokens.stylex";
-import { vibrate } from "../haptics";
 import { trackError, trackEvent, trackStepView } from "../telemetry";
 import { ActionButton } from "./ActionButton";
-import {
-	isFileSizeExceeded,
-	isDimensionLimitExceeded,
-	getFileSizeErrorMessage,
-	getDimensionErrorMessage,
-} from "../engine/resource-policy";
 
 const styles = stylex.create({
 	imagePreview: { marginTop: "1rem" },
@@ -31,60 +32,16 @@ const styles = stylex.create({
 	panelSpacing: { marginTop: "1rem", textAlign: "center" },
 });
 
-/** Props for {@link ContinueButton}. */
-interface ContinueButtonProps {
-	/** The processed source image to continue with. */
-	sourceImage: SourceImageInfo;
-	/** Called when the user chooses to continue. */
-	onContinue: (sourceImage: SourceImageInfo) => void;
-}
-
-/**
- * Button that advances the workflow to the tesserae build step.
- * Encapsulates passing the selected source image back to the caller.
- */
-function ContinueButton({ sourceImage, onContinue }: ContinueButtonProps) {
-	return (
-		<ActionButton type="button" onClick={() => onContinue(sourceImage)}>
-			Continue to {WORKFLOW_STEP_TITLES[WorkflowStep.BUILD_TESSERAE]} →
-		</ActionButton>
-	);
-}
-
-/** Props for {@link SourceImageSelection}. */
-interface SourceImageSelectionProps {
-	/** Called when a valid source image is selected and processed. */
-	onSourceSelected: (sourceImage: SourceImageInfo) => void;
-	/** Called when source image selection or processing fails. */
-	onSourceError: (errorMessage: string) => void;
-	/** Current workflow state, used to display persisted errors. */
-	initialState: WorkflowState;
-}
-
 /**
  * Drop zone and file input for selecting the source image.
  * Validates file type, extracts dimensions, and shows a preview.
  */
-export function SourceImageSelection({
-	onSourceSelected,
-	onSourceError,
-	initialState,
-}: SourceImageSelectionProps) {
+export function SourceImageSelection() {
+	const sourceImage = useAtomValue(sourceImageAtom);
+	const sourceImageError = useAtomValue(sourceImageErrorAtom);
+	const selectSourceImage = useSetAtom(selectSourceImageAtom);
+	const reportSourceError = useSetAtom(reportSourceErrorAtom);
 	const [isProcessing, setIsProcessing] = useState(false);
-	const [previewUrl, setPreviewUrl] = useState<string | null>(
-		initialState.sourceImage?.url ?? null,
-	);
-	const [imageDimensions, setImageDimensions] = useState<{
-		width: number;
-		height: number;
-	} | null>(
-		initialState.sourceImage
-			? {
-					width: initialState.sourceImage.width,
-					height: initialState.sourceImage.height,
-				}
-			: null,
-	);
 
 	useEffect(() => {
 		trackStepView("choose_source_image");
@@ -96,51 +53,51 @@ export function SourceImageSelection({
 
 			const file = files[0];
 			if (!file.type.match(/^image\/(jpeg|png|webp)$/)) {
-				onSourceError(
+				reportSourceError(
 					"Unsupported file type. Please select a JPEG, PNG, or WebP image.",
 				);
 				return;
 			}
 
 			if (isFileSizeExceeded(file)) {
-				onSourceError(getFileSizeErrorMessage(file.name));
+				reportSourceError(getFileSizeErrorMessage(file.name));
 				return;
 			}
 
 			setIsProcessing(true);
 			try {
-				const sourceImage = await getSourceImageInfo(file);
+				const sourceImageInfo = await getSourceImageInfo(file);
 
-				if (isDimensionLimitExceeded(sourceImage.width, sourceImage.height)) {
-					onSourceError(
-						getDimensionErrorMessage(sourceImage.width, sourceImage.height),
+				if (
+					isDimensionLimitExceeded(
+						sourceImageInfo.width,
+						sourceImageInfo.height,
+					)
+				) {
+					reportSourceError(
+						getDimensionErrorMessage(
+							sourceImageInfo.width,
+							sourceImageInfo.height,
+						),
 					);
 					return;
 				}
 
-				onSourceSelected(sourceImage);
+				selectSourceImage(sourceImageInfo);
 
 				trackEvent("source_image_upload", {
-					width: sourceImage.width,
-					height: sourceImage.height,
+					width: sourceImageInfo.width,
+					height: sourceImageInfo.height,
 					fileSize: file.size,
 					fileType: file.type,
 				});
 				vibrate(10);
-
-				// Reuse the object URL the engine holds rather than creating a second
-				// one; it lives as long as the source image is in the workflow.
-				setPreviewUrl(sourceImage.url);
-				setImageDimensions({
-					width: sourceImage.width,
-					height: sourceImage.height,
-				});
 			} catch (error) {
 				const errorMessage =
 					error instanceof Error
 						? error.message
 						: "Failed to process the image.";
-				onSourceError(errorMessage);
+				reportSourceError(errorMessage);
 				trackError("source_image_load", error, {
 					fileName: file.name,
 					fileType: file.type,
@@ -150,7 +107,7 @@ export function SourceImageSelection({
 				setIsProcessing(false);
 			}
 		},
-		[onSourceSelected, onSourceError],
+		[selectSourceImage, reportSourceError],
 	);
 
 	const handleDragOver = useCallback((e: React.DragEvent) => {
@@ -194,30 +151,29 @@ export function SourceImageSelection({
 				/>
 			</button>
 
-			{initialState.sourceImageError && (
+			{sourceImageError && (
 				<article
 					{...errorPanelProps}
 					className={`error-message ${errorPanelProps.className}`}
 					role="alert"
 				>
-					{initialState.sourceImageError}
+					{sourceImageError}
 				</article>
 			)}
 
-			{previewUrl && (
+			{sourceImage && (
 				<div {...stylex.props(styles.imagePreview)}>
 					<p {...stylex.props(base.paragraph)}>Source image preview:</p>
+					{/* Reuses the object URL the engine holds rather than creating a
+					    second one; it lives as long as the source image is selected. */}
 					<img
-						src={previewUrl}
+						src={sourceImage.url}
 						alt="Source"
 						{...stylex.props(styles.previewImage)}
 					/>
-					{imageDimensions && (
-						<p {...stylex.props(base.paragraph)}>
-							Dimensions: {imageDimensions.width} × {imageDimensions.height}{" "}
-							pixels
-						</p>
-					)}
+					<p {...stylex.props(base.paragraph)}>
+						Dimensions: {sourceImage.width} × {sourceImage.height} pixels
+					</p>
 				</div>
 			)}
 
@@ -231,11 +187,13 @@ export function SourceImageSelection({
 				</article>
 			)}
 
-			{previewUrl && imageDimensions && initialState.sourceImage && (
-				<ContinueButton
-					sourceImage={initialState.sourceImage}
-					onContinue={onSourceSelected}
-				/>
+			{sourceImage && (
+				<ActionButton
+					type="button"
+					onClick={() => selectSourceImage(sourceImage)}
+				>
+					Continue to step 2 →
+				</ActionButton>
 			)}
 		</div>
 	);

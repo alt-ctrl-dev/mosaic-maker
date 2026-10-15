@@ -1,7 +1,15 @@
-import { useEffect } from "react";
 import * as stylex from "@stylexjs/stylex";
-import type { TesseraInfo } from "../engine/workflow-state";
-import { WORKFLOW_STEP_TITLES, WorkflowStep } from "../engine/workflow-state";
+import { useAtomValue, useSetAtom } from "jotai";
+import { useEffect } from "react";
+import {
+	acceptSupplementationAtom,
+	advanceFromReviewAtom,
+	hasAcceptedSupplementationAtom,
+	isLowVarietyCollectionAtom,
+	removeTesseraAtom,
+	tesseraeAtom,
+	varietyRecommendationAtom,
+} from "../atoms/workflow-atoms";
 import { base } from "../styles/base.stylex";
 import { tokens } from "../styles/tokens.stylex";
 import { trackEvent } from "../telemetry";
@@ -57,40 +65,23 @@ const styles = stylex.create({
 	},
 });
 
-/** Props for {@link TesseraReview}. */
-interface TesseraReviewProps {
-	/** Tesserae to display in the review grid. */
-	tesserae: TesseraInfo[];
-	/** Called when the user removes a tessera at the given index. */
-	onRemoveTessera: (index: number) => void;
-	/** Called when the user accepts supplementing with generated tesserae. */
-	onAcceptSupplementation?: () => void;
-	/** Called when the user wants to continue to the next step. */
-	onContinue?: () => void;
-	/** Whether the collection has low variety. */
-	isLowVariety?: boolean;
-	/** Recommended number of tesserae for adequate variety. */
-	varietyRecommendation?: number | null;
-	/** Whether the user has already accepted supplementation. */
-	hasAcceptedSupplementation?: boolean;
-	/** Whether the details element should be open by default. */
-	open?: boolean;
-}
-
 /**
  * Displays the tessera collection for review with validity stats,
- * variety warnings, and per-tessera removal.
+ * variety warnings, and per-tessera removal. Reads and writes the
+ * workflow atoms directly.
  */
-export function TesseraReview({
-	tesserae,
-	onRemoveTessera,
-	onAcceptSupplementation,
-	onContinue,
-	isLowVariety = false,
-	varietyRecommendation = null,
-	hasAcceptedSupplementation = false,
-	open,
-}: TesseraReviewProps) {
+export function TesseraReview() {
+	const tesserae = useAtomValue(tesseraeAtom);
+	const isLowVariety = useAtomValue(isLowVarietyCollectionAtom);
+	const varietyRecommendation = useAtomValue(varietyRecommendationAtom);
+	const hasAcceptedSupplementation = useAtomValue(
+		hasAcceptedSupplementationAtom,
+	);
+	const removeTessera = useSetAtom(removeTesseraAtom);
+	const acceptSupplementation = useSetAtom(acceptSupplementationAtom);
+	const advanceFromReview = useSetAtom(advanceFromReviewAtom);
+
+	const open = tesserae.some((tessera) => !tessera.isValid);
 	const validCount = tesserae.filter((t) => t.isValid).length;
 	const rejectedCount = tesserae.length - validCount;
 
@@ -130,10 +121,10 @@ export function TesseraReview({
 						Low variety: You have {validCount} tesserae, but{" "}
 						{varietyRecommendation} are recommended.
 					</p>
-					{onAcceptSupplementation && !hasAcceptedSupplementation && (
+					{isLowVariety && !hasAcceptedSupplementation && (
 						<ActionButton
 							type="button"
-							onClick={onAcceptSupplementation}
+							onClick={() => acceptSupplementation()}
 							variant="outline"
 						>
 							Add random tesserae
@@ -187,7 +178,7 @@ export function TesseraReview({
 								</div>
 								<ActionButton
 									type="button"
-									onClick={() => onRemoveTessera(index)}
+									onClick={() => removeTessera(index)}
 									aria-label={`Remove ${tessera.fileName}`}
 									variant="outline"
 								>
@@ -199,18 +190,15 @@ export function TesseraReview({
 				</div>
 			</details>
 
-			{onContinue && (
-				<div>
-					<ActionButton
-						type="button"
-						onClick={onContinue}
-						disabled={validCount === 0}
-					>
-						Continue to{" "}
-						{WORKFLOW_STEP_TITLES[WorkflowStep.GENERATE_AND_PREVIEW]} →
-					</ActionButton>
-				</div>
-			)}
+			<div>
+				<ActionButton
+					type="button"
+					onClick={() => advanceFromReview()}
+					disabled={validCount === 0}
+				>
+					Continue to step 3 →
+				</ActionButton>
+			</div>
 		</div>
 	);
 }

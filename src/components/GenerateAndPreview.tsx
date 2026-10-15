@@ -1,12 +1,20 @@
-import { useCallback, useEffect, useRef, useState } from "react";
 import * as stylex from "@stylexjs/stylex";
+import { useAtomValue, useSetAtom } from "jotai";
+import { useCallback, useEffect, useRef, useState } from "react";
+import {
+	adjustedTesseraSizeAtom,
+	completeMosaicAtom,
+	discardMosaicAtom,
+	modeAtom,
+	sourceImageAtom,
+	tesseraeAtom,
+} from "../atoms/workflow-atoms";
+import type { SourceImageInfo } from "../engine/image-processing";
 import { generateMosaic, type ProgressCallback } from "../engine/mosaic-engine";
 import { ANDROID_READBACK_FAILURE } from "../engine/mosaic-shared";
-import type { WorkflowState } from "../engine/workflow-state";
-import type { WorkflowAction } from "../hooks/useWorkflowReducer";
+import { vibrate } from "../haptics";
 import { base } from "../styles/base.stylex";
 import { tokens } from "../styles/tokens.stylex";
-import { vibrate } from "../haptics";
 import { trackError, trackMosaicGeneration, trackStepView } from "../telemetry";
 import { ActionButton } from "./ActionButton";
 
@@ -100,14 +108,6 @@ const styles = stylex.create({
 	},
 });
 
-/** Props for {@link GenerateAndPreview}. */
-interface GenerateAndPreviewProps {
-	/** Current workflow state, used for source image, tesserae, and tessera size. */
-	state: WorkflowState;
-	/** Dispatches workflow actions for mosaic generation results and cancellations. */
-	dispatch: (action: WorkflowAction) => void;
-}
-
 /**
  * User-facing error shown when the Android main-thread fallback also fails,
  * meaning the mosaic could not be generated on the current device.
@@ -127,12 +127,16 @@ function onBeforeUnload(event: BeforeUnloadEvent) {
 /**
  * Mosaic generation step that orchestrates the async generation,
  * shows a progress indicator with cancel support, and displays the
- * generated mosaic preview.
+ * generated mosaic preview. Reads its inputs from the workflow atoms.
  */
-export function GenerateAndPreview({
-	state,
-	dispatch,
-}: GenerateAndPreviewProps) {
+export function GenerateAndPreview() {
+	const mode = useAtomValue(modeAtom);
+	const sourceImage = useAtomValue(sourceImageAtom);
+	const adjustedTesseraSize = useAtomValue(adjustedTesseraSizeAtom);
+	const tesserae = useAtomValue(tesseraeAtom);
+	const completeMosaic = useSetAtom(completeMosaicAtom);
+	const discardMosaic = useSetAtom(discardMosaicAtom);
+
 	const [isGenerating, setIsGenerating] = useState(false);
 	const [progress, setProgress] = useState<{
 		percent: number;
@@ -179,15 +183,14 @@ export function GenerateAndPreview({
 	}, [isGenerating, terminateWorker]);
 
 	const handleGenerate = async () => {
-		if (!state.sourceImage || !state.adjustedTesseraSize) {
+		if (!sourceImage || !adjustedTesseraSize) {
 			setError("Missing source image or tile size");
 			return;
 		}
 
 		terminateWorker();
 
-		const sourceImage = state.sourceImage;
-		const tesseraSize = state.adjustedTesseraSize;
+		const tesseraSize = adjustedTesseraSize;
 		const generationId = ++generationIdRef.current;
 		generationStartTimeRef.current = performance.now();
 
@@ -230,7 +233,7 @@ export function GenerateAndPreview({
 								sourceImage.width,
 								sourceImage.height,
 								tesseraSize,
-								state.mode,
+								mode,
 								"worker",
 							);
 							if (success) {
@@ -240,16 +243,13 @@ export function GenerateAndPreview({
 									height: data.height,
 								});
 								vibrate(MOSAIC_COMPLETE_VIBRATION);
-								dispatch({
-									type: "mosaicGenerated",
-									mosaicResult: {
-										dataUrl: data.dataUrl,
-										width: data.width,
-										height: data.height,
-									},
+								completeMosaic({
+									dataUrl: data.dataUrl,
+									width: data.width,
+									height: data.height,
 								});
 							} else {
-								dispatch({ type: "generationCancelledOrFailed" });
+								discardMosaic();
 							}
 							setIsGenerating(false);
 							terminateWorker();
@@ -270,7 +270,7 @@ export function GenerateAndPreview({
 								);
 							} else {
 								setError(data.message);
-								dispatch({ type: "generationCancelledOrFailed" });
+								discardMosaic();
 								setIsGenerating(false);
 								trackMosaicGeneration(
 									false,
@@ -278,7 +278,7 @@ export function GenerateAndPreview({
 									sourceImage.width,
 									sourceImage.height,
 									tesseraSize,
-									state.mode,
+									mode,
 									"worker",
 								);
 								terminateWorker();
@@ -290,14 +290,14 @@ export function GenerateAndPreview({
 				workerRef.current.postMessage({
 					type: "generate",
 					sourceImage,
-					tesserae: state.tesserae.map((tessera) => ({
+					tesserae: tesserae.map((tessera) => ({
 						fileName: tessera.fileName,
 						isValid: tessera.isValid,
 						previewUrl: tessera.previewUrl,
 						color: tessera.color,
 					})),
 					tesseraSize,
-					mode: state.mode,
+					mode: mode,
 				});
 			} catch (err) {
 				if (generationId !== generationIdRef.current) return;
@@ -325,8 +325,8 @@ export function GenerateAndPreview({
 	};
 
 	const generateOnMainThread = async (
-		sourceImage: NonNullable<WorkflowState["sourceImage"]>,
-		tesseraSize: NonNullable<WorkflowState["adjustedTesseraSize"]>,
+		sourceImage: SourceImageInfo,
+		tesseraSize: number,
 		fallbackReason: "android_readback" | "worker_unavailable",
 		generationId: number,
 		fallbackErrorMessage?: string,
@@ -344,9 +344,9 @@ export function GenerateAndPreview({
 		try {
 			const result = await generateMosaic(
 				sourceImage,
-				state.tesserae,
+				tesserae,
 				tesseraSize,
-				state.mode,
+				mode,
 				undefined,
 				undefined,
 				progressCallback,
@@ -361,7 +361,7 @@ export function GenerateAndPreview({
 				sourceImage.width,
 				sourceImage.height,
 				tesseraSize,
-				state.mode,
+				mode,
 				"main_thread",
 				fallbackReason,
 			);
@@ -371,7 +371,7 @@ export function GenerateAndPreview({
 			setPreviewDimensions({ width: result.width, height: result.height });
 			vibrate(MOSAIC_COMPLETE_VIBRATION);
 
-			dispatch({ type: "mosaicGenerated", mosaicResult: result });
+			completeMosaic(result);
 		} catch (err) {
 			if (generationId !== generationIdRef.current) return;
 			if (fallbackErrorMessage) {
@@ -387,7 +387,7 @@ export function GenerateAndPreview({
 			} else {
 				setError("Unknown error occurred");
 			}
-			dispatch({ type: "generationCancelledOrFailed" });
+			discardMosaic();
 
 			const totalTime = performance.now() - generationStartTimeRef.current;
 
@@ -397,7 +397,7 @@ export function GenerateAndPreview({
 				sourceImage.width,
 				sourceImage.height,
 				tesseraSize,
-				state.mode,
+				mode,
 				"main_thread",
 				fallbackReason,
 			);
@@ -409,14 +409,14 @@ export function GenerateAndPreview({
 	const handleCancel = () => {
 		++generationIdRef.current;
 		workerRef.current?.postMessage({ type: "cancel" });
-		if (state.sourceImage && state.adjustedTesseraSize) {
+		if (sourceImage && adjustedTesseraSize) {
 			trackMosaicGeneration(
 				false,
 				performance.now() - generationStartTimeRef.current,
-				state.sourceImage.width,
-				state.sourceImage.height,
-				state.adjustedTesseraSize,
-				state.mode,
+				sourceImage.width,
+				sourceImage.height,
+				adjustedTesseraSize,
+				mode,
 				generationPathRef.current.executionPath,
 				generationPathRef.current.fallbackReason,
 			);
@@ -426,15 +426,13 @@ export function GenerateAndPreview({
 		setIsGenerating(false);
 		setError(null);
 		setProgress(null);
-		dispatch({ type: "generationCancelledOrFailed" });
+		discardMosaic();
 	};
 
 	const canGenerate =
-		state.sourceImage !== null &&
-		state.adjustedTesseraSize !== null &&
-		(state.mode === "brick"
-			? state.tesserae.length >= 2
-			: state.tesserae.length > 0);
+		sourceImage !== null &&
+		adjustedTesseraSize !== null &&
+		(mode === "brick" ? tesserae.length >= 2 : tesserae.length > 0);
 
 	const filledProgressCells = progress
 		? Math.round((progress.percent / 100) * PROGRESS_CELL_COUNT)

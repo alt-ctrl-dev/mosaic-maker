@@ -1,9 +1,10 @@
-import { fireEvent, render, screen, waitFor } from "@testing-library/react";
+import { fireEvent, screen, waitFor } from "@testing-library/react";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
+import { mosaicResultAtom } from "../atoms/workflow-atoms";
 import * as mosaicEngine from "../engine/mosaic-engine";
 import { ANDROID_READBACK_FAILURE } from "../engine/mosaic-shared";
-import type { WorkflowState } from "../engine/workflow-state";
-import { INITIAL_WORKFLOW_STATE, WorkflowStep } from "../engine/workflow-state";
+import { WorkflowStep } from "../engine/workflow-state";
+import { renderWithWorkflow } from "../test-utils/workflow";
 import { GenerateAndPreview } from "./GenerateAndPreview";
 
 class MockWorker {
@@ -28,11 +29,10 @@ vi.mock("../engine/mosaic-worker.ts?worker", () => ({
 	default: MockWorker,
 }));
 
-const mockDispatch = vi.fn();
-
-const mockState: WorkflowState = {
-	...INITIAL_WORKFLOW_STATE,
+const mockState = {
 	currentStep: WorkflowStep.GENERATE_AND_PREVIEW,
+	// Seeded so cancellation visibly discards it.
+	mosaicResult: { dataUrl: "data:stale", width: 1, height: 1 },
 	sourceImage: {
 		width: 100,
 		height: 100,
@@ -77,7 +77,7 @@ describe("GenerateAndPreview Android readback fallback", () => {
 	it("attributes completed worker generation to the worker with click-to-result duration", async () => {
 		const log = vi.spyOn(console, "log").mockImplementation(() => {});
 		vi.spyOn(performance, "now").mockReturnValue(100);
-		render(<GenerateAndPreview state={mockState} dispatch={mockDispatch} />);
+		renderWithWorkflow(<GenerateAndPreview />, mockState);
 		fireEvent.click(screen.getByRole("button", { name: "Generate Mosaic" }));
 		await waitFor(() => expect(currentWorker).not.toBeNull());
 		vi.spyOn(performance, "now").mockReturnValue(350);
@@ -93,7 +93,7 @@ describe("GenerateAndPreview Android readback fallback", () => {
 	it("attributes worker errors and cancellations to the worker", async () => {
 		const log = vi.spyOn(console, "log").mockImplementation(() => {});
 		vi.spyOn(performance, "now").mockReturnValue(100);
-		render(<GenerateAndPreview state={mockState} dispatch={mockDispatch} />);
+		renderWithWorkflow(<GenerateAndPreview />, mockState);
 		fireEvent.click(screen.getByRole("button", { name: "Generate Mosaic" }));
 		await waitFor(() => expect(currentWorker).not.toBeNull());
 		vi.spyOn(performance, "now").mockReturnValue(250);
@@ -107,7 +107,7 @@ describe("GenerateAndPreview Android readback fallback", () => {
 	it("attributes non-Android worker errors to the worker", async () => {
 		const log = vi.spyOn(console, "log").mockImplementation(() => {});
 		vi.spyOn(performance, "now").mockReturnValue(100);
-		render(<GenerateAndPreview state={mockState} dispatch={mockDispatch} />);
+		renderWithWorkflow(<GenerateAndPreview />, mockState);
 		fireEvent.click(screen.getByRole("button", { name: "Generate Mosaic" }));
 		await waitFor(() => expect(currentWorker).not.toBeNull());
 		vi.spyOn(performance, "now").mockReturnValue(190);
@@ -128,7 +128,7 @@ describe("GenerateAndPreview Android readback fallback", () => {
 			height: 100,
 		});
 		vi.spyOn(performance, "now").mockReturnValue(100);
-		render(<GenerateAndPreview state={mockState} dispatch={mockDispatch} />);
+		renderWithWorkflow(<GenerateAndPreview />, mockState);
 		fireEvent.click(screen.getByRole("button", { name: "Generate Mosaic" }));
 		vi.spyOn(performance, "now").mockReturnValue(360);
 		await waitFor(() => expect(generationEvents(log)).toHaveLength(1));
@@ -153,7 +153,7 @@ describe("GenerateAndPreview Android readback fallback", () => {
 			}),
 		);
 		vi.spyOn(performance, "now").mockReturnValue(100);
-		render(<GenerateAndPreview state={mockState} dispatch={mockDispatch} />);
+		renderWithWorkflow(<GenerateAndPreview />, mockState);
 		fireEvent.click(screen.getByRole("button", { name: "Generate Mosaic" }));
 		await waitFor(() => expect(currentWorker).not.toBeNull());
 		vi.spyOn(performance, "now").mockReturnValue(250);
@@ -184,7 +184,7 @@ describe("GenerateAndPreview Android readback fallback", () => {
 			}),
 		);
 		vi.spyOn(performance, "now").mockReturnValue(100);
-		render(<GenerateAndPreview state={mockState} dispatch={mockDispatch} />);
+		renderWithWorkflow(<GenerateAndPreview />, mockState);
 		fireEvent.click(screen.getByRole("button", { name: "Generate Mosaic" }));
 		await waitFor(() => expect(currentWorker).not.toBeNull());
 		currentWorker?.emitError(
@@ -210,7 +210,7 @@ describe("GenerateAndPreview Android readback fallback", () => {
 			.spyOn(mosaicEngine, "generateMosaic")
 			.mockRejectedValue(new Error("main-thread failure"));
 
-		render(<GenerateAndPreview state={mockState} dispatch={mockDispatch} />);
+		const { store } = renderWithWorkflow(<GenerateAndPreview />, mockState);
 
 		fireEvent.click(screen.getByRole("button", { name: "Generate Mosaic" }));
 
@@ -236,9 +236,8 @@ describe("GenerateAndPreview Android readback fallback", () => {
 			},
 		]);
 		expect(generateMosaic).toHaveBeenCalled();
-		expect(mockDispatch).toHaveBeenCalledWith({
-			type: "generationCancelledOrFailed",
-		});
+		// Cancellation discards any stale mosaic result.
+		expect(store.get(mosaicResultAtom)).toBeNull();
 		expect(
 			screen.queryByRole("button", { name: "Cancel" }),
 		).not.toBeInTheDocument();

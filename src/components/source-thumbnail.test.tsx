@@ -1,14 +1,11 @@
-import { afterEach, describe, expect, it } from "vitest";
 import { cleanup, render, within } from "@testing-library/react";
-import { createStore, Provider } from "jotai";
-import { workflowStateAtom } from "../atoms/workflow-atoms";
-import {
-	INITIAL_WORKFLOW_STATE,
-	WorkflowStep,
-	type WorkflowState,
-} from "../engine/workflow-state";
-import type { SourceImageInfo } from "../engine/image-processing";
+import { Provider } from "jotai";
+import { afterEach, describe, expect, it } from "vitest";
 import { WorkflowApp } from "../App";
+import { createWorkflowStore } from "../atoms/workflow-atoms";
+import type { SourceImageInfo } from "../engine/image-processing";
+import type { WorkflowState } from "../engine/workflow-state";
+import { WorkflowStep } from "../engine/workflow-state";
 
 afterEach(cleanup);
 
@@ -24,9 +21,8 @@ function makeSourceImage(
 	};
 }
 
-function makeAdjustedState(step: WorkflowStep): WorkflowState {
+function makeAdjustedState(step: WorkflowStep): Partial<WorkflowState> {
 	return {
-		...INITIAL_WORKFLOW_STATE,
 		sourceImage: makeSourceImage(),
 		currentStep: step,
 		furthestCompletedStep: step,
@@ -34,9 +30,8 @@ function makeAdjustedState(step: WorkflowStep): WorkflowState {
 }
 
 /** Render WorkflowApp with a pre-seeded workflow state. */
-function renderWithState(state: WorkflowState) {
-	const store = createStore();
-	store.set(workflowStateAtom, state);
+function renderWithState(state: Partial<WorkflowState>) {
+	const store = createWorkflowStore(state);
 	return render(
 		<Provider store={store}>
 			<WorkflowApp />
@@ -69,7 +64,7 @@ describe("Source Thumbnail Persistence", () => {
 	});
 
 	it("hides thumbnail when no source image is selected", () => {
-		renderWithState(INITIAL_WORKFLOW_STATE);
+		renderWithState({});
 
 		expect(queryHeaderThumbnail()).not.toBeInTheDocument();
 	});
