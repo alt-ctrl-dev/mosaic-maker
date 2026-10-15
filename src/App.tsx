@@ -198,12 +198,17 @@ const styles = stylex.create({
 		fontSize: "0.875rem",
 		textTransform: "uppercase",
 		letterSpacing: "0.05em",
-		borderLeft: `1px solid ${tokens.border}`,
+		borderLeftWidth: "1px",
+		borderLeftStyle: "solid",
+		borderLeftColor: tokens.border,
 		paddingLeft: "1rem",
 		margin: "0 1rem",
 		"@media (max-width: 768px)": {
-			borderLeft: "none",
-			borderTop: `1px solid ${tokens.border}`,
+			borderLeftWidth: 0,
+			borderLeftStyle: "none",
+			borderTopWidth: "1px",
+			borderTopStyle: "solid",
+			borderTopColor: tokens.border,
 			paddingLeft: 0,
 			paddingTop: "1rem",
 			margin: "1rem 0",
@@ -222,7 +227,8 @@ export function App() {
 	);
 }
 
-function WorkflowApp() {
+/** Internal workflow component exported for testing. */
+export function WorkflowApp() {
 	const [workflowState, dispatch] = useWorkflowReducer();
 
 	const resolvedTesseraSize =
