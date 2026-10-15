@@ -32,7 +32,6 @@ describe("ExportMosaic summary and confirmation", () => {
 	it("should display summary with format, dimensions, and approximate size", () => {
 		render(<ExportMosaic state={mockState} dispatch={mockDispatch} />);
 
-		// Should show format, dimensions, and approximate size
 		expect(screen.getByText(/PNG · 1200×800 · ~0 KB/)).toBeInTheDocument();
 	});
 
@@ -61,7 +60,6 @@ describe("ExportMosaic summary and confirmation", () => {
 
 		render(<ExportMosaic state={jpegState} dispatch={mockDispatch} />);
 
-		// Export settings should be open by default for jpeg
 		expect(screen.getByText("Quality Settings")).toBeInTheDocument();
 	});
 
@@ -73,14 +71,12 @@ describe("ExportMosaic summary and confirmation", () => {
 
 		render(<ExportMosaic state={webpState} dispatch={mockDispatch} />);
 
-		// Export settings should be open by default for webp
 		expect(screen.getByText("Quality Settings")).toBeInTheDocument();
 	});
 
 	it("should keep export settings closed by default for png format", () => {
 		render(<ExportMosaic state={mockState} dispatch={mockDispatch} />);
 
-		// Export settings should be closed by default for png
 		expect(screen.queryByText("Quality Settings")).not.toBeInTheDocument();
 	});
 });
