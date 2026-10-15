@@ -169,4 +169,20 @@ export const base = stylex.create({
 		opacity: 0,
 		cursor: "pointer",
 	},
+	/** Sized swatch for Brick mode color palette */
+	brickSwatch: {
+		width: "2rem",
+		height: "2rem",
+		borderRadius: tokens.radius,
+		border: `1px solid ${tokens.border}`,
+		display: "inline-block",
+		margin: "0.25rem",
+	},
+	/** Bounded size for Brick mode selected color preview */
+	brickPreview: {
+		maxWidth: "4rem",
+		maxHeight: "4rem",
+		borderRadius: tokens.radius,
+		border: `1px solid ${tokens.border}`,
+	},
 });
