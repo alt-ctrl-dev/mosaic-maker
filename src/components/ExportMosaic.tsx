@@ -25,6 +25,18 @@ const styles = stylex.create({
 		borderRadius: tokens.radius,
 		boxShadow: tokens.shadow,
 	},
+	summary: {
+		textAlign: "center",
+		marginBottom: "1rem",
+		fontSize: "0.875rem",
+		color: tokens.secondary,
+	},
+	confirmation: {
+		textAlign: "center",
+		marginTop: "1rem",
+		fontSize: "0.875rem",
+		color: tokens.valid,
+	},
 });
 
 /** Props for {@link ExportMosaic}. */
@@ -104,7 +116,7 @@ function openNewTabForLaterPopulation(): {
 		return {
 			populate: () => {},
 			error:
-				"Popup blocked. To save the image, please use your browser's share or save functionality.",
+				"Popup blocked. To save the image, please tap the Download button again.",
 		};
 	}
 
@@ -203,7 +215,7 @@ function exportButtonLabel(isExporting: boolean, canShare: boolean): string {
  */
 export function ExportMosaic({ state, dispatch }: ExportMosaicProps) {
 	const [isExporting, setIsExporting] = useState(false);
-	const [isExported, setIsExported] = useState(false);
+	const [isDelivered, setIsDelivered] = useState(false);
 
 	const [error, setError] = useState<string | null>(null);
 	const canShare = supportsWebShare();
@@ -282,7 +294,6 @@ export function ExportMosaic({ state, dispatch }: ExportMosaicProps) {
 			height: mosaicResult.height,
 			delivery: useAnchorDownload ? "anchor" : "new-tab-populated",
 		});
-		setIsExported(true);
 	};
 
 	const handleExport = async () => {
@@ -293,8 +304,8 @@ export function ExportMosaic({ state, dispatch }: ExportMosaicProps) {
 		}
 
 		setIsExporting(true);
-		setIsExported(false);
 		setError(null);
+		setIsDelivered(false);
 
 		// Prepare the download delivery path up front. On iOS/iPadOS a tab must be
 		// opened synchronously within the user gesture, before the async export,
@@ -325,6 +336,7 @@ export function ExportMosaic({ state, dispatch }: ExportMosaicProps) {
 			if (canShare) {
 				const shared = await shareExportedMosaic(exportedDataUrl, mosaicResult);
 				if (shared) {
+					setIsDelivered(true);
 					return;
 				}
 				// Sharing failed (unsupported file type). Fall through to download
@@ -337,6 +349,7 @@ export function ExportMosaic({ state, dispatch }: ExportMosaicProps) {
 				useAnchorDownload,
 				tabPopulator,
 			);
+			setIsDelivered(true);
 		} catch (err) {
 			// User cancelling the native share sheet is not an error.
 			if (err instanceof DOMException && err.name === "AbortError") {
@@ -369,15 +382,11 @@ export function ExportMosaic({ state, dispatch }: ExportMosaicProps) {
 							{...stylex.props(styles.mosaicPreview)}
 						/>
 					</div>
-					<p {...stylex.props(base.paragraph)}>
-						<strong>Export:</strong> {state.exportFormat.toUpperCase()} ·{" "}
-						{state.mosaicResult.width} × {state.mosaicResult.height} pixels ·
-						Approx.{" "}
-						{((state.mosaicResult.dataUrl.length * 0.75) / 1024 / 1024).toFixed(
-							1,
-						)}{" "}
-						MB
-					</p>
+					<div {...stylex.props(styles.summary)}>
+						{state.exportFormat.toUpperCase()} · {state.mosaicResult.width}×
+						{state.mosaicResult.height} · ~
+						{Math.round((state.mosaicResult.dataUrl.length * 0.75) / 1024)} KB
+					</div>
 					<details
 						{...stylex.props(base.details)}
 						open={
@@ -497,10 +506,8 @@ export function ExportMosaic({ state, dispatch }: ExportMosaicProps) {
 								<strong>Error:</strong> {error}
 							</article>
 						)}
-						{isExported && (
-							<article {...stylex.props(base.card)} role="status">
-								<strong>Success!</strong> Your mosaic has been exported.
-							</article>
+						{isDelivered && (
+							<div {...stylex.props(styles.confirmation)}>Delivered!</div>
 						)}
 					</div>
 				</>
