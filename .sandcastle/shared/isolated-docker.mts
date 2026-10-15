@@ -1,11 +1,92 @@
-import { createIsolatedSandboxProvider, type IsolatedSandboxProvider } from "@ai-hero/sandcastle";
+import {
+  createIsolatedSandboxProvider,
+  type ExecResult,
+  type IsolatedSandboxProvider,
+} from "@ai-hero/sandcastle";
 import { sandboxEnv } from "./sandbox-env.mts";
 import { execSync, spawn, spawnSync } from "child_process";
 import { stat, unlink } from "fs/promises";
 import { tmpdir } from "os";
 import { join } from "path";
 
+/**
+ * Type of the isolated Docker provider, named for the project-specific
+ * provider exported by {@link isolatedDockerSandbox}.
+ */
 export type IsolatedDockerSandbox = IsolatedSandboxProvider;
+
+/**
+ * Accumulates process output into complete lines, delivering each non-empty
+ * line to `onLine` as it arrives. A trailing partial line is held back until
+ * the next chunk or `finish()`, so messages split across chunk boundaries are
+ * delivered intact rather than as broken fragments.
+ */
+function createLineCollector(onLine?: (line: string) => void) {
+  let buffer = "";
+  let text = "";
+
+  const push = (chunk: string): void => {
+    const lines = (buffer + chunk).split("\n");
+    buffer = lines.pop() ?? "";
+    for (const line of lines) {
+      if (line.trim()) {
+        text += `${line}\n`;
+        onLine?.(line);
+      }
+    }
+  };
+
+  const finish = (): void => {
+    if (buffer.trim()) {
+      text += buffer;
+      onLine?.(buffer.trim());
+    }
+  };
+
+  return { push, finish, text: () => text };
+}
+
+/**
+ * Runs a command in the container with stdin piped, streaming complete lines
+ * to `onLine` as they arrive.
+ */
+async function execStreaming(
+  containerName: string,
+  command: string,
+  stdin: string,
+  onLine?: (line: string) => void,
+): Promise<ExecResult> {
+  const child = spawn("docker", [
+    "exec",
+    "-i",
+    containerName,
+    "sh",
+    "-c",
+    command,
+  ]);
+
+  const stdout = createLineCollector(onLine);
+  const stderr = createLineCollector();
+
+  child.stdout.on("data", (data: Buffer) => stdout.push(data.toString()));
+  child.stderr.on("data", (data: Buffer) => stderr.push(data.toString()));
+
+  child.stdin.write(stdin);
+  child.stdin.end();
+
+  return new Promise<ExecResult>((resolve, reject) => {
+    child.on("close", (exitCode) => {
+      stdout.finish();
+      stderr.finish();
+      resolve({
+        stdout: stdout.text().trim(),
+        stderr: stderr.text().trim(),
+        exitCode: exitCode ?? 0,
+      });
+    });
+    child.on("error", reject);
+  });
+}
 
 /**
  * Isolated Docker sandbox provider that prevents untrusted execution from
@@ -23,12 +104,13 @@ export const isolatedDockerSandbox: IsolatedDockerSandbox = createIsolatedSandbo
     const containerName = `sandcastle-isolated-${Date.now()}-${Math.random().toString(36).substring(2, 11)}`;
     const worktreePath = "/workspace";
 
-    // Only forward explicitly allowed environment variables to prevent credential leakage
+    // Only forward explicitly allowed environment variables to prevent
+    // credential leakage. Host credentials such as GH_TOKEN are dropped.
     const allowedEnvKeys = ["OPENROUTER_API_KEY"];
     const filteredCreateEnv = Object.fromEntries(
-      Object.entries(createOptions.env || {}).filter(([key]) => 
-        allowedEnvKeys.includes(key)
-      )
+      Object.entries(createOptions.env || {}).filter(([key]) =>
+        allowedEnvKeys.includes(key),
+      ),
     );
     const mergedEnv = { ...sandboxEnv, ...filteredCreateEnv };
     const envArgs = Object.entries(mergedEnv)
@@ -65,94 +147,17 @@ export const isolatedDockerSandbox: IsolatedDockerSandbox = createIsolatedSandbo
           sudo?: boolean;
           stdin?: string;
         },
-      ) => {
+      ): Promise<ExecResult> => {
         const cwd = opts?.cwd ?? worktreePath;
+        const shellCommand = `cd '${cwd.replace(/'/g, "'\\''")}' && ${command}`;
 
-        if (opts?.stdin) {
-          const child = spawn("docker", [
-            "exec",
-            "-i",
-            containerName,
-            "sh",
-            "-c",
-            `cd '${cwd.replace(/'/g, "'\\''")}' && ${command}`,
-          ]);
-
-          let stdout = "";
-          let stderr = "";
-
-          child.stdin.write(opts.stdin);
-          child.stdin.end();
-
-          // Buffer for incomplete lines to handle JSON streaming properly
-          let stdoutBuffer = "";
-          
-          child.stdout.on("data", (data: Buffer) => {
-            const chunk = data.toString();
-            stdoutBuffer += chunk;
-            
-            // Process complete lines
-            const lines = stdoutBuffer.split("\n");
-            // Keep the last incomplete line in the buffer
-            stdoutBuffer = lines.pop() || "";
-            
-            for (const line of lines) {
-              if (line.trim()) {
-                stdout += line + "\n";
-                opts.onLine?.(line);
-              }
-            }
-          });
-
-          // Buffer for incomplete stderr lines
-          let stderrBuffer = "";
-          
-          child.stderr.on("data", (data: Buffer) => {
-            const chunk = data.toString();
-            stderrBuffer += chunk;
-            
-            // Process complete lines
-            const lines = stderrBuffer.split("\n");
-            // Keep the last incomplete line in the buffer
-            stderrBuffer = lines.pop() || "";
-            
-            for (const line of lines) {
-              if (line.trim()) {
-                stderr += line + "\n";
-              }
-            }
-          });
-
-          return new Promise((resolve, reject) => {
-            child.on("close", (exitCode) => {
-              // Process any remaining buffered stdout data
-              if (stdoutBuffer.trim()) {
-                stdout += stdoutBuffer;
-                opts.onLine?.(stdoutBuffer.trim());
-              }
-              // Process any remaining buffered stderr data
-              if (stderrBuffer.trim()) {
-                stderr += stderrBuffer;
-              }
-              resolve({
-                stdout: stdout.trim(),
-                stderr: stderr.trim(),
-                exitCode: exitCode ?? 0,
-              });
-            });
-            child.on("error", reject);
-          });
+        if (opts?.stdin !== undefined) {
+          return execStreaming(containerName, shellCommand, opts.stdin, opts.onLine);
         }
 
         const result = spawnSync(
           "docker",
-          [
-            "exec",
-            containerName,
-            "sh",
-            "-c",
-            `cd '${cwd.replace(/'/g, "'\\''")}' && ${command}`,
-          ],
+          ["exec", containerName, "sh", "-c", shellCommand],
           { encoding: "utf8" },
         );
 
