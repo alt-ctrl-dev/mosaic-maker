@@ -39,16 +39,12 @@ const stepEnter = stylex.keyframes({
 
 const styles = stylex.create({
 	// Shell chrome formerly provided by :root/body/base.css globals.
-	// The workbench field carries a faint construction grid: the app's
-	// output is a grid, and the live tessera-size overlay reads against it.
 	root: {
 		boxSizing: "border-box",
 		colorScheme: "dark",
 		fontFamily: "system-ui, sans-serif",
 		fontSize: "100%",
 		backgroundColor: tokens.background,
-		backgroundImage: `linear-gradient(to right, ${tokens.gridline} 1px, transparent 1px), linear-gradient(to bottom, ${tokens.gridline} 1px, transparent 1px)`,
-		backgroundSize: "2rem 2rem",
 		color: tokens.text,
 		lineHeight: 1.5,
 		paddingInline: "16px",
