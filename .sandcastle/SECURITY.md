@@ -72,8 +72,8 @@ object that only:
 
 All actual isolation (container creation, environment handling, file transfer,
 command execution) lives in the `create` function **the caller provides**. The
-library contributes the `"isolated"` tag that `verifySandboxIsolation` in
-`shared/security-check.mts` trusts — nothing more.
+library contributes the `"isolated"` tag that `enforceSandboxSecurityBoundaries`
+in `shared/security-check.mts` trusts — nothing more.
 
 ### The library ships no built-in isolated provider for local Docker
 
@@ -82,8 +82,8 @@ are `daytona` and `vercel` — remote, hosted sandboxes that require external
 accounts and credentials. The built-in local container providers (`docker`,
 `podman`) are **bind-mount** providers (`tag: "bind-mount"`): they mount host
 directories, including host Git metadata, which is exactly the exposure this
-security model exists to prevent. `security-check.mts` explicitly lists
-`docker` and `podman` as known-insecure for that reason.
+security model exists to prevent. `security-check.mts` fails closed for every
+provider that is not tagged `"isolated"` for that reason.
 
 There is therefore no library-provided isolated path for running bots in a
 local Docker container. The custom `create` in `isolated-docker.mts` is the
