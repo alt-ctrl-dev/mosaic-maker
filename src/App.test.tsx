@@ -29,13 +29,12 @@ describe("Mosaic Maker workflow", () => {
 				(button) =>
 					within(button)
 						.getByText(
-							/^(Choose mode|Choose source image|Build tiles|Generate and preview|Export mosaic)$/,
+							/^(Choose source image|Build tiles|Generate and preview|Export mosaic)$/,
 						)
 						.textContent?.trim() ?? "",
 			);
 
 		expect(stages).toEqual([
-			"Choose mode",
 			"Choose source image",
 			"Build tiles",
 			"Generate and preview",
@@ -43,8 +42,13 @@ describe("Mosaic Maker workflow", () => {
 		]);
 	});
 
-	it("keeps mode selection and step navigation in sync", () => {
+	it("keeps the top mode switcher and step navigation in sync", () => {
 		render(<App />);
+
+		// The workflow starts at source image; mode lives in the top switcher.
+		expect(
+			screen.getAllByRole("button", { name: /choose source image/i })[0],
+		).toHaveAttribute("aria-current", "step");
 
 		fireEvent.click(
 			screen.getByRole("radio", { name: /Select Brick Style mode/ }),
@@ -52,16 +56,9 @@ describe("Mosaic Maker workflow", () => {
 		expect(
 			screen.getByRole("radio", { name: /Select Brick Style mode/ }),
 		).toBeChecked();
-		fireEvent.click(screen.getByRole("button", { name: "Continue" }));
-
-		// The rack is the navigation: the source stage becomes current.
 		expect(
-			screen.getAllByRole("button", { name: /choose source image/i })[0],
-		).toHaveAttribute("aria-current", "step");
-		fireEvent.click(screen.getAllByRole("button", { name: /choose mode/i })[0]);
-		expect(
-			screen.getByRole("radio", { name: /Select Brick Style mode/ }),
-		).toBeChecked();
+			screen.getByRole("radio", { name: /Select Photomosaic mode/ }),
+		).not.toBeChecked();
 	});
 
 	it("starts each mounted workflow with independent state", () => {
@@ -69,24 +66,18 @@ describe("Mosaic Maker workflow", () => {
 		fireEvent.click(
 			screen.getByRole("radio", { name: /Select Brick Style mode/ }),
 		);
-		fireEvent.click(screen.getByRole("button", { name: "Continue" }));
 
 		const second = render(<App />);
 		expect(
-			within(second.container).getAllByRole("button", {
-				name: /choose mode/i,
-			})[0],
-		).toHaveAttribute("aria-current", "step");
-		expect(
 			within(second.container).getByRole("radio", {
-				name: /Select Photomosaic \(Default\) mode/,
+				name: /Select Photomosaic mode/,
 			}),
 		).toBeChecked();
 		expect(
-			within(first.container).getAllByRole("button", {
-				name: /choose source image/i,
-			})[0],
-		).toHaveAttribute("aria-current", "step");
+			within(first.container).getByRole("radio", {
+				name: /Select Brick Style mode/,
+			}),
+		).toBeChecked();
 	});
 
 	it("renders no wizard counter or back/next chrome", () => {

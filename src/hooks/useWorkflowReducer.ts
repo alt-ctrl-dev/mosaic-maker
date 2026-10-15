@@ -7,7 +7,6 @@ import {
 	type ExportSettings,
 	type MosaicMode,
 	type TesseraInfo,
-	updateWorkflowAdvanceFromMode,
 	updateWorkflowAdvanceFromReview,
 	updateWorkflowClearAllTesserae,
 	updateWorkflowExportSettings,
@@ -27,7 +26,6 @@ import {
 import { trackEvent } from "../telemetry";
 
 const WORKFLOW_STEP_NAMES = [
-	"choose_mode",
 	"choose_source_image",
 	"build_tesserae",
 	"generate_and_preview",
@@ -59,7 +57,6 @@ export type WorkflowAction =
 	| { type: "generationCancelledOrFailed" }
 	| { type: "exportSettingsChanged"; settings: Partial<ExportSettings> }
 	| { type: "goToStep"; step: number }
-	| { type: "advanceFromMode" }
 	| { type: "advanceFromReview" };
 
 /**
@@ -124,8 +121,6 @@ export function workflowReducer(
 			}
 			return state;
 		}
-		case "advanceFromMode":
-			return updateWorkflowAdvanceFromMode(state);
 		case "advanceFromReview":
 			return updateWorkflowAdvanceFromReview(state);
 	}

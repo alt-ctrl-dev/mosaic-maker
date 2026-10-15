@@ -1,8 +1,7 @@
 import * as stylex from "@stylexjs/stylex";
+import { useId } from "react";
 import type { MosaicMode } from "../engine/workflow-state";
-import { base } from "../styles/base.stylex";
 import { tokens } from "../styles/tokens.stylex";
-import { ActionButton } from "./ActionButton";
 
 /** Props for {@link ModeSelection}. */
 interface ModeSelectionProps {
@@ -10,96 +9,109 @@ interface ModeSelectionProps {
 	mode: MosaicMode;
 	/** Called when the user selects a different mode. */
 	onModeSelected: (mode: MosaicMode) => void;
-	/** Called when the user chooses to continue to the next step. */
-	onContinue: () => void;
 }
-
-/** Human-readable descriptions for each mosaic mode. */
-const MODE_DESCRIPTIONS: Record<MosaicMode, string> = {
-	photomosaic:
-		"Create a traditional photomosaic using your uploaded images as tiles",
-	brick:
-		"Create a mosaic using a limited color palette, rendered as flat squares",
-};
 
 /** Display titles for each mosaic mode. */
 const MODE_TITLES: Record<MosaicMode, string> = {
-	photomosaic: "Photomosaic (Default)",
+	photomosaic: "Photomosaic",
 	brick: "Brick Style",
 };
 
 /** All available modes as a typed array for safe iteration. */
 const MODES: MosaicMode[] = ["photomosaic", "brick"];
 
+/** StyleX only resolves computed conditional keys defined in the same module. */
+const REDUCED_MOTION = "@media (prefers-reduced-motion: reduce)";
+
+/* Neumorphic palette: soft dual shadows need tonal headroom around the surface. */
+const groove = "#171b26";
+const thumb = tokens.secondary;
+const darkShadow = "rgba(0, 0, 0, 0.5)";
+const lightShadow = "rgba(255, 255, 255, 0.04)";
+
 const styles = stylex.create({
-	options: { display: "grid", gap: "1rem", marginBottom: "1.5rem" },
+	root: {
+		display: "inline-flex",
+		width: "100%",
+		maxWidth: "24rem",
+		gap: "0.25rem",
+		padding: "0.375rem",
+		backgroundColor: groove,
+		borderRadius: "999px",
+		boxShadow: `inset 4px 4px 8px ${darkShadow}, inset -4px -4px 8px ${lightShadow}`,
+	},
 	option: {
-		display: "flex",
-		alignItems: "flex-start",
-		gap: "0.75rem",
-		padding: "1rem",
-		borderWidth: "1px",
-		borderStyle: "solid",
-		borderColor: tokens.border,
-		borderRadius: tokens.radius,
+		position: "relative",
+		display: "inline-flex",
+		flex: 1,
+		alignItems: "center",
+		justifyContent: "center",
+		padding: "0.5rem 1.25rem",
+		borderRadius: "999px",
+		color: tokens.muted,
+		fontSize: "0.875rem",
+		fontWeight: 600,
+		letterSpacing: "0.02em",
+		cursor: "pointer",
+		userSelect: "none",
+		transition:
+			"background-color 0.15s ease-out, color 0.15s ease-out, box-shadow 0.15s ease-out",
+		":focus-within": {
+			outline: `2px solid ${tokens.primary}`,
+			outlineOffset: "2px",
+		},
+		[REDUCED_MOTION]: { transitionDuration: "0.01ms" },
 	},
 	selected: {
-		borderColor: tokens.primary,
-		backgroundColor: tokens.primarySoft,
+		backgroundColor: thumb,
+		color: tokens.text,
+		boxShadow: `4px 4px 8px ${darkShadow}, -4px -4px 8px ${lightShadow}`,
+	},
+	input: {
+		position: "absolute",
+		opacity: 0,
+		width: "1px",
+		height: "1px",
+		margin: 0,
+		pointerEvents: "none",
 	},
 });
 
 /**
- * First workflow step that lets the user choose between photomosaic and
- * brick mosaic generation modes before proceeding to source image selection.
+ * Neumorphic switcher above the workspace that selects the mosaic mode.
+ * Mode is a global setting, not a workflow step: the workflow starts at
+ * source image selection.
  */
-export function ModeSelection({
-	mode,
-	onModeSelected,
-	onContinue,
-}: ModeSelectionProps) {
+export function ModeSelection({ mode, onModeSelected }: ModeSelectionProps) {
+	// Instance-unique group name: radios sharing a name across mounted
+	// instances would uncheck each other.
+	const groupName = useId();
 	return (
-		<div>
-			<h2 {...stylex.props(base.heading, base.h2)}>Select Mosaic Style</h2>
-			<p {...stylex.props(base.paragraph)}>
-				Choose how you want your mosaic to look:
-			</p>
-
-			<div {...stylex.props(styles.options)}>
-				{MODES.map((modeValue) => {
-					const title = MODE_TITLES[modeValue];
-					const isSelected = mode === modeValue;
-					return (
-						<div
-							key={modeValue}
-							{...stylex.props(styles.option, isSelected && styles.selected)}
-						>
-							<input
-								type="radio"
-								id={`mode-${modeValue}`}
-								name="mosaic-mode"
-								checked={isSelected}
-								onChange={() => onModeSelected(modeValue)}
-								aria-label={`Select ${title} mode`}
-								{...stylex.props(base.accentPrimary, base.focusOutline)}
-							/>
-							<label
-								htmlFor={`mode-${modeValue}`}
-								{...stylex.props(base.label)}
-							>
-								<h3 {...stylex.props(base.heading, base.h3)}>{title}</h3>
-								<p {...stylex.props(base.paragraph)}>
-									{MODE_DESCRIPTIONS[modeValue]}
-								</p>
-							</label>
-						</div>
-					);
-				})}
-			</div>
-
-			<ActionButton type="button" onClick={onContinue}>
-				Continue
-			</ActionButton>
+		<div
+			role="radiogroup"
+			aria-label="Mosaic style"
+			{...stylex.props(styles.root)}
+		>
+			{MODES.map((modeValue) => {
+				const title = MODE_TITLES[modeValue];
+				const isSelected = mode === modeValue;
+				return (
+					<label
+						key={modeValue}
+						{...stylex.props(styles.option, isSelected && styles.selected)}
+					>
+						<input
+							type="radio"
+							name={`mosaic-mode-${groupName}`}
+							checked={isSelected}
+							onChange={() => onModeSelected(modeValue)}
+							aria-label={`Select ${title} mode`}
+							{...stylex.props(styles.input)}
+						/>
+						{title}
+					</label>
+				);
+			})}
 		</div>
 	);
 }

@@ -108,6 +108,12 @@ const styles = stylex.create({
 		gap: "2rem",
 		"@media (max-width: 900px)": { flexDirection: "column" },
 	},
+	// The mode switcher is a global setting above the workspace, not a step.
+	modeBar: {
+		display: "flex",
+		justifyContent: "center",
+		paddingBlock: "1rem",
+	},
 	// The rack sits to the right of the canvas focal plane; the source
 	// image and its construction grid lead the workspace.
 	sidebar: {
@@ -361,18 +367,6 @@ export function WorkflowApp() {
 
 	function renderStepContent(stepIndex: number) {
 		switch (stepIndex) {
-			case WorkflowStepEnum.CHOOSE_MODE:
-				return (
-					<ModeSelection
-						mode={workflowState.mode}
-						onModeSelected={(mode) => dispatch({ type: "modeSelected", mode })}
-						onContinue={() =>
-							dispatch({
-								type: "advanceFromMode",
-							})
-						}
-					/>
-				);
 			case WorkflowStepEnum.CHOOSE_SOURCE_IMAGE:
 				return (
 					<SourceImageSelection
@@ -506,6 +500,13 @@ export function WorkflowApp() {
 						</div>
 					)}
 			</header>
+
+			<div {...stylex.props(styles.modeBar)}>
+				<ModeSelection
+					mode={workflowState.mode}
+					onModeSelected={(mode) => dispatch({ type: "modeSelected", mode })}
+				/>
+			</div>
 
 			<ErrorBoundary>
 				<main id="main-content" {...stylex.props(styles.workflow)}>

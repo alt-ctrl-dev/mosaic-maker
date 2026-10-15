@@ -1,9 +1,19 @@
-import { fireEvent, render, screen, within } from "@testing-library/react";
-import { describe, expect, it } from "vitest";
+import {
+	fireEvent,
+	render,
+	screen,
+	waitFor,
+	within,
+} from "@testing-library/react";
+import { describe, expect, it, vi } from "vitest";
 import { App } from "./App";
 
+vi.mock("./engine/image-processing", () => ({
+	getSourceImageInfo: () =>
+		Promise.resolve({ url: "blob:test", width: 100, height: 100 }),
+}));
+
 const EXPECTED_STEP_TITLES = [
-	"Choose mode",
 	"Choose source image",
 	"Build tiles",
 	"Generate and preview",
@@ -28,7 +38,7 @@ describe("workflow navigation", () => {
 		const labels = stepButtons.map((button) => {
 			const title = within(button)
 				.getByText(
-					/^(Choose mode|Choose source image|Build tiles|Generate and preview|Export mosaic)$/,
+					/^(Choose source image|Build tiles|Generate and preview|Export mosaic)$/,
 				)
 				.textContent?.trim();
 			return title;
@@ -42,17 +52,21 @@ describe("workflow navigation", () => {
 		}
 	});
 
-	it("preserves completed checkmarks when navigating backwards", () => {
+	it("preserves completed checkmarks when navigating backwards", async () => {
 		render(<App />);
 
-		// Advance from Choose mode to Choose source image.
-		fireEvent.click(screen.getByRole("button", { name: "Continue" }));
+		// Selecting a valid source image completes the first step and advances.
+		fireEvent.change(screen.getByLabelText("Select source image"), {
+			target: { files: [new File(["x"], "source.png", { type: "image/png" })] },
+		});
 
-		// Choose mode is now completed and shows a checkmark.
-		const completedStep = getStepButtons()[0];
-		expect(completedStep.querySelector("svg")).not.toBeNull();
+		const completedStep = await waitFor(() => {
+			const button = getStepButtons()[0];
+			expect(button.querySelector("svg")).not.toBeNull();
+			return button;
+		});
 
-		// Navigate back to Choose mode via the step rack.
+		// Navigate back to the completed step via the step rack.
 		fireEvent.click(completedStep);
 
 		// The checkmark survives the backward navigation.

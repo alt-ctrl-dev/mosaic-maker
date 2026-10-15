@@ -119,7 +119,6 @@ export interface WorkflowState {
  * Workflow steps.
  */
 export enum WorkflowStep {
-	CHOOSE_MODE,
 	CHOOSE_SOURCE_IMAGE,
 	BUILD_TESSERAE,
 	GENERATE_AND_PREVIEW,
@@ -130,7 +129,6 @@ export enum WorkflowStep {
  * Display titles for each workflow step, ordered by {@link WorkflowStep}.
  */
 export const WORKFLOW_STEP_TITLES = [
-	"Choose mode",
 	"Choose source image",
 	"Build tiles",
 	"Generate and preview",
@@ -146,8 +144,8 @@ export const SEED_MAX = 1_000_000;
  * Initial workflow state.
  */
 export const INITIAL_WORKFLOW_STATE: WorkflowState = {
-	currentStep: WorkflowStep.CHOOSE_MODE,
-	furthestCompletedStep: WorkflowStep.CHOOSE_MODE,
+	currentStep: WorkflowStep.CHOOSE_SOURCE_IMAGE,
+	furthestCompletedStep: WorkflowStep.CHOOSE_SOURCE_IMAGE,
 	mode: "photomosaic",
 	sourceImage: null,
 	requestedTesseraSize: null,
@@ -587,25 +585,6 @@ export function updateWorkflowWithGeneratedTesserae(
 	return {
 		...filterGeneratedAndAppend(state, tesserae),
 		needsRegeneration: false,
-	};
-}
-
-/**
- * Advance the workflow from mode selection to the source image step.
- *
- * @param state - The current workflow state
- * @returns Updated workflow state advanced to the source image step
- */
-export function updateWorkflowAdvanceFromMode(
-	state: WorkflowState,
-): WorkflowState {
-	return {
-		...state,
-		currentStep: WorkflowStep.CHOOSE_SOURCE_IMAGE,
-		furthestCompletedStep: Math.max(
-			state.furthestCompletedStep,
-			WorkflowStep.CHOOSE_SOURCE_IMAGE,
-		),
 	};
 }
 

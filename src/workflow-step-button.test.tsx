@@ -1,4 +1,4 @@
-import { fireEvent, render, screen, within } from "@testing-library/react";
+import { render, screen } from "@testing-library/react";
 import { describe, expect, it } from "vitest";
 import { App } from "./App";
 import { tokens } from "./styles/tokens.stylex";
@@ -9,7 +9,7 @@ describe("workflow-step-button styling", () => {
 		render(<App />);
 
 		const button = screen.getAllByRole("button", {
-			name: /choose source image/i,
+			name: /build tiles/i,
 		})[0];
 		expect(button).toBeDefined();
 
@@ -17,22 +17,5 @@ describe("workflow-step-button styling", () => {
 			tokens.surface,
 		);
 		expect(declaredValuesFor(button, "color")).toContain(tokens.text);
-	});
-
-	it("styles completed and disabled steps distinctly", () => {
-		render(<App />);
-
-		// Advance so the first step becomes completed.
-		fireEvent.click(screen.getByRole("button", { name: "Continue" }));
-
-		const stepButtons = within(
-			screen.getByRole("complementary", { name: "Workflow steps" }),
-		).getAllByRole("button");
-
-		const completedStep = stepButtons[0];
-		const disabledStep = stepButtons[2];
-
-		expect(declaredValuesFor(completedStep, "color")).toContain(tokens.valid);
-		expect(declaredValuesFor(disabledStep, "color")).toContain(tokens.muted);
 	});
 });

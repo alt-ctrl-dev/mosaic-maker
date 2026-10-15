@@ -121,33 +121,12 @@ describe("workflowReducer", () => {
 		expect(next.validTesseraCount).toBe(0);
 	});
 
-	it("advances from mode selection to source image on an advanceFromMode action", () => {
-		const next = workflowReducer(INITIAL_WORKFLOW_STATE, {
-			type: "advanceFromMode",
-		});
+	it("starts at the source image step and blocks forward navigation", () => {
+		expect(INITIAL_WORKFLOW_STATE.currentStep).toBe(
+			WorkflowStep.CHOOSE_SOURCE_IMAGE,
+		);
 
-		expect(next.currentStep).toBe(WorkflowStep.CHOOSE_SOURCE_IMAGE);
-		expect(next.furthestCompletedStep).toBe(WorkflowStep.CHOOSE_SOURCE_IMAGE);
-	});
-
-	it("unblocks navigation up to the source image step after advanceFromMode", () => {
-		const advanced = workflowReducer(INITIAL_WORKFLOW_STATE, {
-			type: "advanceFromMode",
-		});
-
-		const back = workflowReducer(advanced, {
-			type: "goToStep",
-			step: WorkflowStep.CHOOSE_MODE,
-		});
-		expect(back.currentStep).toBe(WorkflowStep.CHOOSE_MODE);
-
-		const forward = workflowReducer(back, {
-			type: "goToStep",
-			step: WorkflowStep.CHOOSE_SOURCE_IMAGE,
-		});
-		expect(forward.currentStep).toBe(WorkflowStep.CHOOSE_SOURCE_IMAGE);
-
-		const blocked = workflowReducer(advanced, {
+		const blocked = workflowReducer(INITIAL_WORKFLOW_STATE, {
 			type: "goToStep",
 			step: WorkflowStep.BUILD_TESSERAE,
 		});
