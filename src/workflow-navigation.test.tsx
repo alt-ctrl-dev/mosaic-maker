@@ -1,45 +1,63 @@
-import { render, screen } from "@testing-library/react";
+import { fireEvent, render, screen, within } from "@testing-library/react";
 import { describe, expect, it } from "vitest";
 import { App } from "./App";
-import { INITIAL_WORKFLOW_STATE, WorkflowStep } from "./engine/workflow-state";
+
+const EXPECTED_STEP_TITLES = [
+	"Choose mode",
+	"Choose source image",
+	"Build tesserae",
+	"Generate and preview",
+	"Export mosaic",
+] as const;
+
+/** Returns the visible step buttons in the workflow sidebar. */
+function getStepButtons() {
+	const sidebar = screen.getByRole("complementary", {
+		name: "Workflow steps",
+	});
+	return within(sidebar).getAllByRole("button");
+}
 
 describe("workflow navigation", () => {
-	it("shows correct step labels and completion state", () => {
+	it("shows the step labels in order with current and disabled states", () => {
 		render(<App />);
 
-		// Check that step buttons show correct numbering and completion indicators
-		const stepButtons = screen.getAllByRole("button", {
-			name: /(choose mode|choose source image|build tesserae|generate and preview|export mosaic)/i,
+		const stepButtons = getStepButtons();
+		expect(stepButtons).toHaveLength(EXPECTED_STEP_TITLES.length);
+
+		const labels = stepButtons.map((button) => {
+			const title = within(button)
+				.getByText(
+					/^(Choose mode|Choose source image|Build tesserae|Generate and preview|Export mosaic)$/,
+				)
+				.textContent?.trim();
+			return title;
 		});
+		expect(labels).toEqual([...EXPECTED_STEP_TITLES]);
 
-		expect(stepButtons).toHaveLength(5);
-
-		// First step should be current (highlighted)
+		// First step is current; the rest are not yet reachable.
 		expect(stepButtons[0]).toHaveAttribute("aria-current", "step");
-
-		// Other steps should be disabled (not completed yet)
 		for (let i = 1; i < stepButtons.length; i++) {
 			expect(stepButtons[i]).toBeDisabled();
 		}
 	});
 
 	it("preserves completed checkmarks when navigating backwards", () => {
-		// Simulate a state where we've completed step 2 but are currently on step 1
-		const state = {
-			...INITIAL_WORKFLOW_STATE,
-			currentStep: WorkflowStep.CHOOSE_SOURCE_IMAGE, // Currently on step 1
-			furthestCompletedStep: WorkflowStep.BUILD_TESSERAE, // But we've completed step 2
-		};
-
-		// Render with this state - we'd need to mock the reducer for this
-		// For now, we'll test the logic directly
-		expect(state.furthestCompletedStep).toBeGreaterThan(state.currentStep);
-	});
-
-	it("continue buttons show correct next step names", () => {
 		render(<App />);
 
-		// Find continue buttons and check their labels
-		// The continue button should indicate what step it leads to
+		// Advance from Choose mode to Choose source image.
+		fireEvent.click(screen.getByRole("button", { name: "Continue" }));
+
+		// Choose mode is now completed and shows a checkmark.
+		const completedStep = getStepButtons()[0];
+		expect(within(completedStep).getByText("✓")).toBeInTheDocument();
+
+		// Navigate back to Choose mode.
+		fireEvent.click(screen.getByRole("button", { name: "← Back" }));
+
+		// The checkmark survives the backward navigation.
+		const currentStep = getStepButtons()[0];
+		expect(currentStep).toHaveAttribute("aria-current", "step");
+		expect(within(currentStep).getByText("✓")).toBeInTheDocument();
 	});
 });

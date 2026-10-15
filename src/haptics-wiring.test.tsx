@@ -88,7 +88,7 @@ describe("haptic feedback at workflow milestones", () => {
 		await waitFor(() => expect(vibrate).toHaveBeenCalledWith(15));
 	});
 
-	it("vibrates briefly when generated tiles are ready", async () => {
+	it("vibrates briefly when generated tesserae are ready", async () => {
 		const state = {
 			seed: 42,
 			generatedTesseraCount: 20,

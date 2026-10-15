@@ -68,4 +68,27 @@ describe("SourceImageSelection state persistence", () => {
 
 		expect(screen.getByText("Test error message")).toBeInTheDocument();
 	});
+
+	it("labels the continue button with the next workflow step", () => {
+		render(
+			<SourceImageSelection
+				onSourceSelected={vi.fn()}
+				onSourceError={vi.fn()}
+				initialState={{
+					...INITIAL_WORKFLOW_STATE,
+					sourceImage: {
+						url: "blob:test",
+						width: 100,
+						height: 100,
+						orientation: 1,
+					},
+					hasValidSourceDimensions: true,
+				}}
+			/>,
+		);
+
+		expect(
+			screen.getByRole("button", { name: /continue to build tesserae/i }),
+		).toBeInTheDocument();
+	});
 });

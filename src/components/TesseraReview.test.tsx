@@ -63,7 +63,7 @@ describe("TesseraReview", () => {
 		);
 
 		const continueButton = screen.getByRole("button", {
-			name: /continue to step 3/i,
+			name: /continue to generate and preview/i,
 		});
 
 		const details = continueButton?.closest("details");

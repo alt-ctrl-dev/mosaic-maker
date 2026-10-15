@@ -17,6 +17,7 @@ import { resizeTesserae } from "./engine/tessera-processing";
 import {
 	generateSupplementedTesserae,
 	WorkflowStep as WorkflowStepEnum,
+	WORKFLOW_STEP_TITLES,
 } from "./engine/workflow-state";
 import { useWorkflowReducer } from "./hooks/useWorkflowReducer";
 import { base } from "./styles/base.stylex";
@@ -25,14 +26,6 @@ import { trackError } from "./telemetry";
 
 // StyleX only resolves computed conditional keys defined in the same module.
 const REDUCED_MOTION = "@media (prefers-reduced-motion: reduce)";
-
-const stages = [
-	"Choose mode",
-	"Choose source image",
-	"Build tesserae",
-	"Generate and preview",
-	"Export mosaic",
-] as const;
 
 /** Fallback tessera size when no adjusted size has been calculated yet. */
 const DEFAULT_TESSERA_SIZE = 16;
@@ -438,7 +431,7 @@ export function WorkflowApp() {
 						ariaLabel="Toggle workflow steps"
 					>
 						<ol {...stylex.props(styles.stepsList)}>
-							{stages.map((title, index) => {
+							{WORKFLOW_STEP_TITLES.map((title, index) => {
 								const isCurrent = workflowState.currentStep === index;
 								const isCompleted = index < workflowState.furthestCompletedStep;
 								const isDisabled = index > workflowState.furthestCompletedStep;
@@ -481,7 +474,7 @@ export function WorkflowApp() {
 
 					<aside {...stylex.props(styles.sidebar)} aria-label="Workflow steps">
 						<ol {...stylex.props(styles.stepsList)}>
-							{stages.map((title, index) => {
+							{WORKFLOW_STEP_TITLES.map((title, index) => {
 								const isCurrent = workflowState.currentStep === index;
 								const isCompleted = index < workflowState.furthestCompletedStep;
 								const isDisabled = index > workflowState.furthestCompletedStep;
@@ -537,7 +530,8 @@ export function WorkflowApp() {
 								</ActionButton>
 							)}
 							<span {...stylex.props(styles.stepCounter)}>
-								Step {workflowState.currentStep + 1} of {stages.length}
+								Step {workflowState.currentStep + 1} of{" "}
+								{WORKFLOW_STEP_TITLES.length}
 							</span>
 							{showTopNextButton && (
 								<ActionButton
@@ -549,7 +543,8 @@ export function WorkflowApp() {
 										})
 									}
 								>
-									Continue to {stages[workflowState.currentStep + 1]} →
+									Continue to{" "}
+									{WORKFLOW_STEP_TITLES[workflowState.currentStep + 1]} →
 								</ActionButton>
 							)}
 						</div>

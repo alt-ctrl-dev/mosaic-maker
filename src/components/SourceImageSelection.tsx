@@ -3,7 +3,11 @@ import { useCallback, useEffect, useState } from "react";
 import * as stylex from "@stylexjs/stylex";
 import type { SourceImageInfo } from "../engine/image-processing";
 import { getSourceImageInfo } from "../engine/image-processing";
-import type { WorkflowState } from "../engine/workflow-state";
+import {
+	type WorkflowState,
+	WORKFLOW_STEP_TITLES,
+	WorkflowStep,
+} from "../engine/workflow-state";
 import { base } from "../styles/base.stylex";
 import { tokens } from "../styles/tokens.stylex";
 import { vibrate } from "../haptics";
@@ -42,7 +46,7 @@ interface ContinueButtonProps {
 function ContinueButton({ sourceImage, onContinue }: ContinueButtonProps) {
 	return (
 		<ActionButton type="button" onClick={() => onContinue(sourceImage)}>
-			Continue to step 2 →
+			Continue to {WORKFLOW_STEP_TITLES[WorkflowStep.BUILD_TESSERAE]} →
 		</ActionButton>
 	);
 }
