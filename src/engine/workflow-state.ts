@@ -127,6 +127,17 @@ export enum WorkflowStep {
 }
 
 /**
+ * Display titles for each workflow step, ordered by {@link WorkflowStep}.
+ */
+export const WORKFLOW_STEP_TITLES = [
+	"Choose mode",
+	"Choose source image",
+	"Build tesserae",
+	"Generate and preview",
+	"Export mosaic",
+] as const;
+
+/**
  * Maximum value for seed generation.
  */
 export const SEED_MAX = 1_000_000;

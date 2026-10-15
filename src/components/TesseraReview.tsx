@@ -1,6 +1,7 @@
 import { useEffect } from "react";
 import * as stylex from "@stylexjs/stylex";
 import type { TesseraInfo } from "../engine/workflow-state";
+import { WORKFLOW_STEP_TITLES, WorkflowStep } from "../engine/workflow-state";
 import { base } from "../styles/base.stylex";
 import { tokens } from "../styles/tokens.stylex";
 import { trackEvent } from "../telemetry";
@@ -135,7 +136,7 @@ export function TesseraReview({
 							onClick={onAcceptSupplementation}
 							variant="outline"
 						>
-							Add random tiles
+							Add random tesserae
 						</ActionButton>
 					)}
 				</article>
@@ -205,7 +206,8 @@ export function TesseraReview({
 						onClick={onContinue}
 						disabled={validCount === 0}
 					>
-						Continue to step 3 →
+						Continue to{" "}
+						{WORKFLOW_STEP_TITLES[WorkflowStep.GENERATE_AND_PREVIEW]} →
 					</ActionButton>
 				</div>
 			)}

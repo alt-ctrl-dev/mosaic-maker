@@ -113,7 +113,7 @@ export function TesseraSizeSelection({
 		<div>
 			<div>
 				<label htmlFor="tessera-size" {...stylex.props(base.label)}>
-					Tile size (pixels):
+					Tessera size (pixels):
 				</label>
 				<input
 					id="tessera-size"
@@ -134,7 +134,7 @@ export function TesseraSizeSelection({
 					</p>
 					{requestedSize !== adjustedSize && (
 						<p {...stylex.props(base.paragraph)}>
-							Adjusted to fit within the valid tile size range.
+							Adjusted to fit within the valid tessera size range.
 						</p>
 					)}
 				</div>

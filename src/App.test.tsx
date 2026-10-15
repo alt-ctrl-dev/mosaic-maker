@@ -82,9 +82,9 @@ describe("Mosaic Maker workflow", () => {
 		).toBeInTheDocument();
 	});
 
-	it("hides Next button on first load", () => {
+	it("hides the top continue button on first load", () => {
 		render(<App />);
-		expect(screen.queryByText("Next →")).toBeNull();
+		expect(screen.queryByText(/^Continue to /)).toBeNull();
 	});
 
 	it("hides Back button on first load", () => {

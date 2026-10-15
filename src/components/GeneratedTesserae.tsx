@@ -133,7 +133,7 @@ export function GeneratedTesserae({
 	return (
 		<div {...stylex.props(styles.root)} data-testid="generated-tesserae">
 			<fieldset {...stylex.props(base.fieldset, styles.controlGroup)}>
-				<legend {...stylex.props(base.legend)}>Generate random tiles</legend>
+				<legend {...stylex.props(base.legend)}>Generate random tesserae</legend>
 				<div {...stylex.props(styles.control)}>
 					<label
 						htmlFor="seed"
@@ -165,7 +165,7 @@ export function GeneratedTesserae({
 						htmlFor="count"
 						{...stylex.props(base.label, styles.controlLabel)}
 					>
-						Number of tiles:
+						Number of tesserae:
 					</label>
 					<input
 						id="count"
@@ -174,7 +174,7 @@ export function GeneratedTesserae({
 						max="1000"
 						value={count}
 						onChange={(e) => setCount(Number(e.target.value))}
-						aria-label="Number of tiles to generate"
+						aria-label="Number of tesserae to generate"
 						{...stylex.props(base.field, base.focusOutline)}
 					/>
 				</div>
@@ -187,7 +187,7 @@ export function GeneratedTesserae({
 				aria-busy={isGenerating}
 				variant="secondary"
 			>
-				{isGenerating ? "Generating..." : "Generate tiles"}
+				{isGenerating ? "Generating..." : "Generate tesserae"}
 			</ActionButton>
 			{isGenerating && (
 				<article
@@ -195,7 +195,7 @@ export function GeneratedTesserae({
 					className={`generation-info ${generationInfoProps.className}`}
 					aria-busy="true"
 				>
-					Generating {count} tiles with seed {seed}...
+					Generating {count} tesserae with seed {seed}...
 				</article>
 			)}
 		</div>

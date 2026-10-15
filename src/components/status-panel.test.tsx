@@ -141,7 +141,7 @@ describe("Status panels use the shared card styling", () => {
 			<GeneratedTesserae onTesseraeGenerated={noop} initialState={state} />,
 		);
 
-		fireEvent.click(screen.getByRole("button", { name: /generate tiles/i }));
+		fireEvent.click(screen.getByRole("button", { name: /generate tesserae/i }));
 
 		const panel = await waitFor(() => {
 			const found = container.querySelector(".generation-info");
