@@ -43,6 +43,20 @@ const styles = stylex.create({
 			lineHeight: 0,
 		},
 	},
+	toggleButtonText: {
+		color: "#ffffff",
+		fontWeight: "bold",
+		fontSize: "0.75rem",
+		textTransform: "uppercase",
+		letterSpacing: "0.05em",
+		"@media (max-width: 900px)": {
+			display: "block",
+			position: "absolute",
+			top: "50%",
+			left: "50%",
+			transform: "translate(-50%, -50%)",
+		},
+	},
 	// ponytail: the old fade used `opacity` + `@starting-style` and
 	// `display ... allow-discrete` transitions, which StyleX cannot express;
 	// the dialog now shows and hides instantly on both open and close.
@@ -92,6 +106,7 @@ const DialogButtonToggle = ({
 			});
 		}}
 	>
+		<span {...stylex.props(styles.toggleButtonText)}>Steps</span>
 		{children}
 	</button>
 );

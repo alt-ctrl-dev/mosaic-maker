@@ -8,7 +8,6 @@ import { initializeTelemetry, trackDeviceAnalytics } from "./telemetry";
 // body-level resets the deleted global stylesheet provided live here.
 // Upgrade if StyleX gains a global-styles story.
 document.body.style.margin = "0";
-document.body.style.minWidth = "20rem";
 document.body.style.backgroundColor = tokens.background;
 
 // Initialize telemetry before app bootstrap
