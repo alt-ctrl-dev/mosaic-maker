@@ -58,6 +58,25 @@ const styles = stylex.create({
 		marginInline: "auto",
 		"@media (min-width: 80rem)": { maxWidth: "80rem" },
 	},
+	sourceThumbnailHeader: {
+		display: "flex",
+		alignItems: "center",
+		gap: "0.75rem",
+		marginTop: "1rem",
+		justifyContent: "center",
+		"@media (max-width: 900px)": { justifyContent: "flex-start" },
+	},
+	sourceThumbnailImage: {
+		width: "40px",
+		height: "40px",
+		objectFit: "cover",
+		borderRadius: tokens.radius,
+		boxShadow: tokens.shadow,
+	},
+	sourceThumbnailDimensions: {
+		fontSize: "0.85rem",
+		color: tokens.muted,
+	},
 	header: {
 		paddingBlock: "4rem 2rem",
 		textAlign: "center",
@@ -172,6 +191,24 @@ const styles = stylex.create({
 		alignItems: "flex-start",
 		"@media (max-width: 768px)": { flexDirection: "column" },
 	},
+	divider: {
+		alignSelf: "center",
+		color: tokens.muted,
+		fontWeight: "bold",
+		fontSize: "0.875rem",
+		textTransform: "uppercase",
+		letterSpacing: "0.05em",
+		borderLeft: `1px solid ${tokens.border}`,
+		paddingLeft: "1rem",
+		margin: "0 1rem",
+		"@media (max-width: 768px)": {
+			borderLeft: "none",
+			borderTop: `1px solid ${tokens.border}`,
+			paddingLeft: 0,
+			paddingTop: "1rem",
+			margin: "1rem 0",
+		},
+	},
 });
 
 /**
@@ -277,7 +314,7 @@ function WorkflowApp() {
 										adjustedTesseraSize={resolvedTesseraSize}
 										currentTesserae={workflowState.tesserae}
 									/>
-									<p {...stylex.props(base.paragraph)}>OR</p>
+									<div {...stylex.props(styles.divider)}>OR</div>
 									<GeneratedTesserae
 										onTesseraeGenerated={(tesserae) =>
 											dispatch({ type: "tesseraeGenerated", tesserae })
@@ -368,6 +405,20 @@ function WorkflowApp() {
 					Private, in-browser image making • Works offline once loaded
 				</p>
 				<h1 {...stylex.props(base.heading, base.h1)}>Mosaic Maker</h1>
+				{workflowState.sourceImage &&
+					workflowState.currentStep > WorkflowStepEnum.CHOOSE_SOURCE_IMAGE && (
+						<div {...stylex.props(styles.sourceThumbnailHeader)}>
+							<img
+								src={workflowState.sourceImage.url}
+								alt="Source"
+								{...stylex.props(styles.sourceThumbnailImage)}
+							/>
+							<span {...stylex.props(styles.sourceThumbnailDimensions)}>
+								{workflowState.sourceImage.width} ×{" "}
+								{workflowState.sourceImage.height} pixels
+							</span>
+						</div>
+					)}
 				<p {...stylex.props(base.paragraph, styles.tagline)}>
 					Turn a source image into a full-resolution photomosaic. Your source
 					image and tesserae stay on this device.

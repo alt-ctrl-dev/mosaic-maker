@@ -185,6 +185,7 @@ export function GeneratedTesserae({
 				onClick={handleGenerate}
 				disabled={isGenerating}
 				aria-busy={isGenerating}
+				variant="secondary"
 			>
 				{isGenerating ? "Generating..." : "Generate tiles"}
 			</ActionButton>
