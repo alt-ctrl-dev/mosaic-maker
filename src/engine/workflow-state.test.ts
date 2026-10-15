@@ -5,6 +5,8 @@ import {
 	INITIAL_WORKFLOW_STATE,
 	type TesseraInfo,
 	updateWorkflowWithGeneratedTesserae,
+	updateWorkflowWithMosaicResult,
+	WorkflowStep,
 } from "./workflow-state";
 
 function makeTessera(fileName: string, isValid: boolean = true): TesseraInfo {
@@ -69,6 +71,31 @@ describe("workflow-state", () => {
 			expect(newState.validTesseraCount).toBe(3);
 			expect(newState.rejectedTesseraCount).toBe(1);
 			expect(newState.totalTesseraCount).toBe(4);
+		});
+	});
+
+	describe("updateWorkflowWithMosaicResult", () => {
+		it("updates mosaic result and furthestCompletedStep without changing currentStep", () => {
+			const initialState = {
+				...INITIAL_WORKFLOW_STATE,
+				currentStep: WorkflowStep.GENERATE_AND_PREVIEW,
+				furthestCompletedStep: WorkflowStep.GENERATE_AND_PREVIEW,
+			};
+
+			const mockMosaicResult = {
+				dataUrl: "test-data-url",
+				width: 100,
+				height: 100,
+			};
+
+			const newState = updateWorkflowWithMosaicResult(
+				initialState,
+				mockMosaicResult,
+			);
+
+			expect(newState.mosaicResult).toEqual(mockMosaicResult);
+			expect(newState.currentStep).toBe(WorkflowStep.GENERATE_AND_PREVIEW);
+			expect(newState.furthestCompletedStep).toBe(WorkflowStep.EXPORT_MOSAIC);
 		});
 	});
 

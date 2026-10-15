@@ -620,11 +620,12 @@ export function updateWorkflowAdvanceFromReview(
 
 /**
  * Update workflow state with a mosaic result.
- * Updates the workflow with the generated mosaic and advances to the export step.
+ * Updates the workflow with the generated mosaic and marks export step as completed,
+ * but does not advance the current step so the preview remains visible.
  *
  * @param state - The current workflow state
  * @param mosaicResult - The generated mosaic result
- * @returns Updated workflow state with the mosaic result and export step
+ * @returns Updated workflow state with the mosaic result and export step marked as completed
  */
 export function updateWorkflowWithMosaicResult(
 	state: WorkflowState,
@@ -633,7 +634,6 @@ export function updateWorkflowWithMosaicResult(
 	return {
 		...state,
 		mosaicResult,
-		currentStep: WorkflowStep.EXPORT_MOSAIC,
 		furthestCompletedStep: Math.max(
 			state.furthestCompletedStep,
 			WorkflowStep.EXPORT_MOSAIC,
