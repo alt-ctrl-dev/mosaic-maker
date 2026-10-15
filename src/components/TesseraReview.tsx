@@ -43,11 +43,11 @@ const styles = stylex.create({
 		borderRadius: `calc(${tokens.radius} / 2)`,
 		marginBottom: "0.5rem",
 	},
-	detailsText: { fontSize: "0.85em" },
+	detailsText: { fontSize: "0.875rem" },
 	name: { fontWeight: "bold", display: "block", marginBottom: "0.25rem" },
-	error: { display: "block", margin: "0.25rem 0", fontSize: "0.8em" },
+	error: { display: "block", margin: "0.25rem 0", fontSize: "0.875rem" },
 	supplementedLabel: {
-		fontSize: "0.7em",
+		fontSize: "0.875rem",
 		fontWeight: "bold",
 		color: tokens.primary,
 		backgroundColor: tokens.primarySoft,
@@ -72,6 +72,8 @@ interface TesseraReviewProps {
 	varietyRecommendation?: number | null;
 	/** Whether the user has already accepted supplementation. */
 	hasAcceptedSupplementation?: boolean;
+	/** Whether the details element should be open by default. */
+	open?: boolean;
 }
 
 /**
