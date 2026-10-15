@@ -3,7 +3,7 @@ import * as stylex from "@stylexjs/stylex";
 import type { TesseraInfo } from "../engine/workflow-state";
 import { base } from "../styles/base.stylex";
 import { tokens } from "../styles/tokens.stylex";
-import { trackEvent } from "../telemetry";
+import { getTelemetry } from "../telemetry-service";
 import { ActionButton } from "./ActionButton";
 
 // StyleX only resolves computed conditional keys defined in the same module.
@@ -95,14 +95,14 @@ export function TesseraReview({
 
 	// Track when the tessera review section is viewed
 	useEffect(() => {
-		trackEvent("tessera_review_viewed", {
-			tesseraCount: tesserae.length,
+		getTelemetry().tesseraReviewViewed(
+			tesserae.length,
 			validCount,
 			rejectedCount,
 			isLowVariety,
 			varietyRecommendation,
 			hasAcceptedSupplementation,
-		});
+		);
 	}, [
 		tesserae.length,
 		validCount,

@@ -8,7 +8,7 @@ import {
 } from "../engine/tessera-sizing";
 import type { WorkflowState } from "../engine/workflow-state";
 import { base } from "../styles/base.stylex";
-import { trackEvent, trackStepView } from "../telemetry";
+import { getTelemetry } from "../telemetry-service";
 
 /** Props for {@link TesseraSizeSelection}. */
 interface TesseraSizeSelectionProps {
@@ -48,7 +48,7 @@ export function TesseraSizeSelection({
 	const debounceTimerRef = useRef<NodeJS.Timeout | null>(null);
 
 	useEffect(() => {
-		trackStepView("build_tesserae");
+		getTelemetry().stepViewed("build_tesserae");
 	}, []);
 
 	// biome-ignore lint/correctness/useExhaustiveDependencies: intentional mount-only effect
@@ -102,7 +102,7 @@ export function TesseraSizeSelection({
 
 		debounceTimerRef.current = setTimeout(() => {
 			onSizeSelectedRef.current(newSize);
-			trackEvent("tessera_size_changed", { size: newSize });
+			getTelemetry().tesseraSizeChanged(newSize);
 			debounceTimerRef.current = null;
 		}, 150);
 	};

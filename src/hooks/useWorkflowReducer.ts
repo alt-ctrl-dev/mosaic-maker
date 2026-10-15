@@ -24,7 +24,7 @@ import {
 	type WorkflowState,
 	WorkflowStep,
 } from "../engine/workflow-state";
-import { trackEvent } from "../telemetry";
+import { getTelemetry } from "../telemetry-service";
 
 const WORKFLOW_STEP_NAMES = [
 	"choose_mode",
@@ -111,14 +111,12 @@ export function workflowReducer(
 				const newState = { ...state, currentStep: clamped };
 
 				// Track step navigation
-				trackEvent("workflow_step_navigate", {
-					fromStep:
-						WORKFLOW_STEP_NAMES[state.currentStep] ||
-						`step_${state.currentStep}`,
-					toStep: WORKFLOW_STEP_NAMES[clamped] || `step_${clamped}`,
-					isForward: clamped > state.currentStep,
-					isBackward: clamped < state.currentStep,
-				});
+				getTelemetry().workflowStepNavigated(
+					WORKFLOW_STEP_NAMES[state.currentStep] || `step_${state.currentStep}`,
+					WORKFLOW_STEP_NAMES[clamped] || `step_${clamped}`,
+					clamped > state.currentStep,
+					clamped < state.currentStep,
+				);
 
 				return newState;
 			}

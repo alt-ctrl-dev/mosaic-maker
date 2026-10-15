@@ -2,6 +2,7 @@ import { StrictMode } from "react";
 import { createRoot } from "react-dom/client";
 import { App } from "./App";
 import { tokens } from "./styles/tokens.stylex";
+import type { TelemetryService } from "./telemetry-port";
 import { getTelemetry, setTelemetry } from "./telemetry-service";
 import {
 	FaroTelemetryAdapter,
@@ -18,14 +19,17 @@ document.body.style.backgroundColor = tokens.background;
 
 // Initialize telemetry before app bootstrap
 function initializeTelemetry(): void {
-	const hasConsent = true; // Default consent logic - this will be checked by the adapter
+	// Consent defaults to granted when no preference has been stored,
+	// matching pre-existing semantics.
+	const storedConsent = localStorage.getItem("telemetry-consent");
+	const hasConsent = storedConsent === null || storedConsent === "true";
+
 	const isFaroConfigured =
 		Boolean(import.meta.env.VITE_FARO_URL) &&
 		Boolean(import.meta.env.VITE_FARO_APP_NAME);
 
-	let telemetryService: any | null = null;
+	let telemetryService: TelemetryService;
 	if (hasConsent && isFaroConfigured) {
-		// Initialize Faro with configuration
 		initializeFaroTelemetry(
 			import.meta.env.VITE_FARO_URL,
 			import.meta.env.VITE_FARO_APP_NAME,

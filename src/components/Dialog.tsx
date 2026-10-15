@@ -1,7 +1,7 @@
 import * as stylex from "@stylexjs/stylex";
 import { useState, type PropsWithChildren } from "react";
 import { tokens } from "../styles/tokens.stylex";
-import { trackEvent } from "../telemetry";
+import { getTelemetry } from "../telemetry-service";
 
 // StyleX only resolves computed conditional keys defined in the same module.
 const REDUCED_MOTION = "@media (prefers-reduced-motion: reduce)";
@@ -86,10 +86,7 @@ const DialogButtonToggle = ({
 		commandfor={dialogId}
 		command={command}
 		onClick={() => {
-			trackEvent("mobile_workflow_menu_interaction", {
-				action: command,
-				dialogId,
-			});
+			getTelemetry().mobileMenuInteraction(command, dialogId);
 		}}
 	>
 		{children}

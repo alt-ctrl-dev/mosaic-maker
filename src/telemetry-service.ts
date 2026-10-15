@@ -1,23 +1,23 @@
 import type { TelemetryService } from "./telemetry-port";
 import { LogOnlyTelemetryAdapter } from "./telemetry-logonly-adapter";
 
-// Default to a safe no-op service
+// Default to null — lazily creates a log-only adapter on first access
 let telemetryService: TelemetryService | null = null;
 let hasWarned = false;
 
 /**
  * Get the telemetry service instance.
- * Returns a no-op service if none has been registered.
+ * Returns a log-only adapter if none has been registered.
+ * Never throws.
  */
 export function getTelemetry(): TelemetryService {
 	if (telemetryService) {
 		return telemetryService;
 	}
 
-	// Warn once if telemetry service is not registered
 	if (!hasWarned) {
 		console.warn(
-			"Telemetry service not registered, using no-op implementation",
+			"Telemetry service not registered, falling back to log-only adapter",
 		);
 		hasWarned = true;
 	}

@@ -21,7 +21,7 @@ import {
 import { useWorkflowReducer } from "./hooks/useWorkflowReducer";
 import { base } from "./styles/base.stylex";
 import { tokens } from "./styles/tokens.stylex";
-import { trackError } from "./telemetry";
+import { getTelemetry } from "./telemetry-service";
 
 // StyleX only resolves computed conditional keys defined in the same module.
 const REDUCED_MOTION = "@media (prefers-reduced-motion: reduce)";
@@ -263,7 +263,7 @@ export function WorkflowApp() {
 			});
 		} catch (error) {
 			console.error("Error resizing tesserae:", error);
-			trackError("tesserae_resize", error, {
+			getTelemetry().errorTracked("tesserae_resize", error, {
 				tesseraCount: workflowState.tesserae.length,
 				targetSize: size,
 			});

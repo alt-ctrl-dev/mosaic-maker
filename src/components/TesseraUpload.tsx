@@ -6,7 +6,7 @@ import type { TesseraInfo } from "../engine/workflow-state";
 import { base } from "../styles/base.stylex";
 import { tokens } from "../styles/tokens.stylex";
 import { vibrate } from "../haptics";
-import { trackError, trackStepView } from "../telemetry";
+import { getTelemetry } from "../telemetry-service";
 import {
 	isFileSizeExceeded,
 	isTotalRetainedSizeExceeded,
@@ -58,7 +58,7 @@ export function TesseraUpload({
 	const [errorMessage, setErrorMessage] = useState<string | null>(null);
 
 	useEffect(() => {
-		trackStepView("tessera_upload");
+		getTelemetry().stepViewed("tessera_upload");
 	}, []);
 
 	const handleFileChange = useCallback(
@@ -74,7 +74,7 @@ export function TesseraUpload({
 			) {
 				const errorMsg = getFileCountErrorMessage();
 				const error = new Error(errorMsg);
-				trackError("tessera_processing", error, {
+				getTelemetry().errorTracked("tessera_processing", error, {
 					fileCount: filesArray.length,
 					currentTesseraeCount: currentTesserae.length,
 				});
@@ -88,7 +88,7 @@ export function TesseraUpload({
 			if (isTotalRetainedSizeExceeded(currentFiles, filesArray)) {
 				const errorMsg = getTotalSizeErrorMessage();
 				const error = new Error(errorMsg);
-				trackError("tessera_processing", error, {
+				getTelemetry().errorTracked("tessera_processing", error, {
 					fileCount: filesArray.length,
 					totalFileSize: filesArray.reduce((sum, file) => sum + file.size, 0),
 				});
@@ -100,7 +100,7 @@ export function TesseraUpload({
 				if (isFileSizeExceeded(file)) {
 					const errorMsg = getFileSizeErrorMessage(file.name);
 					const error = new Error(errorMsg);
-					trackError("tessera_processing", error, {
+					getTelemetry().errorTracked("tessera_processing", error, {
 						fileName: file.name,
 						fileSize: file.size,
 					});
@@ -124,7 +124,7 @@ export function TesseraUpload({
 				if (isDimensionLimitExceeded(dims.width, dims.height)) {
 					const errorMsg = getDimensionErrorMessage(dims.width, dims.height);
 					const error = new Error(errorMsg);
-					trackError("tessera_dimension_limit", error, {
+					getTelemetry().errorTracked("tessera_dimension_limit", error, {
 						fileName: file.name,
 						width: dims.width,
 						height: dims.height,
@@ -156,7 +156,7 @@ export function TesseraUpload({
 				vibrate(15);
 			} catch (error) {
 				console.error("Error processing tesserae:", error);
-				trackError("tessera_processing", error, {
+				getTelemetry().errorTracked("tessera_processing", error, {
 					fileCount: files?.length,
 					adjustedTesseraSize,
 				});

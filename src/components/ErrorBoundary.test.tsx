@@ -1,17 +1,22 @@
 import { render, screen } from "@testing-library/react";
 import type React from "react";
-import { describe, expect, it, vi } from "vitest";
+import { beforeEach, describe, expect, it, vi } from "vitest";
+import { RecordingTelemetryAdapter } from "../telemetry-recording-adapter";
+import { setTelemetry } from "../telemetry-service";
 import { ErrorBoundary } from "./ErrorBoundary";
-
-vi.mock("../telemetry", () => ({
-	trackError: vi.fn(),
-}));
 
 function BrokenComponent(): React.ReactElement {
 	throw new Error("Test render crash");
 }
 
 describe("ErrorBoundary", () => {
+	let recordingAdapter: RecordingTelemetryAdapter;
+
+	beforeEach(() => {
+		recordingAdapter = new RecordingTelemetryAdapter();
+		setTelemetry(recordingAdapter);
+	});
+
 	it("renders children when no error occurs", () => {
 		render(
 			<ErrorBoundary>
@@ -24,7 +29,6 @@ describe("ErrorBoundary", () => {
 	});
 
 	it("renders fallback UI when a child throws", () => {
-		// Suppress React's expected error log during test
 		const consoleError = vi
 			.spyOn(console, "error")
 			.mockImplementation(() => {});
@@ -43,8 +47,7 @@ describe("ErrorBoundary", () => {
 		consoleError.mockRestore();
 	});
 
-	it("reports the error to telemetry", async () => {
-		const { trackError } = await import("../telemetry");
+	it("reports the error to telemetry", () => {
 		const consoleError = vi
 			.spyOn(console, "error")
 			.mockImplementation(() => {});
@@ -55,16 +58,16 @@ describe("ErrorBoundary", () => {
 			</ErrorBoundary>,
 		);
 
-		expect(trackError).toHaveBeenCalledWith(
-			"react_rendering",
-			expect.any(Error),
-			expect.objectContaining({
-				componentStack: expect.any(String),
-			}),
+		const errorEvents = recordingAdapter.getEventsByNamePattern(
+			/^error_react_rendering$/,
 		);
-
-		const call = (trackError as ReturnType<typeof vi.fn>).mock.calls[0];
-		expect(call[1].message).toBe("Test render crash");
+		expect(errorEvents).toHaveLength(1);
+		const payload = errorEvents[0].payload;
+		expect(payload.step).toBe("react_rendering");
+		expect(payload.errorName).toBe("Error");
+		expect(payload.errorMessage).toBe("Test render crash");
+		expect(payload.context).toBeDefined();
+		expect(payload.context).toContain("componentStack");
 
 		consoleError.mockRestore();
 	});

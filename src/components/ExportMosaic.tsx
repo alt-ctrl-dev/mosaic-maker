@@ -6,7 +6,7 @@ import type { ExportSettings, WorkflowState } from "../engine/workflow-state";
 import type { WorkflowAction } from "../hooks/useWorkflowReducer";
 import { base } from "../styles/base.stylex";
 import { tokens } from "../styles/tokens.stylex";
-import { trackError, trackEvent, trackStepView } from "../telemetry";
+import { getTelemetry } from "../telemetry-service";
 import { ActionButton } from "./ActionButton";
 
 const styles = stylex.create({
@@ -208,7 +208,7 @@ export function ExportMosaic({ state, dispatch }: ExportMosaicProps) {
 	const canShare = supportsWebShare();
 
 	useEffect(() => {
-		trackStepView("export_mosaic");
+		getTelemetry().stepViewed("export_mosaic");
 	}, []);
 
 	const handleExportSettingsChange = (settings: Partial<ExportSettings>) => {
@@ -240,13 +240,13 @@ export function ExportMosaic({ state, dispatch }: ExportMosaicProps) {
 			text: "Check out this mosaic I created!",
 		});
 
-		trackEvent("mosaic_download", {
-			format: state.exportFormat,
-			quality: state.exportQuality,
-			width: mosaicResult.width,
-			height: mosaicResult.height,
-			delivery: "share",
-		});
+		getTelemetry().mosaicDownloaded(
+			state.exportFormat,
+			state.exportQuality,
+			mosaicResult.width,
+			mosaicResult.height,
+			"share",
+		);
 
 		return true;
 	};
@@ -274,13 +274,13 @@ export function ExportMosaic({ state, dispatch }: ExportMosaicProps) {
 			tabPopulator(exportedDataUrl);
 		}
 
-		trackEvent("mosaic_download", {
-			format: state.exportFormat,
-			quality: state.exportQuality,
-			width: mosaicResult.width,
-			height: mosaicResult.height,
-			delivery: useAnchorDownload ? "anchor" : "new-tab-populated",
-		});
+		getTelemetry().mosaicDownloaded(
+			state.exportFormat,
+			state.exportQuality,
+			mosaicResult.width,
+			mosaicResult.height,
+			useAnchorDownload ? "anchor" : "new-tab-populated",
+		);
 	};
 
 	const handleExport = async () => {
@@ -343,7 +343,7 @@ export function ExportMosaic({ state, dispatch }: ExportMosaicProps) {
 			const errorMessage =
 				err instanceof Error ? err.message : "Unknown error occurred";
 			setError(errorMessage);
-			trackError("mosaic_export", err, {
+			getTelemetry().errorTracked("mosaic_export", err, {
 				exportFormat: state.exportFormat,
 				exportQuality: state.exportQuality,
 			});

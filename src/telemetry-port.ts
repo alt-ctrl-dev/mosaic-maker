@@ -31,37 +31,57 @@ export type ErrorStep =
  * Defines the contract for telemetry implementations.
  */
 export interface TelemetryService {
-	/** Check if user has given telemetry consent */
 	hasConsent(): boolean;
-
-	/** Set user's telemetry consent preference */
 	setConsent(consent: boolean): void;
 
-	/** Track when a user views/navigates to a step in the workflow */
+	/** Track when a user views a step in the workflow. */
 	stepViewed(step: TelemetryStep): void;
 
-	/** Track workflow step navigation */
-	workflowStepNavigated(from: string, to: string): void;
+	/** Track workflow step navigation in the sidebar/mobile menu. */
+	workflowStepNavigated(
+		fromStep: string,
+		toStep: string,
+		isForward: boolean,
+		isBackward: boolean,
+	): void;
 
-	/** Track tesserae generation */
+	/** Track tesserae generation completion. */
 	tesseraeGenerated(count: number, duration: number): void;
 
-	/** Track tessera size change */
+	/** Track tessera size change. */
 	tesseraSizeChanged(size: number): void;
 
-	/** Track source image upload */
-	sourceImageUploaded(width: number, height: number, fileSize: number): void;
+	/** Track source image upload success. */
+	sourceImageUploaded(
+		width: number,
+		height: number,
+		fileSize: number,
+		fileType: string,
+	): void;
 
-	/** Track mobile menu interaction */
-	mobileMenuInteraction(action: string): void;
+	/** Track mobile workflow menu interactions. */
+	mobileMenuInteraction(action: string, dialogId: string): void;
 
-	/** Track tessera review viewed */
-	tesseraReviewViewed(count: number): void;
+	/** Track when the tessera review section is viewed. */
+	tesseraReviewViewed(
+		tesseraCount: number,
+		validCount: number,
+		rejectedCount: number,
+		isLowVariety: boolean,
+		varietyRecommendation: number | null,
+		hasAcceptedSupplementation: boolean,
+	): void;
 
-	/** Track mosaic download */
-	mosaicDownloaded(format: string): void;
+	/** Track mosaic download/share. */
+	mosaicDownloaded(
+		format: string,
+		quality: number,
+		width: number,
+		height: number,
+		delivery: string,
+	): void;
 
-	/** Track mosaic generation */
+	/** Track mosaic generation completion. */
 	mosaicGenerated(
 		success: boolean,
 		duration: number,
@@ -73,13 +93,13 @@ export interface TelemetryService {
 		fallbackReason?: "android_readback" | "worker_unavailable",
 	): void;
 
-	/** Track errors */
+	/** Track errors with step attribution. */
 	errorTracked(
 		step: ErrorStep,
 		error: unknown,
 		context?: Record<string, unknown>,
 	): void;
 
-	/** Collect device analytics */
+	/** Collect device analytics (at most once per app lifecycle). */
 	collectDeviceAnalytics(): Promise<void>;
 }

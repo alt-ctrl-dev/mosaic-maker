@@ -5,18 +5,24 @@ import {
 	screen,
 	within,
 } from "@testing-library/react";
-import { afterEach, describe, expect, it, vi } from "vitest";
+import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
+import { RecordingTelemetryAdapter } from "./telemetry-recording-adapter";
+import { setTelemetry } from "./telemetry-service";
 import { App } from "./App";
 
 vi.mock("./version", () => ({
 	VERSION_STRING: "v1.0.0+abc1234",
 	PACKAGE_VERSION: "1.0.0",
 	COMMIT_SHA: "abc1234",
+	SEMVER: "1.0.0",
 }));
 
 afterEach(cleanup);
 
 describe("Mosaic Maker workflow", () => {
+	beforeEach(() => {
+		setTelemetry(new RecordingTelemetryAdapter());
+	});
 	it("presents all four stages in order", () => {
 		render(<App />);
 

@@ -12,12 +12,6 @@ vi.mock("../haptics", () => ({
 	vibrate: vi.fn(),
 }));
 
-// Mock telemetry
-vi.mock("../telemetry", () => ({
-	trackError: vi.fn(),
-	trackStepView: vi.fn(),
-}));
-
 // Mock the resource policy functions
 vi.mock("../engine/resource-policy", async () => {
 	const actual = await vi.importActual("../engine/resource-policy");

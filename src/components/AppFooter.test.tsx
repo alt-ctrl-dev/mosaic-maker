@@ -1,16 +1,20 @@
 import { fireEvent, render, screen } from "@testing-library/react";
 import { beforeEach, describe, expect, it, vi } from "vitest";
+import { RecordingTelemetryAdapter } from "../telemetry-recording-adapter";
+import { setTelemetry } from "../telemetry-service";
 import { AppFooter } from "./AppFooter";
 
 vi.mock("../version", () => ({
 	VERSION_STRING: "v1.0.0+abc1234",
 	PACKAGE_VERSION: "1.0.0",
 	COMMIT_SHA: "abc1234",
+	SEMVER: "1.0.0",
 }));
 
 describe("AppFooter", () => {
 	beforeEach(() => {
 		localStorage.clear();
+		setTelemetry(new RecordingTelemetryAdapter());
 	});
 
 	it("renders a centered footer with the version string", () => {

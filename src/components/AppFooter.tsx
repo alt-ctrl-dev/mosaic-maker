@@ -2,7 +2,7 @@ import * as stylex from "@stylexjs/stylex";
 import { useEffect, useState } from "react";
 import { base } from "../styles/base.stylex";
 import { tokens } from "../styles/tokens.stylex";
-import { hasTelemetryConsent, setTelemetryConsent } from "../telemetry";
+import { getTelemetry } from "../telemetry-service";
 import { VERSION_STRING } from "../version";
 
 const styles = stylex.create({
@@ -28,10 +28,10 @@ const styles = stylex.create({
 
 /** Application footer showing the build version. */
 export function AppFooter() {
-	const [consent, setConsent] = useState(hasTelemetryConsent());
+	const [consent, setConsent] = useState(getTelemetry().hasConsent());
 
 	useEffect(() => {
-		setTelemetryConsent(consent);
+		getTelemetry().setConsent(consent);
 	}, [consent]);
 
 	const handleConsentChange = (event: React.ChangeEvent<HTMLInputElement>) => {

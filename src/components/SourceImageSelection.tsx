@@ -120,6 +120,7 @@ export function SourceImageSelection({
 					sourceImage.width,
 					sourceImage.height,
 					file.size,
+					file.type,
 				);
 				vibrate(10);
 

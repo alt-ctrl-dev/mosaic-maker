@@ -11,7 +11,7 @@ import {
 import { base } from "../styles/base.stylex";
 import { tokens } from "../styles/tokens.stylex";
 import { vibrate } from "../haptics";
-import { trackError, trackEvent, trackStepView } from "../telemetry";
+import { getTelemetry } from "../telemetry-service";
 import { ActionButton } from "./ActionButton";
 
 const styles = stylex.create({
@@ -79,7 +79,7 @@ export function GeneratedTesserae({
 	);
 
 	useEffect(() => {
-		trackStepView("generated_tesserae");
+		getTelemetry().stepViewed("generated_tesserae");
 	}, []);
 
 	useEffect(() => {
@@ -101,16 +101,11 @@ export function GeneratedTesserae({
 			const tesserae = await generateNoiseTesseraeFromState(tempState);
 			onTesseraeGenerated(tesserae);
 
-			trackEvent("tesserae_generation", {
-				count: tesserae.length,
-				requestedCount: count,
-				tesseraSize: initialState.adjustedTesseraSize ?? 0,
-				seed,
-			});
+			getTelemetry().tesseraeGenerated(tesserae.length, 0); // duration is not available here
 			vibrate(15);
 		} catch (error) {
 			console.error("Error generating tesserae:", error);
-			trackError("tesserae_generation", error, {
+			getTelemetry().errorTracked("tesserae_generation", error, {
 				seed,
 				count,
 				tesseraSize: initialState.adjustedTesseraSize ?? 0,

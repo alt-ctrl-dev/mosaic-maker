@@ -1,7 +1,7 @@
 import React from "react";
 import * as stylex from "@stylexjs/stylex";
 import { base } from "../styles/base.stylex";
-import { trackError } from "../telemetry";
+import { getTelemetry } from "../telemetry-service";
 import { ActionButton } from "./ActionButton";
 
 const styles = stylex.create({
@@ -45,7 +45,7 @@ export class ErrorBoundary extends React.Component<
 
 	componentDidCatch(error: Error, errorInfo: React.ErrorInfo): void {
 		// Log the error to telemetry
-		trackError("react_rendering", error, {
+		getTelemetry().errorTracked("react_rendering", error, {
 			componentStack: errorInfo.componentStack,
 		});
 
