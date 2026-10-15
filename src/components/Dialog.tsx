@@ -44,7 +44,7 @@ const styles = stylex.create({
 		},
 	},
 	toggleButtonText: {
-		color: "#ffffff",
+		color: tokens.onPrimary,
 		fontWeight: "bold",
 		fontSize: "0.75rem",
 		textTransform: "uppercase",
@@ -106,7 +106,9 @@ const DialogButtonToggle = ({
 			});
 		}}
 	>
-		<span {...stylex.props(styles.toggleButtonText)}>Steps</span>
+		{command === "show-modal" && (
+			<span {...stylex.props(styles.toggleButtonText)}>Steps</span>
+		)}
 		{children}
 	</button>
 );

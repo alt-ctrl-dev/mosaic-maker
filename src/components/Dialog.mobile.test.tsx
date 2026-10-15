@@ -13,9 +13,8 @@ describe("Dialog mobile adaptations", () => {
 			</Dialog>,
 		);
 
-		// Should contain visible text "Steps" in the first toggle button
 		const buttons = screen.getAllByText("Steps");
-		expect(buttons).toHaveLength(2);
+		expect(buttons).toHaveLength(1);
 		expect(buttons[0]).toBeInTheDocument();
 	});
 });

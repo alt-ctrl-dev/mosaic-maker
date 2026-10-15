@@ -14,7 +14,6 @@ vi.mock("../telemetry", () => ({
 	trackStepView: vi.fn(),
 }));
 
-// Mock resource policy functions
 vi.mock("../engine/resource-policy", () => ({
 	isFileSizeExceeded: vi.fn().mockReturnValue(false),
 	isTotalRetainedSizeExceeded: vi.fn().mockReturnValue(false),
@@ -37,8 +36,6 @@ describe("TesseraUpload mobile adaptations", () => {
 			/>,
 		);
 
-		// Should show touch-appropriate copy instead of "Drop tesserae images here"
-		// Look for text that suggests touch-friendly actions
 		const paragraph = screen.getByText(/choose|select|tap/i);
 		expect(paragraph).toBeInTheDocument();
 	});
@@ -52,7 +49,6 @@ describe("TesseraUpload mobile adaptations", () => {
 			/>,
 		);
 
-		// Should NOT show "drop" focused copy
 		expect(screen.queryByText(/drop.*images.*here/i)).not.toBeInTheDocument();
 	});
 });
