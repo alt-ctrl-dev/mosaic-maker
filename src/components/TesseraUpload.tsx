@@ -205,7 +205,7 @@ export function TesseraUpload({
 					{...stylex.props(base.dropZone, isProcessing && base.dropZoneActive)}
 				>
 					<p {...stylex.props(base.paragraph)}>
-						Drop tesserae images here or click below
+						Choose images or drag them here
 					</p>
 					<input
 						type="file"
