@@ -1,7 +1,6 @@
-import { render, screen, fireEvent, waitFor } from "@testing-library/react";
+import { render, screen } from "@testing-library/react";
 import { describe, expect, it } from "vitest";
 import { App } from "./App";
-import { INITIAL_WORKFLOW_STATE, WorkflowStep } from "./engine/workflow-state";
 
 describe("workflow navigation comprehensive", () => {
 	it("shows correct step labels and completion state", async () => {
