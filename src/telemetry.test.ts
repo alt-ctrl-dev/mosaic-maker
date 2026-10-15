@@ -9,7 +9,7 @@ import {
 	trackMosaicGeneration,
 	trackStepView,
 } from "./telemetry";
-import { VERSION_STRING } from "./version";
+import { PACKAGE_VERSION } from "./version";
 
 describe("telemetry", () => {
 	beforeEach(() => {
@@ -99,6 +99,34 @@ describe("telemetry", () => {
 				}),
 			);
 		});
+
+		it("initializes Faro with the bare semver as app.version", async () => {
+			vi.stubEnv("VITE_FARO_URL", "http://localhost:1234/collect");
+			vi.stubEnv("VITE_FARO_APP_NAME", "test-app");
+			setTelemetryConsent(true);
+
+			const mockInitializeFaro = vi.fn();
+			vi.doMock("@grafana/faro-web-sdk", async () => {
+				const actual = await vi.importActual("@grafana/faro-web-sdk");
+				return {
+					...actual,
+					initializeFaro: mockInitializeFaro,
+					getWebInstrumentations: vi.fn(() => []),
+				};
+			});
+
+			const { initializeTelemetry } = await import("./telemetry");
+			initializeTelemetry();
+
+			expect(mockInitializeFaro).toHaveBeenCalledWith(
+				expect.objectContaining({
+					app: expect.objectContaining({
+						name: "test-app",
+						version: PACKAGE_VERSION,
+					}),
+				}),
+			);
+		});
 	});
 
 	describe("getWorkflowSessionId", () => {
@@ -124,7 +152,7 @@ describe("telemetry", () => {
 				JSON.stringify(
 					{
 						sessionId: getWorkflowSessionId(),
-						appVersion: VERSION_STRING,
+						appVersion: PACKAGE_VERSION,
 						test: "data",
 					},
 					null,
@@ -143,7 +171,7 @@ describe("telemetry", () => {
 			trackEvent("mosaic_download", { format: "png" });
 			for (const call of consoleLogSpy.mock.calls) {
 				expect(call[1]).toContain(sessionId);
-				expect(call[1]).toContain(VERSION_STRING);
+				expect(call[1]).toContain(PACKAGE_VERSION);
 			}
 		});
 
@@ -158,7 +186,7 @@ describe("telemetry", () => {
 				JSON.stringify(
 					{
 						sessionId: getWorkflowSessionId(),
-						appVersion: VERSION_STRING,
+						appVersion: PACKAGE_VERSION,
 						test: "data",
 					},
 					null,
@@ -228,7 +256,7 @@ describe("telemetry", () => {
 			await trackDeviceAnalytics();
 
 			const attributes = loggedDeviceAttributes(consoleLogSpy.mock.calls);
-			expect(attributes.appVersion).toBe(VERSION_STRING);
+			expect(attributes.appVersion).toBe(PACKAGE_VERSION);
 			expect(attributes.sessionId).toBe(getWorkflowSessionId());
 			expect(attributes.os).toBe("Windows");
 			expect(attributes.deviceType).toBe("Desktop");
@@ -496,7 +524,7 @@ describe("telemetry", () => {
 				JSON.stringify(
 					{
 						sessionId: getWorkflowSessionId(),
-						appVersion: VERSION_STRING,
+						appVersion: PACKAGE_VERSION,
 						success: "true",
 						duration: "1000",
 						sourceWidth: "1920",
@@ -577,7 +605,7 @@ describe("telemetry", () => {
 			const call = consoleLogSpy.mock.calls[0];
 			const payload = JSON.parse(call[1] as string);
 			expect(payload.sessionId).toBe(getWorkflowSessionId());
-			expect(payload.appVersion).toBe(VERSION_STRING);
+			expect(payload.appVersion).toBe(PACKAGE_VERSION);
 		});
 
 		it("handles non-Error values thrown from catch blocks gracefully", () => {
@@ -641,7 +669,7 @@ describe("telemetry", () => {
 
 			const payload = JSON.parse(consoleLogSpy.mock.calls[0][1] as string);
 			expect(payload.sessionId).toBe(getWorkflowSessionId());
-			expect(payload.appVersion).toBe(VERSION_STRING);
+			expect(payload.appVersion).toBe(PACKAGE_VERSION);
 		});
 	});
 });
