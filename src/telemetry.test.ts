@@ -9,7 +9,7 @@ import {
 	trackMosaicGeneration,
 	trackStepView,
 } from "./telemetry";
-import { VERSION_STRING } from "./version";
+import { PACKAGE_VERSION } from "./version";
 
 describe("telemetry", () => {
 	beforeEach(() => {
@@ -124,7 +124,7 @@ describe("telemetry", () => {
 				JSON.stringify(
 					{
 						sessionId: getWorkflowSessionId(),
-						appVersion: VERSION_STRING,
+						appVersion: PACKAGE_VERSION,
 						test: "data",
 					},
 					null,
@@ -143,7 +143,7 @@ describe("telemetry", () => {
 			trackEvent("mosaic_download", { format: "png" });
 			for (const call of consoleLogSpy.mock.calls) {
 				expect(call[1]).toContain(sessionId);
-				expect(call[1]).toContain(VERSION_STRING);
+				expect(call[1]).toContain(PACKAGE_VERSION);
 			}
 		});
 
@@ -158,7 +158,7 @@ describe("telemetry", () => {
 				JSON.stringify(
 					{
 						sessionId: getWorkflowSessionId(),
-						appVersion: VERSION_STRING,
+						appVersion: PACKAGE_VERSION,
 						test: "data",
 					},
 					null,
@@ -228,7 +228,7 @@ describe("telemetry", () => {
 			await trackDeviceAnalytics();
 
 			const attributes = loggedDeviceAttributes(consoleLogSpy.mock.calls);
-			expect(attributes.appVersion).toBe(VERSION_STRING);
+			expect(attributes.appVersion).toBe(PACKAGE_VERSION);
 			expect(attributes.sessionId).toBe(getWorkflowSessionId());
 			expect(attributes.os).toBe("Windows");
 			expect(attributes.deviceType).toBe("Desktop");
@@ -496,7 +496,7 @@ describe("telemetry", () => {
 				JSON.stringify(
 					{
 						sessionId: getWorkflowSessionId(),
-						appVersion: VERSION_STRING,
+						appVersion: PACKAGE_VERSION,
 						success: "true",
 						duration: "1000",
 						sourceWidth: "1920",
@@ -577,7 +577,7 @@ describe("telemetry", () => {
 			const call = consoleLogSpy.mock.calls[0];
 			const payload = JSON.parse(call[1] as string);
 			expect(payload.sessionId).toBe(getWorkflowSessionId());
-			expect(payload.appVersion).toBe(VERSION_STRING);
+			expect(payload.appVersion).toBe(PACKAGE_VERSION);
 		});
 
 		it("handles non-Error values thrown from catch blocks gracefully", () => {
@@ -641,7 +641,7 @@ describe("telemetry", () => {
 
 			const payload = JSON.parse(consoleLogSpy.mock.calls[0][1] as string);
 			expect(payload.sessionId).toBe(getWorkflowSessionId());
-			expect(payload.appVersion).toBe(VERSION_STRING);
+			expect(payload.appVersion).toBe(PACKAGE_VERSION);
 		});
 	});
 });
