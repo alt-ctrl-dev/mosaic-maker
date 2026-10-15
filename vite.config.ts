@@ -3,7 +3,7 @@ import faroUploader from "@grafana/faro-rollup-plugin";
 import stylexPlugin from "@stylexjs/rollup-plugin";
 import react from "@vitejs/plugin-react";
 import { defineConfig, loadEnv } from "vite";
-import { version as packageVersion } from "./package.json";
+import pkg from "./package.json" with { type: "json" };
 
 function getGitCommitSha() {
 	try {
@@ -20,7 +20,7 @@ export default defineConfig(({ mode, command }) => {
 	const base = "/mosaic-maker/";
 
 	const define = {
-		"import.meta.env.VITE_APP_VERSION": JSON.stringify(packageVersion),
+		"import.meta.env.VITE_APP_VERSION": JSON.stringify(pkg.version),
 		"import.meta.env.VITE_APP_COMMIT": JSON.stringify(
 			env.VITE_APP_COMMIT || commitSha,
 		),
