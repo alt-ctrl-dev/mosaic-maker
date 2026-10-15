@@ -107,6 +107,7 @@ export function BrickColorPicker({
 									src={renderBrick(color)}
 									alt={`Brick tessera ${color}`}
 									title={color}
+									{...stylex.props(base.brickPreview)}
 								/>
 								<ActionButton
 									type="button"
@@ -142,6 +143,7 @@ export function BrickColorPicker({
 									key={color}
 									style={{ backgroundColor: color }}
 									title={color}
+									{...stylex.props(base.brickSwatch)}
 								/>
 							))}
 						</div>
