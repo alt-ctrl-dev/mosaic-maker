@@ -99,6 +99,34 @@ describe("telemetry", () => {
 				}),
 			);
 		});
+
+		it("initializes Faro with the bare semver as app.version", async () => {
+			vi.stubEnv("VITE_FARO_URL", "http://localhost:1234/collect");
+			vi.stubEnv("VITE_FARO_APP_NAME", "test-app");
+			setTelemetryConsent(true);
+
+			const mockInitializeFaro = vi.fn();
+			vi.doMock("@grafana/faro-web-sdk", async () => {
+				const actual = await vi.importActual("@grafana/faro-web-sdk");
+				return {
+					...actual,
+					initializeFaro: mockInitializeFaro,
+					getWebInstrumentations: vi.fn(() => []),
+				};
+			});
+
+			const { initializeTelemetry } = await import("./telemetry");
+			initializeTelemetry();
+
+			expect(mockInitializeFaro).toHaveBeenCalledWith(
+				expect.objectContaining({
+					app: expect.objectContaining({
+						name: "test-app",
+						version: PACKAGE_VERSION,
+					}),
+				}),
+			);
+		});
 	});
 
 	describe("getWorkflowSessionId", () => {

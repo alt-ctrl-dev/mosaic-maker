@@ -1,6 +1,5 @@
-import { describe, it, expect, vi } from "vitest";
+import { afterEach, describe, expect, it, vi } from "vitest";
 
-// Mock the version module to simulate build-time values
 vi.mock("./version", () => ({
 	PACKAGE_VERSION: "1.2.3",
 	COMMIT_SHA: "abc1234",
@@ -8,27 +7,25 @@ vi.mock("./version", () => ({
 }));
 
 describe("telemetry semver", () => {
-	it("should use bare semver for telemetry grouping, not full version with commit", async () => {
-		// This test will verify that telemetry uses PACKAGE_VERSION (bare semver)
-		// instead of VERSION_STRING (with commit) for app version grouping
-		const { trackEvent } = await import("./telemetry");
+	afterEach(() => {
+		vi.restoreAllMocks();
+		vi.unstubAllEnvs();
+	});
 
-		// Mock console.log to capture telemetry output
+	it("stamps appVersion with the bare semver, not the display string", async () => {
+		vi.stubEnv("VITE_FARO_URL", "");
+		vi.stubEnv("VITE_FARO_APP_NAME", "");
+		const { trackEvent } = await import("./telemetry");
 		const consoleLogSpy = vi.spyOn(console, "log").mockImplementation(() => {});
 
-		// Track an event
 		trackEvent("test_event", { test: "data" });
 
-		// Check that the appVersion attribute uses the bare semver
 		const call = consoleLogSpy.mock.calls.find(
 			(args) => args[0] === "[Telemetry] test_event:",
 		);
 		expect(call).toBeDefined();
 		const payload = JSON.parse(call?.[1] as string);
-
-		// This is what we WANT - bare semver for stable grouping
 		expect(payload.appVersion).toBe("1.2.3");
-
-		consoleLogSpy.mockRestore();
+		expect(Object.keys(payload)).toEqual(["sessionId", "appVersion", "test"]);
 	});
 });
