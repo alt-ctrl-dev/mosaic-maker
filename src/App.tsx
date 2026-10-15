@@ -309,7 +309,6 @@ function WorkflowApp() {
 						)}
 						{canReview && (
 							<div>
-								{/* Status line showing ready/rejected counts */}
 								<div
 									{...stylex.props(base.paragraph)}
 									style={{ fontSize: "0.875rem" }}
@@ -330,7 +329,6 @@ function WorkflowApp() {
 									hasAcceptedSupplementation={
 										workflowState.hasAcceptedSupplementation
 									}
-									/* Automatically open the review drawer when anything was rejected */
 									open={workflowState.tesserae.some((t) => !t.isValid)}
 								/>
 							</div>

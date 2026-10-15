@@ -50,7 +50,6 @@ describe("TesseraUpload", () => {
 	};
 
 	beforeEach(() => {
-		// Reset all mocks before each test
 		vi.resetAllMocks();
 	});
 
@@ -72,7 +71,6 @@ describe("TesseraUpload", () => {
 
 		render(<TesseraUpload {...defaultProps} />);
 
-		// Create a file that exceeds the individual file size limit (25 MiB)
 		const largeFile = new File(
 			[new ArrayBuffer(30 * 1024 * 1024)],
 			"large.jpg",
@@ -82,7 +80,6 @@ describe("TesseraUpload", () => {
 		const input = screen.getByLabelText("Upload tesserae images");
 		fireEvent.change(input, { target: { files: [largeFile] } });
 
-		// Wait for the error message to appear
 		await waitFor(() => {
 			expect(screen.getByRole("alert")).toBeInTheDocument();
 		});
@@ -99,7 +96,6 @@ describe("TesseraUpload", () => {
 
 		render(<TesseraUpload {...defaultProps} />);
 
-		// Create files that exceed the file count limit
 		const files = Array.from(
 			{ length: 501 },
 			(_, i) =>
@@ -111,7 +107,6 @@ describe("TesseraUpload", () => {
 		const input = screen.getByLabelText("Upload tesserae images");
 		fireEvent.change(input, { target: { files } });
 
-		// Wait for the error message to appear
 		await waitFor(() => {
 			expect(screen.getByRole("alert")).toBeInTheDocument();
 		});
@@ -121,16 +116,17 @@ describe("TesseraUpload", () => {
 	it("shows total size error message when total size exceeded", async () => {
 		const {
 			isTesseraFileLimitExceeded,
+			isFileSizeExceeded,
 			isTotalRetainedSizeExceeded,
 			getTotalSizeErrorMessage,
 		} = await import("../engine/resource-policy");
-		vi.mocked(isTesseraFileLimitExceeded).mockReturnValue(false); // Make sure file count check passes
+		vi.mocked(isTesseraFileLimitExceeded).mockReturnValue(false);
+		vi.mocked(isFileSizeExceeded).mockReturnValue(false);
 		vi.mocked(isTotalRetainedSizeExceeded).mockReturnValue(true);
 		vi.mocked(getTotalSizeErrorMessage).mockReturnValue("Total size exceeded");
 
 		render(<TesseraUpload {...defaultProps} />);
 
-		// Create files that exceed the total size limit
 		const largeFiles = [
 			new File([new ArrayBuffer(150 * 1024 * 1024)], "large1.jpg", {
 				type: "image/jpeg",
@@ -143,7 +139,6 @@ describe("TesseraUpload", () => {
 		const input = screen.getByLabelText("Upload tesserae images");
 		fireEvent.change(input, { target: { files: largeFiles } });
 
-		// Wait for the error message to appear
 		await waitFor(() => {
 			expect(screen.getByRole("alert")).toBeInTheDocument();
 		});

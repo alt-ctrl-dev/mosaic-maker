@@ -34,11 +34,6 @@ const styles = stylex.create({
 		marginTop: "1rem",
 		fontSize: "0.875rem",
 	},
-	statusLine: {
-		marginTop: "0.5rem",
-		fontSize: "0.875rem",
-		color: tokens.muted,
-	},
 });
 
 /** Props for {@link TesseraUpload}. */
@@ -70,7 +65,6 @@ export function TesseraUpload({
 		async (files: FileList | null) => {
 			if (!files || files.length === 0) return;
 
-			// Clear any previous error messages
 			setErrorMessage(null);
 
 			const filesArray = Array.from(files);

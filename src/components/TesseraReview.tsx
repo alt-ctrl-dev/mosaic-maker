@@ -88,6 +88,7 @@ export function TesseraReview({
 	isLowVariety = false,
 	varietyRecommendation = null,
 	hasAcceptedSupplementation = false,
+	open,
 }: TesseraReviewProps) {
 	const validCount = tesserae.filter((t) => t.isValid).length;
 	const rejectedCount = tesserae.length - validCount;
@@ -140,7 +141,7 @@ export function TesseraReview({
 				</article>
 			)}
 
-			<details {...stylex.props(base.details)}>
+			<details {...stylex.props(base.details)} open={open}>
 				<summary {...stylex.props(base.summary)}>
 					Review tesserae ({validCount} valid, {rejectedCount} rejected)
 				</summary>
