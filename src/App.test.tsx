@@ -52,9 +52,7 @@ describe("Mosaic Maker workflow", () => {
 		expect(
 			screen.getByRole("radio", { name: /Select Brick Style mode/ }),
 		).toBeChecked();
-		fireEvent.click(
-			screen.getByRole("button", { name: "Continue to Choose source image →" }),
-		);
+		fireEvent.click(screen.getByRole("button", { name: "Continue" }));
 
 		expect(screen.getByText("Step 2 of 5")).toBeInTheDocument();
 		fireEvent.click(screen.getByRole("button", { name: "← Back" }));
@@ -68,9 +66,7 @@ describe("Mosaic Maker workflow", () => {
 		fireEvent.click(
 			screen.getByRole("radio", { name: /Select Brick Style mode/ }),
 		);
-		fireEvent.click(
-			screen.getByRole("button", { name: "Continue to Choose source image →" }),
-		);
+		fireEvent.click(screen.getByRole("button", { name: "Continue" }));
 
 		const second = render(<App />);
 		expect(
