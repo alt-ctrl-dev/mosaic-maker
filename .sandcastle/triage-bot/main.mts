@@ -19,7 +19,6 @@ async function main() {
 
   requireAuthorizedActor();
 
-  // Security check: Ensure sandbox provider meets isolation requirements
   await enforceSandboxSecurityBoundaries(isolatedDockerSandbox);
 
   const issues = getOpenIssuesNeedingTriage();

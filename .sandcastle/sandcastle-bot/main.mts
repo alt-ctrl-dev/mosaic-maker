@@ -38,7 +38,6 @@ console.log(`Running for ${MAX_ITERATIONS} iteration(s)`);
 
 requireAuthorizedActor();
 
-// Security check: Ensure sandbox provider meets isolation requirements
 await enforceSandboxSecurityBoundaries(isolatedDockerSandbox);
 
 const planAgent = createPlanAgent(isolatedDockerSandbox);

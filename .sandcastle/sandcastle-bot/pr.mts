@@ -2,20 +2,20 @@ import { spawnSync } from "child_process";
 import * as sandcastle from "@ai-hero/sandcastle";
 import type { IsolatedDockerSandbox } from "../shared/isolated-docker.mts";
 import { pushBranch } from "../shared/git.mts";
-import fs from 'node:fs';
+import fs from "node:fs";
 
-const maybeAttachIssueId = (description: string, issueId: string|undefined) => {
-    if (issueId === "" || issueId === undefined) {
-        return description
-    }
-    return `
+const maybeAttachIssueId = (description: string, issueId: string | undefined) => {
+  if (!issueId) {
+    return description;
+  }
+  return `
 ${description}
 
 ## References
 
 Closes #${issueId}
-`
-}
+`;
+};
 
 /**
  * Generates a PR title and description by running two parallel sandbox agents
@@ -51,65 +51,62 @@ export const generatePrDescription = async (
   const description = maybeAttachIssueId(prDescription.output, issueId);
 
   return { title: prTitle.output, description };
-}
+};
 
 /**
  * Creates a GitHub pull request for the given branch, pushing it first
  * and generating the PR via the GitHub CLI.
  */
-export const createPr = async (title: string, description: string, branch: {
-    base?: string; current: string
-}) => {
-    // -----------------------------------------------------------------------
-    // Create Pull Request
-    //
-    // Create a pull request for the branch.
-    // -----------------------------------------------------------------------
-    const prDescriptionFileName = "pr-description.md"
-    const BASE_BRANCH = branch.base ?? "main"
-    console.log("\n================ PR Title ================\n", title);
-    console.log("\n============= PR Description =============\n", description);
+export const createPr = async (
+  title: string,
+  description: string,
+  branch: { base?: string; current: string },
+) => {
+  const prDescriptionFileName = "pr-description.md";
+  const baseBranch = branch.base ?? "main";
 
-    if (!title || typeof title !== "string") {
-        throw new Error("Invalid PR title");
+  console.log("\n================ PR Title ================\n", title);
+  console.log("\n============= PR Description =============\n", description);
+
+  if (!title || typeof title !== "string") {
+    throw new Error("Invalid PR title");
+  }
+
+  if (!branch.current || typeof branch.current !== "string") {
+    throw new Error("Invalid branch name");
+  }
+
+  if (baseBranch && typeof baseBranch !== "string") {
+    throw new Error("Invalid base branch name");
+  }
+
+  if (title.startsWith("-") || branch.current.startsWith("-") || baseBranch.startsWith("-")) {
+    throw new Error("Inputs cannot start with hyphen");
+  }
+
+  try {
+    await pushBranch(branch.current);
+
+    fs.writeFileSync(prDescriptionFileName, description);
+
+    const result = spawnSync(
+      "gh",
+      ["pr", "create", "--title", title, "--body-file", prDescriptionFileName, "--base", baseBranch, "--head", branch.current],
+      { stdio: "inherit" },
+    );
+
+    if (result.status !== 0) {
+      throw new Error(`gh pr create failed with exit code ${result.status}`);
     }
 
-    if (!branch.current || typeof branch.current !== "string") {
-        throw new Error("Invalid branch name");
+    console.log("Pull request created successfully.");
+  } catch (error) {
+    const message = error instanceof Error ? error.message : "Unknown error";
+    console.error("Failed to create pull request:", message);
+    throw error;
+  } finally {
+    if (fs.existsSync(prDescriptionFileName)) {
+      fs.rmSync(prDescriptionFileName);
     }
-
-    if (BASE_BRANCH && typeof BASE_BRANCH !== "string") {
-        throw new Error("Invalid base branch name");
-    }
-
-    if (title.startsWith("-") || branch.current.startsWith("-") || (BASE_BRANCH && BASE_BRANCH.startsWith("-"))) {
-        throw new Error("Inputs cannot start with hyphen");
-    }
-
-    try {
-        await pushBranch(branch.current);
-
-        fs.writeFileSync(prDescriptionFileName, description);
-        
-        const result = spawnSync(
-            "gh",
-            ["pr", "create", "--title", title, "--body-file", prDescriptionFileName, "--base", BASE_BRANCH, "--head", branch.current],
-            { stdio: "inherit" }
-        );
-
-        if (result.status !== 0) {
-            throw new Error(`gh pr create failed with exit code ${result.status}`);
-        }
-
-        console.log("Pull request created successfully.");
-    } catch (error) {
-        const message = error instanceof Error ? error.message : "Unknown error";
-        console.error("Failed to create pull request:", message);
-        throw error;
-    }
-    finally {
-        if (fs.existsSync(prDescriptionFileName)) {
-            fs.rmSync(prDescriptionFileName);
-        }
-    }
-}
+  }
+};

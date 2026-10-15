@@ -9,7 +9,6 @@ const planSchema = z.object({
   ),
 });
 
-
 /**
  * Creates a planning agent that reads the open issue list, builds a dependency
  * graph, and selects the next unblocked issue to work on.
@@ -50,10 +49,9 @@ export const createPlanAgent = (
       );
     }
     return plan.output.issues[0];
-  }
+  };
 
   return {
-    run: planWork
-  }
-}
-
+    run: planWork,
+  };
+};
