@@ -308,19 +308,30 @@ function WorkflowApp() {
 							/>
 						)}
 						{canReview && (
-							<TesseraReview
-								tesserae={workflowState.tesserae}
-								onRemoveTessera={(index) =>
-									dispatch({ type: "removeTessera", index })
-								}
-								onAcceptSupplementation={handleAcceptSupplementation}
-								onContinue={() => dispatch({ type: "advanceFromReview" })}
-								isLowVariety={workflowState.isLowVarietyCollection}
-								varietyRecommendation={workflowState.varietyRecommendation}
-								hasAcceptedSupplementation={
-									workflowState.hasAcceptedSupplementation
-								}
-							/>
+							<div>
+								<div
+									{...stylex.props(base.paragraph)}
+									style={{ fontSize: "0.875rem" }}
+								>
+									{workflowState.tesserae.filter((t) => t.isValid).length} ready
+									· {workflowState.tesserae.filter((t) => !t.isValid).length}{" "}
+									rejected
+								</div>
+								<TesseraReview
+									tesserae={workflowState.tesserae}
+									onRemoveTessera={(index) =>
+										dispatch({ type: "removeTessera", index })
+									}
+									onAcceptSupplementation={handleAcceptSupplementation}
+									onContinue={() => dispatch({ type: "advanceFromReview" })}
+									isLowVariety={workflowState.isLowVarietyCollection}
+									varietyRecommendation={workflowState.varietyRecommendation}
+									hasAcceptedSupplementation={
+										workflowState.hasAcceptedSupplementation
+									}
+									open={workflowState.tesserae.some((t) => !t.isValid)}
+								/>
+							</div>
 						)}
 					</div>
 				);

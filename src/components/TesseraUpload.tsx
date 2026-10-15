@@ -30,6 +30,10 @@ const styles = stylex.create({
 		padding: "1rem",
 	},
 	panelSpacing: { marginTop: "1rem", textAlign: "center" },
+	errorAlert: {
+		marginTop: "1rem",
+		fontSize: "0.875rem",
+	},
 });
 
 /** Props for {@link TesseraUpload}. */
@@ -51,6 +55,7 @@ export function TesseraUpload({
 	currentTesserae,
 }: TesseraUploadProps) {
 	const [isProcessing, setIsProcessing] = useState(false);
+	const [errorMessage, setErrorMessage] = useState<string | null>(null);
 
 	useEffect(() => {
 		trackStepView("tessera_upload");
@@ -60,16 +65,20 @@ export function TesseraUpload({
 		async (files: FileList | null) => {
 			if (!files || files.length === 0) return;
 
+			setErrorMessage(null);
+
 			const filesArray = Array.from(files);
 
 			if (
 				isTesseraFileLimitExceeded(currentTesserae.length, filesArray.length)
 			) {
-				const error = new Error(getFileCountErrorMessage());
+				const errorMsg = getFileCountErrorMessage();
+				const error = new Error(errorMsg);
 				trackError("tessera_processing", error, {
 					fileCount: filesArray.length,
 					currentTesseraeCount: currentTesserae.length,
 				});
+				setErrorMessage(errorMsg);
 				return;
 			}
 
@@ -77,21 +86,25 @@ export function TesseraUpload({
 				.map((t) => t.file)
 				.filter((file): file is File => file !== undefined);
 			if (isTotalRetainedSizeExceeded(currentFiles, filesArray)) {
-				const error = new Error(getTotalSizeErrorMessage());
+				const errorMsg = getTotalSizeErrorMessage();
+				const error = new Error(errorMsg);
 				trackError("tessera_processing", error, {
 					fileCount: filesArray.length,
 					totalFileSize: filesArray.reduce((sum, file) => sum + file.size, 0),
 				});
+				setErrorMessage(errorMsg);
 				return;
 			}
 
 			for (const file of filesArray) {
 				if (isFileSizeExceeded(file)) {
-					const error = new Error(getFileSizeErrorMessage(file.name));
+					const errorMsg = getFileSizeErrorMessage(file.name);
+					const error = new Error(errorMsg);
 					trackError("tessera_processing", error, {
 						fileName: file.name,
 						fileSize: file.size,
 					});
+					setErrorMessage(errorMsg);
 					return;
 				}
 			}
@@ -109,9 +122,8 @@ export function TesseraUpload({
 				}
 
 				if (isDimensionLimitExceeded(dims.width, dims.height)) {
-					const error = new Error(
-						getDimensionErrorMessage(dims.width, dims.height),
-					);
+					const errorMsg = getDimensionErrorMessage(dims.width, dims.height);
+					const error = new Error(errorMsg);
 					trackError("tessera_dimension_limit", error, {
 						fileName: file.name,
 						width: dims.width,
@@ -121,7 +133,7 @@ export function TesseraUpload({
 						file,
 						fileName: file.name,
 						isValid: false,
-						error: error.message,
+						error: errorMsg,
 						isLowResolution: false,
 						previewUrl: null,
 					});
@@ -210,6 +222,12 @@ export function TesseraUpload({
 					Supported formats: JPEG, PNG, WebP
 				</p>
 			</fieldset>
+
+			{errorMessage && (
+				<article {...stylex.props(base.card, styles.errorAlert)} role="alert">
+					{errorMessage}
+				</article>
+			)}
 
 			{isProcessing && (
 				<article
