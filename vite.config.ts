@@ -20,9 +20,7 @@ export default defineConfig(({ mode, command }) => {
 	const base = "/mosaic-maker/";
 
 	const define = {
-		"import.meta.env.VITE_APP_VERSION": JSON.stringify(
-			env.VITE_APP_VERSION || packageVersion,
-		),
+		"import.meta.env.VITE_APP_VERSION": JSON.stringify(packageVersion),
 		"import.meta.env.VITE_APP_COMMIT": JSON.stringify(
 			env.VITE_APP_COMMIT || commitSha,
 		),
