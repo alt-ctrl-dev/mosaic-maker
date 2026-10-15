@@ -66,7 +66,7 @@ export async function generateMosaic(
 	progressCallback?: ProgressCallback,
 ): Promise<MosaicResult> {
 	if (tesseraSize <= 0) {
-		throw new Error("Tessera size must be positive");
+		throw new Error("Tile size must be positive");
 	}
 
 	if (sourceImage.width <= 0 || sourceImage.height <= 0) {

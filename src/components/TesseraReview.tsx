@@ -118,7 +118,7 @@ export function TesseraReview({
 	return (
 		<div>
 			<div aria-live="polite" aria-atomic="true" {...stylex.props(base.srOnly)}>
-				Tessera counts updated: {validCount} valid, {rejectedCount} rejected
+				Tile counts updated: {validCount} valid, {rejectedCount} rejected
 			</div>
 			{isLowVariety && varietyRecommendation && (
 				<article
@@ -144,7 +144,7 @@ export function TesseraReview({
 
 			<details {...stylex.props(base.details)} open={open}>
 				<summary {...stylex.props(base.summary)}>
-					Review tesserae ({validCount} valid, {rejectedCount} rejected)
+					Review tiles ({validCount} valid, {rejectedCount} rejected)
 				</summary>
 
 				<div {...stylex.props(styles.grid)}>

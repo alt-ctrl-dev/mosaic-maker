@@ -180,7 +180,7 @@ export function GenerateAndPreview({
 
 	const handleGenerate = async () => {
 		if (!state.sourceImage || !state.adjustedTesseraSize) {
-			setError("Missing source image or tessera size");
+			setError("Missing source image or tile size");
 			return;
 		}
 
@@ -466,8 +466,8 @@ export function GenerateAndPreview({
 
 					{!canGenerate && (
 						<p {...stylex.props(base.paragraph)}>
-							Please ensure you have a source image, tessera size, and tesserae
-							before generating.
+							Please ensure you have a source image, tile size, and tiles before
+							generating.
 						</p>
 					)}
 

@@ -198,7 +198,7 @@ export function TesseraUpload({
 		>
 			<fieldset
 				{...stylex.props(base.fieldset, styles.controlGroup)}
-				aria-label="Upload Tesserae"
+				aria-label="Upload tiles"
 			>
 				<legend {...stylex.props(base.legend)}>Upload your own images</legend>
 				<div
@@ -213,7 +213,7 @@ export function TesseraUpload({
 						onChange={(e) => handleFileChange(e.target.files)}
 						multiple
 						disabled={isProcessing}
-						aria-label="Upload tesserae images"
+						aria-label="Upload tile images"
 						{...stylex.props(base.fileInput, base.focusOutline)}
 					/>
 				</div>
@@ -235,7 +235,7 @@ export function TesseraUpload({
 					className={`processing-indicator ${processingProps.className}`}
 					aria-busy="true"
 				>
-					Processing tesserae...
+					Processing tiles...
 				</article>
 			)}
 		</section>

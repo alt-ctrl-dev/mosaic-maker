@@ -164,7 +164,7 @@ export function TesseraSizeSelection({
 		<div>
 			<div>
 				<label htmlFor="tessera-size" {...stylex.props(base.label)}>
-					Tessera size (pixels):
+					Tile size (pixels):
 				</label>
 				<input
 					id="tessera-size"
@@ -185,7 +185,7 @@ export function TesseraSizeSelection({
 					</p>
 					{requestedSize !== adjustedSize && (
 						<p {...stylex.props(base.paragraph)}>
-							Adjusted to fit within the valid tessera size range.
+							Adjusted to fit within the valid tile size range.
 						</p>
 					)}
 				</div>
@@ -196,7 +196,7 @@ export function TesseraSizeSelection({
 					<div {...stylex.props(styles.gridPreview)}>
 						<img
 							src={sourceImage.url}
-							alt="Source under the construction grid at the selected tessera size"
+							alt="Source under the construction grid at the selected tile size"
 							{...stylex.props(styles.gridPreviewImage)}
 						/>
 						<div

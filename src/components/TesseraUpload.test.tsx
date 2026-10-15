@@ -77,7 +77,7 @@ describe("TesseraUpload", () => {
 			{ type: "image/jpeg" },
 		);
 
-		const input = screen.getByLabelText("Upload tesserae images");
+		const input = screen.getByLabelText("Upload tile images");
 		fireEvent.change(input, { target: { files: [largeFile] } });
 
 		await waitFor(() => {
@@ -104,7 +104,7 @@ describe("TesseraUpload", () => {
 				}),
 		);
 
-		const input = screen.getByLabelText("Upload tesserae images");
+		const input = screen.getByLabelText("Upload tile images");
 		fireEvent.change(input, { target: { files } });
 
 		await waitFor(() => {
@@ -136,7 +136,7 @@ describe("TesseraUpload", () => {
 			}),
 		];
 
-		const input = screen.getByLabelText("Upload tesserae images");
+		const input = screen.getByLabelText("Upload tile images");
 		fireEvent.change(input, { target: { files: largeFiles } });
 
 		await waitFor(() => {

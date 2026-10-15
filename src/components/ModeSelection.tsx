@@ -17,7 +17,7 @@ interface ModeSelectionProps {
 /** Human-readable descriptions for each mosaic mode. */
 const MODE_DESCRIPTIONS: Record<MosaicMode, string> = {
 	photomosaic:
-		"Create a traditional photomosaic using your uploaded images as tesserae",
+		"Create a traditional photomosaic using your uploaded images as tiles",
 	brick:
 		"Create a mosaic using a limited color palette, rendered as flat squares",
 };

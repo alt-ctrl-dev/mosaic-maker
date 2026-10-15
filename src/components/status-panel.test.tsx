@@ -119,7 +119,7 @@ describe("Status panels use the shared card styling", () => {
 			/>,
 		);
 
-		const input = screen.getByLabelText("Upload tesserae images");
+		const input = screen.getByLabelText("Upload tile images");
 		const file = new File(["x"], "tessera.png", { type: "image/png" });
 		fireEvent.change(input, { target: { files: [file] } });
 

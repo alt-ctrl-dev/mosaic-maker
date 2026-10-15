@@ -45,7 +45,7 @@ describe("TesseraReview", () => {
 		const summaryElement = container.querySelector("summary");
 		expect(summaryElement).toBeTruthy();
 		expect(summaryElement?.textContent).toContain(
-			"Review tesserae (2 valid, 1 rejected)",
+			"Review tiles (2 valid, 1 rejected)",
 		);
 
 		const detailsElement = container.querySelector("details");

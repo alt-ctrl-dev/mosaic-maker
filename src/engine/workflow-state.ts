@@ -132,7 +132,7 @@ export enum WorkflowStep {
 export const WORKFLOW_STEP_TITLES = [
 	"Choose mode",
 	"Choose source image",
-	"Build tesserae",
+	"Build tiles",
 	"Generate and preview",
 	"Export mosaic",
 ] as const;

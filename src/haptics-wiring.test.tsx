@@ -78,7 +78,7 @@ describe("haptic feedback at workflow milestones", () => {
 			/>,
 		);
 
-		const input = screen.getByLabelText("Upload tesserae images");
+		const input = screen.getByLabelText("Upload tile images");
 		fireEvent.change(input, {
 			target: {
 				files: [new File(["x"], "tessera.png", { type: "image/png" })],

@@ -88,7 +88,7 @@ describe("SourceImageSelection state persistence", () => {
 		);
 
 		expect(
-			screen.getByRole("button", { name: /continue to build tesserae/i }),
+			screen.getByRole("button", { name: /continue to build tiles/i }),
 		).toBeInTheDocument();
 	});
 });

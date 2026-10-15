@@ -5,7 +5,7 @@ import { App } from "./App";
 const EXPECTED_STEP_TITLES = [
 	"Choose mode",
 	"Choose source image",
-	"Build tesserae",
+	"Build tiles",
 	"Generate and preview",
 	"Export mosaic",
 ] as const;
@@ -28,7 +28,7 @@ describe("workflow navigation", () => {
 		const labels = stepButtons.map((button) => {
 			const title = within(button)
 				.getByText(
-					/^(Choose mode|Choose source image|Build tesserae|Generate and preview|Export mosaic)$/,
+					/^(Choose mode|Choose source image|Build tiles|Generate and preview|Export mosaic)$/,
 				)
 				.textContent?.trim();
 			return title;
@@ -50,14 +50,14 @@ describe("workflow navigation", () => {
 
 		// Choose mode is now completed and shows a checkmark.
 		const completedStep = getStepButtons()[0];
-		expect(within(completedStep).getByText("✓")).toBeInTheDocument();
+		expect(completedStep.querySelector("svg")).not.toBeNull();
 
-		// Navigate back to Choose mode.
-		fireEvent.click(screen.getByRole("button", { name: "← Back" }));
+		// Navigate back to Choose mode via the step rack.
+		fireEvent.click(completedStep);
 
 		// The checkmark survives the backward navigation.
 		const currentStep = getStepButtons()[0];
 		expect(currentStep).toHaveAttribute("aria-current", "step");
-		expect(within(currentStep).getByText("✓")).toBeInTheDocument();
+		expect(currentStep.querySelector("svg")).not.toBeNull();
 	});
 });

@@ -105,7 +105,7 @@ export function BrickColorPicker({
 							<div key={color}>
 								<img
 									src={renderBrick(color)}
-									alt={`Brick tessera ${color}`}
+									alt={`Brick tile ${color}`}
 									title={color}
 									{...stylex.props(base.brickPreview)}
 								/>

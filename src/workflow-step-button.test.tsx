@@ -19,7 +19,7 @@ describe("workflow-step-button styling", () => {
 		expect(declaredValuesFor(button, "color")).toContain(tokens.text);
 	});
 
-	it("styles completed and disabled steps with distinct opacity", () => {
+	it("styles completed and disabled steps distinctly", () => {
 		render(<App />);
 
 		// Advance so the first step becomes completed.
@@ -32,7 +32,7 @@ describe("workflow-step-button styling", () => {
 		const completedStep = stepButtons[0];
 		const disabledStep = stepButtons[2];
 
-		expect(declaredValuesFor(completedStep, "opacity")).toContain("0.7");
-		expect(declaredValuesFor(disabledStep, "opacity")).toContain("0.3");
+		expect(declaredValuesFor(completedStep, "color")).toContain(tokens.valid);
+		expect(declaredValuesFor(disabledStep, "color")).toContain(tokens.muted);
 	});
 });

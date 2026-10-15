@@ -25,7 +25,7 @@ describe("BrickColorPicker", () => {
 		);
 
 		// Find the selected brick image
-		const brickImage = screen.getByAltText("Brick tessera #FF0000");
+		const brickImage = screen.getByAltText("Brick tile #FF0000");
 		expect(brickImage).toBeInTheDocument();
 
 		// Assert that the image has bounded size styles
