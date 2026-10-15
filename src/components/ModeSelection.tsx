@@ -98,7 +98,7 @@ export function ModeSelection({
 			</div>
 
 			<ActionButton type="button" onClick={onContinue}>
-				Continue
+				Continue to Choose source image →
 			</ActionButton>
 		</div>
 	);

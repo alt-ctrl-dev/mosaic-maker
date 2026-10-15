@@ -104,7 +104,7 @@ function openNewTabForLaterPopulation(): {
 		return {
 			populate: () => {},
 			error:
-				'Popup blocked. To save the image, please tap the share button and choose "Save Image".',
+				"Popup blocked. To save the image, please use your browser's share or save functionality.",
 		};
 	}
 
@@ -203,6 +203,7 @@ function exportButtonLabel(isExporting: boolean, canShare: boolean): string {
  */
 export function ExportMosaic({ state, dispatch }: ExportMosaicProps) {
 	const [isExporting, setIsExporting] = useState(false);
+	const [isExported, setIsExported] = useState(false);
 
 	const [error, setError] = useState<string | null>(null);
 	const canShare = supportsWebShare();
@@ -281,6 +282,7 @@ export function ExportMosaic({ state, dispatch }: ExportMosaicProps) {
 			height: mosaicResult.height,
 			delivery: useAnchorDownload ? "anchor" : "new-tab-populated",
 		});
+		setIsExported(true);
 	};
 
 	const handleExport = async () => {
@@ -291,6 +293,7 @@ export function ExportMosaic({ state, dispatch }: ExportMosaicProps) {
 		}
 
 		setIsExporting(true);
+		setIsExported(false);
 		setError(null);
 
 		// Prepare the download delivery path up front. On iOS/iPadOS a tab must be
@@ -366,7 +369,21 @@ export function ExportMosaic({ state, dispatch }: ExportMosaicProps) {
 							{...stylex.props(styles.mosaicPreview)}
 						/>
 					</div>
-					<details {...stylex.props(base.details)}>
+					<p {...stylex.props(base.paragraph)}>
+						<strong>Export:</strong> {state.exportFormat.toUpperCase()} ·{" "}
+						{state.mosaicResult.width} × {state.mosaicResult.height} pixels ·
+						Approx.{" "}
+						{((state.mosaicResult.dataUrl.length * 0.75) / 1024 / 1024).toFixed(
+							1,
+						)}{" "}
+						MB
+					</p>
+					<details
+						{...stylex.props(base.details)}
+						open={
+							state.exportFormat === "jpeg" || state.exportFormat === "webp"
+						}
+					>
 						<summary {...stylex.props(base.summary)}>Export Settings</summary>
 						<div {...stylex.props(styles.detailsContent)}>
 							<fieldset {...stylex.props(base.fieldset, styles.settingGroup)}>
@@ -478,6 +495,11 @@ export function ExportMosaic({ state, dispatch }: ExportMosaicProps) {
 								role="alert"
 							>
 								<strong>Error:</strong> {error}
+							</article>
+						)}
+						{isExported && (
+							<article {...stylex.props(base.card)} role="status">
+								<strong>Success!</strong> Your mosaic has been exported.
 							</article>
 						)}
 					</div>
