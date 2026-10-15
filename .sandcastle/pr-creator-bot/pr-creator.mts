@@ -1,7 +1,10 @@
 import { z } from "zod";
-import {  createPr, generatePrDescription } from "../sandcastle-bot/pr.mts";
+import { createPr, generatePrDescription } from "../sandcastle-bot/pr.mts";
 import { dockerSandbox } from "../shared/docker.mts";
 import { spawnSync } from "child_process";
+import { requireAuthorizedActor } from "../shared/auth.mts";
+
+requireAuthorizedActor();
 
 const revParseResult = spawnSync("git", ["rev-parse", "--abbrev-ref", "HEAD"], { encoding: "utf-8" });
 if (revParseResult.status !== 0) {

@@ -10,9 +10,13 @@
 import * as sandcastle from "@ai-hero/sandcastle";
 import { dockerSandbox } from "../shared/docker.mts";
 import { getOpenIssuesNeedingTriage } from "./triage.mts";
+import { requireAuthorizedActor } from "../shared/auth.mts";
+import { canStartRequest, startRequestTracking } from "../shared/rate-limit.mts";
 
 async function main() {
   console.log("Starting Triage Bot...");
+
+  requireAuthorizedActor();
 
   const issues = getOpenIssuesNeedingTriage();
 
@@ -25,19 +29,33 @@ async function main() {
 
   const results = await Promise.allSettled(
     issues.map(async (issue) => {
+      // Check rate limits before proceeding
+      if (!canStartRequest()) {
+        console.error(`Skipping issue #${issue.number} due to execution budget limits`);
+        throw new Error("Execution budget exceeded");
+      }
+
       console.log(`\nTriaging issue #${issue.number}: ${issue.title}`);
 
-      await sandcastle.run({
-        sandbox: dockerSandbox,
-        name: `triage-issue-${issue.number}`,
-        agent: sandcastle.pi("openrouter/anthropic/claude-opus-4.8"),
-        promptFile: "./.sandcastle/triage-bot/triage-prompt.md",
-        promptArgs: {
-          ISSUE_NUMBER: issue.number.toString(),
-          ISSUE_TITLE: issue.title,
-        },
-        completionSignal: "<promise>COMPLETE</promise>",
-      });
+      // Track request for rate limiting
+      const requestId = `triage-${issue.number}-${Date.now()}`;
+      const stopTracking = startRequestTracking(requestId);
+
+      try {
+        await sandcastle.run({
+          sandbox: dockerSandbox,
+          name: `triage-issue-${issue.number}`,
+          agent: sandcastle.pi("openrouter/anthropic/claude-opus-4.8"),
+          promptFile: "./.sandcastle/triage-bot/triage-prompt.md",
+          promptArgs: {
+            ISSUE_NUMBER: issue.number.toString(),
+            ISSUE_TITLE: issue.title,
+          },
+          completionSignal: "<promise>COMPLETE</promise>",
+        });
+      } finally {
+        stopTracking();
+      }
 
       return issue.number;
     }),
