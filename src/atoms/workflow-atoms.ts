@@ -56,8 +56,12 @@ export const requestedTesseraSizeAtom = atom<number>(DEFAULT_TESSERA_SIZE);
 export const tesseraeAtom = atom<TesseraInfo[]>([]);
 /** Whether the user accepted supplementing with generated tesserae. */
 export const hasAcceptedSupplementationAtom = atom(false);
-/** Seed for reproducible noise tessera generation. */
-export const seedAtom = atom<number | null>(null);
+/**
+ * Seed for reproducible noise tessera generation. Defaults to a random
+ * value, so every session starts reproducible from whatever the store
+ * holds.
+ */
+export const seedAtom = atom<number>(Math.floor(Math.random() * SEED_MAX));
 /** Explicit count of tesserae to generate. */
 export const generatedTesseraCountAtom = atom<number | null>(null);
 /** The generated mosaic result, set after generation completes. */
@@ -185,7 +189,7 @@ export const selectModeAtom = atom(null, (get, set, mode: MosaicMode) => {
 	// Tesserae from the other mode don't carry over; keep the source image.
 	set(tesseraeAtom, []);
 	set(hasAcceptedSupplementationAtom, false);
-	set(seedAtom, null);
+	set(seedAtom, Math.floor(Math.random() * SEED_MAX));
 	set(generatedTesseraCountAtom, null);
 	set(mosaicResultAtom, null);
 });
@@ -300,7 +304,7 @@ export const acceptSupplementationAtom = atom(null, async (get, set) => {
 		adjustedTesseraSize,
 		varietyRecommendation,
 		validTesseraCount: get(validTesseraCountAtom),
-		seed: get(seedAtom) ?? Math.floor(Math.random() * SEED_MAX),
+		seed: get(seedAtom),
 	});
 
 	set(tesseraeAtom, [...get(tesseraeAtom), ...supplemented]);
@@ -360,7 +364,7 @@ export function hydrateWorkflowStore(
 	if (state.tesserae !== undefined) store.set(tesseraeAtom, state.tesserae);
 	if (state.hasAcceptedSupplementation !== undefined)
 		store.set(hasAcceptedSupplementationAtom, state.hasAcceptedSupplementation);
-	if (state.seed !== undefined) store.set(seedAtom, state.seed);
+	if (typeof state.seed === "number") store.set(seedAtom, state.seed);
 	if (state.generatedTesseraCount !== undefined)
 		store.set(generatedTesseraCountAtom, state.generatedTesseraCount);
 	if (state.mosaicResult !== undefined)

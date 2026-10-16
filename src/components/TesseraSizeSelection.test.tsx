@@ -78,21 +78,32 @@ describe("TesseraSizeSelection", () => {
 		expect(widthPct).toBeGreaterThan(singleCellPct);
 	});
 
-	it("debounces the size commit when the slider value changes", () => {
+	it("debounces the size commit when the slider value changes", async () => {
+		const telemetry = await import("../telemetry");
+		const trackEvent = vi.spyOn(telemetry, "trackEvent");
 		vi.useFakeTimers();
 		const { store } = renderSizeSelection();
+		trackEvent.mockClear();
 
 		const rangeInput = screen.getByRole("slider");
 		fireEvent.change(rangeInput, { target: { value: "32" } });
 
-		// Should not be committed immediately (debounced)
-		expect(store.get(requestedTesseraSizeAtom)).toBe(16);
+		// The draft lands in the atom immediately…
+		expect(store.get(requestedTesseraSizeAtom)).toBe(32);
+		// …but the commit side effect waits for the debounce.
+		expect(trackEvent).not.toHaveBeenCalledWith(
+			"tessera_size_changed",
+			expect.anything(),
+		);
 
 		// Advance timers to allow debounce to complete
 		vi.advanceTimersByTime(300);
 
-		// Should be committed after debounce
-		expect(store.get(requestedTesseraSizeAtom)).toBe(32);
+		// Committed once after debounce
+		expect(trackEvent).toHaveBeenCalledWith("tessera_size_changed", {
+			size: 32,
+		});
+		trackEvent.mockRestore();
 		vi.useRealTimers();
 	});
 });

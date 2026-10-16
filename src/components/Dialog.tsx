@@ -1,5 +1,7 @@
 import * as stylex from "@stylexjs/stylex";
-import { useState, type PropsWithChildren } from "react";
+import { useAtom } from "jotai";
+import type { PropsWithChildren } from "react";
+import { dialogOpenAtom } from "../atoms/ui-atoms";
 import { tokens } from "../styles/tokens.stylex";
 import { trackEvent } from "../telemetry";
 
@@ -121,7 +123,7 @@ export const Dialog = ({
 	// Drives the hamburger/X icon morph that the old CSS attached to
 	// `body:has(dialog[open])`; the popover's toggle event keeps it in sync
 	// with native opens/closes (Escape, outside click, command buttons).
-	const [isOpen, setIsOpen] = useState(false);
+	const [isOpen, setIsOpen] = useAtom(dialogOpenAtom);
 
 	return (
 		<>

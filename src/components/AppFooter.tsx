@@ -1,8 +1,9 @@
 import * as stylex from "@stylexjs/stylex";
-import { useEffect, useState } from "react";
+import { useAtom } from "jotai";
+import { telemetryConsentAtom } from "../atoms/ui-atoms";
 import { base } from "../styles/base.stylex";
 import { tokens } from "../styles/tokens.stylex";
-import { hasTelemetryConsent, setTelemetryConsent } from "../telemetry";
+
 import { VERSION_STRING } from "../version";
 
 const styles = stylex.create({
@@ -28,11 +29,8 @@ const styles = stylex.create({
 
 /** Application footer showing the build version. */
 export function AppFooter() {
-	const [consent, setConsent] = useState(hasTelemetryConsent());
-
-	useEffect(() => {
-		setTelemetryConsent(consent);
-	}, [consent]);
+	// atomWithStorage persists the preference to localStorage on write.
+	const [consent, setConsent] = useAtom(telemetryConsentAtom);
 
 	const handleConsentChange = (event: React.ChangeEvent<HTMLInputElement>) => {
 		setConsent(event.target.checked);

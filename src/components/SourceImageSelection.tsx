@@ -1,7 +1,11 @@
 import * as stylex from "@stylexjs/stylex";
-import { useAtomValue, useSetAtom } from "jotai";
+import { useAtom, useAtomValue, useSetAtom } from "jotai";
 import type React from "react";
-import { useCallback, useEffect, useRef, useState } from "react";
+import { useCallback, useEffect, useRef } from "react";
+import {
+	isSelectingSourceAtom,
+	isSourceDragActiveAtom,
+} from "../atoms/ui-atoms";
 import {
 	reportSourceErrorAtom,
 	selectSourceImageAtom,
@@ -85,8 +89,8 @@ export function SourceImageSelection() {
 	const sourceImageError = useAtomValue(sourceImageErrorAtom);
 	const selectSourceImage = useSetAtom(selectSourceImageAtom);
 	const reportSourceError = useSetAtom(reportSourceErrorAtom);
-	const [isProcessing, setIsProcessing] = useState(false);
-	const [isDragging, setIsDragging] = useState(false);
+	const [isProcessing, setIsProcessing] = useAtom(isSelectingSourceAtom);
+	const [isDragging, setIsDragging] = useAtom(isSourceDragActiveAtom);
 	const dragDepth = useRef(0);
 
 	useEffect(() => {
@@ -153,20 +157,23 @@ export function SourceImageSelection() {
 				setIsProcessing(false);
 			}
 		},
-		[selectSourceImage, reportSourceError],
+		[selectSourceImage, reportSourceError, setIsProcessing],
 	);
 
-	const handleDragEnter = useCallback((e: React.DragEvent) => {
-		e.preventDefault();
-		// Depth counter: enter/leave also fire for the drop zone's children.
-		dragDepth.current += 1;
-		setIsDragging(true);
-	}, []);
+	const handleDragEnter = useCallback(
+		(e: React.DragEvent) => {
+			e.preventDefault();
+			// Depth counter: enter/leave also fire for the drop zone's children.
+			dragDepth.current += 1;
+			setIsDragging(true);
+		},
+		[setIsDragging],
+	);
 
 	const handleDragLeave = useCallback(() => {
 		dragDepth.current = Math.max(0, dragDepth.current - 1);
 		if (dragDepth.current === 0) setIsDragging(false);
-	}, []);
+	}, [setIsDragging]);
 
 	const handleDragOver = useCallback((e: React.DragEvent) => {
 		e.preventDefault();
@@ -181,7 +188,7 @@ export function SourceImageSelection() {
 			setIsDragging(false);
 			handleFileChange(e.dataTransfer.files);
 		},
-		[handleFileChange],
+		[handleFileChange, setIsDragging],
 	);
 
 	const errorPanelProps = stylex.props(base.card);

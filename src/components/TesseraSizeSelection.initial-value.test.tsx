@@ -7,6 +7,21 @@ import {
 } from "../atoms/workflow-atoms";
 import { TesseraSizeSelection } from "./TesseraSizeSelection";
 
+// The commit's observable side effect is resizing existing tiles.
+vi.mock("../engine/tessera-processing", () => ({
+	resizeTesserae: vi.fn().mockResolvedValue([]),
+	processTesserae: vi.fn().mockResolvedValue([]),
+}));
+
+const existingTessera = {
+	file: new File([], "tile.png", { type: "image/png" }),
+	fileName: "tile.png",
+	isValid: true,
+	error: null,
+	isLowResolution: false,
+	previewUrl: null,
+};
+
 describe("TesseraSizeSelection initial value registration", () => {
 	const mockInitialState = {
 		sourceImage: {
@@ -15,6 +30,7 @@ describe("TesseraSizeSelection initial value registration", () => {
 			height: 100,
 			orientation: 1,
 		},
+		tesserae: [existingTessera],
 	};
 
 	function renderSizeSelection() {
@@ -40,7 +56,9 @@ describe("TesseraSizeSelection initial value registration", () => {
 		expect(store.get(requestedTesseraSizeAtom)).toBe(16);
 	});
 
-	it("debounces the size commit when user changes slider value", () => {
+	it("debounces the size commit when user changes slider value", async () => {
+		const { resizeTesserae } = await import("../engine/tessera-processing");
+		vi.mocked(resizeTesserae).mockClear();
 		vi.useFakeTimers();
 		const { store } = renderSizeSelection();
 
@@ -48,14 +66,17 @@ describe("TesseraSizeSelection initial value registration", () => {
 
 		fireEvent.change(rangeInput, { target: { value: "32" } });
 
-		// Should not be committed immediately (debounced)
-		expect(store.get(requestedTesseraSizeAtom)).toBe(16);
+		// The draft lands in the atom immediately…
+		expect(store.get(requestedTesseraSizeAtom)).toBe(32);
+		// …but the commit side effect waits for the debounce.
+		expect(resizeTesserae).not.toHaveBeenCalled();
 
 		// Advance timers to allow debounce to complete
 		vi.advanceTimersByTime(300);
 
-		// Should be committed after debounce
-		expect(store.get(requestedTesseraSizeAtom)).toBe(32);
+		// Committed after debounce
+		expect(resizeTesserae).toHaveBeenCalledTimes(1);
+		expect(resizeTesserae).toHaveBeenCalledWith([existingTessera], 32);
 		vi.useRealTimers();
 	});
 });

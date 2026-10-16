@@ -1,6 +1,7 @@
 import * as stylex from "@stylexjs/stylex";
 import { useAtom, useAtomValue } from "jotai";
 import { useEffect, useState } from "react";
+import { exportErrorAtom, isExportingAtom } from "../atoms/ui-atoms";
 import {
 	exportBackgroundColorAtom,
 	exportFormatAtom,
@@ -218,10 +219,10 @@ export function ExportMosaic() {
 	const [exportBackgroundColor, setExportBackgroundColor] = useAtom(
 		exportBackgroundColorAtom,
 	);
-	const [isExporting, setIsExporting] = useState(false);
+	const [isExporting, setIsExporting] = useAtom(isExportingAtom);
 	const [isDelivered, setIsDelivered] = useState(false);
 
-	const [error, setError] = useState<string | null>(null);
+	const [error, setError] = useAtom(exportErrorAtom);
 	const canShare = supportsWebShare();
 
 	useEffect(() => {

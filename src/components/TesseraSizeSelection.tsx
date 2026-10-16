@@ -1,20 +1,17 @@
 import * as stylex from "@stylexjs/stylex";
-import { useAtomValue, useSetAtom } from "jotai";
+import { useAtom, useAtomValue, useSetAtom } from "jotai";
 import type React from "react";
-import { useEffect, useRef, useState } from "react";
+import { useEffect, useRef } from "react";
 import {
+	adjustedTesseraSizeAtom,
 	commitTesseraSizeAtom,
+	gridCellCountAtom,
 	hasValidSourceDimensionsAtom,
+	isCoarseGridAtom,
 	requestedTesseraSizeAtom,
 	sourceImageAtom,
 } from "../atoms/workflow-atoms";
-import {
-	calculateAdjustedTesseraSize,
-	calculateGridCellCount,
-	isCoarseGrid,
-	MAX_TESSERA_SIZE,
-	MIN_TESSERA_SIZE,
-} from "../engine/tessera-sizing";
+import { MAX_TESSERA_SIZE, MIN_TESSERA_SIZE } from "../engine/tessera-sizing";
 import { base } from "../styles/base.stylex";
 import { tokens } from "../styles/tokens.stylex";
 import { trackEvent, trackStepView } from "../telemetry";
@@ -67,31 +64,14 @@ const styles = stylex.create({
 export function TesseraSizeSelection() {
 	const sourceImage = useAtomValue(sourceImageAtom);
 	const hasValidSourceDimensions = useAtomValue(hasValidSourceDimensionsAtom);
-	const initialRequestedSize = useAtomValue(requestedTesseraSizeAtom);
+	// The slider is bound straight to the atom: the derived adjusted size and
+	// grid metrics follow live, and only the expensive commit (step advance,
+	// tile resize) is debounced.
+	const [requestedSize, setRequestedSize] = useAtom(requestedTesseraSizeAtom);
+	const adjustedSize = useAtomValue(adjustedTesseraSizeAtom);
+	const gridCellCount = useAtomValue(gridCellCountAtom);
+	const isCoarse = useAtomValue(isCoarseGridAtom);
 	const commitTesseraSize = useSetAtom(commitTesseraSizeAtom);
-	const [requestedSize, setRequestedSize] = useState(initialRequestedSize);
-
-	// Derived during render, not in an effect, so the preview never shows a
-	// stale one-render-behind size.
-	const adjustedSize =
-		sourceImage && hasValidSourceDimensions
-			? calculateAdjustedTesseraSize(
-					requestedSize,
-					sourceImage.width,
-					sourceImage.height,
-				)
-			: null;
-
-	const gridCellCount =
-		adjustedSize !== null && sourceImage
-			? calculateGridCellCount(
-					adjustedSize,
-					sourceImage.width,
-					sourceImage.height,
-				)
-			: null;
-
-	const isCoarse = gridCellCount !== null && isCoarseGrid(gridCellCount);
 
 	// The ceiling is engine truth: no tessera larger than the source's
 	// short side, and never larger than the product max. 100 covers the

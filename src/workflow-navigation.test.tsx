@@ -15,7 +15,8 @@ vi.mock("./engine/image-processing", () => ({
 
 const EXPECTED_STEP_TITLES = [
 	"Choose source image",
-	"Build tiles",
+	"Pick tile size",
+	"Pick tiles",
 	"Generate and preview",
 	"Export mosaic",
 ] as const;
@@ -38,7 +39,7 @@ describe("workflow navigation", () => {
 		const labels = stepButtons.map((button) => {
 			const title = within(button)
 				.getByText(
-					/^(Choose source image|Build tiles|Generate and preview|Export mosaic)$/,
+					/^(Choose source image|Pick tile size|Pick tiles|Generate and preview|Export mosaic)$/,
 				)
 				.textContent?.trim();
 			return title;

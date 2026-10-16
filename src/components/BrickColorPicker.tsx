@@ -1,6 +1,9 @@
 import * as stylex from "@stylexjs/stylex";
-import { useAtomValue, useSetAtom } from "jotai";
-import { useState } from "react";
+import { useAtom, useAtomValue, useSetAtom } from "jotai";
+import {
+	activeBrickPaletteAtom,
+	customBrickColorAtom,
+} from "../atoms/ui-atoms";
 import { replaceTesseraeAtom, tesseraeAtom } from "../atoms/workflow-atoms";
 import { renderBrick } from "../engine/brick";
 import { createBrickTesserae } from "../engine/workflow-state";
@@ -55,8 +58,8 @@ export function BrickColorPicker() {
 	const selectedColors = tesserae
 		.map((tessera) => tessera.color)
 		.filter((color): color is string => color !== undefined);
-	const [customColor, setCustomColor] = useState("#FF0000");
-	const [activePalette, setActivePalette] = useState<number | null>(null);
+	const [customColor, setCustomColor] = useAtom(customBrickColorAtom);
+	const [activePalette, setActivePalette] = useAtom(activeBrickPaletteAtom);
 
 	const updateColors = (next: string[]) => {
 		replaceTesserae(createBrickTesserae(next));

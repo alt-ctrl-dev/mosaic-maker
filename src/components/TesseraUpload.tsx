@@ -1,7 +1,8 @@
 import * as stylex from "@stylexjs/stylex";
-import { useAtomValue, useSetAtom } from "jotai";
+import { useAtom, useAtomValue, useSetAtom } from "jotai";
 import type React from "react";
-import { useCallback, useEffect, useState } from "react";
+import { useCallback, useEffect } from "react";
+import { isProcessingUploadAtom, uploadErrorAtom } from "../atoms/ui-atoms";
 import {
 	replaceTesseraeAtom,
 	resolvedTesseraSizeAtom,
@@ -49,8 +50,8 @@ export function TesseraUpload() {
 	const adjustedTesseraSize = useAtomValue(resolvedTesseraSizeAtom);
 	const currentTesserae = useAtomValue(tesseraeAtom);
 	const replaceTesserae = useSetAtom(replaceTesseraeAtom);
-	const [isProcessing, setIsProcessing] = useState(false);
-	const [errorMessage, setErrorMessage] = useState<string | null>(null);
+	const [isProcessing, setIsProcessing] = useAtom(isProcessingUploadAtom);
+	const [errorMessage, setErrorMessage] = useAtom(uploadErrorAtom);
 
 	useEffect(() => {
 		trackStepView("tessera_upload");
@@ -159,7 +160,13 @@ export function TesseraUpload() {
 				setIsProcessing(false);
 			}
 		},
-		[adjustedTesseraSize, currentTesserae, replaceTesserae],
+		[
+			adjustedTesseraSize,
+			currentTesserae,
+			replaceTesserae,
+			setIsProcessing,
+			setErrorMessage,
+		],
 	);
 
 	const handleDragOver = useCallback((e: React.DragEvent) => {

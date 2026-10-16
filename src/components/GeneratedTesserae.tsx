@@ -1,6 +1,7 @@
 import * as stylex from "@stylexjs/stylex";
 import { useAtom, useAtomValue, useSetAtom } from "jotai";
-import { useEffect, useState } from "react";
+import { useEffect } from "react";
+import { isGeneratingTilesAtom } from "../atoms/ui-atoms";
 import {
 	adjustedTesseraSizeAtom,
 	appendGeneratedTesseraeAtom,
@@ -64,17 +65,13 @@ function computeDefaultTesseraCount(
 export function GeneratedTesserae() {
 	const sourceImage = useAtomValue(sourceImageAtom);
 	const adjustedTesseraSize = useAtomValue(adjustedTesseraSizeAtom);
-	const stateSeed = useAtomValue(seedAtom);
+	const [seed, setSeed] = useAtom(seedAtom);
 	const [generatedTesseraCount, setGeneratedTesseraCount] = useAtom(
 		generatedTesseraCountAtom,
 	);
+	const [isGenerating, setIsGenerating] = useAtom(isGeneratingTilesAtom);
 	const appendGeneratedTesserae = useSetAtom(appendGeneratedTesseraeAtom);
 
-	const [isGenerating, setIsGenerating] = useState(false);
-	// Local draft: needs a stable random value when no seed is stored.
-	const [seed, setSeed] = useState<number>(
-		stateSeed ?? Math.floor(Math.random() * SEED_MAX),
-	);
 	const count =
 		generatedTesseraCount ??
 		computeDefaultTesseraCount(sourceImage, adjustedTesseraSize);

@@ -1,6 +1,11 @@
 import * as stylex from "@stylexjs/stylex";
-import { useAtomValue, useSetAtom } from "jotai";
-import { useCallback, useEffect, useRef, useState } from "react";
+import { useAtom, useAtomValue, useSetAtom } from "jotai";
+import { useCallback, useEffect, useRef } from "react";
+import {
+	generationErrorAtom,
+	generationProgressAtom,
+	isGeneratingMosaicAtom,
+} from "../atoms/ui-atoms";
 import {
 	adjustedTesseraSizeAtom,
 	completeMosaicAtom,
@@ -140,12 +145,9 @@ export function GenerateAndPreview() {
 	const completeMosaic = useSetAtom(completeMosaicAtom);
 	const discardMosaic = useSetAtom(discardMosaicAtom);
 
-	const [isGenerating, setIsGenerating] = useState(false);
-	const [progress, setProgress] = useState<{
-		percent: number;
-		message: string;
-	} | null>(null);
-	const [error, setError] = useState<string | null>(null);
+	const [isGenerating, setIsGenerating] = useAtom(isGeneratingMosaicAtom);
+	const [progress, setProgress] = useAtom(generationProgressAtom);
+	const [error, setError] = useAtom(generationErrorAtom);
 
 	const beforeUnloadRef = useRef(onBeforeUnload);
 	const workerRef = useRef<Worker | null>(null);
