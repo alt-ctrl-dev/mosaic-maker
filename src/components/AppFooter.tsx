@@ -3,8 +3,8 @@ import { useAtom } from "jotai";
 import { telemetryConsentAtom } from "../atoms/ui-atoms";
 import { base } from "../styles/base.stylex";
 import { tokens } from "../styles/tokens.stylex";
-
 import { VERSION_STRING } from "../version";
+import { ThemeToggle } from "./ThemeToggle";
 
 const styles = stylex.create({
 	footer: {
@@ -55,6 +55,7 @@ export function AppFooter() {
 						Share anonymous usage data
 					</label>
 				</div>
+				<ThemeToggle />
 			</div>
 		</footer>
 	);
