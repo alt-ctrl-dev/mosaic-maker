@@ -43,12 +43,16 @@ describe("PickTiles", () => {
 		expect(screen.getByText(/of ~\d+ recommended/)).toBeInTheDocument();
 	});
 
-	it("clears all tiles", () => {
+	it("clears all tiles from inside the review accordion", () => {
+		// A rejected tile keeps the accordion open, where the clear action lives.
 		const { store } = renderWithWorkflow(<PickTiles />, {
-			tesserae: [mockTessera()],
+			tesserae: [mockTessera({ isValid: false, error: "Too small" })],
 		});
 
-		fireEvent.click(screen.getByRole("button", { name: "Clear all tiles" }));
+		const clearButton = screen.getByRole("button", { name: "Clear all tiles" });
+		expect(clearButton.closest("details")).not.toBeNull();
+
+		fireEvent.click(clearButton);
 
 		expect(store.get(tesseraeAtom)).toHaveLength(0);
 	});

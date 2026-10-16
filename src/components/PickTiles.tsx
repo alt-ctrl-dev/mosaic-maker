@@ -1,14 +1,12 @@
 import * as stylex from "@stylexjs/stylex";
-import { useAtomValue, useSetAtom } from "jotai";
+import { useAtomValue } from "jotai";
 import { useState } from "react";
 import {
-	clearTesseraeAtom,
 	tesseraeAtom,
 	validTesseraCountAtom,
 	varietyRecommendationAtom,
 } from "../atoms/workflow-atoms";
 import { tokens } from "../styles/tokens.stylex";
-import { ActionButton } from "./ActionButton";
 import { GeneratedTesserae } from "./GeneratedTesserae";
 import { TesseraReview } from "./TesseraReview";
 import { TesseraUpload } from "./TesseraUpload";
@@ -98,7 +96,6 @@ function ReadinessMeter() {
 export function PickTiles() {
 	const [path, setPath] = useState<TesseraPath>("upload");
 	const hasTesserae = useAtomValue(tesseraeAtom).length > 0;
-	const clearTesserae = useSetAtom(clearTesseraeAtom);
 
 	return (
 		<div {...stylex.props(styles.root)} data-testid="pick-tiles">
@@ -139,19 +136,7 @@ export function PickTiles() {
 			) : (
 				<GeneratedTesserae />
 			)}
-			{hasTesserae && (
-				<>
-					<ActionButton
-						type="button"
-						onClick={() => clearTesserae()}
-						variant="secondary"
-						style={{ alignSelf: "flex-start" }}
-					>
-						Clear all tiles
-					</ActionButton>
-					<TesseraReview />
-				</>
-			)}
+			{hasTesserae && <TesseraReview />}
 		</div>
 	);
 }

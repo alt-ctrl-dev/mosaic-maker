@@ -4,6 +4,7 @@ import { useEffect } from "react";
 import {
 	acceptSupplementationAtom,
 	advanceFromReviewAtom,
+	clearTesseraeAtom,
 	hasAcceptedSupplementationAtom,
 	isLowVarietyCollectionAtom,
 	removeTesseraAtom,
@@ -78,6 +79,7 @@ export function TesseraReview() {
 		hasAcceptedSupplementationAtom,
 	);
 	const removeTessera = useSetAtom(removeTesseraAtom);
+	const clearTesserae = useSetAtom(clearTesseraeAtom);
 	const acceptSupplementation = useSetAtom(acceptSupplementationAtom);
 	const advanceFromReview = useSetAtom(advanceFromReviewAtom);
 
@@ -188,6 +190,14 @@ export function TesseraReview() {
 						);
 					})}
 				</div>
+
+				<ActionButton
+					type="button"
+					onClick={() => clearTesserae()}
+					variant="secondary"
+				>
+					Clear all tiles
+				</ActionButton>
 			</details>
 
 			<div>
