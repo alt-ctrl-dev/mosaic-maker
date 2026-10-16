@@ -30,7 +30,7 @@ const styles = stylex.create({
 		padding: "1rem",
 	},
 	control: { marginBottom: "1rem" },
-	seedControl: { marginTop: "1rem" },
+	seedControl: { margin: "1rem" },
 	controlLabel: {
 		display: "block",
 		marginBottom: "0.5rem",
