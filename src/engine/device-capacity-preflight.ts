@@ -141,7 +141,7 @@ export function checkDeviceCapacity(
 			isSafe: false,
 			reason: `Estimated memory usage (${memoryMB} MB) exceeds device capacity threshold (${thresholdMB} MB)`,
 			remedy:
-				"Try using a larger tessera size to reduce the grid cell count, or use fewer tesserae",
+				"Try using a larger tile size to reduce the grid cell count, or use fewer tiles",
 		};
 	}
 
@@ -153,7 +153,7 @@ export function checkDeviceCapacity(
 		return {
 			isSafe: false,
 			reason: `Device has only ${capacity.hardwareConcurrency} CPU cores, which may be insufficient for this large workload`,
-			remedy: "Try using a larger tessera size to reduce the grid cell count",
+			remedy: "Try using a larger tile size to reduce the grid cell count",
 		};
 	}
 

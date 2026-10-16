@@ -1,14 +1,17 @@
-import { afterEach, describe, expect, it } from "vitest";
-import { cleanup, render, within } from "@testing-library/react";
-import { createStore, Provider } from "jotai";
-import { workflowStateAtom } from "../atoms/workflow-atoms";
 import {
-	INITIAL_WORKFLOW_STATE,
-	WorkflowStep,
-	type WorkflowState,
-} from "../engine/workflow-state";
-import type { SourceImageInfo } from "../engine/image-processing";
+	cleanup,
+	fireEvent,
+	render,
+	screen,
+	within,
+} from "@testing-library/react";
+import { Provider } from "jotai";
+import { afterEach, describe, expect, it } from "vitest";
 import { WorkflowApp } from "../App";
+import { createWorkflowStore } from "../atoms/workflow-atoms";
+import type { SourceImageInfo } from "../engine/image-processing";
+import type { WorkflowState } from "../engine/workflow-state";
+import { WorkflowStep } from "../engine/workflow-state";
 
 afterEach(cleanup);
 
@@ -24,9 +27,8 @@ function makeSourceImage(
 	};
 }
 
-function makeAdjustedState(step: WorkflowStep): WorkflowState {
+function makeAdjustedState(step: WorkflowStep): Partial<WorkflowState> {
 	return {
-		...INITIAL_WORKFLOW_STATE,
 		sourceImage: makeSourceImage(),
 		currentStep: step,
 		furthestCompletedStep: step,
@@ -34,9 +36,8 @@ function makeAdjustedState(step: WorkflowStep): WorkflowState {
 }
 
 /** Render WorkflowApp with a pre-seeded workflow state. */
-function renderWithState(state: WorkflowState) {
-	const store = createStore();
-	store.set(workflowStateAtom, state);
+function renderWithState(state: Partial<WorkflowState>) {
+	const store = createWorkflowStore(state);
 	return render(
 		<Provider store={store}>
 			<WorkflowApp />
@@ -45,56 +46,113 @@ function renderWithState(state: WorkflowState) {
 }
 
 /**
- * Returns the header thumbnail image element, scoped to the page
- * header rather than the source-image preview in step content.
+ * Returns the thumbnail image element from the bar below the mode
+ * switcher, rather than the source-image preview in step content.
  */
-function queryHeaderThumbnail(): HTMLImageElement | null {
-	const header = document.querySelector("header");
-	if (!header) return null;
-	return within(header).queryByAltText("Source");
+function queryThumbnailBar(): HTMLDivElement | null {
+	return document.querySelector('[data-testid="selection-summary"]');
+}
+
+function queryBarThumbnail(): HTMLImageElement | null {
+	const bar = queryThumbnailBar();
+	if (!bar) return null;
+	return within(bar).queryByAltText("Source");
 }
 
 describe("Source Thumbnail Persistence", () => {
-	it("shows source thumbnail and dimensions in header after source selection", () => {
-		renderWithState(makeAdjustedState(WorkflowStep.BUILD_TESSERAE));
+	it("shows source thumbnail and dimensions below the switcher after source selection", () => {
+		renderWithState(makeAdjustedState(WorkflowStep.PICK_TILE_SIZE));
 
-		const thumbnail = queryHeaderThumbnail();
+		const thumbnail = queryBarThumbnail();
 		expect(thumbnail).toBeInTheDocument();
 		expect(thumbnail).toHaveAttribute("src", "blob:source");
 
-		const header = document.querySelector("header");
-		expect(header).not.toBeNull();
-		if (!header) throw new Error("header not found");
-		expect(within(header).getByText("640 × 480 pixels")).toBeInTheDocument();
+		const bar = queryThumbnailBar();
+		expect(bar).not.toBeNull();
+		if (!bar) throw new Error("thumbnail bar not found");
+		expect(within(bar).getByText("640 × 480 pixels")).toBeInTheDocument();
 	});
 
 	it("hides thumbnail when no source image is selected", () => {
-		renderWithState(INITIAL_WORKFLOW_STATE);
+		renderWithState({});
 
-		expect(queryHeaderThumbnail()).not.toBeInTheDocument();
+		expect(queryBarThumbnail()).not.toBeInTheDocument();
 	});
 
 	it("hides thumbnail on the source image selection step itself", () => {
 		renderWithState(makeAdjustedState(WorkflowStep.CHOOSE_SOURCE_IMAGE));
 
-		expect(queryHeaderThumbnail()).not.toBeInTheDocument();
+		expect(queryBarThumbnail()).not.toBeInTheDocument();
 	});
 
 	it("shows thumbnail on tessera size step", () => {
-		renderWithState(makeAdjustedState(WorkflowStep.BUILD_TESSERAE));
+		renderWithState(makeAdjustedState(WorkflowStep.PICK_TILE_SIZE));
 
-		expect(queryHeaderThumbnail()).toBeInTheDocument();
+		expect(queryBarThumbnail()).toBeInTheDocument();
 	});
 
 	it("shows thumbnail on generate and preview step", () => {
 		renderWithState(makeAdjustedState(WorkflowStep.GENERATE_AND_PREVIEW));
 
-		expect(queryHeaderThumbnail()).toBeInTheDocument();
+		expect(queryBarThumbnail()).toBeInTheDocument();
 	});
 
-	it("shows thumbnail on export step", () => {
-		renderWithState(makeAdjustedState(WorkflowStep.EXPORT_MOSAIC));
+	it("shows the committed tile size once the size step is complete", () => {
+		renderWithState({
+			...makeAdjustedState(WorkflowStep.PICK_TILES),
+			requestedTesseraSize: 16,
+		});
 
-		expect(queryHeaderThumbnail()).toBeInTheDocument();
+		const bar = queryThumbnailBar();
+		expect(bar).not.toBeNull();
+		if (!bar) throw new Error("summary bar not found");
+		expect(within(bar).getByText("Tile size: 16 × 16 px")).toBeInTheDocument();
+	});
+
+	it("does not show the tile size on the size step itself", () => {
+		renderWithState({
+			...makeAdjustedState(WorkflowStep.PICK_TILE_SIZE),
+			requestedTesseraSize: 16,
+		});
+
+		const bar = queryThumbnailBar();
+		expect(bar).not.toBeNull();
+		if (!bar) throw new Error("summary bar not found");
+		expect(
+			within(bar).queryByText("Tile size: 16 × 16 px"),
+		).not.toBeInTheDocument();
+	});
+
+	it("returns to source selection when the change button is clicked", () => {
+		renderWithState(makeAdjustedState(WorkflowStep.PICK_TILE_SIZE));
+
+		const bar = queryThumbnailBar();
+		expect(bar).not.toBeNull();
+		if (!bar) throw new Error("thumbnail bar not found");
+
+		fireEvent.click(within(bar).getByRole("button", { name: /change image/i }));
+
+		// The bar hides on the source step, and the drop zone is live again.
+		expect(queryThumbnailBar()).not.toBeInTheDocument();
+		expect(
+			screen.getByLabelText("Tap or click here to choose a source image"),
+		).toBeInTheDocument();
+	});
+
+	it("returns to source selection when the thumbnail is clicked", () => {
+		renderWithState(makeAdjustedState(WorkflowStep.PICK_TILE_SIZE));
+
+		const bar = queryThumbnailBar();
+		expect(bar).not.toBeNull();
+		if (!bar) throw new Error("thumbnail bar not found");
+
+		fireEvent.click(
+			within(bar).getByRole("button", { name: /change source image/i }),
+		);
+
+		expect(queryThumbnailBar()).not.toBeInTheDocument();
+		expect(
+			screen.getByLabelText("Tap or click here to choose a source image"),
+		).toBeInTheDocument();
 	});
 });

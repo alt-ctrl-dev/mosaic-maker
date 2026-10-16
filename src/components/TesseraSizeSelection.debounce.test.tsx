@@ -1,23 +1,45 @@
 import { cleanup, fireEvent, render, screen } from "@testing-library/react";
+import { Provider } from "jotai";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
-import type { WorkflowState } from "../engine/workflow-state";
+import {
+	createWorkflowStore,
+	requestedTesseraSizeAtom,
+	tesseraeAtom,
+} from "../atoms/workflow-atoms";
 import { TesseraSizeSelection } from "./TesseraSizeSelection";
 
-describe("TesseraSizeSelection debouncing", () => {
-	const onSizeSelectedMock = vi.fn();
+const existingTessera = {
+	file: new File([], "tile.png", { type: "image/png" }),
+	fileName: "tile.png",
+	isValid: true,
+	error: null,
+	isLowResolution: false,
+	previewUrl: null,
+};
 
+describe("TesseraSizeSelection debouncing", () => {
 	const mockInitialState = {
 		sourceImage: {
 			url: "blob:test",
 			width: 100,
 			height: 100,
+			orientation: 1,
 		},
-		hasValidSourceDimensions: true,
-	} as unknown as WorkflowState;
+		tesserae: [existingTessera],
+	};
+
+	function renderSizeSelection() {
+		const store = createWorkflowStore(mockInitialState);
+		const result = render(
+			<Provider store={store}>
+				<TesseraSizeSelection />
+			</Provider>,
+		);
+		return { store, ...result };
+	}
 
 	beforeEach(() => {
 		vi.useFakeTimers();
-		onSizeSelectedMock.mockReset();
 	});
 
 	afterEach(() => {
@@ -25,16 +47,8 @@ describe("TesseraSizeSelection debouncing", () => {
 		vi.useRealTimers();
 	});
 
-	it("debounces rapid slider changes to reduce callback calls", () => {
-		render(
-			<TesseraSizeSelection
-				onSizeSelected={onSizeSelectedMock}
-				initialState={mockInitialState}
-			/>,
-		);
-
-		// Clear the initial mount call
-		onSizeSelectedMock.mockClear();
+	it("updates the atom immediately but clears tiles only once", () => {
+		const { store } = renderSizeSelection();
 
 		const rangeInput = screen.getByRole("slider");
 
@@ -44,47 +58,38 @@ describe("TesseraSizeSelection debouncing", () => {
 		fireEvent.change(rangeInput, { target: { value: "30" } });
 		fireEvent.change(rangeInput, { target: { value: "35" } });
 
-		// Should not have been called yet (debounced)
-		expect(onSizeSelectedMock).not.toHaveBeenCalled();
+		// The draft lands in the atom straight away…
+		expect(store.get(requestedTesseraSizeAtom)).toBe(35);
+		// …but the commit side effect (tile clear) has not run yet.
+		expect(store.get(tesseraeAtom)).toHaveLength(1);
 
-		// Advance timers to allow debounce to complete
+		// Advance timers to allow the debounce to complete
 		vi.advanceTimersByTime(300);
 
-		// Should only have been called once with the final value
-		expect(onSizeSelectedMock).toHaveBeenCalledTimes(1);
-		expect(onSizeSelectedMock).toHaveBeenCalledWith(35);
+		// Tiles cleared once after the final value
+		expect(store.get(requestedTesseraSizeAtom)).toBe(35);
+		expect(store.get(tesseraeAtom)).toHaveLength(0);
 	});
 
-	it("delays callback execution during rapid slider changes", () => {
-		render(
-			<TesseraSizeSelection
-				onSizeSelected={onSizeSelectedMock}
-				initialState={mockInitialState}
-			/>,
-		);
-
-		// Clear the initial mount call
-		onSizeSelectedMock.mockClear();
+	it("delays the clear during rapid slider changes", () => {
+		const { store } = renderSizeSelection();
 
 		const rangeInput = screen.getByRole("slider");
 
-		// First change should be debounced
+		// First change lands in the atom but the clear is debounced
 		fireEvent.change(rangeInput, { target: { value: "20" } });
+		expect(store.get(tesseraeAtom)).toHaveLength(1);
 
-		// Should not have been called yet (debounced)
-		expect(onSizeSelectedMock).not.toHaveBeenCalled();
-
-		// Rapid subsequent changes should also be debounced
+		// Rapid subsequent changes keep the clear pending
 		fireEvent.change(rangeInput, { target: { value: "25" } });
 		fireEvent.change(rangeInput, { target: { value: "30" } });
+		expect(store.get(tesseraeAtom)).toHaveLength(1);
 
-		// Should still not have been called
-		expect(onSizeSelectedMock).not.toHaveBeenCalled();
-
-		// Advance timers to allow debounce to complete
+		// Advance timers to allow the debounce to complete
 		vi.advanceTimersByTime(300);
 
-		// Should have been called with the final value
-		expect(onSizeSelectedMock).toHaveBeenCalledWith(30);
+		// The clear ran once with the final value
+		expect(store.get(requestedTesseraSizeAtom)).toBe(30);
+		expect(store.get(tesseraeAtom)).toHaveLength(0);
 	});
 });

@@ -73,7 +73,7 @@ describe("device-capacity-preflight", () => {
 
 			expect(result.isSafe).toBe(false);
 			expect(result.reason).toContain("memory usage");
-			expect(result.remedy).toContain("larger tessera size");
+			expect(result.remedy).toContain("larger tile size");
 		});
 
 		it("should reject extremely large workloads on single-core devices", () => {
@@ -89,7 +89,7 @@ describe("device-capacity-preflight", () => {
 
 			expect(result.isSafe).toBe(false);
 			expect(result.reason).toContain("CPU cores");
-			expect(result.remedy).toContain("larger tessera size");
+			expect(result.remedy).toContain("larger tile size");
 		});
 
 		it("should allow large workloads on multi-core devices", () => {

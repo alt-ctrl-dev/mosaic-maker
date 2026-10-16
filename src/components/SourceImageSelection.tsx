@@ -1,146 +1,192 @@
-import type React from "react";
-import { useCallback, useEffect, useState } from "react";
 import * as stylex from "@stylexjs/stylex";
-import type { SourceImageInfo } from "../engine/image-processing";
+import { useAtom, useAtomValue, useSetAtom } from "jotai";
+import type React from "react";
+import { useCallback, useEffect, useRef, useState } from "react";
+import {
+	isSelectingSourceAtom,
+	isSourceDragActiveAtom,
+} from "../atoms/ui-atoms";
+import {
+	mosaicResultAtom,
+	reportSourceErrorAtom,
+	resetWorkflowAtom,
+	selectSourceImageAtom,
+	sourceImageAtom,
+	sourceImageErrorAtom,
+} from "../atoms/workflow-atoms";
 import { getSourceImageInfo } from "../engine/image-processing";
 import {
-	type WorkflowState,
-	WORKFLOW_STEP_TITLES,
-	WorkflowStep,
-} from "../engine/workflow-state";
+	getDimensionErrorMessage,
+	getFileSizeErrorMessage,
+	isDimensionLimitExceeded,
+	isFileSizeExceeded,
+} from "../engine/resource-policy";
+import { vibrate } from "../haptics";
 import { base } from "../styles/base.stylex";
 import { tokens } from "../styles/tokens.stylex";
-import { vibrate } from "../haptics";
 import { trackError, trackEvent, trackStepView } from "../telemetry";
 import { ActionButton } from "./ActionButton";
-import {
-	isFileSizeExceeded,
-	isDimensionLimitExceeded,
-	getFileSizeErrorMessage,
-	getDimensionErrorMessage,
-} from "../engine/resource-policy";
 
 const styles = stylex.create({
-	imagePreview: { marginTop: "1rem" },
-	previewImage: {
-		maxWidth: "100%",
-		height: "auto",
+	panelSpacing: { marginTop: "1rem", textAlign: "center" },
+	// Drag and drop only exists on pointer devices, so the hint only
+	// renders there.
+	dragHint: {
+		margin: 0,
+		marginTop: "0.25rem",
+		fontSize: "0.875rem",
+		color: tokens.muted,
+		display: "none",
+		"@media (hover: hover) and (pointer: fine)": { display: "block" },
+	},
+	dropText: {
+		display: "flex",
+		flexDirection: "column",
+		alignItems: "center",
+	},
+	backdrop: {
+		position: "fixed",
+		inset: 0,
+		backgroundColor: "rgba(0, 0, 0, 0.7)",
+		display: "flex",
+		alignItems: "center",
+		justifyContent: "center",
+		zIndex: 1000,
+	},
+	dialog: {
+		backgroundColor: tokens.surface,
+		color: tokens.text,
 		borderRadius: tokens.radius,
+		border: `0.0625rem solid ${tokens.border}`,
+		padding: "1.5rem",
+		maxWidth: "25rem",
+		width: "90vw",
 		boxShadow: tokens.shadow,
 	},
-	panelSpacing: { marginTop: "1rem", textAlign: "center" },
+	title: {
+		marginTop: 0,
+		marginBottom: "1rem",
+		fontSize: "1.25rem",
+		fontWeight: "bold",
+	},
+	message: {
+		marginBottom: "1.5rem",
+		lineHeight: 1.5,
+	},
+	buttonGroup: {
+		display: "flex",
+		gap: "0.75rem",
+		justifyContent: "flex-end",
+	},
+	button: {
+		padding: "0.5rem 1rem",
+		borderRadius: tokens.radius,
+		border: "none",
+		cursor: "pointer",
+		fontWeight: "500",
+		transition: "background-color 0.2s",
+	},
+	cancelButton: {
+		backgroundColor: tokens.surface,
+		color: tokens.text,
+		border: `0.0625rem solid ${tokens.border}`,
+		":hover": {
+			backgroundColor: tokens.secondaryHover,
+		},
+	},
+	confirmButton: {
+		backgroundColor: tokens.primary,
+		color: tokens.onPrimary,
+		":hover": {
+			backgroundColor: tokens.primaryHover,
+		},
+	},
 });
 
-/** Props for {@link ContinueButton}. */
-interface ContinueButtonProps {
-	/** The processed source image to continue with. */
-	sourceImage: SourceImageInfo;
-	/** Called when the user chooses to continue. */
-	onContinue: (sourceImage: SourceImageInfo) => void;
-}
+/** StyleX only resolves computed conditional keys defined in the same module. */
+const REDUCED_MOTION = "@media (prefers-reduced-motion: reduce)";
 
-/**
- * Button that advances the workflow to the tesserae build step.
- * Encapsulates passing the selected source image back to the caller.
- */
-function ContinueButton({ sourceImage, onContinue }: ContinueButtonProps) {
-	return (
-		<ActionButton type="button" onClick={() => onContinue(sourceImage)}>
-			Continue to {WORKFLOW_STEP_TITLES[WorkflowStep.BUILD_TESSERAE]} →
-		</ActionButton>
-	);
-}
+/** The drop zone's internal grid marches while an image hovers over it. */
+const gridMarch = stylex.keyframes({
+	from: { backgroundPosition: "0 0, 0 0" },
+	to: { backgroundPosition: "1.5rem 1.5rem, 1.5rem 1.5rem" },
+});
 
-/** Props for {@link SourceImageSelection}. */
-interface SourceImageSelectionProps {
-	/** Called when a valid source image is selected and processed. */
-	onSourceSelected: (sourceImage: SourceImageInfo) => void;
-	/** Called when source image selection or processing fails. */
-	onSourceError: (errorMessage: string) => void;
-	/** Current workflow state, used to display persisted errors. */
-	initialState: WorkflowState;
-}
+const dragStyles = stylex.create({
+	dropZoneDragging: {
+		borderColor: tokens.primary,
+		backgroundColor: tokens.primarySoft,
+		animationName: gridMarch,
+		animationDuration: "1.2s",
+		animationTimingFunction: "linear",
+		animationIterationCount: "infinite",
+		[REDUCED_MOTION]: {
+			animationDuration: "0.01ms",
+			animationIterationCount: "1",
+		},
+	},
+});
 
 /**
  * Drop zone and file input for selecting the source image.
  * Validates file type, extracts dimensions, and shows a preview.
  */
-export function SourceImageSelection({
-	onSourceSelected,
-	onSourceError,
-	initialState,
-}: SourceImageSelectionProps) {
-	const [isProcessing, setIsProcessing] = useState(false);
-	const [previewUrl, setPreviewUrl] = useState<string | null>(
-		initialState.sourceImage?.url ?? null,
-	);
-	const [imageDimensions, setImageDimensions] = useState<{
-		width: number;
-		height: number;
-	} | null>(
-		initialState.sourceImage
-			? {
-					width: initialState.sourceImage.width,
-					height: initialState.sourceImage.height,
-				}
-			: null,
-	);
+export function SourceImageSelection() {
+	const sourceImage = useAtomValue(sourceImageAtom);
+	const sourceImageError = useAtomValue(sourceImageErrorAtom);
+	const _mosaicResult = useAtomValue(mosaicResultAtom);
+	const selectSourceImage = useSetAtom(selectSourceImageAtom);
+	const reportSourceError = useSetAtom(reportSourceErrorAtom);
+	const _resetWorkflow = useSetAtom(resetWorkflowAtom);
+	const [isProcessing, setIsProcessing] = useAtom(isSelectingSourceAtom);
+	const [isDragging, setIsDragging] = useAtom(isSourceDragActiveAtom);
+	const [_showResetWarning, _setShowResetWarning] = useState(false);
+	const [_pendingFile, _setPendingFile] = useState<FileList | null>(null);
+	const dragDepth = useRef(0);
 
 	useEffect(() => {
 		trackStepView("choose_source_image");
 	}, []);
 
-	const handleFileChange = useCallback(
+	const _processFileChange = useCallback(
 		async (files: FileList | null) => {
 			if (!files || files.length === 0) return;
 
 			const file = files[0];
-			if (!file.type.match(/^image\/(jpeg|png|webp)$/)) {
-				onSourceError(
-					"Unsupported file type. Please select a JPEG, PNG, or WebP image.",
-				);
-				return;
-			}
-
-			if (isFileSizeExceeded(file)) {
-				onSourceError(getFileSizeErrorMessage(file.name));
-				return;
-			}
-
 			setIsProcessing(true);
 			try {
-				const sourceImage = await getSourceImageInfo(file);
+				const sourceImageInfo = await getSourceImageInfo(file);
 
-				if (isDimensionLimitExceeded(sourceImage.width, sourceImage.height)) {
-					onSourceError(
-						getDimensionErrorMessage(sourceImage.width, sourceImage.height),
+				if (
+					isDimensionLimitExceeded(
+						sourceImageInfo.width,
+						sourceImageInfo.height,
+					)
+				) {
+					reportSourceError(
+						getDimensionErrorMessage(
+							sourceImageInfo.width,
+							sourceImageInfo.height,
+						),
 					);
 					return;
 				}
 
-				onSourceSelected(sourceImage);
+				selectSourceImage(sourceImageInfo);
 
 				trackEvent("source_image_upload", {
-					width: sourceImage.width,
-					height: sourceImage.height,
+					width: sourceImageInfo.width,
+					height: sourceImageInfo.height,
 					fileSize: file.size,
 					fileType: file.type,
 				});
 				vibrate(10);
-
-				// Reuse the object URL the engine holds rather than creating a second
-				// one; it lives as long as the source image is in the workflow.
-				setPreviewUrl(sourceImage.url);
-				setImageDimensions({
-					width: sourceImage.width,
-					height: sourceImage.height,
-				});
 			} catch (error) {
 				const errorMessage =
 					error instanceof Error
 						? error.message
 						: "Failed to process the image.";
-				onSourceError(errorMessage);
+				reportSourceError(errorMessage);
 				trackError("source_image_load", error, {
 					fileName: file.name,
 					fileType: file.type,
@@ -150,8 +196,86 @@ export function SourceImageSelection({
 				setIsProcessing(false);
 			}
 		},
-		[onSourceSelected, onSourceError],
+		[selectSourceImage, reportSourceError, setIsProcessing],
 	);
+
+	const handleFileChange = useCallback(
+		async (files: FileList | null) => {
+			if (!files || files.length === 0) return;
+
+			const file = files[0];
+			if (!file.type.match(/^image\/(jpeg|png|webp)$/)) {
+				reportSourceError(
+					"Unsupported file type. Please select a JPEG, PNG, or WebP image.",
+				);
+				return;
+			}
+
+			if (isFileSizeExceeded(file)) {
+				reportSourceError(getFileSizeErrorMessage(file.name));
+				return;
+			}
+
+			setIsProcessing(true);
+			try {
+				const sourceImageInfo = await getSourceImageInfo(file);
+
+				if (
+					isDimensionLimitExceeded(
+						sourceImageInfo.width,
+						sourceImageInfo.height,
+					)
+				) {
+					reportSourceError(
+						getDimensionErrorMessage(
+							sourceImageInfo.width,
+							sourceImageInfo.height,
+						),
+					);
+					return;
+				}
+
+				selectSourceImage(sourceImageInfo);
+
+				trackEvent("source_image_upload", {
+					width: sourceImageInfo.width,
+					height: sourceImageInfo.height,
+					fileSize: file.size,
+					fileType: file.type,
+				});
+				vibrate(10);
+			} catch (error) {
+				const errorMessage =
+					error instanceof Error
+						? error.message
+						: "Failed to process the image.";
+				reportSourceError(errorMessage);
+				trackError("source_image_load", error, {
+					fileName: file.name,
+					fileType: file.type,
+					fileSize: file.size,
+				});
+			} finally {
+				setIsProcessing(false);
+			}
+		},
+		[selectSourceImage, reportSourceError, setIsProcessing],
+	);
+
+	const handleDragEnter = useCallback(
+		(e: React.DragEvent) => {
+			e.preventDefault();
+			// Depth counter: enter/leave also fire for the drop zone's children.
+			dragDepth.current += 1;
+			setIsDragging(true);
+		},
+		[setIsDragging],
+	);
+
+	const handleDragLeave = useCallback(() => {
+		dragDepth.current = Math.max(0, dragDepth.current - 1);
+		if (dragDepth.current === 0) setIsDragging(false);
+	}, [setIsDragging]);
 
 	const handleDragOver = useCallback((e: React.DragEvent) => {
 		e.preventDefault();
@@ -162,9 +286,11 @@ export function SourceImageSelection({
 		(e: React.DragEvent) => {
 			e.preventDefault();
 			e.stopPropagation();
+			dragDepth.current = 0;
+			setIsDragging(false);
 			handleFileChange(e.dataTransfer.files);
 		},
-		[handleFileChange],
+		[handleFileChange, setIsDragging],
 	);
 
 	const errorPanelProps = stylex.props(base.card);
@@ -178,12 +304,27 @@ export function SourceImageSelection({
 		<div>
 			<button
 				type="button"
+				onDragEnter={handleDragEnter}
+				onDragLeave={handleDragLeave}
 				onDragOver={handleDragOver}
 				onDrop={handleDrop}
-				{...stylex.props(base.dropZone, base.focusOutline)}
-				aria-label="Drop images here or click to select"
+				{...stylex.props(
+					base.dropZone,
+					base.focusOutline,
+					isDragging && dragStyles.dropZoneDragging,
+				)}
+				aria-label="Tap or click here to choose a source image"
 			>
-				<p {...stylex.props(base.paragraph)}>Drop images here or click below</p>
+				<div {...stylex.props(styles.dropText)}>
+					<p {...stylex.props(base.paragraph)}>
+						{isDragging
+							? "Release to place your source image on the bench"
+							: "Tap or click here to choose a source image"}
+					</p>
+					{!isDragging && (
+						<p {...stylex.props(styles.dragHint)}>or drag and drop one here</p>
+					)}
+				</div>
 				<input
 					type="file"
 					accept="image/jpeg,image/png,image/webp"
@@ -194,30 +335,29 @@ export function SourceImageSelection({
 				/>
 			</button>
 
-			{initialState.sourceImageError && (
+			{sourceImageError && (
 				<article
 					{...errorPanelProps}
 					className={`error-message ${errorPanelProps.className}`}
 					role="alert"
 				>
-					{initialState.sourceImageError}
+					{sourceImageError}
 				</article>
 			)}
 
-			{previewUrl && (
-				<div {...stylex.props(styles.imagePreview)}>
+			{sourceImage && (
+				<div {...stylex.props(base.sourcePreviewContainer)}>
 					<p {...stylex.props(base.paragraph)}>Source image preview:</p>
+					{/* Reuses the object URL the engine holds rather than creating a
+					    second one; it lives as long as the source image is selected. */}
 					<img
-						src={previewUrl}
+						src={sourceImage.url}
 						alt="Source"
-						{...stylex.props(styles.previewImage)}
+						{...stylex.props(base.sourcePreviewImage)}
 					/>
-					{imageDimensions && (
-						<p {...stylex.props(base.paragraph)}>
-							Dimensions: {imageDimensions.width} × {imageDimensions.height}{" "}
-							pixels
-						</p>
-					)}
+					<p {...stylex.props(base.paragraph)}>
+						Dimensions: {sourceImage.width} × {sourceImage.height} pixels
+					</p>
 				</div>
 			)}
 
@@ -231,11 +371,13 @@ export function SourceImageSelection({
 				</article>
 			)}
 
-			{previewUrl && imageDimensions && initialState.sourceImage && (
-				<ContinueButton
-					sourceImage={initialState.sourceImage}
-					onContinue={onSourceSelected}
-				/>
+			{sourceImage && (
+				<ActionButton
+					type="button"
+					onClick={() => selectSourceImage(sourceImage)}
+				>
+					Continue to step 2 →
+				</ActionButton>
 			)}
 		</div>
 	);

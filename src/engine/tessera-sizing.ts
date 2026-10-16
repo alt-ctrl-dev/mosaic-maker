@@ -1,9 +1,13 @@
 /** Minimum tessera size in pixels. */
-const MIN_TESSERA_SIZE = 8;
+export const MIN_TESSERA_SIZE = 8;
+
+/** Maximum tessera size in pixels. */
+export const MAX_TESSERA_SIZE = 150;
 
 /**
  * Calculate the adjusted tessera size that best fits the source image dimensions.
- * With partial edge cells, any size from {@link MIN_TESSERA_SIZE} to the minimum dimension is valid.
+ * With partial edge cells, any size from {@link MIN_TESSERA_SIZE} up to the
+ * smaller of {@link MAX_TESSERA_SIZE} and the minimum dimension is valid.
  * The requested size is clamped to this valid range.
  *
  * @param requestedSize - The tessera size requested by the user
@@ -16,7 +20,7 @@ export function calculateAdjustedTesseraSize(
 	sourceWidth: number,
 	sourceHeight: number,
 ): number {
-	const maxSize = Math.min(sourceWidth, sourceHeight);
+	const maxSize = Math.min(MAX_TESSERA_SIZE, sourceWidth, sourceHeight);
 
 	// Clamp the requested size to the valid range
 	return Math.max(MIN_TESSERA_SIZE, Math.min(requestedSize, maxSize));

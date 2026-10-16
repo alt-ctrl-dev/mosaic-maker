@@ -3,7 +3,16 @@ import faroUploader from "@grafana/faro-rollup-plugin";
 import stylexPlugin from "@stylexjs/rollup-plugin";
 import react from "@vitejs/plugin-react";
 import { defineConfig, loadEnv } from "vite";
-import { version as packageVersion } from "./package.json";
+import pkg from "./package.json" with { type: "json" };
+
+/**
+ * Oldest browsers the CSS may target. `light-dark()` must survive
+ * minification: both minifiers otherwise lower it to prefers-color-scheme
+ * custom properties, which the theme toggle cannot override.
+ */
+const CSS_TARGETS = ["chrome123", "safari17.5", "firefox120"];
+/** Lightning CSS encodes versions as major << 16 | minor << 8. */
+const cssVersion = (major: number, minor = 0) => (major << 16) | (minor << 8);
 
 function getGitCommitSha() {
 	try {
@@ -20,7 +29,7 @@ export default defineConfig(({ mode, command }) => {
 	const base = "/mosaic-maker/";
 
 	const define = {
-		"import.meta.env.VITE_APP_VERSION": JSON.stringify(packageVersion),
+		"import.meta.env.VITE_APP_VERSION": JSON.stringify(pkg.version),
 		"import.meta.env.VITE_APP_COMMIT": JSON.stringify(
 			env.VITE_APP_COMMIT || commitSha,
 		),
@@ -28,9 +37,19 @@ export default defineConfig(({ mode, command }) => {
 
 	return {
 		base,
+		build: { cssTarget: CSS_TARGETS },
 		define,
 		plugins: [
-			stylexPlugin({ runtimeInjection: command === "serve" }),
+			stylexPlugin({
+				runtimeInjection: command === "serve",
+				lightningcssOptions: {
+					targets: {
+						chrome: cssVersion(123),
+						safari: cssVersion(17, 5),
+						firefox: cssVersion(120),
+					},
+				},
+			}),
 			// The StyleX Rollup plugin emits CSS separately from Vite's CSS graph.
 			{
 				name: "stylex-stylesheet",

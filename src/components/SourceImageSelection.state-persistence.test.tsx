@@ -1,6 +1,6 @@
-import { render, screen } from "@testing-library/react";
+import { screen } from "@testing-library/react";
 import { describe, expect, it, vi } from "vitest";
-import { INITIAL_WORKFLOW_STATE } from "../engine/workflow-state";
+import { renderWithWorkflow } from "../test-utils/workflow";
 import { SourceImageSelection } from "./SourceImageSelection";
 
 // Mock canvas APIs for Vitest environment
@@ -30,23 +30,15 @@ vi.stubGlobal("URL", {
 });
 
 describe("SourceImageSelection state persistence", () => {
-	it("shows preview when initialState contains source image", () => {
-		render(
-			<SourceImageSelection
-				onSourceSelected={vi.fn()}
-				onSourceError={vi.fn()}
-				initialState={{
-					...INITIAL_WORKFLOW_STATE,
-					sourceImage: {
-						url: "blob:test",
-						width: 100,
-						height: 100,
-						orientation: 1,
-					},
-					hasValidSourceDimensions: true,
-				}}
-			/>,
-		);
+	it("shows preview when the store contains a source image", () => {
+		renderWithWorkflow(<SourceImageSelection />, {
+			sourceImage: {
+				url: "blob:test",
+				width: 100,
+				height: 100,
+				orientation: 1,
+			},
+		});
 
 		expect(screen.getByAltText("Source")).toBeInTheDocument();
 		expect(
@@ -54,41 +46,27 @@ describe("SourceImageSelection state persistence", () => {
 		).toBeInTheDocument();
 	});
 
-	it("shows error when initialState contains source image error", () => {
-		render(
-			<SourceImageSelection
-				onSourceSelected={vi.fn()}
-				onSourceError={vi.fn()}
-				initialState={{
-					...INITIAL_WORKFLOW_STATE,
-					sourceImageError: "Test error message",
-				}}
-			/>,
-		);
+	it("shows error when the store contains a source image error", () => {
+		renderWithWorkflow(<SourceImageSelection />, {
+			sourceImageError: "Test error message",
+		});
 
 		expect(screen.getByText("Test error message")).toBeInTheDocument();
 	});
 
 	it("labels the continue button with the next workflow step", () => {
-		render(
-			<SourceImageSelection
-				onSourceSelected={vi.fn()}
-				onSourceError={vi.fn()}
-				initialState={{
-					...INITIAL_WORKFLOW_STATE,
-					sourceImage: {
-						url: "blob:test",
-						width: 100,
-						height: 100,
-						orientation: 1,
-					},
-					hasValidSourceDimensions: true,
-				}}
-			/>,
-		);
+		renderWithWorkflow(<SourceImageSelection />, {
+			sourceImage: {
+				url: "blob:test",
+				width: 100,
+				height: 100,
+				orientation: 1,
+			},
+			hasValidSourceDimensions: true,
+		});
 
 		expect(
-			screen.getByRole("button", { name: /continue to build tesserae/i }),
+			screen.getByRole("button", { name: /continue to step 2/i }),
 		).toBeInTheDocument();
 	});
 });

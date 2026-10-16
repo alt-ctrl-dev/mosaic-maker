@@ -1,59 +1,93 @@
-import type React from "react";
-import { useEffect, useRef, useState } from "react";
 import * as stylex from "@stylexjs/stylex";
+import { useAtom, useAtomValue, useSetAtom } from "jotai";
+import type React from "react";
+import { useEffect, useRef } from "react";
 import {
-	calculateAdjustedTesseraSize,
-	calculateGridCellCount,
-	isCoarseGrid,
-} from "../engine/tessera-sizing";
-import type { WorkflowState } from "../engine/workflow-state";
+	adjustedTesseraSizeAtom,
+	commitTesseraSizeAtom,
+	gridCellCountAtom,
+	hasValidSourceDimensionsAtom,
+	isCoarseGridAtom,
+	requestedTesseraSizeAtom,
+	sourceImageAtom,
+} from "../atoms/workflow-atoms";
+import { MAX_TESSERA_SIZE, MIN_TESSERA_SIZE } from "../engine/tessera-sizing";
 import { base } from "../styles/base.stylex";
+import { tokens } from "../styles/tokens.stylex";
 import { trackEvent, trackStepView } from "../telemetry";
 
-/** Props for {@link TesseraSizeSelection}. */
-interface TesseraSizeSelectionProps {
-	/** Called when the tessera size changes. */
-	onSizeSelected: (size: number) => void;
-	/** Current workflow state, used for source image dimensions. */
-	initialState: WorkflowState;
-}
+// The CSS caps mirror these constants; the fit math below predicts the
+// on-screen preview size from them.
+const PREVIEW_MAX_WIDTH_REM = 20;
+const PREVIEW_MAX_HEIGHT_REM = 25;
+// Below this on-screen cell spacing the 1px grid lines merge into a solid
+// fill, so the overlay draws every Nth line to stay legible.
+const MIN_GRID_CELL_REM = 3 / 16;
+
+const styles = stylex.create({
+	// The source image under its live construction grid: dragging the size
+	// re-solves the grid density against the real image dimensions. The
+	// container shrink-wraps the capped image so the overlay stays aligned.
+	gridPreviewWrap: { textAlign: "center" },
+	gridPreview: {
+		display: "inline-block",
+		position: "relative",
+		marginTop: "1rem",
+		borderWidth: "0.0625rem",
+		borderStyle: "solid",
+		borderColor: tokens.border,
+	},
+	gridPreviewImage: {
+		display: "block",
+		maxWidth: `${PREVIEW_MAX_WIDTH_REM}rem`,
+		maxHeight: `${PREVIEW_MAX_HEIGHT_REM}rem`,
+	},
+	gridOverlay: {
+		position: "absolute",
+		inset: 0,
+		pointerEvents: "none",
+	},
+	gridReadout: {
+		marginTop: "0.5rem",
+		textAlign: "center",
+		fontFamily: "ui-monospace, monospace",
+		fontSize: "0.8rem",
+		color: tokens.info,
+		fontVariantNumeric: "tabular-nums",
+	},
+});
 
 /**
  * Lets the user pick a tessera pixel size and shows the adjusted size,
  * grid cell count, and any coarse-grid warning.
  */
-export function TesseraSizeSelection({
-	onSizeSelected,
-	initialState,
-}: TesseraSizeSelectionProps) {
-	const [requestedSize, setRequestedSize] = useState<number>(
-		initialState.requestedTesseraSize ?? 16,
-	);
-	const [adjustedSize, setAdjustedSize] = useState<number | null>(null);
-	const [gridCellCount, setGridCellCount] = useState<number | null>(null);
+export function TesseraSizeSelection() {
+	const sourceImage = useAtomValue(sourceImageAtom);
+	const hasValidSourceDimensions = useAtomValue(hasValidSourceDimensionsAtom);
+	// The slider is bound straight to the atom: the derived adjusted size and
+	// grid metrics follow live, and only the commit (clearing existing tiles)
+	// is debounced.
+	const [requestedSize, setRequestedSize] = useAtom(requestedTesseraSizeAtom);
+	const adjustedSize = useAtomValue(adjustedTesseraSizeAtom);
+	const gridCellCount = useAtomValue(gridCellCountAtom);
+	const isCoarse = useAtomValue(isCoarseGridAtom);
+	const commitTesseraSize = useSetAtom(commitTesseraSizeAtom);
 
-	const isCoarse = gridCellCount !== null && isCoarseGrid(gridCellCount);
-
-	const maxTesseraSize = 250;
-	// initialState.sourceImage && initialState.hasValidSourceDimensions
-	// 	? Math.min(
-	// 			initialState.sourceImage.width,
-	// 			initialState.sourceImage.height,
-	// 		)
-	// 	: 100;
-
-	const onSizeSelectedRef = useRef(onSizeSelected);
-	onSizeSelectedRef.current = onSizeSelected;
+	// The ceiling is engine truth: no tessera larger than the source's
+	// short side, and never larger than the product max. 100 covers the
+	// no-image-yet case.
+	const maxTesseraSize =
+		sourceImage && hasValidSourceDimensions
+			? Math.min(MAX_TESSERA_SIZE, sourceImage.width, sourceImage.height)
+			: 100;
 
 	const debounceTimerRef = useRef<NodeJS.Timeout | null>(null);
+	// Committing clears existing tiles; skip commits that land on the size
+	// already in effect (e.g. dragging the slider away and back).
+	const lastCommittedSizeRef = useRef(requestedSize);
 
 	useEffect(() => {
-		trackStepView("build_tesserae");
-	}, []);
-
-	// biome-ignore lint/correctness/useExhaustiveDependencies: intentional mount-only effect
-	useEffect(() => {
-		onSizeSelectedRef.current(requestedSize);
+		trackStepView("pick_tile_size");
 	}, []);
 
 	useEffect(() => {
@@ -64,34 +98,6 @@ export function TesseraSizeSelection({
 		};
 	}, []);
 
-	useEffect(() => {
-		if (initialState.sourceImage && initialState.hasValidSourceDimensions) {
-			const adjusted = calculateAdjustedTesseraSize(
-				requestedSize,
-				initialState.sourceImage.width,
-				initialState.sourceImage.height,
-			);
-
-			setAdjustedSize(adjusted);
-
-			if (adjusted !== null) {
-				const cellCount = calculateGridCellCount(
-					adjusted,
-					initialState.sourceImage.width,
-					initialState.sourceImage.height,
-				);
-
-				setGridCellCount(cellCount);
-			} else {
-				setGridCellCount(null);
-			}
-		}
-	}, [
-		requestedSize,
-		initialState.sourceImage,
-		initialState.hasValidSourceDimensions,
-	]);
-
 	const handleSizeChange = (e: React.ChangeEvent<HTMLInputElement>) => {
 		const newSize = Number(e.target.value);
 		setRequestedSize(newSize);
@@ -101,7 +107,10 @@ export function TesseraSizeSelection({
 		}
 
 		debounceTimerRef.current = setTimeout(() => {
-			onSizeSelectedRef.current(newSize);
+			if (newSize !== lastCommittedSizeRef.current) {
+				commitTesseraSize(newSize);
+				lastCommittedSizeRef.current = newSize;
+			}
 			trackEvent("tessera_size_changed", { size: newSize });
 			debounceTimerRef.current = null;
 		}, 150);
@@ -109,34 +118,83 @@ export function TesseraSizeSelection({
 
 	const warningProps = stylex.props(base.card);
 
+	const showGridPreview =
+		sourceImage !== null && hasValidSourceDimensions && adjustedSize !== null;
+	const gridColumns =
+		showGridPreview && sourceImage
+			? Math.ceil(sourceImage.width / adjustedSize)
+			: null;
+	const gridRows =
+		showGridPreview && sourceImage
+			? Math.ceil(sourceImage.height / adjustedSize)
+			: null;
+	const gridCellWidthPct =
+		showGridPreview && sourceImage
+			? (adjustedSize / sourceImage.width) * 100
+			: null;
+	const gridCellHeightPct =
+		showGridPreview && sourceImage
+			? (adjustedSize / sourceImage.height) * 100
+			: null;
+
+	// Fitted preview width (mirrors the CSS caps). When cells crowd below
+	// MIN_GRID_CELL_REM on screen, the overlay draws every Nth line so the
+	// grid stays visible at every tile size instead of fusing into a solid
+	// fill.
+	const previewWidthRem =
+		showGridPreview && sourceImage
+			? Math.min(
+					PREVIEW_MAX_WIDTH_REM,
+					PREVIEW_MAX_HEIGHT_REM * (sourceImage.width / sourceImage.height),
+				)
+			: null;
+	const gridCellRem =
+		showGridPreview && previewWidthRem !== null && sourceImage !== null
+			? (previewWidthRem * adjustedSize) / sourceImage.width
+			: null;
+	const gridStride =
+		gridCellRem !== null && gridCellRem > 0
+			? Math.max(1, Math.ceil(MIN_GRID_CELL_REM / gridCellRem))
+			: 1;
+
 	return (
 		<div>
 			<div>
 				<label htmlFor="tessera-size" {...stylex.props(base.label)}>
-					Tessera size (pixels):
+					Tile size ({requestedSize} pixels x {requestedSize} pixels):
 				</label>
 				<input
 					id="tessera-size"
 					type="range"
-					min="2"
+					min={MIN_TESSERA_SIZE}
 					max={maxTesseraSize}
 					value={requestedSize}
 					onChange={handleSizeChange}
 					{...stylex.props(base.rangeInput, base.focusOutline)}
 				/>
-				<span>{requestedSize}px</span>
 			</div>
 
-			{adjustedSize !== null && (
-				<div>
-					<p {...stylex.props(base.paragraph)}>
-						Adjusted size: <strong>{adjustedSize}px</strong>
+			{showGridPreview && sourceImage && (
+				<div {...stylex.props(styles.gridPreviewWrap)}>
+					<div {...stylex.props(styles.gridPreview)}>
+						<img
+							src={sourceImage.url}
+							alt="Source under the construction grid at the selected tile size"
+							{...stylex.props(styles.gridPreviewImage)}
+						/>
+						<div
+							{...stylex.props(styles.gridOverlay)}
+							aria-hidden="true"
+							style={{
+								backgroundImage:
+									"linear-gradient(to right, rgba(10, 12, 18, 0.85) 0.0625rem, transparent 0.0625rem), linear-gradient(to bottom, rgba(10, 12, 18, 0.85) 0.0625rem, transparent 0.0625rem)",
+								backgroundSize: `${(gridCellWidthPct ?? 0) * gridStride}% ${(gridCellHeightPct ?? 0) * gridStride}%`,
+							}}
+						/>
+					</div>
+					<p {...stylex.props(styles.gridReadout)}>
+						{gridColumns} × {gridRows} cells · {gridCellCount} total
 					</p>
-					{requestedSize !== adjustedSize && (
-						<p {...stylex.props(base.paragraph)}>
-							Adjusted to fit within the valid tessera size range.
-						</p>
-					)}
 				</div>
 			)}
 

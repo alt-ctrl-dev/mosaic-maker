@@ -1,10 +1,8 @@
-import { fireEvent, render, screen, waitFor } from "@testing-library/react";
+import { fireEvent, screen, waitFor } from "@testing-library/react";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 import * as exportEngine from "../engine/export";
-import { INITIAL_WORKFLOW_STATE, WorkflowStep } from "../engine/workflow-state";
-import { ExportMosaic } from "./ExportMosaic";
-
-const mockDispatch = vi.fn();
+import { renderWithWorkflow } from "../test-utils/workflow";
+import { ExportPanel } from "./ExportMosaic";
 
 const mockMosaicResult = {
 	dataUrl: "data:image/png;base64,mock-image-data",
@@ -13,8 +11,6 @@ const mockMosaicResult = {
 };
 
 const mockState = {
-	...INITIAL_WORKFLOW_STATE,
-	currentStep: WorkflowStep.EXPORT_MOSAIC,
 	mosaicResult: mockMosaicResult,
 	exportFormat: "png" as const,
 	exportQuality: 0.9,
@@ -30,7 +26,7 @@ describe("ExportMosaic summary and confirmation", () => {
 	});
 
 	it("should display summary with format, dimensions, and approximate size", () => {
-		render(<ExportMosaic state={mockState} dispatch={mockDispatch} />);
+		renderWithWorkflow(<ExportPanel />, mockState);
 
 		expect(screen.getByText(/PNG · 1200×800 · ~0 KB/)).toBeInTheDocument();
 	});
@@ -40,7 +36,7 @@ describe("ExportMosaic summary and confirmation", () => {
 			.spyOn(exportEngine, "exportMosaic")
 			.mockResolvedValue("data:image/png;base64,exported-image-data");
 
-		render(<ExportMosaic state={mockState} dispatch={mockDispatch} />);
+		renderWithWorkflow(<ExportPanel />, mockState);
 
 		const downloadButton = screen.getByRole("button", { name: "Download" });
 		fireEvent.click(downloadButton);
@@ -53,29 +49,25 @@ describe("ExportMosaic summary and confirmation", () => {
 	});
 
 	it("should open export settings by default for jpeg format", () => {
-		const jpegState = {
+		renderWithWorkflow(<ExportPanel />, {
 			...mockState,
 			exportFormat: "jpeg" as const,
-		};
-
-		render(<ExportMosaic state={jpegState} dispatch={mockDispatch} />);
+		});
 
 		expect(screen.getByText("Quality Settings")).toBeInTheDocument();
 	});
 
 	it("should open export settings by default for webp format", () => {
-		const webpState = {
+		renderWithWorkflow(<ExportPanel />, {
 			...mockState,
 			exportFormat: "webp" as const,
-		};
-
-		render(<ExportMosaic state={webpState} dispatch={mockDispatch} />);
+		});
 
 		expect(screen.getByText("Quality Settings")).toBeInTheDocument();
 	});
 
 	it("should keep export settings closed by default for png format", () => {
-		render(<ExportMosaic state={mockState} dispatch={mockDispatch} />);
+		renderWithWorkflow(<ExportPanel />, mockState);
 
 		expect(screen.queryByText("Quality Settings")).not.toBeInTheDocument();
 	});

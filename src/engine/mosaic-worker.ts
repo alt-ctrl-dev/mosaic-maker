@@ -194,7 +194,7 @@ async function renderTessera(
 	const canvas = createCanvas(tesseraSize, tesseraSize);
 	const ctx = canvas.getContext("2d");
 	if (!ctx) {
-		throw new Error("Failed to get tessera canvas context");
+		throw new Error("Failed to get tile canvas context");
 	}
 
 	if (tessera.color) {
@@ -204,7 +204,7 @@ async function renderTessera(
 	}
 
 	if (!tessera.previewUrl) {
-		throw new Error(`Tessera "${tessera.fileName}" has no preview image`);
+		throw new Error(`Tile "${tessera.fileName}" has no preview image`);
 	}
 
 	const img = await loadImage(tessera.previewUrl);
@@ -353,7 +353,7 @@ async function generateMosaicWithProgress(
 	mode: MosaicMode = "photomosaic",
 ): Promise<{ dataUrl: string; width: number; height: number }> {
 	if (tesseraSize <= 0) {
-		throw new Error("Tessera size must be positive");
+		throw new Error("Tile size must be positive");
 	}
 
 	if (sourceImage.width <= 0 || sourceImage.height <= 0) {
@@ -401,7 +401,7 @@ async function generateMosaicWithProgress(
 	self.postMessage({
 		type: "progress",
 		percent: 30,
-		message: "Processing tesserae...",
+		message: "Processing tiles...",
 	});
 	const processedTesserae: ProcessedTessera[] = [];
 	for (let i = 0; i < validTesserae.length; i++) {

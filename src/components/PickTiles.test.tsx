@@ -1,0 +1,61 @@
+import { fireEvent, screen } from "@testing-library/react";
+import { tesseraeAtom } from "../atoms/workflow-atoms";
+import type { TesseraInfo } from "../engine/workflow-state";
+import { renderWithWorkflow } from "../test-utils/workflow";
+import { PickTiles } from "./PickTiles";
+
+function mockTessera(overrides: Partial<TesseraInfo> = {}): TesseraInfo {
+	return {
+		fileName: "test.jpg",
+		isValid: true,
+		error: null,
+		isLowResolution: false,
+		previewUrl: null,
+		...overrides,
+	};
+}
+
+describe("PickTiles", () => {
+	it("shows the upload path by default and hides the generator", () => {
+		renderWithWorkflow(<PickTiles />);
+
+		expect(screen.getByTestId("tessera-upload")).toBeInTheDocument();
+		expect(screen.queryByTestId("generated-tesserae")).not.toBeInTheDocument();
+	});
+
+	it("switches to the generated path", () => {
+		renderWithWorkflow(<PickTiles />);
+
+		fireEvent.click(
+			screen.getByRole("button", { name: "Generate random tiles" }),
+		);
+
+		expect(screen.getByTestId("generated-tesserae")).toBeInTheDocument();
+		expect(screen.queryByTestId("tessera-upload")).not.toBeInTheDocument();
+	});
+
+	it("always shows the review accordion, even with no tiles", () => {
+		renderWithWorkflow(<PickTiles />);
+
+		expect(
+			screen.getByText("Review tiles (0 valid, 0 rejected)"),
+		).toBeInTheDocument();
+		expect(
+			screen.queryByRole("button", { name: "Clear all tiles" }),
+		).not.toBeInTheDocument();
+	});
+
+	it("clears all tiles from inside the review accordion", () => {
+		// A rejected tile keeps the accordion open, where the clear action lives.
+		const { store } = renderWithWorkflow(<PickTiles />, {
+			tesserae: [mockTessera({ isValid: false, error: "Too small" })],
+		});
+
+		const clearButton = screen.getByRole("button", { name: "Clear all tiles" });
+		expect(clearButton.closest("details")).not.toBeNull();
+
+		fireEvent.click(clearButton);
+
+		expect(store.get(tesseraeAtom)).toHaveLength(0);
+	});
+});

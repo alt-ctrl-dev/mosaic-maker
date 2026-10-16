@@ -1,14 +1,17 @@
 import { describe, expect, it } from "vitest";
 import {
+	createWorkflowStore,
+	currentStepAtom,
+	hasValidSourceDimensionsAtom,
+	selectSourceImageAtom,
+	sourceImageErrorAtom,
+} from "../atoms/workflow-atoms";
+import {
 	calculateAdjustedTesseraSize,
 	calculateGridCellCount,
 	hasValidTesseraSizes,
 } from "../engine/tessera-sizing";
-import type { WorkflowState } from "../engine/workflow-state";
-import {
-	updateWorkflowWithSourceImage,
-	WorkflowStep,
-} from "../engine/workflow-state";
+import { WorkflowStep } from "../engine/workflow-state";
 
 describe("Issue #123: Allow partial edge cells", () => {
 	it("should accept 476x600 image that previously failed due to no common divisors >= 8", () => {
@@ -46,33 +49,6 @@ describe("Issue #123: Allow partial edge cells", () => {
 
 	it("should work with the workflow state update", () => {
 		// Test that the workflow accepts the 476x600 image
-		// Test that the workflow accepts the 476x600 image
-		const initialState: WorkflowState = {
-			currentStep: WorkflowStep.CHOOSE_SOURCE_IMAGE,
-			furthestCompletedStep: WorkflowStep.CHOOSE_SOURCE_IMAGE,
-			mode: "photomosaic",
-			sourceImage: null,
-			hasValidSourceDimensions: false,
-			sourceImageError: null,
-			requestedTesseraSize: null,
-			adjustedTesseraSize: null,
-			isCoarseGrid: false,
-			tesserae: [],
-			validTesseraCount: 0,
-			rejectedTesseraCount: 0,
-			totalTesseraCount: 0,
-			isLowVarietyCollection: false,
-			varietyRecommendation: null,
-			hasAcceptedSupplementation: false,
-			seed: null,
-			generatedTesseraCount: null,
-			mosaicResult: null,
-			needsRegeneration: false,
-			exportFormat: "png",
-			exportQuality: 0.9,
-			exportBackgroundColor: "#ffffff",
-		};
-
 		const sourceImageInfo = {
 			url: "data:image/png;base64,test",
 			width: 476,
@@ -80,15 +56,15 @@ describe("Issue #123: Allow partial edge cells", () => {
 			orientation: 1,
 		};
 
-		const newState = updateWorkflowWithSourceImage(
-			initialState,
-			sourceImageInfo,
-		);
+		const store = createWorkflowStore();
+		store.set(selectSourceImageAtom, sourceImageInfo);
 
 		// Should accept the image
-		expect(newState.hasValidSourceDimensions).toBe(true);
-		expect(newState.sourceImageError).toBeNull();
-		// Should advance to the BUILD_TESSERAE step
-		expect(newState.currentStep).toBeGreaterThan(0);
+		expect(store.get(hasValidSourceDimensionsAtom)).toBe(true);
+		expect(store.get(sourceImageErrorAtom)).toBeNull();
+		// Should advance past the source image step
+		expect(store.get(currentStepAtom)).toBeGreaterThan(
+			WorkflowStep.CHOOSE_SOURCE_IMAGE,
+		);
 	});
 });

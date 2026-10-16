@@ -1,66 +1,74 @@
 import { cleanup, fireEvent, render, screen } from "@testing-library/react";
-import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
-import type { WorkflowState } from "../engine/workflow-state";
+import { Provider } from "jotai";
+import { afterEach, describe, expect, it, vi } from "vitest";
+import {
+	createWorkflowStore,
+	requestedTesseraSizeAtom,
+	tesseraeAtom,
+} from "../atoms/workflow-atoms";
 import { TesseraSizeSelection } from "./TesseraSizeSelection";
 
-describe("TesseraSizeSelection initial value registration", () => {
-	const onSizeSelectedMock = vi.fn();
+const existingTessera = {
+	file: new File([], "tile.png", { type: "image/png" }),
+	fileName: "tile.png",
+	isValid: true,
+	error: null,
+	isLowResolution: false,
+	previewUrl: null,
+};
 
+describe("TesseraSizeSelection initial value registration", () => {
 	const mockInitialState = {
 		sourceImage: {
 			url: "blob:test",
 			width: 100,
 			height: 100,
+			orientation: 1,
 		},
-		hasValidSourceDimensions: true,
-	} as unknown as WorkflowState;
+		tesserae: [existingTessera],
+	};
 
-	beforeEach(() => {
-		onSizeSelectedMock.mockReset();
-	});
+	function renderSizeSelection() {
+		const store = createWorkflowStore(mockInitialState);
+		const result = render(
+			<Provider store={store}>
+				<TesseraSizeSelection />
+			</Provider>,
+		);
+		return { store, ...result };
+	}
 
 	afterEach(() => {
 		cleanup();
 	});
 
-	it("calls onSizeSelected on initial render with default value", () => {
-		render(
-			<TesseraSizeSelection
-				onSizeSelected={onSizeSelectedMock}
-				initialState={mockInitialState}
-			/>,
-		);
+	it("exposes the default size from the start", () => {
+		const { store } = renderSizeSelection();
 
 		const rangeInput = screen.getByRole("slider");
 		expect(rangeInput.getAttribute("value")).toBe("16");
 
-		expect(onSizeSelectedMock).toHaveBeenCalledTimes(1);
-		expect(onSizeSelectedMock).toHaveBeenCalledWith(16);
+		expect(store.get(requestedTesseraSizeAtom)).toBe(16);
 	});
 
-	it("debounces onSizeSelected when user changes slider value", () => {
+	it("debounces the size commit when user changes slider value", () => {
 		vi.useFakeTimers();
-		render(
-			<TesseraSizeSelection
-				onSizeSelected={onSizeSelectedMock}
-				initialState={mockInitialState}
-			/>,
-		);
+		const { store } = renderSizeSelection();
 
 		const rangeInput = screen.getByRole("slider");
-		onSizeSelectedMock.mockClear();
 
 		fireEvent.change(rangeInput, { target: { value: "32" } });
 
-		// Should not be called immediately (debounced)
-		expect(onSizeSelectedMock).not.toHaveBeenCalled();
+		// The draft lands in the atom immediately…
+		expect(store.get(requestedTesseraSizeAtom)).toBe(32);
+		// …but the commit side effect (clearing old tiles) waits for the debounce.
+		expect(store.get(tesseraeAtom)).toHaveLength(1);
 
 		// Advance timers to allow debounce to complete
 		vi.advanceTimersByTime(300);
 
-		// Should be called after debounce
-		expect(onSizeSelectedMock).toHaveBeenCalledTimes(1);
-		expect(onSizeSelectedMock).toHaveBeenCalledWith(32);
+		// Committed after debounce: tiles sized for the old value are gone
+		expect(store.get(tesseraeAtom)).toHaveLength(0);
 		vi.useRealTimers();
 	});
 });

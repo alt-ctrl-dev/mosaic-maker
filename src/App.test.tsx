@@ -17,33 +17,7 @@ vi.mock("./version", () => ({
 afterEach(cleanup);
 
 describe("Mosaic Maker workflow", () => {
-	it("presents all five stages in order", () => {
-		render(<App />);
-
-		const workflow = screen.getByRole("complementary", {
-			name: "Workflow steps",
-		});
-		const stages = within(workflow)
-			.getAllByRole("button")
-			.map(
-				(button) =>
-					within(button)
-						.getByText(
-							/^(Choose mode|Choose source image|Build tesserae|Generate and preview|Export mosaic)$/,
-						)
-						.textContent?.trim() ?? "",
-			);
-
-		expect(stages).toEqual([
-			"Choose mode",
-			"Choose source image",
-			"Build tesserae",
-			"Generate and preview",
-			"Export mosaic",
-		]);
-	});
-
-	it("keeps mode selection and step navigation in sync", () => {
+	it("switches modes via the top mode switcher", () => {
 		render(<App />);
 
 		fireEvent.click(
@@ -52,13 +26,9 @@ describe("Mosaic Maker workflow", () => {
 		expect(
 			screen.getByRole("radio", { name: /Select Brick Style mode/ }),
 		).toBeChecked();
-		fireEvent.click(screen.getByRole("button", { name: "Continue" }));
-
-		expect(screen.getByText("Step 2 of 5")).toBeInTheDocument();
-		fireEvent.click(screen.getByRole("button", { name: "← Back" }));
 		expect(
-			screen.getByRole("radio", { name: /Select Brick Style mode/ }),
-		).toBeChecked();
+			screen.getByRole("radio", { name: /Select Photomosaic mode/ }),
+		).not.toBeChecked();
 	});
 
 	it("starts each mounted workflow with independent state", () => {
@@ -66,41 +36,33 @@ describe("Mosaic Maker workflow", () => {
 		fireEvent.click(
 			screen.getByRole("radio", { name: /Select Brick Style mode/ }),
 		);
-		fireEvent.click(screen.getByRole("button", { name: "Continue" }));
 
 		const second = render(<App />);
 		expect(
-			within(second.container).getByText("Step 1 of 5"),
-		).toBeInTheDocument();
-		expect(
 			within(second.container).getByRole("radio", {
-				name: /Select Photomosaic \(Default\) mode/,
+				name: /Select Photomosaic mode/,
 			}),
 		).toBeChecked();
 		expect(
-			within(first.container).getByText("Step 2 of 5"),
-		).toBeInTheDocument();
+			within(first.container).getByRole("radio", {
+				name: /Select Brick Style mode/,
+			}),
+		).toBeChecked();
 	});
 
-	it("hides the top continue button on first load", () => {
+	it("renders no wizard counter or back/next chrome", () => {
 		render(<App />);
-		expect(screen.queryByText(/^Continue to /)).toBeNull();
-	});
-
-	it("hides Back button on first load", () => {
-		render(<App />);
+		expect(screen.queryByText(/Step \d of \d/)).toBeNull();
 		expect(screen.queryByText("← Back")).toBeNull();
+		expect(screen.queryByText("Next →")).toBeNull();
 	});
 
-	it("displays the header eyebrow text with offline support information", () => {
+	it("displays the privacy note", () => {
 		render(<App />);
 
-		const eyebrow = screen.getByText(
-			/Private, in-browser image making • Works offline once loaded/,
-		);
+		const eyebrow = screen.getByText(/Private · in-browser/);
 		expect(eyebrow).toBeInTheDocument();
 		expect(eyebrow.tagName).toBe("P");
-		expect(eyebrow).toHaveClass("eyebrow");
 	});
 
 	it("displays the version footer with correct information", () => {

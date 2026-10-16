@@ -1,4 +1,5 @@
-import { render, screen } from "@testing-library/react";
+import { screen } from "@testing-library/react";
+import { renderWithWorkflow } from "../test-utils/workflow";
 import { TesseraUpload } from "./TesseraUpload";
 
 vi.mock("../engine/tessera-processing", () => ({
@@ -28,26 +29,14 @@ vi.mock("../engine/resource-policy", () => ({
 
 describe("TesseraUpload mobile adaptations", () => {
 	it("shows touch-honest copy in dropzone", () => {
-		render(
-			<TesseraUpload
-				onTesseraeProcessed={vi.fn()}
-				adjustedTesseraSize={16}
-				currentTesserae={[]}
-			/>,
-		);
+		renderWithWorkflow(<TesseraUpload />);
 
 		const paragraph = screen.getByText(/choose|select|tap/i);
 		expect(paragraph).toBeInTheDocument();
 	});
 
 	it("does not show drop-focused copy on mobile", () => {
-		render(
-			<TesseraUpload
-				onTesseraeProcessed={vi.fn()}
-				adjustedTesseraSize={16}
-				currentTesserae={[]}
-			/>,
-		);
+		renderWithWorkflow(<TesseraUpload />);
 
 		expect(screen.queryByText(/drop.*images.*here/i)).not.toBeInTheDocument();
 	});

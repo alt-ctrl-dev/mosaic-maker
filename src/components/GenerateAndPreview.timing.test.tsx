@@ -1,8 +1,8 @@
-import { act, cleanup, render, screen } from "@testing-library/react";
+import { act, cleanup, screen } from "@testing-library/react";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 import * as mosaicEngine from "../engine/mosaic-engine";
-import type { WorkflowState } from "../engine/workflow-state";
 import * as telemetry from "../telemetry";
+import { renderWithWorkflow } from "../test-utils/workflow";
 import { GenerateAndPreview } from "./GenerateAndPreview";
 
 vi.mock("../telemetry", async () => {
@@ -18,7 +18,6 @@ vi.mock("../engine/mosaic-engine", () => ({
 }));
 
 describe("GenerateAndPreview Timing", () => {
-	const mockDispatch = vi.fn();
 	const mockSourceImage = {
 		url: "test-image-url",
 		width: 100,
@@ -43,30 +42,13 @@ describe("GenerateAndPreview Timing", () => {
 			isLowResolution: false,
 		},
 	];
-	const mockState: WorkflowState = {
+	const mockState = {
 		currentStep: 2,
 		furthestCompletedStep: 2,
-		mode: "photomosaic",
+		mode: "photomosaic" as const,
 		sourceImage: mockSourceImage,
 		tesserae: mockTesserae,
 		requestedTesseraSize: 10,
-		adjustedTesseraSize: 10,
-		isCoarseGrid: false,
-		hasValidSourceDimensions: true,
-		sourceImageError: null,
-		validTesseraCount: 2,
-		rejectedTesseraCount: 0,
-		totalTesseraCount: 2,
-		isLowVarietyCollection: false,
-		varietyRecommendation: null,
-		hasAcceptedSupplementation: false,
-		seed: null,
-		generatedTesseraCount: null,
-		needsRegeneration: false,
-		mosaicResult: null,
-		exportFormat: "png",
-		exportQuality: 0.9,
-		exportBackgroundColor: "#ffffff",
 	};
 
 	beforeEach(() => {
@@ -97,7 +79,7 @@ describe("GenerateAndPreview Timing", () => {
 		delete window.Worker;
 
 		try {
-			render(<GenerateAndPreview state={mockState} dispatch={mockDispatch} />);
+			renderWithWorkflow(<GenerateAndPreview />, mockState);
 
 			const generateButton = await screen.findByText("Generate Mosaic");
 			await act(async () => {
@@ -131,7 +113,7 @@ describe("GenerateAndPreview Timing", () => {
 		delete window.Worker;
 
 		try {
-			render(<GenerateAndPreview state={mockState} dispatch={mockDispatch} />);
+			renderWithWorkflow(<GenerateAndPreview />, mockState);
 
 			const generateButton = await screen.findByText("Generate Mosaic");
 			await act(async () => {
@@ -169,7 +151,7 @@ describe("GenerateAndPreview Timing", () => {
 		// @ts-expect-error - intentionally removing Worker
 		delete window.Worker;
 		try {
-			render(<GenerateAndPreview state={mockState} dispatch={mockDispatch} />);
+			renderWithWorkflow(<GenerateAndPreview />, mockState);
 			await act(async () =>
 				screen.getByRole("button", { name: "Generate Mosaic" }).click(),
 			);

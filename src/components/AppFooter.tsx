@@ -1,9 +1,10 @@
 import * as stylex from "@stylexjs/stylex";
-import { useEffect, useState } from "react";
+import { useAtom } from "jotai";
+import { telemetryConsentAtom } from "../atoms/ui-atoms";
 import { base } from "../styles/base.stylex";
 import { tokens } from "../styles/tokens.stylex";
-import { hasTelemetryConsent, setTelemetryConsent } from "../telemetry";
 import { VERSION_STRING } from "../version";
+import { ThemeToggle } from "./ThemeToggle";
 
 const styles = stylex.create({
 	footer: {
@@ -11,7 +12,7 @@ const styles = stylex.create({
 		padding: "1rem",
 		color: tokens.muted,
 		fontSize: "0.85rem",
-		borderTopWidth: "1px",
+		borderTopWidth: "0.0625rem",
 		borderTopStyle: "solid",
 		borderTopColor: tokens.border,
 		marginTop: "auto",
@@ -28,11 +29,8 @@ const styles = stylex.create({
 
 /** Application footer showing the build version. */
 export function AppFooter() {
-	const [consent, setConsent] = useState(hasTelemetryConsent());
-
-	useEffect(() => {
-		setTelemetryConsent(consent);
-	}, [consent]);
+	// atomWithStorage persists the preference to localStorage on write.
+	const [consent, setConsent] = useAtom(telemetryConsentAtom);
 
 	const handleConsentChange = (event: React.ChangeEvent<HTMLInputElement>) => {
 		setConsent(event.target.checked);
@@ -57,6 +55,7 @@ export function AppFooter() {
 						Share anonymous usage data
 					</label>
 				</div>
+				<ThemeToggle />
 			</div>
 		</footer>
 	);

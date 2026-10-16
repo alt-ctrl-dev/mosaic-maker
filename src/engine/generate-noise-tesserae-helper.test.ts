@@ -1,6 +1,5 @@
 import { describe, expect, it } from "vitest";
 import { generateNoiseTesseraeFromState } from "./generate-noise-tesserae-helper";
-import type { WorkflowState } from "./workflow-state";
 
 /**
  * Minimal in-memory canvas stub, since jsdom does not implement a 2D context.
@@ -34,41 +33,17 @@ async function fakeImageLoader(): Promise<HTMLImageElement> {
 	return {} as HTMLImageElement;
 }
 
-describe("generateNoiseTesseraeFromState", () => {
-	it("generates tesserae based on workflow state", async () => {
-		const mockState: WorkflowState = {
-			currentStep: 0,
-			furthestCompletedStep: 0,
-			mode: "photomosaic",
-			sourceImage: {
-				width: 100,
-				height: 100,
-				orientation: 1,
-				url: "blob:source",
-			},
-			requestedTesseraSize: 10,
-			adjustedTesseraSize: 10,
-			isCoarseGrid: false,
-			hasValidSourceDimensions: true,
-			sourceImageError: null,
-			tesserae: [],
-			validTesseraCount: 0,
-			rejectedTesseraCount: 0,
-			totalTesseraCount: 0,
-			isLowVarietyCollection: false,
-			varietyRecommendation: null,
-			hasAcceptedSupplementation: false,
-			seed: 12345,
-			generatedTesseraCount: null,
-			needsRegeneration: false,
-			mosaicResult: null,
-			exportFormat: "png",
-			exportQuality: 0.9,
-			exportBackgroundColor: "#ffffff",
-		};
+const sourceImage = {
+	width: 100,
+	height: 100,
+	orientation: 1,
+	url: "blob:source",
+};
 
+describe("generateNoiseTesseraeFromState", () => {
+	it("generates tesserae based on the given parameters", async () => {
 		const tesserae = await generateNoiseTesseraeFromState(
-			mockState,
+			{ sourceImage, adjustedTesseraSize: 10, seed: 12345 },
 			createFakeCanvas,
 			fakeImageLoader,
 		);
@@ -79,39 +54,13 @@ describe("generateNoiseTesseraeFromState", () => {
 	});
 
 	it("uses explicit count when provided", async () => {
-		const mockState: WorkflowState = {
-			currentStep: 0,
-			furthestCompletedStep: 0,
-			mode: "photomosaic",
-			sourceImage: {
-				width: 100,
-				height: 100,
-				orientation: 1,
-				url: "blob:source",
-			},
-			requestedTesseraSize: 10,
-			adjustedTesseraSize: 10,
-			isCoarseGrid: false,
-			hasValidSourceDimensions: true,
-			sourceImageError: null,
-			tesserae: [],
-			validTesseraCount: 0,
-			rejectedTesseraCount: 0,
-			totalTesseraCount: 0,
-			isLowVarietyCollection: false,
-			varietyRecommendation: null,
-			hasAcceptedSupplementation: false,
-			seed: 12345,
-			generatedTesseraCount: 5,
-			needsRegeneration: false,
-			mosaicResult: null,
-			exportFormat: "png",
-			exportQuality: 0.9,
-			exportBackgroundColor: "#ffffff",
-		};
-
 		const tesserae = await generateNoiseTesseraeFromState(
-			mockState,
+			{
+				sourceImage,
+				adjustedTesseraSize: 10,
+				seed: 12345,
+				generatedTesseraCount: 5,
+			},
 			createFakeCanvas,
 			fakeImageLoader,
 		);
@@ -120,71 +69,22 @@ describe("generateNoiseTesseraeFromState", () => {
 	});
 
 	it("throws error when source image is missing", async () => {
-		const mockState: WorkflowState = {
-			currentStep: 0,
-			furthestCompletedStep: 0,
-			mode: "photomosaic",
-			sourceImage: null,
-			requestedTesseraSize: 10,
-			adjustedTesseraSize: 10,
-			isCoarseGrid: false,
-			hasValidSourceDimensions: true,
-			sourceImageError: null,
-			tesserae: [],
-			validTesseraCount: 0,
-			rejectedTesseraCount: 0,
-			totalTesseraCount: 0,
-			isLowVarietyCollection: false,
-			varietyRecommendation: null,
-			hasAcceptedSupplementation: false,
-			seed: 12345,
-			generatedTesseraCount: null,
-			needsRegeneration: false,
-			mosaicResult: null,
-			exportFormat: "png",
-			exportQuality: 0.9,
-			exportBackgroundColor: "#ffffff",
-		};
-
-		await expect(generateNoiseTesseraeFromState(mockState)).rejects.toThrow(
-			"Source image and adjusted tessera size are required",
-		);
+		await expect(
+			generateNoiseTesseraeFromState({
+				sourceImage: null,
+				adjustedTesseraSize: 10,
+				seed: 12345,
+			}),
+		).rejects.toThrow("Source image and adjusted tessera size are required");
 	});
 
 	it("throws error when adjusted tessera size is missing", async () => {
-		const mockState: WorkflowState = {
-			currentStep: 0,
-			furthestCompletedStep: 0,
-			mode: "photomosaic",
-			sourceImage: {
-				width: 100,
-				height: 100,
-				orientation: 1,
-				url: "blob:source",
-			},
-			requestedTesseraSize: 10,
-			adjustedTesseraSize: null,
-			isCoarseGrid: false,
-			hasValidSourceDimensions: true,
-			sourceImageError: null,
-			tesserae: [],
-			validTesseraCount: 0,
-			rejectedTesseraCount: 0,
-			totalTesseraCount: 0,
-			isLowVarietyCollection: false,
-			varietyRecommendation: null,
-			hasAcceptedSupplementation: false,
-			seed: 12345,
-			generatedTesseraCount: null,
-			needsRegeneration: false,
-			mosaicResult: null,
-			exportFormat: "png",
-			exportQuality: 0.9,
-			exportBackgroundColor: "#ffffff",
-		};
-
-		await expect(generateNoiseTesseraeFromState(mockState)).rejects.toThrow(
-			"Source image and adjusted tessera size are required",
-		);
+		await expect(
+			generateNoiseTesseraeFromState({
+				sourceImage,
+				adjustedTesseraSize: null,
+				seed: 12345,
+			}),
+		).rejects.toThrow("Source image and adjusted tessera size are required");
 	});
 });

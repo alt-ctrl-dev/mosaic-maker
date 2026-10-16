@@ -1,80 +1,61 @@
-import { useCallback, useEffect, useRef, useState } from "react";
 import * as stylex from "@stylexjs/stylex";
+import { useAtom, useAtomValue, useSetAtom } from "jotai";
+import { useCallback, useEffect, useRef } from "react";
+import {
+	generationErrorAtom,
+	generationProgressAtom,
+	isGeneratingMosaicAtom,
+} from "../atoms/ui-atoms";
+import {
+	adjustedTesseraSizeAtom,
+	completeMosaicAtom,
+	discardMosaicAtom,
+	modeAtom,
+	mosaicResultAtom,
+	sourceImageAtom,
+	tesseraeAtom,
+} from "../atoms/workflow-atoms";
+import type { SourceImageInfo } from "../engine/image-processing";
 import { generateMosaic, type ProgressCallback } from "../engine/mosaic-engine";
 import { ANDROID_READBACK_FAILURE } from "../engine/mosaic-shared";
-import type { WorkflowState } from "../engine/workflow-state";
-import type { WorkflowAction } from "../hooks/useWorkflowReducer";
-import { base } from "../styles/base.stylex";
-import { tokens } from "../styles/tokens.stylex";
 import { vibrate } from "../haptics";
+import { base } from "../styles/base.stylex";
 import { trackError, trackMosaicGeneration, trackStepView } from "../telemetry";
-import { ActionButton } from "./ActionButton";
+import { SourceImageOverlay } from "./SourceImageOverlay";
+import { ExportPanel } from "./ExportMosaic";
 
-// StyleX only resolves computed conditional keys defined in the same module.
-const REDUCED_MOTION = "@media (prefers-reduced-motion: reduce)";
+/** Cap on DOM cells in the tile-fill animation over the source image. */
+const MAX_OVERLAY_CELLS = 2500;
 
-// Keyframes must be defined in the same module: StyleX does not resolve
-// imported keyframe bindings in animation values.
-const spin = stylex.keyframes({
-	to: { transform: "rotate(360deg)" },
-});
-
-/** Pop-in for the finished mosaic preview. Local because StyleX does not
- * resolve imported keyframe bindings. */
-const previewIn = stylex.keyframes({
-	from: { opacity: 0, transform: "scale(0.98)" },
-	to: { opacity: 1, transform: "none" },
-});
+/**
+ * Overlay grid mirroring the mosaic grid for the chosen tile size
+ * (ceil(source / tile) per axis), scaled down to MAX_OVERLAY_CELLS while
+ * keeping the tile aspect ratio so huge grids stay renderable.
+ */
+export function overlayGridFor(
+	sourceWidth: number,
+	sourceHeight: number,
+	tesseraSize: number,
+): { cols: number; rows: number } {
+	let cols = Math.max(1, Math.ceil(sourceWidth / tesseraSize));
+	let rows = Math.max(1, Math.ceil(sourceHeight / tesseraSize));
+	const scale = Math.sqrt(MAX_OVERLAY_CELLS / (cols * rows));
+	if (scale < 1) {
+		cols = Math.max(1, Math.floor(cols * scale));
+		rows = Math.max(1, Math.floor(rows * scale));
+	}
+	return { cols, rows };
+}
 
 const styles = stylex.create({
-	progressPanel: { textAlign: "center" },
-	progressBar: {
-		width: "100%",
-		margin: "0.5rem 0",
-		accentColor: tokens.primary,
-	},
-	spinner: {
-		width: "2rem",
-		height: "2rem",
-		borderWidth: "3px",
-		borderStyle: "solid",
-		borderColor: tokens.text,
-		borderTopWidth: "3px",
-		borderTopStyle: "solid",
-		borderTopColor: tokens.primary,
-		borderRadius: "50%",
-		animationName: spin,
-		animationDuration: "1s",
-		animationTimingFunction: "linear",
-		animationIterationCount: "infinite",
-		margin: "0 auto 1rem",
-		[REDUCED_MOTION]: {
-			animationDuration: "0.01ms",
-			animationIterationCount: 1,
-		},
-	},
-	previewContainer: { margin: "1rem 0", textAlign: "center" },
-	mosaicPreview: {
+	// Idle state: the source image centered with the generate button on top.
+	// The container shrink-wraps the image so overlays sit flush on it.
+	sourceContainer: {
+		position: "relative",
+		display: "inline-block",
 		maxWidth: "100%",
-		maxHeight: "70vh",
-		width: "auto",
-		height: "auto",
-		borderRadius: tokens.radius,
-		boxShadow: tokens.shadow,
-		animationName: previewIn,
-		animationDuration: "0.3s",
-		animationTimingFunction: "ease-out",
-		[REDUCED_MOTION]: { animationDuration: "0.01ms" },
 	},
 });
-
-/** Props for {@link GenerateAndPreview}. */
-interface GenerateAndPreviewProps {
-	/** Current workflow state, used for source image, tesserae, and tessera size. */
-	state: WorkflowState;
-	/** Dispatches workflow actions for mosaic generation results and cancellations. */
-	dispatch: (action: WorkflowAction) => void;
-}
 
 /**
  * User-facing error shown when the Android main-thread fallback also fails,
@@ -95,23 +76,21 @@ function onBeforeUnload(event: BeforeUnloadEvent) {
 /**
  * Mosaic generation step that orchestrates the async generation,
  * shows a progress indicator with cancel support, and displays the
- * generated mosaic preview.
+ * generated mosaic preview. Reads its inputs from the workflow atoms.
  */
-export function GenerateAndPreview({
-	state,
-	dispatch,
-}: GenerateAndPreviewProps) {
-	const [isGenerating, setIsGenerating] = useState(false);
-	const [progress, setProgress] = useState<{
-		percent: number;
-		message: string;
-	} | null>(null);
-	const [error, setError] = useState<string | null>(null);
-	const [previewUrl, setPreviewUrl] = useState<string | null>(null);
-	const [previewDimensions, setPreviewDimensions] = useState<{
-		width: number;
-		height: number;
-	} | null>(null);
+export function GenerateAndPreview() {
+	const mode = useAtomValue(modeAtom);
+	const sourceImage = useAtomValue(sourceImageAtom);
+	const adjustedTesseraSize = useAtomValue(adjustedTesseraSizeAtom);
+	const tesserae = useAtomValue(tesseraeAtom);
+	// The finished mosaic is workflow state; the preview renders from it.
+	const mosaicResult = useAtomValue(mosaicResultAtom);
+	const completeMosaic = useSetAtom(completeMosaicAtom);
+	const discardMosaic = useSetAtom(discardMosaicAtom);
+
+	const [isGenerating, setIsGenerating] = useAtom(isGeneratingMosaicAtom);
+	const [progress, setProgress] = useAtom(generationProgressAtom);
+	const [error, setError] = useAtom(generationErrorAtom);
 
 	const beforeUnloadRef = useRef(onBeforeUnload);
 	const workerRef = useRef<Worker | null>(null);
@@ -147,23 +126,20 @@ export function GenerateAndPreview({
 	}, [isGenerating, terminateWorker]);
 
 	const handleGenerate = async () => {
-		if (!state.sourceImage || !state.adjustedTesseraSize) {
-			setError("Missing source image or tessera size");
+		if (!sourceImage || !adjustedTesseraSize) {
+			setError("Missing source image or tile size");
 			return;
 		}
 
 		terminateWorker();
 
-		const sourceImage = state.sourceImage;
-		const tesseraSize = state.adjustedTesseraSize;
+		const tesseraSize = adjustedTesseraSize;
 		const generationId = ++generationIdRef.current;
 		generationStartTimeRef.current = performance.now();
 
 		setIsGenerating(true);
 		setError(null);
 		setProgress(null);
-		setPreviewUrl(null);
-		setPreviewDimensions(null);
 		generationPathRef.current =
 			typeof Worker !== "undefined"
 				? { executionPath: "worker" }
@@ -198,26 +174,18 @@ export function GenerateAndPreview({
 								sourceImage.width,
 								sourceImage.height,
 								tesseraSize,
-								state.mode,
+								mode,
 								"worker",
 							);
 							if (success) {
-								setPreviewUrl(data.dataUrl);
-								setPreviewDimensions({
+								vibrate(MOSAIC_COMPLETE_VIBRATION);
+								completeMosaic({
+									dataUrl: data.dataUrl,
 									width: data.width,
 									height: data.height,
 								});
-								vibrate(MOSAIC_COMPLETE_VIBRATION);
-								dispatch({
-									type: "mosaicGenerated",
-									mosaicResult: {
-										dataUrl: data.dataUrl,
-										width: data.width,
-										height: data.height,
-									},
-								});
 							} else {
-								dispatch({ type: "generationCancelledOrFailed" });
+								discardMosaic();
 							}
 							setIsGenerating(false);
 							terminateWorker();
@@ -238,7 +206,7 @@ export function GenerateAndPreview({
 								);
 							} else {
 								setError(data.message);
-								dispatch({ type: "generationCancelledOrFailed" });
+								discardMosaic();
 								setIsGenerating(false);
 								trackMosaicGeneration(
 									false,
@@ -246,7 +214,7 @@ export function GenerateAndPreview({
 									sourceImage.width,
 									sourceImage.height,
 									tesseraSize,
-									state.mode,
+									mode,
 									"worker",
 								);
 								terminateWorker();
@@ -258,14 +226,14 @@ export function GenerateAndPreview({
 				workerRef.current.postMessage({
 					type: "generate",
 					sourceImage,
-					tesserae: state.tesserae.map((tessera) => ({
+					tesserae: tesserae.map((tessera) => ({
 						fileName: tessera.fileName,
 						isValid: tessera.isValid,
 						previewUrl: tessera.previewUrl,
 						color: tessera.color,
 					})),
 					tesseraSize,
-					mode: state.mode,
+					mode: mode,
 				});
 			} catch (err) {
 				if (generationId !== generationIdRef.current) return;
@@ -293,8 +261,8 @@ export function GenerateAndPreview({
 	};
 
 	const generateOnMainThread = async (
-		sourceImage: NonNullable<WorkflowState["sourceImage"]>,
-		tesseraSize: NonNullable<WorkflowState["adjustedTesseraSize"]>,
+		sourceImage: SourceImageInfo,
+		tesseraSize: number,
 		fallbackReason: "android_readback" | "worker_unavailable",
 		generationId: number,
 		fallbackErrorMessage?: string,
@@ -312,9 +280,9 @@ export function GenerateAndPreview({
 		try {
 			const result = await generateMosaic(
 				sourceImage,
-				state.tesserae,
+				tesserae,
 				tesseraSize,
-				state.mode,
+				mode,
 				undefined,
 				undefined,
 				progressCallback,
@@ -329,17 +297,15 @@ export function GenerateAndPreview({
 				sourceImage.width,
 				sourceImage.height,
 				tesseraSize,
-				state.mode,
+				mode,
 				"main_thread",
 				fallbackReason,
 			);
 
 			setProgress({ percent: 100, message: "Mosaic generated successfully" });
-			setPreviewUrl(result.dataUrl);
-			setPreviewDimensions({ width: result.width, height: result.height });
 			vibrate(MOSAIC_COMPLETE_VIBRATION);
 
-			dispatch({ type: "mosaicGenerated", mosaicResult: result });
+			completeMosaic(result);
 		} catch (err) {
 			if (generationId !== generationIdRef.current) return;
 			if (fallbackErrorMessage) {
@@ -355,7 +321,7 @@ export function GenerateAndPreview({
 			} else {
 				setError("Unknown error occurred");
 			}
-			dispatch({ type: "generationCancelledOrFailed" });
+			discardMosaic();
 
 			const totalTime = performance.now() - generationStartTimeRef.current;
 
@@ -365,7 +331,7 @@ export function GenerateAndPreview({
 				sourceImage.width,
 				sourceImage.height,
 				tesseraSize,
-				state.mode,
+				mode,
 				"main_thread",
 				fallbackReason,
 			);
@@ -377,14 +343,14 @@ export function GenerateAndPreview({
 	const handleCancel = () => {
 		++generationIdRef.current;
 		workerRef.current?.postMessage({ type: "cancel" });
-		if (state.sourceImage && state.adjustedTesseraSize) {
+		if (sourceImage && adjustedTesseraSize) {
 			trackMosaicGeneration(
 				false,
 				performance.now() - generationStartTimeRef.current,
-				state.sourceImage.width,
-				state.sourceImage.height,
-				state.adjustedTesseraSize,
-				state.mode,
+				sourceImage.width,
+				sourceImage.height,
+				adjustedTesseraSize,
+				mode,
 				generationPathRef.current.executionPath,
 				generationPathRef.current.fallbackReason,
 			);
@@ -394,44 +360,62 @@ export function GenerateAndPreview({
 		setIsGenerating(false);
 		setError(null);
 		setProgress(null);
-		dispatch({ type: "generationCancelledOrFailed" });
+		discardMosaic();
 	};
 
 	const canGenerate =
-		state.sourceImage !== null &&
-		state.adjustedTesseraSize !== null &&
-		(state.mode === "brick"
-			? state.tesserae.length >= 2
-			: state.tesserae.length > 0);
+		sourceImage !== null &&
+		adjustedTesseraSize !== null &&
+		(mode === "brick" ? tesserae.length >= 2 : tesserae.length > 0);
+
+	const overlayGrid =
+		sourceImage && adjustedTesseraSize
+			? overlayGridFor(
+					sourceImage.width,
+					sourceImage.height,
+					adjustedTesseraSize,
+				)
+			: null;
+	const overlayCellCount = overlayGrid
+		? overlayGrid.cols * overlayGrid.rows
+		: 0;
+	const filledProgressCells = progress
+		? Math.round((progress.percent / 100) * overlayCellCount)
+		: 0;
 
 	const errorPanelProps = stylex.props(base.card);
-	const progressPanelProps = stylex.props(
-		base.card,
-		base.busySpinner,
-		styles.progressPanel,
-	);
 
 	return (
 		<div>
-			{!isGenerating && !previewUrl && (
-				<div>
-					<p {...stylex.props(base.paragraph)}>
-						Ready to generate your mosaic? Press the "Generate Mosaic" button
-						below. You can go back to the previous step anytime if needed.
-					</p>
-					<ActionButton
-						type="button"
-						onClick={handleGenerate}
-						disabled={!canGenerate || isGenerating}
+			{!mosaicResult && sourceImage && (
+				<div {...stylex.props(base.sourcePreviewContainer)}>
+					<div
+						{...stylex.props(styles.sourceContainer)}
 						aria-busy={isGenerating}
 					>
-						Generate Mosaic
-					</ActionButton>
+						<img
+							src={sourceImage.url}
+							alt="Source"
+							{...stylex.props(base.sourcePreviewImage)}
+						/>
+						<SourceImageOverlay
+							isGenerating={isGenerating}
+							grid={overlayGrid}
+							filledCells={filledProgressCells}
+							canGenerate={canGenerate}
+							onGenerate={handleGenerate}
+							onCancel={handleCancel}
+						/>
+					</div>
+				</div>
+			)}
 
+			{!isGenerating && !mosaicResult && (
+				<div>
 					{!canGenerate && (
 						<p {...stylex.props(base.paragraph)}>
-							Please ensure you have a source image, tessera size, and tesserae
-							before generating.
+							Please ensure you have a source image, tile size, and tiles before
+							generating.
 						</p>
 					)}
 
@@ -447,53 +431,7 @@ export function GenerateAndPreview({
 				</div>
 			)}
 
-			{isGenerating && (
-				<article
-					{...progressPanelProps}
-					className={`generation-progress ${progressPanelProps.className}`}
-					aria-busy="true"
-				>
-					<h3 {...stylex.props(base.heading, base.h3)}>Generating Mosaic...</h3>
-					{progress ? (
-						<div>
-							<progress
-								{...stylex.props(styles.progressBar)}
-								value={progress.percent}
-								max="100"
-								aria-label="Generation progress"
-							>
-								{progress.percent}%
-							</progress>
-							<p {...stylex.props(base.paragraph)}>{progress.message}</p>
-						</div>
-					) : (
-						<div>
-							<div {...stylex.props(styles.spinner)} aria-hidden="true" />
-							<p {...stylex.props(base.paragraph)}>Processing...</p>
-						</div>
-					)}
-					<ActionButton type="button" onClick={handleCancel} variant="outline">
-						Cancel
-					</ActionButton>
-				</article>
-			)}
-
-			{previewUrl && previewDimensions && (
-				<div>
-					<h3 {...stylex.props(base.heading, base.h3)}>Preview</h3>
-					<div {...stylex.props(styles.previewContainer)}>
-						<img
-							src={previewUrl}
-							alt="Generated mosaic preview"
-							{...stylex.props(styles.mosaicPreview)}
-						/>
-					</div>
-					<p {...stylex.props(base.paragraph)}>
-						Dimensions: {previewDimensions.width} × {previewDimensions.height}{" "}
-						pixels
-					</p>
-				</div>
-			)}
+			{!isGenerating && mosaicResult && <ExportPanel />}
 		</div>
 	);
 }

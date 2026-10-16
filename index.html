@@ -1,22 +1,92 @@
 <!doctype html>
 <html lang="en">
-  <head>
-    <meta charset="UTF-8" />
-    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-    <meta
-      name="description"
-      content="Create a full-resolution photomosaic privately in your browser."
-    />
-    <!-- Security Policies -->
-    <meta http-equiv="Content-Security-Policy" content="default-src 'self'; script-src 'self' 'unsafe-inline' 'unsafe-eval'; style-src 'self' 'unsafe-inline'; img-src 'self' blob: data:; connect-src 'self'; worker-src 'self' blob:; object-src 'none'; frame-ancestors 'none'; base-uri 'none'; form-action 'none';" />
-    <meta http-equiv="Referrer-Policy" content="strict-origin-when-cross-origin" />
-    <meta http-equiv="Permissions-Policy" content="geolocation=(), camera=(), microphone=(), payment=(), usb=(), autoplay=()" />
 
-    <title>Mosaic Maker</title>
-    <link rel="icon" type="image/svg+xml" href="%BASE_URL%favicon.svg" />
-  </head>
-  <body>
-    <div id="root"></div>
-    <script type="module" src="/src/main.tsx"></script>
-  </body>
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <meta name="description" content="Create a full-resolution photomosaic privately in your browser." />
+  <!-- Security Policies -->
+  <meta http-equiv="Content-Security-Policy" content="default-src 'self'; script-src 'self' 'unsafe-inline' 'unsafe-eval'; style-src 'self' 'unsafe-inline'; img-src 'self' blob: data:; connect-src 'self'; worker-src 'self' blob:; object-src 'none'; frame-ancestors 'none'; base-uri 'none'; form-action 'none';" />
+  <meta http-equiv="Referrer-Policy" content="strict-origin-when-cross-origin" />
+  <meta http-equiv="Permissions-Policy" content="geolocation=(), camera=(), microphone=(), payment=(), usb=(), autoplay=()" />
+
+  <title>Mosaic Maker</title>
+  <meta name="color-scheme" content="light dark">
+  <link rel="icon" type="image/svg+xml" href="favicon.svg" />
+  <style>
+    /* Self-hosted display face for the Pixel Sprite Grid world (SIL OFL).
+       Remote font hosts are blocked by the app CSP, so the face ships
+       beside the app. */
+    @font-face {
+      font-family: "Press Start 2P";
+      src: url("fonts/PressStart2P-Regular.ttf") format("truetype");
+      font-weight: 400;
+      font-style: normal;
+      font-display: swap;
+    }
+
+    /* Browser surfaces themed from the world palette: the parts of the
+       page the app does not draw still carry the design. */
+    html {
+      caret-color: light-dark(#8a6100, #ffcf3f);
+      scrollbar-color: light-dark(#c9cedb, #2a3040) light-dark(#eceef3, #12141c);
+    }
+
+    ::selection {
+      background: #ffcf3f;
+      color: #16130a;
+    }
+
+    ::-webkit-scrollbar {
+      width: 0.75rem;
+      height: 0.75rem;
+    }
+
+    ::-webkit-scrollbar-track {
+      background: light-dark(#eceef3, #12141c);
+    }
+
+    ::-webkit-scrollbar-thumb {
+      background: light-dark(#c9cedb, #2a3040);
+      border: 0.125rem solid light-dark(#eceef3, #12141c);
+    }
+
+    ::-webkit-scrollbar-thumb:hover {
+      background: light-dark(#b6bdcd, #2e374c);
+    }
+
+    /* First-paint shell: paints the workbench before React mounts, so the
+       page never flashes the wrong field. Every color is a light-dark()
+       pair resolved by the used color-scheme on <html>: "light dark"
+       follows the OS, and a saved choice pins one (see the script below).
+       The colors must stay in sync with the background and text design
+       tokens. */
+    html {
+      color-scheme: light dark;
+      background-color: light-dark(#eceef3, #12141c);
+    }
+
+    body {
+      margin: 0;
+      background-color: light-dark(#eceef3, #12141c);
+      color: light-dark(#1b1e28, #e8eaf2);
+    }
+  </style>
+  <script>
+    // Pin the saved scheme before first paint; without one the stylesheet's
+    // "light dark" keeps following the OS.
+    try {
+      const saved = localStorage.getItem("color-scheme");
+      if (saved === "light" || saved === "dark") {
+        document.documentElement.style.colorScheme = saved;
+      }
+    } catch {}
+  </script>
+</head>
+
+<body>
+  <div id="root"></div>
+  <script type="module" src="/src/main.tsx"></script>
+</body>
+
 </html>

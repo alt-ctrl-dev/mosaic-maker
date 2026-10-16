@@ -129,12 +129,12 @@ export function getTotalSizeErrorMessage(): string {
 }
 
 /**
- * Get an appropriate error message for tessera file count violations.
+ * Get an appropriate error message for tile file count violations.
  *
  * @returns Error message describing the file count violation
  */
 export function getFileCountErrorMessage(): string {
-	return `Too many tessera files imported (${MAX_TESSERA_FILES} maximum). Please remove some files.`;
+	return `Too many tiles imported (${MAX_TESSERA_FILES} maximum). Please remove some files.`;
 }
 
 /**

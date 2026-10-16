@@ -1,45 +1,115 @@
-import { useEffect } from "react";
 import * as stylex from "@stylexjs/stylex";
-import type { TesseraInfo } from "../engine/workflow-state";
-import { WORKFLOW_STEP_TITLES, WorkflowStep } from "../engine/workflow-state";
+import { useAtomValue, useSetAtom } from "jotai";
+import { useEffect, useRef, useState } from "react";
+import { isGeneratingTilesAtom } from "../atoms/ui-atoms";
+import {
+	acceptSupplementationAtom,
+	advanceFromReviewAtom,
+	clearTesseraeAtom,
+	hasAcceptedSupplementationAtom,
+	isLowVarietyCollectionAtom,
+	removeTesseraAtom,
+	tesseraeAtom,
+	varietyRecommendationAtom,
+} from "../atoms/workflow-atoms";
 import { base } from "../styles/base.stylex";
 import { tokens } from "../styles/tokens.stylex";
 import { trackEvent } from "../telemetry";
 import { ActionButton } from "./ActionButton";
+import { Badge } from "./Badge";
+import { OptionalButton } from "./OptionalButton";
 
 // StyleX only resolves computed conditional keys defined in the same module.
 const REDUCED_MOTION = "@media (prefers-reduced-motion: reduce)";
 
+/** Flash for the review summary when tiles are added while it is closed. */
+const summaryFlash = stylex.keyframes({
+	from: { backgroundColor: tokens.primarySoft },
+	to: { backgroundColor: "transparent" },
+});
+
 const styles = stylex.create({
 	grid: {
 		display: "grid",
-		gridTemplateColumns: "repeat(auto-fill, minmax(150px, 1fr))",
+		gridTemplateColumns: "repeat(auto-fill, minmax(9.375rem, 1fr))",
 		gap: "1rem",
 		// The old stylesheet gave details content a 1rem margin on every side.
 		margin: "1rem",
 	},
 	item: {
+		position: "relative",
 		padding: "0.75rem",
 		borderRadius: tokens.radius,
 		boxShadow: tokens.shadow,
 		transition: "transform 0.2s ease",
-		":hover": { transform: "translateY(-2px)" },
+		":hover": { transform: "translateY(-0.125rem)" },
 		[REDUCED_MOTION]: { transitionDuration: "0.01ms" },
 	},
 	itemInvalid: {
-		borderWidth: "2px",
+		borderWidth: "0.125rem",
 		borderStyle: "solid",
 		borderColor: tokens.invalid,
 		backgroundColor: tokens.invalidSoft,
 	},
-	itemSupplemented: {
-		borderWidth: "2px",
+	varietyBar: {
+		display: "flex",
+		flexWrap: "wrap",
+		alignItems: "center",
+		gap: "0.5rem 1rem",
+		margin: "0 1rem",
+		padding: "0.75rem 1rem",
+		backgroundColor: tokens.surface,
+		borderWidth: "0.0625rem",
 		borderStyle: "solid",
-		borderColor: tokens.valid,
+		borderColor: tokens.border,
+		borderLeftWidth: "0.1875rem",
+		borderLeftColor: tokens.primary,
+	},
+	varietyText: { margin: 0, flex: 1, fontSize: "0.9rem" },
+	clearRow: { margin: "1rem" },
+	loadingRow: {
+		display: "flex",
+		alignItems: "center",
+		margin: "1rem 1rem 0",
+		fontSize: "0.9rem",
+		color: tokens.muted,
+	},
+	removeButton: {
+		position: "absolute",
+		top: "0.375rem",
+		right: "0.375rem",
+		display: "flex",
+		alignItems: "center",
+		justifyContent: "center",
+		width: "1.5rem",
+		height: "1.5rem",
+		padding: 0,
+		backgroundColor: tokens.background,
+		color: tokens.muted,
+		borderWidth: "0.0625rem",
+		borderStyle: "solid",
+		borderColor: tokens.border,
+		cursor: "pointer",
+		fontSize: "0.75rem",
+		lineHeight: 1,
+		// Thumbs need bigger targets than cursors.
+		"@media (max-width: 36rem)": {
+			width: "2rem",
+			height: "2rem",
+			fontSize: "0.875rem",
+		},
+		"@media (pointer: coarse)": {
+			width: "2.75rem",
+			height: "2.75rem",
+			top: "0.25rem",
+			right: "0.25rem",
+			fontSize: "1rem",
+		},
+		":hover": { color: tokens.invalid, borderColor: tokens.invalid },
 	},
 	preview: {
 		width: "100%",
-		height: "100px",
+		height: "6.25rem",
 		objectFit: "cover",
 		borderRadius: `calc(${tokens.radius} / 2)`,
 		marginBottom: "0.5rem",
@@ -55,42 +125,50 @@ const styles = stylex.create({
 		padding: "0.1rem 0.3rem",
 		borderRadius: `calc(${tokens.radius} / 2)`,
 	},
+	summaryPulse: {
+		animationName: summaryFlash,
+		animationDuration: "0.8s",
+		animationTimingFunction: "ease-out",
+		[REDUCED_MOTION]: { animationDuration: "0.01ms" },
+	},
 });
-
-/** Props for {@link TesseraReview}. */
-interface TesseraReviewProps {
-	/** Tesserae to display in the review grid. */
-	tesserae: TesseraInfo[];
-	/** Called when the user removes a tessera at the given index. */
-	onRemoveTessera: (index: number) => void;
-	/** Called when the user accepts supplementing with generated tesserae. */
-	onAcceptSupplementation?: () => void;
-	/** Called when the user wants to continue to the next step. */
-	onContinue?: () => void;
-	/** Whether the collection has low variety. */
-	isLowVariety?: boolean;
-	/** Recommended number of tesserae for adequate variety. */
-	varietyRecommendation?: number | null;
-	/** Whether the user has already accepted supplementation. */
-	hasAcceptedSupplementation?: boolean;
-	/** Whether the details element should be open by default. */
-	open?: boolean;
-}
 
 /**
  * Displays the tessera collection for review with validity stats,
- * variety warnings, and per-tessera removal.
+ * variety warnings, and per-tessera removal. Reads and writes the
+ * workflow atoms directly.
  */
-export function TesseraReview({
-	tesserae,
-	onRemoveTessera,
-	onAcceptSupplementation,
-	onContinue,
-	isLowVariety = false,
-	varietyRecommendation = null,
-	hasAcceptedSupplementation = false,
-	open,
-}: TesseraReviewProps) {
+export function TesseraReview() {
+	const tesserae = useAtomValue(tesseraeAtom);
+	const isLowVariety = useAtomValue(isLowVarietyCollectionAtom);
+	const varietyRecommendation = useAtomValue(varietyRecommendationAtom);
+	const hasAcceptedSupplementation = useAtomValue(
+		hasAcceptedSupplementationAtom,
+	);
+	const removeTessera = useSetAtom(removeTesseraAtom);
+	const clearTesserae = useSetAtom(clearTesseraeAtom);
+	const isGenerating = useAtomValue(isGeneratingTilesAtom);
+	const acceptSupplementation = useSetAtom(acceptSupplementationAtom);
+	const advanceFromReview = useSetAtom(advanceFromReviewAtom);
+
+	// Adding tiles keeps the accordion closed but pulses the summary to
+	// signal the change. Rejected tiles always keep it open.
+	const prevCountRef = useRef(tesserae.length);
+	const prevGeneratingRef = useRef(isGenerating);
+	const [summaryPulse, setSummaryPulse] = useState(false);
+
+	useEffect(() => {
+		if (
+			tesserae.length > prevCountRef.current ||
+			(isGenerating && !prevGeneratingRef.current)
+		) {
+			setSummaryPulse(true);
+		}
+		prevCountRef.current = tesserae.length;
+		prevGeneratingRef.current = isGenerating;
+	}, [tesserae.length, isGenerating]);
+
+	const open = tesserae.some((tessera) => !tessera.isValid);
 	const validCount = tesserae.filter((t) => t.isValid).length;
 	const rejectedCount = tesserae.length - validCount;
 
@@ -113,46 +191,73 @@ export function TesseraReview({
 		hasAcceptedSupplementation,
 	]);
 
-	const warningProps = stylex.props(base.card);
+	const warningProps = stylex.props(styles.varietyBar);
 
 	return (
 		<div>
 			<div aria-live="polite" aria-atomic="true" {...stylex.props(base.srOnly)}>
-				Tessera counts updated: {validCount} valid, {rejectedCount} rejected
+				Tile counts updated: {validCount} valid, {rejectedCount} rejected
 			</div>
-			{isLowVariety && varietyRecommendation && (
-				<article
-					{...warningProps}
-					className={`warning-message ${warningProps.className}`}
-					role="alert"
+			<details
+				{...stylex.props(base.details)}
+				open={open}
+				aria-busy={isGenerating}
+			>
+				<summary
+					{...stylex.props(base.summary, summaryPulse && styles.summaryPulse)}
+					onAnimationEnd={() => setSummaryPulse(false)}
 				>
-					<p {...stylex.props(base.paragraph)}>
-						Low variety: You have {validCount} tesserae, but{" "}
-						{varietyRecommendation} are recommended.
+					Review tiles ({validCount} valid, {rejectedCount} rejected)
+				</summary>
+
+				{isGenerating && (
+					<p
+						{...stylex.props(styles.loadingRow, base.busySpinner)}
+						aria-live="polite"
+					>
+						Generating tiles...
 					</p>
-					{onAcceptSupplementation && !hasAcceptedSupplementation && (
+				)}
+
+				{tesserae.length > 0 && (
+					<div {...stylex.props(styles.clearRow)}>
 						<ActionButton
 							type="button"
-							onClick={onAcceptSupplementation}
-							variant="outline"
+							onClick={() => clearTesserae()}
+							variant="secondary"
 						>
-							Add random tesserae
+							Clear all tiles
 						</ActionButton>
-					)}
-				</article>
-			)}
+					</div>
+				)}
 
-			<details {...stylex.props(base.details)} open={open}>
-				<summary {...stylex.props(base.summary)}>
-					Review tesserae ({validCount} valid, {rejectedCount} rejected)
-				</summary>
+				{isLowVariety && varietyRecommendation && (
+					<article
+						{...warningProps}
+						className={`warning-message ${warningProps.className}`}
+						role="alert"
+					>
+						<Badge>(Optional)</Badge>
+						<p {...stylex.props(styles.varietyText)}>
+							You have {validCount} tiles, but {varietyRecommendation} are
+							recommended.
+						</p>
+						{isLowVariety && (
+							<OptionalButton
+								type="button"
+								onClick={() => acceptSupplementation()}
+							>
+								Add random tiles
+							</OptionalButton>
+						)}
+					</article>
+				)}
 
 				<div {...stylex.props(styles.grid)}>
 					{tesserae.map((tessera, index) => {
 						const itemProps = stylex.props(
 							styles.item,
 							!tessera.isValid && styles.itemInvalid,
-							tessera.isSupplemented && styles.itemSupplemented,
 						);
 						return (
 							<div
@@ -185,32 +290,29 @@ export function TesseraReview({
 										</span>
 									)}
 								</div>
-								<ActionButton
+								<button
 									type="button"
-									onClick={() => onRemoveTessera(index)}
+									onClick={() => removeTessera(index)}
 									aria-label={`Remove ${tessera.fileName}`}
-									variant="outline"
+									{...stylex.props(styles.removeButton, base.focusOutline)}
 								>
-									Remove
-								</ActionButton>
+									<span aria-hidden="true">✕</span>
+								</button>
 							</div>
 						);
 					})}
 				</div>
 			</details>
 
-			{onContinue && (
-				<div>
-					<ActionButton
-						type="button"
-						onClick={onContinue}
-						disabled={validCount === 0}
-					>
-						Continue to{" "}
-						{WORKFLOW_STEP_TITLES[WorkflowStep.GENERATE_AND_PREVIEW]} →
-					</ActionButton>
-				</div>
-			)}
+			<div>
+				<ActionButton
+					type="button"
+					onClick={() => advanceFromReview()}
+					disabled={validCount === 0}
+				>
+					Continue to step 4 →
+				</ActionButton>
+			</div>
 		</div>
 	);
 }

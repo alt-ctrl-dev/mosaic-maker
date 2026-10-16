@@ -1,29 +1,36 @@
-import type React from "react";
-import { useCallback, useEffect, useState } from "react";
 import * as stylex from "@stylexjs/stylex";
+import { useAtom, useAtomValue, useSetAtom } from "jotai";
+import type React from "react";
+import { useCallback, useEffect } from "react";
+import { isProcessingUploadAtom, uploadErrorAtom } from "../atoms/ui-atoms";
+import {
+	replaceTesseraeAtom,
+	resolvedTesseraSizeAtom,
+	tesseraeAtom,
+} from "../atoms/workflow-atoms";
+import {
+	getDimensionErrorMessage,
+	getFileCountErrorMessage,
+	getFileSizeErrorMessage,
+	getImageDimensions,
+	getTotalSizeErrorMessage,
+	isDimensionLimitExceeded,
+	isFileSizeExceeded,
+	isTesseraFileLimitExceeded,
+	isTotalRetainedSizeExceeded,
+} from "../engine/resource-policy";
 import { processTesserae } from "../engine/tessera-processing";
 import type { TesseraInfo } from "../engine/workflow-state";
+import { vibrate } from "../haptics";
 import { base } from "../styles/base.stylex";
 import { tokens } from "../styles/tokens.stylex";
-import { vibrate } from "../haptics";
 import { trackError, trackStepView } from "../telemetry";
-import {
-	isFileSizeExceeded,
-	isTotalRetainedSizeExceeded,
-	isTesseraFileLimitExceeded,
-	isDimensionLimitExceeded,
-	getImageDimensions,
-	getFileSizeErrorMessage,
-	getTotalSizeErrorMessage,
-	getFileCountErrorMessage,
-	getDimensionErrorMessage,
-} from "../engine/resource-policy";
 
 const styles = stylex.create({
 	root: { flex: 1 },
 	controlGroup: {
 		margin: 0,
-		borderWidth: "1px",
+		borderWidth: "0.0625rem",
 		borderStyle: "solid",
 		borderColor: tokens.border,
 		borderRadius: tokens.radius,
@@ -36,26 +43,15 @@ const styles = stylex.create({
 	},
 });
 
-/** Props for {@link TesseraUpload}. */
-interface TesseraUploadProps {
-	/** Called with the processed tesserae when upload completes. */
-	onTesseraeProcessed: (tesserae: TesseraInfo[]) => void;
-	/** Tessera pixel size to validate uploaded images against. */
-	adjustedTesseraSize: number;
-	/** Current tesserae collection for cumulative size checking. */
-	currentTesserae: TesseraInfo[];
-}
-
 /**
  * Drop zone and file input for uploading tessera images.
  */
-export function TesseraUpload({
-	onTesseraeProcessed,
-	adjustedTesseraSize,
-	currentTesserae,
-}: TesseraUploadProps) {
-	const [isProcessing, setIsProcessing] = useState(false);
-	const [errorMessage, setErrorMessage] = useState<string | null>(null);
+export function TesseraUpload() {
+	const adjustedTesseraSize = useAtomValue(resolvedTesseraSizeAtom);
+	const currentTesserae = useAtomValue(tesseraeAtom);
+	const replaceTesserae = useSetAtom(replaceTesseraeAtom);
+	const [isProcessing, setIsProcessing] = useAtom(isProcessingUploadAtom);
+	const [errorMessage, setErrorMessage] = useAtom(uploadErrorAtom);
 
 	useEffect(() => {
 		trackStepView("tessera_upload");
@@ -152,7 +148,7 @@ export function TesseraUpload({
 					);
 					tesserae = [...processed, ...dimensionRejected];
 				}
-				onTesseraeProcessed(tesserae);
+				replaceTesserae([...currentTesserae, ...tesserae]);
 				vibrate(15);
 			} catch (error) {
 				console.error("Error processing tesserae:", error);
@@ -164,7 +160,13 @@ export function TesseraUpload({
 				setIsProcessing(false);
 			}
 		},
-		[adjustedTesseraSize, currentTesserae, onTesseraeProcessed],
+		[
+			adjustedTesseraSize,
+			currentTesserae,
+			replaceTesserae,
+			setIsProcessing,
+			setErrorMessage,
+		],
 	);
 
 	const handleDragOver = useCallback((e: React.DragEvent) => {
@@ -198,7 +200,7 @@ export function TesseraUpload({
 		>
 			<fieldset
 				{...stylex.props(base.fieldset, styles.controlGroup)}
-				aria-label="Upload Tesserae"
+				aria-label="Upload tiles"
 			>
 				<legend {...stylex.props(base.legend)}>Upload your own images</legend>
 				<div
@@ -213,7 +215,7 @@ export function TesseraUpload({
 						onChange={(e) => handleFileChange(e.target.files)}
 						multiple
 						disabled={isProcessing}
-						aria-label="Upload tesserae images"
+						aria-label="Upload tile images"
 						{...stylex.props(base.fileInput, base.focusOutline)}
 					/>
 				</div>
@@ -235,7 +237,7 @@ export function TesseraUpload({
 					className={`processing-indicator ${processingProps.className}`}
 					aria-busy="true"
 				>
-					Processing tesserae...
+					Processing tiles...
 				</article>
 			)}
 		</section>

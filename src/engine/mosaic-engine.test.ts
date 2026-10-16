@@ -319,10 +319,10 @@ describe("Mosaic Engine", () => {
 
 	it("validates tessera size inputs", async () => {
 		await expect(generate([makeTessera()], 0)).rejects.toThrow(
-			"Tessera size must be positive",
+			"Tile size must be positive",
 		);
 		await expect(generate([makeTessera()], -5)).rejects.toThrow(
-			"Tessera size must be positive",
+			"Tile size must be positive",
 		);
 	});
 

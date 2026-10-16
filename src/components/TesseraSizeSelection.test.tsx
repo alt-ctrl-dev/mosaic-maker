@@ -1,6 +1,10 @@
 import { cleanup, fireEvent, render, screen } from "@testing-library/react";
-import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
-import type { WorkflowState } from "../engine/workflow-state";
+import { Provider } from "jotai";
+import { afterEach, describe, expect, it, vi } from "vitest";
+import {
+	createWorkflowStore,
+	requestedTesseraSizeAtom,
+} from "../atoms/workflow-atoms";
 import { TesseraSizeSelection } from "./TesseraSizeSelection";
 
 const mockInitialState = {
@@ -8,72 +12,98 @@ const mockInitialState = {
 		url: "blob:test",
 		width: 100,
 		height: 100,
+		orientation: 1,
 	},
-	hasValidSourceDimensions: true,
-} as unknown as WorkflowState;
+};
+
+function renderSizeSelection(state: Partial<typeof mockInitialState> = {}) {
+	const store = createWorkflowStore({ ...mockInitialState, ...state });
+	const result = render(
+		<Provider store={store}>
+			<TesseraSizeSelection />
+		</Provider>,
+	);
+	return { store, ...result };
+}
 
 describe("TesseraSizeSelection", () => {
-	const onSizeSelectedMock = vi.fn();
-
-	beforeEach(() => {
-		onSizeSelectedMock.mockReset();
-	});
-
 	afterEach(() => {
 		cleanup();
 	});
 
-	it("renders a range input with min 2 and fixed max 250", () => {
-		render(
-			<TesseraSizeSelection
-				onSizeSelected={onSizeSelectedMock}
-				initialState={mockInitialState}
-			/>,
-		);
+	it("renders a range input with min 8 and a source-derived max", () => {
+		renderSizeSelection();
 
 		const rangeInput = screen.getByRole("slider");
 		expect(rangeInput.getAttribute("type")).toBe("range");
-		expect(rangeInput.getAttribute("min")).toBe("2");
-		expect(rangeInput.getAttribute("max")).toBe("250");
+		expect(rangeInput.getAttribute("min")).toBe("8");
+		// Ceiling is the source image's short side (100 × 100 fixture).
+		expect(rangeInput.getAttribute("max")).toBe("100");
 		expect(rangeInput.getAttribute("value")).toBe("16");
 	});
 
 	it("displays the current size value", () => {
-		render(
-			<TesseraSizeSelection
-				onSizeSelected={onSizeSelectedMock}
-				initialState={mockInitialState}
-			/>,
-		);
+		renderSizeSelection();
 
-		expect(
-			screen.getByText("16px", { selector: "strong" }),
-		).toBeInTheDocument();
+		expect(screen.getByText(/16 pixels x 16 pixels/)).toBeInTheDocument();
 	});
 
-	it("debounces onSizeSelected when the slider value changes", () => {
-		vi.useFakeTimers();
-		render(
-			<TesseraSizeSelection
-				onSizeSelected={onSizeSelectedMock}
-				initialState={mockInitialState}
-			/>,
-		);
+	it("shows the grid overlay when cells are spaced far apart on screen", () => {
+		const { container } = renderSizeSelection();
 
-		// Clear the initial mount call
-		onSizeSelectedMock.mockClear();
+		expect(container.querySelector('[aria-hidden="true"]')).not.toBeNull();
+	});
+
+	it("keeps the grid visible but strided when cells get crowded", () => {
+		// 4160 × 6240 at 16px tiles: cells render well under a pixel wide, so
+		// the overlay draws every Nth line instead of fusing into a solid fill.
+		const { container } = renderSizeSelection({
+			sourceImage: {
+				url: "blob:test",
+				width: 4160,
+				height: 6240,
+				orientation: 1,
+			},
+		});
+
+		const overlay = container.querySelector(
+			'[aria-hidden="true"]',
+		) as HTMLElement | null;
+		expect(overlay).not.toBeNull();
+
+		const widthPct = Number.parseFloat(
+			overlay?.style.backgroundSize?.split(" ")[0] ?? "0",
+		);
+		const singleCellPct = (16 / 4160) * 100;
+		expect(widthPct).toBeGreaterThan(singleCellPct);
+	});
+
+	it("debounces the size commit when the slider value changes", async () => {
+		const telemetry = await import("../telemetry");
+		const trackEvent = vi.spyOn(telemetry, "trackEvent");
+		vi.useFakeTimers();
+		const { store } = renderSizeSelection();
+		trackEvent.mockClear();
 
 		const rangeInput = screen.getByRole("slider");
 		fireEvent.change(rangeInput, { target: { value: "32" } });
 
-		// Should not be called immediately (debounced)
-		expect(onSizeSelectedMock).not.toHaveBeenCalled();
+		// The draft lands in the atom immediately…
+		expect(store.get(requestedTesseraSizeAtom)).toBe(32);
+		// …but the commit side effect waits for the debounce.
+		expect(trackEvent).not.toHaveBeenCalledWith(
+			"tessera_size_changed",
+			expect.anything(),
+		);
 
 		// Advance timers to allow debounce to complete
 		vi.advanceTimersByTime(300);
 
-		// Should be called after debounce
-		expect(onSizeSelectedMock).toHaveBeenCalledWith(32);
+		// Committed once after debounce
+		expect(trackEvent).toHaveBeenCalledWith("tessera_size_changed", {
+			size: 32,
+		});
+		trackEvent.mockRestore();
 		vi.useRealTimers();
 	});
 });

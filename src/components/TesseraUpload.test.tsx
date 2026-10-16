@@ -1,5 +1,7 @@
-import { render, screen, fireEvent, waitFor } from "@testing-library/react";
+import { fireEvent, screen, waitFor } from "@testing-library/react";
 import { describe, expect, it, vi } from "vitest";
+import { tesseraeAtom } from "../atoms/workflow-atoms";
+import { renderWithWorkflow } from "../test-utils/workflow";
 import { TesseraUpload } from "./TesseraUpload";
 
 // Mock the processTesserae function
@@ -41,20 +43,23 @@ vi.mock("../engine/resource-policy", async () => {
 	};
 });
 
-describe("TesseraUpload", () => {
-	const mockOnTesseraeProcessed = vi.fn();
-	const defaultProps = {
-		onTesseraeProcessed: mockOnTesseraeProcessed,
-		adjustedTesseraSize: 50,
-		currentTesserae: [],
-	};
+const tesseraUploadState = {
+	sourceImage: {
+		url: "blob:test",
+		width: 100,
+		height: 100,
+		orientation: 1,
+	},
+	requestedTesseraSize: 50,
+};
 
+describe("TesseraUpload", () => {
 	beforeEach(() => {
 		vi.resetAllMocks();
 	});
 
 	it("renders without crashing", () => {
-		render(<TesseraUpload {...defaultProps} />);
+		renderWithWorkflow(<TesseraUpload />, tesseraUploadState);
 		expect(screen.getByText("Upload your own images")).toBeInTheDocument();
 	});
 
@@ -69,7 +74,7 @@ describe("TesseraUpload", () => {
 			(fileName: string) => `File "${fileName}" is too large`,
 		);
 
-		render(<TesseraUpload {...defaultProps} />);
+		renderWithWorkflow(<TesseraUpload />, tesseraUploadState);
 
 		const largeFile = new File(
 			[new ArrayBuffer(30 * 1024 * 1024)],
@@ -77,7 +82,7 @@ describe("TesseraUpload", () => {
 			{ type: "image/jpeg" },
 		);
 
-		const input = screen.getByLabelText("Upload tesserae images");
+		const input = screen.getByLabelText("Upload tile images");
 		fireEvent.change(input, { target: { files: [largeFile] } });
 
 		await waitFor(() => {
@@ -94,7 +99,7 @@ describe("TesseraUpload", () => {
 		vi.mocked(isTesseraFileLimitExceeded).mockReturnValue(true);
 		vi.mocked(getFileCountErrorMessage).mockReturnValue("Too many files");
 
-		render(<TesseraUpload {...defaultProps} />);
+		renderWithWorkflow(<TesseraUpload />, tesseraUploadState);
 
 		const files = Array.from(
 			{ length: 501 },
@@ -104,7 +109,7 @@ describe("TesseraUpload", () => {
 				}),
 		);
 
-		const input = screen.getByLabelText("Upload tesserae images");
+		const input = screen.getByLabelText("Upload tile images");
 		fireEvent.change(input, { target: { files } });
 
 		await waitFor(() => {
@@ -125,7 +130,7 @@ describe("TesseraUpload", () => {
 		vi.mocked(isTotalRetainedSizeExceeded).mockReturnValue(true);
 		vi.mocked(getTotalSizeErrorMessage).mockReturnValue("Total size exceeded");
 
-		render(<TesseraUpload {...defaultProps} />);
+		renderWithWorkflow(<TesseraUpload />, tesseraUploadState);
 
 		const largeFiles = [
 			new File([new ArrayBuffer(150 * 1024 * 1024)], "large1.jpg", {
@@ -136,12 +141,61 @@ describe("TesseraUpload", () => {
 			}),
 		];
 
-		const input = screen.getByLabelText("Upload tesserae images");
+		const input = screen.getByLabelText("Upload tile images");
 		fireEvent.change(input, { target: { files: largeFiles } });
 
 		await waitFor(() => {
 			expect(screen.getByRole("alert")).toBeInTheDocument();
 		});
 		expect(screen.getByRole("alert")).toHaveTextContent("Total size exceeded");
+	});
+
+	it("keeps existing tiles when uploading new ones", async () => {
+		const { getImageDimensions } = await import("../engine/resource-policy");
+		const { processTesserae } = await import("../engine/tessera-processing");
+		vi.mocked(getImageDimensions).mockResolvedValue({
+			width: 100,
+			height: 100,
+		});
+		vi.mocked(processTesserae).mockResolvedValue([
+			{
+				fileName: "new.jpg",
+				isValid: true,
+				error: null,
+				isLowResolution: false,
+				previewUrl: null,
+			},
+		]);
+
+		const existing = {
+			fileName: "existing.jpg",
+			isValid: true,
+			error: null,
+			isLowResolution: false,
+			previewUrl: null,
+		};
+		const { store } = renderWithWorkflow(<TesseraUpload />, {
+			...tesseraUploadState,
+			tesserae: [existing],
+		});
+
+		const input = screen.getByLabelText("Upload tile images");
+		fireEvent.change(input, {
+			target: {
+				files: [
+					new File([new ArrayBuffer(1024)], "new.jpg", {
+						type: "image/jpeg",
+					}),
+				],
+			},
+		});
+
+		await waitFor(() => {
+			expect(store.get(tesseraeAtom)).toHaveLength(2);
+		});
+		expect(store.get(tesseraeAtom).map((t) => t.fileName)).toEqual([
+			"existing.jpg",
+			"new.jpg",
+		]);
 	});
 });

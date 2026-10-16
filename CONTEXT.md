@@ -24,6 +24,14 @@ _Avoid_: Random tile, noise tile
 Anonymized, non-content app performance data — errors, web vitals, and mosaic generation metrics — sent to an observability backend. Never includes image data or user content; users can opt out.
 _Avoid_: Analytics, tracking
 
+**Telemetry service**:
+The contract the app uses to report telemetry: typed domain events, errors, and consent. The app depends only on this contract; a concrete implementation is chosen at startup.
+_Avoid_: Telemetry client, telemetry tracker, analytics service
+
+**Telemetry adapter**:
+A concrete implementation of the telemetry service — one sends events to the observability backend, one logs them locally, and one records them for tests.
+_Avoid_: Telemetry provider, telemetry plugin
+
 **Mosaic**:
 The final image assembled from tesserae, with the same pixel width and height as the source image.
 _Avoid_: Output image, result image

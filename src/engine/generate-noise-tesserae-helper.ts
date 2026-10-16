@@ -1,45 +1,56 @@
 import { runDeviceCapacityPreflight } from "./device-capacity-preflight";
 import { createCanvas, loadImage } from "./export";
+import type { SourceImageInfo } from "./image-processing";
 import {
 	calculateRecommendedTesseraCount,
 	generateTesseraeUsingNoise,
 } from "./noise-tessera-generation";
 import { calculateGridCellCount } from "./tessera-sizing";
-import type { TesseraInfo, WorkflowState } from "./workflow-state";
+import type { TesseraInfo } from "./workflow-state";
 import { SEED_MAX } from "./workflow-state";
 
+/** Inputs for procedural noise tessera generation. */
+export interface NoiseTesseraeParams {
+	sourceImage: SourceImageInfo | null;
+	adjustedTesseraSize: number | null;
+	/** Explicit count to generate; falls back to the recommended count. */
+	generatedTesseraCount?: number | null;
+	/** Seed for reproducible output; random when absent. */
+	seed?: number | null;
+}
+
 /**
- * Generate noise tesserae based on the current workflow state.
- * This function calculates the appropriate number of tesserae to generate and uses
- * the workflow state's seed or generates a new one if none exists.
+ * Generate noise tesserae for the given source image and tessera size.
+ * Calculates the appropriate number of tesserae and uses the given seed or
+ * generates a new one if none exists.
  *
- * @param state - Current workflow state containing source image, tessera size, and generation parameters
+ * @param params - Source image, tessera size, and generation parameters
  * @param canvasCreator - Factory for creating canvas elements (overridable for testing)
  * @param imageLoader - Image loading function (overridable for testing)
  * @returns Promise resolving to an array of generated tesserae
- * @throws Error if source image or adjusted tessera size are not available in the state
+ * @throws Error if source image or adjusted tessera size are missing
  */
 export async function generateNoiseTesseraeFromState(
-	state: WorkflowState,
+	params: NoiseTesseraeParams,
 	canvasCreator: (
 		width: number,
 		height: number,
 	) => HTMLCanvasElement = createCanvas,
 	imageLoader: (url: string) => Promise<HTMLImageElement> = loadImage,
 ): Promise<TesseraInfo[]> {
-	if (!state.sourceImage || !state.adjustedTesseraSize) {
+	if (!params.sourceImage || !params.adjustedTesseraSize) {
 		throw new Error("Source image and adjusted tessera size are required");
 	}
 
 	const gridCellCount = calculateGridCellCount(
-		state.adjustedTesseraSize,
-		state.sourceImage.width,
-		state.sourceImage.height,
+		params.adjustedTesseraSize,
+		params.sourceImage.width,
+		params.sourceImage.height,
 	);
 
 	let tesseraCount: number;
-	if (state.generatedTesseraCount !== null) {
-		tesseraCount = state.generatedTesseraCount;
+	if (params.generatedTesseraCount != null) {
+		tesseraCount = params.generatedTesseraCount;
 	} else {
 		tesseraCount = calculateRecommendedTesseraCount(gridCellCount);
 	}
@@ -48,8 +59,8 @@ export async function generateNoiseTesseraeFromState(
 	const preflightResult = runDeviceCapacityPreflight(
 		gridCellCount,
 		tesseraCount,
-		state.sourceImage.width,
-		state.sourceImage.height,
+		params.sourceImage.width,
+		params.sourceImage.height,
 	);
 
 	if (!preflightResult.isSafe) {
@@ -60,12 +71,12 @@ export async function generateNoiseTesseraeFromState(
 
 	tesseraCount = Math.max(1, Math.min(tesseraCount, gridCellCount));
 
-	const seed = state.seed ?? Math.floor(Math.random() * SEED_MAX);
+	const seed = params.seed ?? Math.floor(Math.random() * SEED_MAX);
 
 	return generateTesseraeUsingNoise(
-		state.sourceImage,
+		params.sourceImage,
 		tesseraCount,
-		state.adjustedTesseraSize,
+		params.adjustedTesseraSize,
 		seed,
 		canvasCreator,
 		imageLoader,

@@ -40,29 +40,6 @@ export async function processTesserae(
 }
 
 /**
- * Resize existing tesserae to a new target size.
- *
- * Synthetic brick tesserae have no backing image file and render as a flat
- * colour at any size, so they pass through unchanged; only file-backed
- * photomosaic tesserae are re-processed.
- *
- * @param tesserae - Array of existing tesserae to resize
- * @param targetSize - The new target size for each tessera
- * @returns A promise that resolves to an array of resized tesserae
- */
-export async function resizeTesserae(
-	tesserae: TesseraInfo[],
-	targetSize: number,
-): Promise<TesseraInfo[]> {
-	const syntheticTesserae = tesserae.filter((t) => t.file === undefined);
-	const files = tesserae
-		.map((t) => t.file)
-		.filter((file): file is File => file !== undefined);
-	const resized = await processTesserae(files, targetSize);
-	return [...syntheticTesserae, ...resized];
-}
-
-/**
  * Process a single image file into a tessera.
  * Validates the file format, loads the image, crops it to a square,
  * resizes it to the target size, and generates a preview.
@@ -120,9 +97,20 @@ function loadImageFromFile(file: File): Promise<HTMLImageElement> {
 			resolve(img);
 		};
 
-		img.onerror = () => {
+		img.onerror = (error) => {
 			URL.revokeObjectURL(url);
-			reject(new Error("Failed to load image"));
+			console.error(
+				"Failed to load image:",
+				error,
+				"File:",
+				file.name,
+				"Size:",
+				file.size,
+				"Type:",
+				file.type,
+			);
+			const detail = error instanceof Error ? error.message : "Unknown error";
+			reject(new Error(`Failed to load image: ${detail}`));
 		};
 
 		img.src = url;
