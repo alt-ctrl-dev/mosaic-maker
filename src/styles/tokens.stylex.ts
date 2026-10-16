@@ -11,7 +11,7 @@ import * as stylex from "@stylexjs/stylex";
  * coral = alerts, blue = informational readouts.
  */
 export const tokens = stylex.defineVars({
-	radius: "0px",
+	radius: 0,
 	primary: "#ffcf3f",
 	onPrimary: "#16130a",
 	onSecondary: "#dfe4f2",

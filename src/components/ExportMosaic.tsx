@@ -151,7 +151,7 @@ function openNewTabForLaterPopulation(): {
 
 			const { body } = doc;
 			body.style.margin = "0";
-			body.style.padding = "20px";
+			body.style.padding = "1.25rem";
 			body.style.display = "flex";
 			body.style.justifyContent = "center";
 			body.style.alignItems = "center";
@@ -162,7 +162,7 @@ function openNewTabForLaterPopulation(): {
 			img.alt = "Exported mosaic";
 			img.style.maxWidth = "100%";
 			img.style.maxHeight = "100vh";
-			img.style.boxShadow = "0 2px 10px rgba(0,0,0,0.1)";
+			img.style.boxShadow = "0 0.125rem 0.625rem rgba(0,0,0,0.1)";
 
 			// Revoke the blob URL once the image has rendered (or failed) instead of
 			// guessing a fixed delay, so the object URL lives exactly as long as it

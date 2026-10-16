@@ -30,7 +30,7 @@ const styles = stylex.create({
 	root: { flex: 1 },
 	controlGroup: {
 		margin: 0,
-		borderWidth: "1px",
+		borderWidth: "0.0625rem",
 		borderStyle: "solid",
 		borderColor: tokens.border,
 		borderRadius: tokens.radius,

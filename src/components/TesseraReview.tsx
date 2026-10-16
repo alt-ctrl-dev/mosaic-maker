@@ -31,7 +31,7 @@ const summaryFlash = stylex.keyframes({
 const styles = stylex.create({
 	grid: {
 		display: "grid",
-		gridTemplateColumns: "repeat(auto-fill, minmax(150px, 1fr))",
+		gridTemplateColumns: "repeat(auto-fill, minmax(9.375rem, 1fr))",
 		gap: "1rem",
 		// The old stylesheet gave details content a 1rem margin on every side.
 		margin: "1rem",
@@ -42,11 +42,11 @@ const styles = stylex.create({
 		borderRadius: tokens.radius,
 		boxShadow: tokens.shadow,
 		transition: "transform 0.2s ease",
-		":hover": { transform: "translateY(-2px)" },
+		":hover": { transform: "translateY(-0.125rem)" },
 		[REDUCED_MOTION]: { transitionDuration: "0.01ms" },
 	},
 	itemInvalid: {
-		borderWidth: "2px",
+		borderWidth: "0.125rem",
 		borderStyle: "solid",
 		borderColor: tokens.invalid,
 		backgroundColor: tokens.invalidSoft,
@@ -59,10 +59,10 @@ const styles = stylex.create({
 		margin: "0 1rem",
 		padding: "0.75rem 1rem",
 		backgroundColor: tokens.surface,
-		borderWidth: "1px",
+		borderWidth: "0.0625rem",
 		borderStyle: "solid",
 		borderColor: tokens.border,
-		borderLeftWidth: "3px",
+		borderLeftWidth: "0.1875rem",
 		borderLeftColor: tokens.primary,
 	},
 	varietyText: { margin: 0, flex: 1, fontSize: "0.9rem" },
@@ -86,14 +86,14 @@ const styles = stylex.create({
 		padding: 0,
 		backgroundColor: tokens.background,
 		color: tokens.muted,
-		borderWidth: "1px",
+		borderWidth: "0.0625rem",
 		borderStyle: "solid",
 		borderColor: tokens.border,
 		cursor: "pointer",
 		fontSize: "0.75rem",
 		lineHeight: 1,
 		// Thumbs need bigger targets than cursors.
-		"@media (max-width: 576px)": {
+		"@media (max-width: 36rem)": {
 			width: "2rem",
 			height: "2rem",
 			fontSize: "0.875rem",
@@ -109,7 +109,7 @@ const styles = stylex.create({
 	},
 	preview: {
 		width: "100%",
-		height: "100px",
+		height: "6.25rem",
 		objectFit: "cover",
 		borderRadius: `calc(${tokens.radius} / 2)`,
 		marginBottom: "0.5rem",

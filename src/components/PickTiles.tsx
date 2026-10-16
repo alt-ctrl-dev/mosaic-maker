@@ -13,12 +13,12 @@ const styles = stylex.create({
 		padding: "0.6rem 1rem",
 		backgroundColor: tokens.surface,
 		color: tokens.text,
-		borderWidth: "1px",
+		borderWidth: "0.0625rem",
 		borderStyle: "solid",
 		borderColor: tokens.border,
 		cursor: "pointer",
 		fontSize: "0.95rem",
-		"@media (max-width: 576px)": { padding: "0.5rem", fontSize: "0.85rem" },
+		"@media (max-width: 36rem)": { padding: "0.5rem", fontSize: "0.85rem" },
 	},
 	segmentButtonActive: {
 		borderColor: tokens.primary,
@@ -28,7 +28,7 @@ const styles = stylex.create({
 	infoBanner: {
 		margin: 0,
 		padding: "0.75rem 1rem",
-		borderWidth: "1px",
+		borderWidth: "0.0625rem",
 		borderStyle: "solid",
 		borderColor: tokens.info,
 		color: tokens.text,

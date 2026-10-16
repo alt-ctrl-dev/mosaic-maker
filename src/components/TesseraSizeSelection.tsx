@@ -33,7 +33,7 @@ const styles = stylex.create({
 		display: "inline-block",
 		position: "relative",
 		marginTop: "1rem",
-		borderWidth: "1px",
+		borderWidth: "0.0625rem",
 		borderStyle: "solid",
 		borderColor: tokens.border,
 	},
@@ -187,7 +187,7 @@ export function TesseraSizeSelection() {
 							aria-hidden="true"
 							style={{
 								backgroundImage:
-									"linear-gradient(to right, rgba(10, 12, 18, 0.85) 1px, transparent 1px), linear-gradient(to bottom, rgba(10, 12, 18, 0.85) 1px, transparent 1px)",
+									"linear-gradient(to right, rgba(10, 12, 18, 0.85) 0.0625rem, transparent 0.0625rem), linear-gradient(to bottom, rgba(10, 12, 18, 0.85) 0.0625rem, transparent 0.0625rem)",
 								backgroundSize: `${(gridCellWidthPct ?? 0) * gridStride}% ${(gridCellHeightPct ?? 0) * gridStride}%`,
 							}}
 						/>

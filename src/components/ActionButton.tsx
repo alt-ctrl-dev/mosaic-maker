@@ -8,7 +8,7 @@ const REDUCED_MOTION = "@media (prefers-reduced-motion: reduce)";
 const styles = stylex.create({
 	button: {
 		appearance: "none",
-		borderWidth: "1px",
+		borderWidth: "0.0625rem",
 		borderStyle: "solid",
 		borderColor: "transparent",
 		borderRadius: tokens.radius,
@@ -30,8 +30,8 @@ const styles = stylex.create({
 		transition: "transform 0.1s ease",
 		":active": { transform: "scale(0.97)" },
 		":focus-visible": {
-			outline: "2px solid currentColor",
-			outlineOffset: "2px",
+			outline: "0.125rem solid currentColor",
+			outlineOffset: "0.125rem",
 		},
 		":disabled": { cursor: "not-allowed", opacity: 0.5 },
 		[REDUCED_MOTION]: { transitionDuration: "0.01ms" },

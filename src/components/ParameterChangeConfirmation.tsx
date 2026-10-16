@@ -23,7 +23,7 @@ const styles = stylex.create({
 		backgroundColor: tokens.surface,
 		color: tokens.text,
 		borderRadius: tokens.radius,
-		border: `1px solid ${tokens.border}`,
+		border: `0.0625rem solid ${tokens.border}`,
 		padding: "1.5rem",
 		maxWidth: "25rem",
 		width: "90vw",
@@ -55,7 +55,7 @@ const styles = stylex.create({
 	cancelButton: {
 		backgroundColor: tokens.surface,
 		color: tokens.text,
-		border: `1px solid ${tokens.border}`,
+		border: `0.0625rem solid ${tokens.border}`,
 		":hover": {
 			backgroundColor: tokens.secondaryHover,
 		},

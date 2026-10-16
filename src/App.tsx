@@ -33,7 +33,7 @@ const styles = stylex.create({
 		fontSize: "100%",
 		color: tokens.text,
 		lineHeight: 1.5,
-		paddingInline: "16px",
+		paddingInline: "1rem",
 		marginInline: "auto",
 		"@media (min-width: 80rem)": { maxWidth: "80rem" },
 	},
@@ -44,10 +44,10 @@ const styles = stylex.create({
 		justifyContent: "space-between",
 		gap: "0.5rem 1rem",
 		paddingBlock: "1.5rem 1rem",
-		borderBottomWidth: "1px",
+		borderBottomWidth: "0.0625rem",
 		borderBottomStyle: "solid",
 		borderBottomColor: tokens.border,
-		"@media (max-width: 576px)": {
+		"@media (max-width: 36rem)": {
 			paddingBlockStart: "1rem",
 		},
 	},

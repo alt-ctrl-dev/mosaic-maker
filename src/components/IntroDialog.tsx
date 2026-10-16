@@ -12,7 +12,7 @@ const styles = stylex.create({
 		maxHeight: "80vh",
 		margin: "auto",
 		padding: "1.5rem",
-		borderWidth: "1px",
+		borderWidth: "0.0625rem",
 		borderStyle: "solid",
 		borderColor: tokens.border,
 		backgroundColor: tokens.surface,
