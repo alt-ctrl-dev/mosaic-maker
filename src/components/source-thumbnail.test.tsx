@@ -136,11 +136,26 @@ describe("Source Thumbnail Persistence", () => {
 		expect(bar).not.toBeNull();
 		if (!bar) throw new Error("thumbnail bar not found");
 
+		fireEvent.click(within(bar).getByRole("button", { name: /change image/i }));
+
+		// The bar hides on the source step, and the drop zone is live again.
+		expect(queryThumbnailBar()).not.toBeInTheDocument();
+		expect(
+			screen.getByLabelText("Tap or click here to choose a source image"),
+		).toBeInTheDocument();
+	});
+
+	it("returns to source selection when the thumbnail is clicked", () => {
+		renderWithState(makeAdjustedState(WorkflowStep.PICK_TILE_SIZE));
+
+		const bar = queryThumbnailBar();
+		expect(bar).not.toBeNull();
+		if (!bar) throw new Error("thumbnail bar not found");
+
 		fireEvent.click(
 			within(bar).getByRole("button", { name: /change source image/i }),
 		);
 
-		// The bar hides on the source step, and the drop zone is live again.
 		expect(queryThumbnailBar()).not.toBeInTheDocument();
 		expect(
 			screen.getByLabelText("Tap or click here to choose a source image"),

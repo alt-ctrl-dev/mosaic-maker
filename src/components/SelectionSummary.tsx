@@ -54,6 +54,16 @@ const styles = stylex.create({
 		borderStyle: "solid",
 		borderColor: tokens.border,
 	},
+	// The thumbnail itself is also a "change image" affordance.
+	thumbnailButton: {
+		appearance: "none",
+		backgroundColor: "transparent",
+		borderWidth: 0,
+		borderStyle: "none",
+		padding: 0,
+		lineHeight: 0,
+		cursor: "pointer",
+	},
 	detail: {
 		fontSize: "0.85rem",
 		color: tokens.muted,
@@ -104,11 +114,18 @@ export function SelectionSummary() {
 			<div {...stylex.props(styles.items)}>
 				<div {...stylex.props(styles.item)}>
 					<div {...stylex.props(styles.itemInfo)}>
-						<img
-							src={sourceImage.url}
-							alt="Source"
-							{...stylex.props(styles.thumbnail)}
-						/>
+						<button
+							type="button"
+							onClick={() => goToStep(WorkflowStep.CHOOSE_SOURCE_IMAGE)}
+							aria-label="Change source image"
+							{...stylex.props(styles.thumbnailButton, base.focusOutline)}
+						>
+							<img
+								src={sourceImage.url}
+								alt="Source"
+								{...stylex.props(styles.thumbnail)}
+							/>
+						</button>
 						<span {...stylex.props(styles.detail)}>
 							{sourceImage.width} × {sourceImage.height} pixels
 						</span>
@@ -116,7 +133,6 @@ export function SelectionSummary() {
 					<button
 						type="button"
 						onClick={() => goToStep(WorkflowStep.CHOOSE_SOURCE_IMAGE)}
-						aria-label="Change source image"
 						{...stylex.props(styles.changeButton, base.focusOutline)}
 					>
 						Change image
