@@ -118,7 +118,7 @@ export function TesseraReview() {
 					role="alert"
 				>
 					<p {...stylex.props(base.paragraph)}>
-						Low variety: You have {validCount} tesserae, but{" "}
+						Low variety: You have {validCount} tiles, but{" "}
 						{varietyRecommendation} are recommended.
 					</p>
 					{isLowVariety && !hasAcceptedSupplementation && (

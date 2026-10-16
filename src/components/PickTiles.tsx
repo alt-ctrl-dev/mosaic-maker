@@ -130,8 +130,8 @@ export function PickTiles() {
 			{path === "upload" ? (
 				<>
 					<p {...stylex.props(styles.infoBanner)} role="note">
-						Each image is cropped to the tessera size and becomes a tile in your
-						mosaic. Tiles may repeat; unused photos stay unused. Your files
+						Each image is cropped to your chosen tile size and becomes a tile in
+						your mosaic. Tiles may repeat; unused photos stay unused. Your files
 						never leave your device.
 					</p>
 					<TesseraUpload />
