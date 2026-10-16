@@ -3,7 +3,6 @@ import { Provider, useAtomValue, useSetAtom } from "jotai";
 import { flushSync } from "react-dom";
 import {
 	advanceFromSizeAtom,
-	clearTesseraeAtom,
 	currentStepAtom,
 	furthestCompletedStepAtom,
 	goToStepAtom,
@@ -19,13 +18,12 @@ import { Dialog } from "./components/Dialog";
 import { ErrorBoundary } from "./components/ErrorBoundary";
 import { ExportMosaic } from "./components/ExportMosaic";
 import { GenerateAndPreview } from "./components/GenerateAndPreview";
-import { GeneratedTesserae } from "./components/GeneratedTesserae";
 import { ModeSelection } from "./components/ModeSelection";
+import { PickTiles } from "./components/PickTiles";
 import { SelectionSummary } from "./components/SelectionSummary";
 import { SourceImageSelection } from "./components/SourceImageSelection";
 import { TesseraReview } from "./components/TesseraReview";
 import { TesseraSizeSelection } from "./components/TesseraSizeSelection";
-import { TesseraUpload } from "./components/TesseraUpload";
 import { prefersReducedMotion } from "./engine/accessibility-utils";
 import { WorkflowStep as WorkflowStepEnum } from "./engine/workflow-state";
 import { base } from "./styles/base.stylex";
@@ -207,36 +205,6 @@ const styles = stylex.create({
 	canvas: { width: "100%", maxWidth: "48rem", marginInline: "auto" },
 	content: { flex: 1, viewTransitionName: "step-content" },
 	pickTiles: { display: "flex", flexDirection: "column", gap: "2rem" },
-	tesseraInputs: {
-		display: "flex",
-		flexWrap: "wrap",
-		gap: "2rem",
-		alignItems: "flex-start",
-		"@media (max-width: 768px)": { flexDirection: "column" },
-	},
-	divider: {
-		alignSelf: "center",
-		color: tokens.muted,
-		fontWeight: "bold",
-		fontSize: "0.875rem",
-		textTransform: "uppercase",
-		letterSpacing: "0.05em",
-		borderLeftWidth: "1px",
-		borderLeftStyle: "solid",
-		borderLeftColor: tokens.border,
-		paddingLeft: "1rem",
-		margin: "0 1rem",
-		"@media (max-width: 768px)": {
-			borderLeftWidth: 0,
-			borderLeftStyle: "none",
-			borderTopWidth: "1px",
-			borderTopStyle: "solid",
-			borderTopColor: tokens.border,
-			paddingLeft: 0,
-			paddingTop: "1rem",
-			margin: "1rem 0",
-		},
-	},
 });
 
 /**
@@ -260,7 +228,6 @@ export function WorkflowApp() {
 	const rejectedTesseraCount = useAtomValue(rejectedTesseraCountAtom);
 	const goToStep = useSetAtom(goToStepAtom);
 	const advanceFromSize = useSetAtom(advanceFromSizeAtom);
-	const clearTesserae = useSetAtom(clearTesseraeAtom);
 
 	function renderStepContent(stepIndex: number) {
 		switch (stepIndex) {
@@ -278,44 +245,29 @@ export function WorkflowApp() {
 					</div>
 				);
 			case WorkflowStepEnum.PICK_TILES: {
-				const isPhotomosaic = mode === "photomosaic";
 				const isBrick = mode === "brick";
-				const hasPhotomosaicTesserae = isPhotomosaic && tesserae.length > 0;
 				const hasBrickColors = isBrick && tesserae.length >= 2;
-				const canReview = hasPhotomosaicTesserae || hasBrickColors;
 
 				return (
 					<div {...stylex.props(styles.pickTiles)}>
-						{isPhotomosaic && (
+						{isBrick ? (
 							<>
-								<div {...stylex.props(styles.tesseraInputs)}>
-									<TesseraUpload />
-									<div {...stylex.props(styles.divider)}>OR</div>
-									<GeneratedTesserae />
-								</div>
-								{hasPhotomosaicTesserae && (
-									<ActionButton
-										type="button"
-										onClick={() => clearTesserae()}
-										variant="secondary"
-										style={{ marginBottom: "1rem" }}
-									>
-										Clear all tesserae
-									</ActionButton>
+								<BrickColorPicker />
+								{hasBrickColors && (
+									<div>
+										<div
+											{...stylex.props(base.paragraph)}
+											style={{ fontSize: "0.875rem" }}
+										>
+											{validTesseraCount} ready · {rejectedTesseraCount}{" "}
+											rejected
+										</div>
+										<TesseraReview />
+									</div>
 								)}
 							</>
-						)}
-						{isBrick && <BrickColorPicker />}
-						{canReview && (
-							<div>
-								<div
-									{...stylex.props(base.paragraph)}
-									style={{ fontSize: "0.875rem" }}
-								>
-									{validTesseraCount} ready · {rejectedTesseraCount} rejected
-								</div>
-								<TesseraReview />
-							</div>
+						) : (
+							<PickTiles />
 						)}
 					</div>
 				);

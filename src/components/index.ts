@@ -1,6 +1,7 @@
 export * from "./BrickColorPicker";
 export * from "./GeneratedTesserae";
 export * from "./ModeSelection";
+export * from "./PickTiles";
 export * from "./SelectionSummary";
 export * from "./SourceImageSelection";
 export * from "./TesseraReview";
