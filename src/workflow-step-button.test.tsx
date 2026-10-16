@@ -10,6 +10,7 @@ describe("workflow-step-button styling", () => {
 
 		const button = screen.getAllByRole("button", {
 			name: /pick tiles/i,
+			hidden: true,
 		})[0];
 		expect(button).toBeDefined();
 

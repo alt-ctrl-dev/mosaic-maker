@@ -20,14 +20,17 @@ describe("Mosaic Maker workflow", () => {
 	it("presents all five stages in order", () => {
 		render(<App />);
 
-		const workflow = screen.getByRole("complementary", {
-			name: "Workflow steps",
-		});
-		const stages = within(workflow)
-			.getAllByRole("button")
+		// The desktop rack was removed; the stages now live in the mobile
+		// step-menu dialog.
+		const menu = document.getElementById("mobile-workflow-menu");
+		expect(menu).not.toBeNull();
+		if (!menu) throw new Error("step menu not found");
+
+		const stages = within(menu)
+			.getAllByRole("listitem", { hidden: true })
 			.map(
-				(button) =>
-					within(button)
+				(item) =>
+					within(item)
 						.getByText(
 							/^(Choose source image|Pick tile size|Pick tiles|Generate and preview|Export mosaic)$/,
 						)
@@ -48,7 +51,10 @@ describe("Mosaic Maker workflow", () => {
 
 		// The workflow starts at source image; mode lives in the top switcher.
 		expect(
-			screen.getAllByRole("button", { name: /choose source image/i })[0],
+			screen.getAllByRole("button", {
+				name: /choose source image/i,
+				hidden: true,
+			})[0],
 		).toHaveAttribute("aria-current", "step");
 
 		fireEvent.click(

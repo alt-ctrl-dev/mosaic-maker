@@ -21,12 +21,17 @@ const EXPECTED_STEP_TITLES = [
 	"Export mosaic",
 ] as const;
 
-/** Returns the visible step buttons in the workflow sidebar. */
+/**
+ * Returns the step buttons. The desktop rack was removed; the steps now
+ * live in the mobile step-menu dialog, which is hidden in jsdom.
+ */
 function getStepButtons() {
-	const sidebar = screen.getByRole("complementary", {
-		name: "Workflow steps",
-	});
-	return within(sidebar).getAllByRole("button");
+	const menu = document.getElementById("mobile-workflow-menu");
+	if (!menu) throw new Error("step menu not found");
+	// Scope to the step list so the dialog's close toggle is excluded.
+	const list = menu.querySelector("ol");
+	if (!list) throw new Error("step list not found");
+	return within(list).getAllByRole("button", { hidden: true });
 }
 
 describe("workflow navigation", () => {

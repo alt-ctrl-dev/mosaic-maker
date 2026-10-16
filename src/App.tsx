@@ -122,19 +122,7 @@ const styles = stylex.create({
 		justifyContent: "center",
 		paddingBlock: "1rem",
 	},
-	// The rack is a horizontal strip under the content column; on mobile the
-	// dialog toggle carries navigation instead.
-	sidebar: {
-		boxSizing: "border-box",
-		width: "100%",
-		maxWidth: "48rem",
-		marginInline: "auto",
-		"@media (max-width: 900px)": { display: "none" },
-	},
 	stepsList: { listStyle: "none", padding: 0, margin: 0 },
-	stepsListRow: { display: "flex", gap: "0.5rem" },
-	stepItem: { flex: 1 },
-	stepButtonRow: { justifyContent: "center" },
 	// Sprite-rack stage cells: hard keylines, square counters, no dimming.
 	stepButton: {
 		boxSizing: "border-box",
@@ -369,60 +357,6 @@ export function WorkflowApp() {
 							{renderStepContent(currentStep)}
 						</div>
 					</div>
-
-					<aside {...stylex.props(styles.sidebar)} aria-label="Workflow steps">
-						<ol {...stylex.props(styles.stepsList, styles.stepsListRow)}>
-							{stages.map((title, index) => {
-								const isCurrent = currentStep === index;
-								const isCompleted = index < furthestCompletedStep;
-								const isDisabled = index > furthestCompletedStep;
-								return (
-									<li key={title} {...stylex.props(styles.stepItem)}>
-										<button
-											type="button"
-											{...stylex.props(
-												styles.stepButton,
-												styles.stepButtonRow,
-												isCurrent && styles.stepButtonCurrent,
-												isCompleted && styles.stepButtonCompleted,
-											)}
-											aria-current={isCurrent ? "step" : undefined}
-											onClick={() =>
-												navigateWithTransition(() => goToStep(index))
-											}
-											disabled={isDisabled}
-										>
-											<span
-												{...stylex.props(
-													styles.stepIndicator,
-													isCurrent && styles.stepIndicatorCurrent,
-												)}
-											>
-												{isCompleted ? (
-													<svg
-														width="12"
-														height="12"
-														viewBox="0 0 12 12"
-														aria-hidden="true"
-													>
-														<path
-															d="M1.5 6.5 4.5 9.5 10.5 2.5"
-															fill="none"
-															stroke="currentColor"
-															strokeWidth="2"
-														/>
-													</svg>
-												) : (
-													<span>{index + 1}</span>
-												)}
-											</span>
-											<span {...stylex.props(styles.stepTitle)}>{title}</span>
-										</button>
-									</li>
-								);
-							})}
-						</ol>
-					</aside>
 				</main>
 			</ErrorBoundary>
 			<AppFooter />
