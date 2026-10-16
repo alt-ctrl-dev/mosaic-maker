@@ -144,7 +144,7 @@ export function SourceImageOverlay({
 				))}
 			</div>
 			<div {...stylex.props(styles.generateOverlay)}>
-				<ActionButton type="button" onClick={onCancel} variant="outline">
+				<ActionButton type="button" onClick={onCancel}>
 					Cancel
 				</ActionButton>
 			</div>
