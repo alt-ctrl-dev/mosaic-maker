@@ -15,6 +15,7 @@ import { base } from "../styles/base.stylex";
 import { tokens } from "../styles/tokens.stylex";
 import { trackEvent } from "../telemetry";
 import { ActionButton } from "./ActionButton";
+import { OptionalButton } from "./OptionalButton";
 
 // StyleX only resolves computed conditional keys defined in the same module.
 const REDUCED_MOTION = "@media (prefers-reduced-motion: reduce)";
@@ -75,23 +76,6 @@ const styles = stylex.create({
 		whiteSpace: "nowrap",
 	},
 	varietyText: { margin: 0, flex: 1, fontSize: "0.9rem" },
-	varietyAction: {
-		backgroundColor: "transparent",
-		borderWidth: "1px",
-		borderStyle: "solid",
-		borderColor: tokens.border,
-		borderRadius: "999px",
-		padding: "0.3rem 0.75rem",
-		font: "inherit",
-		fontSize: "0.8rem",
-		color: tokens.muted,
-		cursor: "pointer",
-		":hover": {
-			color: tokens.text,
-			borderColor: tokens.muted,
-			backgroundColor: tokens.surface,
-		},
-	},
 	removeButton: {
 		position: "absolute",
 		top: "0.375rem",
@@ -225,13 +209,12 @@ export function TesseraReview() {
 							recommended.
 						</p>
 						{isLowVariety && !hasAcceptedSupplementation && (
-							<button
+							<OptionalButton
 								type="button"
 								onClick={() => acceptSupplementation()}
-								{...stylex.props(styles.varietyAction, base.focusOutline)}
 							>
 								Add random tiles
-							</button>
+							</OptionalButton>
 						)}
 					</article>
 				)}
