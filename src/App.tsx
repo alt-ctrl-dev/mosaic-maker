@@ -1,5 +1,6 @@
 import * as stylex from "@stylexjs/stylex";
 import { Provider, useAtomValue, useSetAtom } from "jotai";
+import { flushSync } from "react-dom";
 import {
 	clearTesseraeAtom,
 	currentStepAtom,
@@ -23,6 +24,7 @@ import { ModeSelection } from "./components/ModeSelection";
 import { SourceImageSelection } from "./components/SourceImageSelection";
 import { TesseraReview } from "./components/TesseraReview";
 import { TesseraSizeSelection } from "./components/TesseraSizeSelection";
+import { prefersReducedMotion } from "./engine/accessibility-utils";
 import { TesseraUpload } from "./components/TesseraUpload";
 import { WorkflowStep as WorkflowStepEnum } from "./engine/workflow-state";
 import { base } from "./styles/base.stylex";
@@ -40,10 +42,29 @@ const stages = [
 
 /** Spinner keyframe for the step-content entrance. Local because StyleX
  * does not resolve imported keyframe bindings. */
-const stepEnter = stylex.keyframes({
-	from: { opacity: 0, transform: "translateY(8px)" },
-	to: { opacity: 1, transform: "none" },
-});
+/** Document with the optional View Transition API. */
+type DocumentWithViewTransition = Document & {
+	startViewTransition?: (callback: () => void) => void;
+};
+
+/**
+ * Runs a step change inside a view transition when the browser supports
+ * it and motion is allowed; otherwise updates directly.
+ */
+function navigateWithTransition(update: () => void): void {
+	const doc = document as DocumentWithViewTransition;
+	if (
+		typeof doc.startViewTransition === "function" &&
+		!prefersReducedMotion()
+	) {
+		doc.startViewTransition(() => {
+			// The DOM must change inside the callback to form the snapshot pair.
+			flushSync(update);
+		});
+	} else {
+		update();
+	}
+}
 
 const styles = stylex.create({
 	// Shell chrome formerly provided by :root/body/base.css globals.
@@ -60,12 +81,21 @@ const styles = stylex.create({
 		"@media (min-width: 80rem)": { maxWidth: "80rem" },
 	},
 	sourceThumbnailHeader: {
+		boxSizing: "border-box",
 		display: "flex",
 		alignItems: "center",
-		gap: "0.75rem",
-		marginTop: "0.75rem",
-		justifyContent: "center",
-		"@media (max-width: 900px)": { justifyContent: "flex-start" },
+		justifyContent: "space-between",
+		width: "100%",
+		maxWidth: "48rem",
+		marginInline: "auto",
+		marginTop: "1rem",
+		marginBottom: "0.5rem",
+		padding: "1rem",
+	},
+	sourceThumbnailGroup: {
+		display: "flex",
+		alignItems: "center",
+		gap: "1rem",
 	},
 	sourceThumbnailImage: {
 		width: "40px",
@@ -113,8 +143,8 @@ const styles = stylex.create({
 	},
 	workflow: {
 		display: "flex",
+		flexDirection: "column",
 		gap: "2rem",
-		"@media (max-width: 900px)": { flexDirection: "column" },
 	},
 	// The mode switcher is a global setting above the workspace, not a step.
 	modeBar: {
@@ -122,19 +152,19 @@ const styles = stylex.create({
 		justifyContent: "center",
 		paddingBlock: "1rem",
 	},
-	// The rack sits to the right of the canvas focal plane; the source
-	// image and its construction grid lead the workspace.
+	// The rack is a horizontal strip under the content column; on mobile the
+	// dialog toggle carries navigation instead.
 	sidebar: {
 		boxSizing: "border-box",
-		flex: "0 0 14rem",
-		order: 2,
-		borderLeftWidth: "1px",
-		borderLeftStyle: "solid",
-		borderLeftColor: tokens.border,
-		paddingLeft: "1rem",
+		width: "100%",
+		maxWidth: "48rem",
+		marginInline: "auto",
 		"@media (max-width: 900px)": { display: "none" },
 	},
 	stepsList: { listStyle: "none", padding: 0, margin: 0 },
+	stepsListRow: { display: "flex", gap: "0.5rem" },
+	stepItem: { flex: 1 },
+	stepButtonRow: { justifyContent: "center" },
 	// Sprite-rack stage cells: hard keylines, square counters, no dimming.
 	stepButton: {
 		boxSizing: "border-box",
@@ -203,15 +233,23 @@ const styles = stylex.create({
 		fontWeight: 500,
 		"@media (max-width: 900px)": { fontSize: "1rem" },
 	},
-	canvas: { flex: 1, order: 1, display: "flex", flexDirection: "column" },
-	content: { flex: 1 },
-	// Replays whenever the step changes because the element is keyed by step.
-	contentEnter: {
-		animationName: stepEnter,
-		animationDuration: "0.25s",
-		animationTimingFunction: "ease-out",
-		[REDUCED_MOTION]: { animationDuration: "0.01ms" },
+	thumbnailChangeButton: {
+		backgroundColor: "transparent",
+		borderWidth: "1px",
+		borderStyle: "solid",
+		borderColor: tokens.border,
+		borderRadius: "999px",
+		color: tokens.muted,
+		fontSize: "0.75rem",
+		padding: "0.2rem 0.6rem",
+		cursor: "pointer",
+		":hover": {
+			color: tokens.text,
+			borderColor: tokens.primary,
+		},
 	},
+	canvas: { width: "100%", maxWidth: "48rem", marginInline: "auto" },
+	content: { flex: 1, viewTransitionName: "step-content" },
 	buildTesserae: { display: "flex", flexDirection: "column", gap: "2rem" },
 	tesseraInputs: {
 		display: "flex",
@@ -339,8 +377,18 @@ export function WorkflowApp() {
 			<header {...stylex.props(styles.header)}>
 				<h1 {...stylex.props(styles.nameplate)}>Mosaic Maker</h1>
 				<p {...stylex.props(styles.privacyNote)}>Private · in-browser</p>
-				{sourceImage && currentStep > WorkflowStepEnum.CHOOSE_SOURCE_IMAGE && (
-					<div {...stylex.props(styles.sourceThumbnailHeader)}>
+			</header>
+
+			<div {...stylex.props(styles.modeBar)}>
+				<ModeSelection />
+			</div>
+
+			{sourceImage && currentStep > WorkflowStepEnum.CHOOSE_SOURCE_IMAGE && (
+				<div
+					{...stylex.props(styles.sourceThumbnailHeader)}
+					data-testid="source-thumbnail-bar"
+				>
+					<div {...stylex.props(styles.sourceThumbnailGroup)}>
 						<img
 							src={sourceImage.url}
 							alt="Source"
@@ -350,12 +398,20 @@ export function WorkflowApp() {
 							{sourceImage.width} × {sourceImage.height} pixels
 						</span>
 					</div>
-				)}
-			</header>
-
-			<div {...stylex.props(styles.modeBar)}>
-				<ModeSelection />
-			</div>
+					<button
+						type="button"
+						onClick={() =>
+							navigateWithTransition(() =>
+								goToStep(WorkflowStepEnum.CHOOSE_SOURCE_IMAGE),
+							)
+						}
+						aria-label="Change source image"
+						{...stylex.props(styles.thumbnailChangeButton, base.focusOutline)}
+					>
+						Change image
+					</button>
+				</div>
+			)}
 
 			<ErrorBoundary>
 				<main id="main-content" {...stylex.props(styles.workflow)}>
@@ -378,7 +434,9 @@ export function WorkflowApp() {
 												isCompleted && styles.stepButtonCompleted,
 											)}
 											aria-current={isCurrent ? "step" : undefined}
-											onClick={() => goToStep(index)}
+											onClick={() =>
+												navigateWithTransition(() => goToStep(index))
+											}
 											disabled={isDisabled}
 											commandfor="mobile-workflow-menu"
 											command="close"
@@ -415,23 +473,32 @@ export function WorkflowApp() {
 						</ol>
 					</Dialog>
 
+					<div {...stylex.props(styles.canvas)}>
+						<div key={currentStep} {...stylex.props(styles.content)}>
+							{renderStepContent(currentStep)}
+						</div>
+					</div>
+
 					<aside {...stylex.props(styles.sidebar)} aria-label="Workflow steps">
-						<ol {...stylex.props(styles.stepsList)}>
+						<ol {...stylex.props(styles.stepsList, styles.stepsListRow)}>
 							{stages.map((title, index) => {
 								const isCurrent = currentStep === index;
 								const isCompleted = index < furthestCompletedStep;
 								const isDisabled = index > furthestCompletedStep;
 								return (
-									<li key={title}>
+									<li key={title} {...stylex.props(styles.stepItem)}>
 										<button
 											type="button"
 											{...stylex.props(
 												styles.stepButton,
+												styles.stepButtonRow,
 												isCurrent && styles.stepButtonCurrent,
 												isCompleted && styles.stepButtonCompleted,
 											)}
 											aria-current={isCurrent ? "step" : undefined}
-											onClick={() => goToStep(index)}
+											onClick={() =>
+												navigateWithTransition(() => goToStep(index))
+											}
 											disabled={isDisabled}
 										>
 											<span
@@ -465,15 +532,6 @@ export function WorkflowApp() {
 							})}
 						</ol>
 					</aside>
-
-					<div {...stylex.props(styles.canvas)}>
-						<div
-							key={currentStep}
-							{...stylex.props(styles.content, styles.contentEnter)}
-						>
-							{renderStepContent(currentStep)}
-						</div>
-					</div>
 				</main>
 			</ErrorBoundary>
 			<AppFooter />

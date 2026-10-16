@@ -2,6 +2,7 @@ import { StrictMode } from "react";
 import { createRoot } from "react-dom/client";
 import { App } from "./App";
 import { tokens } from "./styles/tokens.stylex";
+import "./styles/view-transitions.css";
 import { initializeTelemetry, trackDeviceAnalytics } from "./telemetry";
 
 // ponytail: StyleX cannot target elements outside the React tree, so the

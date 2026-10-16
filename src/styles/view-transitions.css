@@ -1,0 +1,38 @@
+/* Step-navigation motion lives in the View Transition layer, not on the DOM:
+   animating the live content (e.g. an opacity-0 entrance) would leak into the
+   new snapshot and cause a flicker on navigation. */
+
+::view-transition-old(step-content) {
+	animation: 0.18s ease-out both step-content-out;
+}
+
+::view-transition-new(step-content) {
+	animation: 0.25s ease-out both step-content-in;
+}
+
+@keyframes step-content-in {
+	from {
+		opacity: 0;
+		transform: translateY(8px);
+	}
+	to {
+		opacity: 1;
+		transform: none;
+	}
+}
+
+@keyframes step-content-out {
+	from {
+		opacity: 1;
+	}
+	to {
+		opacity: 0;
+	}
+}
+
+@media (prefers-reduced-motion: reduce) {
+	::view-transition-old(step-content),
+	::view-transition-new(step-content) {
+		animation: none;
+	}
+}
