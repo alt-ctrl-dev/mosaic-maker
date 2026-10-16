@@ -117,50 +117,57 @@ export function GeneratedTesserae() {
 		<div {...stylex.props(styles.root)} data-testid="generated-tesserae">
 			<fieldset {...stylex.props(base.fieldset, styles.controlGroup)}>
 				<legend {...stylex.props(base.legend)}>Generate random tiles</legend>
-				<div {...stylex.props(styles.control)}>
-					<label
-						htmlFor="seed"
-						{...stylex.props(base.label, styles.controlLabel)}
-					>
-						Seed:
-					</label>
-					<div {...stylex.props(styles.inputGroup)}>
-						<input
-							id="seed"
-							type="number"
-							value={seed}
-							onChange={(e) => setSeed(Number(e.target.value))}
-							aria-label="Seed value for generation"
-							{...stylex.props(base.field, base.focusOutline, styles.flexField)}
-						/>
-						<ActionButton
-							type="button"
-							onClick={handleNewSeed}
-							variant="secondary"
+				<details {...stylex.props(base.details)}>
+					<summary {...stylex.props(base.summary)}>Advanced settings</summary>
+					<div {...stylex.props(styles.control)}>
+						<label
+							htmlFor="seed"
+							{...stylex.props(base.label, styles.controlLabel)}
 						>
-							New Seed
-						</ActionButton>
+							Seed:
+						</label>
+						<div {...stylex.props(styles.inputGroup)}>
+							<input
+								id="seed"
+								type="number"
+								value={seed}
+								onChange={(e) => setSeed(Number(e.target.value))}
+								aria-label="Seed value for generation"
+								{...stylex.props(
+									base.field,
+									base.focusOutline,
+									styles.flexField,
+								)}
+							/>
+							<ActionButton
+								type="button"
+								onClick={handleNewSeed}
+								variant="secondary"
+							>
+								New Seed
+							</ActionButton>
+						</div>
 					</div>
-				</div>
 
-				<div {...stylex.props(styles.control)}>
-					<label
-						htmlFor="count"
-						{...stylex.props(base.label, styles.controlLabel)}
-					>
-						Number of tiles:
-					</label>
-					<input
-						id="count"
-						type="number"
-						min="1"
-						max="1000"
-						value={count}
-						onChange={(e) => setGeneratedTesseraCount(Number(e.target.value))}
-						aria-label="Number of tiles to generate"
-						{...stylex.props(base.field, base.focusOutline)}
-					/>
-				</div>
+					<div {...stylex.props(styles.control)}>
+						<label
+							htmlFor="count"
+							{...stylex.props(base.label, styles.controlLabel)}
+						>
+							Number of tiles:
+						</label>
+						<input
+							id="count"
+							type="number"
+							min="1"
+							max="1000"
+							value={count}
+							onChange={(e) => setGeneratedTesseraCount(Number(e.target.value))}
+							aria-label="Number of tiles to generate"
+							{...stylex.props(base.field, base.focusOutline)}
+						/>
+					</div>
+				</details>
 			</fieldset>
 
 			<ActionButton
