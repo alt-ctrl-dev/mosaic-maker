@@ -28,6 +28,7 @@ const styles = stylex.create({
 		margin: "1rem",
 	},
 	item: {
+		position: "relative",
 		padding: "0.75rem",
 		borderRadius: tokens.radius,
 		boxShadow: tokens.shadow,
@@ -45,6 +46,26 @@ const styles = stylex.create({
 		borderWidth: "2px",
 		borderStyle: "solid",
 		borderColor: tokens.valid,
+	},
+	removeButton: {
+		position: "absolute",
+		top: "0.375rem",
+		right: "0.375rem",
+		display: "flex",
+		alignItems: "center",
+		justifyContent: "center",
+		width: "1.5rem",
+		height: "1.5rem",
+		padding: 0,
+		backgroundColor: tokens.background,
+		color: tokens.muted,
+		borderWidth: "1px",
+		borderStyle: "solid",
+		borderColor: tokens.border,
+		cursor: "pointer",
+		fontSize: "0.75rem",
+		lineHeight: 1,
+		":hover": { color: tokens.invalid, borderColor: tokens.invalid },
 	},
 	preview: {
 		width: "100%",
@@ -194,14 +215,14 @@ export function TesseraReview() {
 										</span>
 									)}
 								</div>
-								<ActionButton
+								<button
 									type="button"
 									onClick={() => removeTessera(index)}
 									aria-label={`Remove ${tessera.fileName}`}
-									variant="outline"
+									{...stylex.props(styles.removeButton, base.focusOutline)}
 								>
-									Remove
-								</ActionButton>
+									<span aria-hidden="true">✕</span>
+								</button>
 							</div>
 						);
 					})}
