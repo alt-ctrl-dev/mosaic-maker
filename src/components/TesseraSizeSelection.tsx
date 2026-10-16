@@ -9,11 +9,11 @@ import {
 	sourceImageAtom,
 } from "../atoms/workflow-atoms";
 import {
-	MAX_TESSERA_SIZE,
-	MIN_TESSERA_SIZE,
 	calculateAdjustedTesseraSize,
 	calculateGridCellCount,
 	isCoarseGrid,
+	MAX_TESSERA_SIZE,
+	MIN_TESSERA_SIZE,
 } from "../engine/tessera-sizing";
 import { base } from "../styles/base.stylex";
 import { tokens } from "../styles/tokens.stylex";
@@ -21,17 +21,22 @@ import { trackEvent, trackStepView } from "../telemetry";
 
 const styles = stylex.create({
 	// The source image under its live construction grid: dragging the size
-	// re-solves the grid density against the real image dimensions.
+	// re-solves the grid density against the real image dimensions. The
+	// container shrink-wraps the capped image so the overlay stays aligned.
+	gridPreviewWrap: { textAlign: "center" },
 	gridPreview: {
+		display: "inline-block",
 		position: "relative",
-		maxWidth: "20rem",
 		marginTop: "1rem",
-		marginInline: "auto",
 		borderWidth: "1px",
 		borderStyle: "solid",
 		borderColor: tokens.border,
 	},
-	gridPreviewImage: { display: "block", width: "100%" },
+	gridPreviewImage: {
+		display: "block",
+		maxWidth: "20rem",
+		maxHeight: "25rem",
+	},
 	gridOverlay: {
 		position: "absolute",
 		inset: 0,
@@ -149,7 +154,7 @@ export function TesseraSizeSelection() {
 		<div>
 			<div>
 				<label htmlFor="tessera-size" {...stylex.props(base.label)}>
-					Tile size (pixels):
+					Tile size ({requestedSize} pixels x {requestedSize} pixels):
 				</label>
 				<input
 					id="tessera-size"
@@ -160,11 +165,10 @@ export function TesseraSizeSelection() {
 					onChange={handleSizeChange}
 					{...stylex.props(base.rangeInput, base.focusOutline)}
 				/>
-				<span>{requestedSize}px</span>
 			</div>
 
 			{showGridPreview && sourceImage && (
-				<div>
+				<div {...stylex.props(styles.gridPreviewWrap)}>
 					<div {...stylex.props(styles.gridPreview)}>
 						<img
 							src={sourceImage.url}

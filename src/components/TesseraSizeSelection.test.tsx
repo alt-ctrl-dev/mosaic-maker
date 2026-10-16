@@ -45,7 +45,7 @@ describe("TesseraSizeSelection", () => {
 	it("displays the current size value", () => {
 		renderSizeSelection();
 
-		expect(screen.getByText("16px")).toBeInTheDocument();
+		expect(screen.getByText(/16 pixels x 16 pixels/)).toBeInTheDocument();
 	});
 
 	it("debounces the size commit when the slider value changes", () => {
