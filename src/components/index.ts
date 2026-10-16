@@ -1,6 +1,7 @@
 export * from "./Badge";
 export * from "./BrickColorPicker";
 export * from "./GeneratedTesserae";
+export * from "./IntroDialog";
 export * from "./ModeSelection";
 export * from "./OptionalButton";
 export * from "./PickTiles";

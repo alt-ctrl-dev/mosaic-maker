@@ -13,6 +13,7 @@ import { AppFooter } from "./components/AppFooter";
 import { BrickColorPicker } from "./components/BrickColorPicker";
 import { ErrorBoundary } from "./components/ErrorBoundary";
 import { GenerateAndPreview } from "./components/GenerateAndPreview";
+import { IntroDialog } from "./components/IntroDialog";
 import { ModeSelection } from "./components/ModeSelection";
 import { PickTiles } from "./components/PickTiles";
 import { SelectionSummary } from "./components/SelectionSummary";
@@ -167,6 +168,8 @@ export function WorkflowApp() {
 				<h1 {...stylex.props(styles.nameplate)}>Mosaic Maker</h1>
 				<p {...stylex.props(styles.privacyNote)}>Private · in-browser</p>
 			</header>
+
+			<IntroDialog />
 
 			<div {...stylex.props(styles.modeBar)}>
 				<ModeSelection />

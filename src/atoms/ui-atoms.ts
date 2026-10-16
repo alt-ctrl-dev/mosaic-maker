@@ -60,3 +60,8 @@ export const activeBrickPaletteAtom = atom<number | null>(null);
  * hasTelemetryConsent().
  */
 export const telemetryConsentAtom = atomWithStorage("telemetry-consent", true);
+
+// --- Intro dialog ---
+
+/** Whether the first-visit intro dialog has been dismissed. */
+export const introDismissedAtom = atomWithStorage("intro-dismissed", false);
