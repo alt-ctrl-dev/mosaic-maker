@@ -75,6 +75,18 @@ const styles = stylex.create({
 		whiteSpace: "nowrap",
 	},
 	varietyText: { margin: 0, flex: 1, fontSize: "0.9rem" },
+	varietyAction: {
+		background: "transparent",
+		borderWidth: 0,
+		padding: "0.25rem 0.5rem",
+		font: "inherit",
+		fontSize: "0.85rem",
+		color: tokens.muted,
+		textDecorationLine: "underline",
+		textUnderlineOffset: "0.2em",
+		cursor: "pointer",
+		":hover": { color: tokens.text },
+	},
 	removeButton: {
 		position: "absolute",
 		top: "0.375rem",
@@ -208,13 +220,13 @@ export function TesseraReview() {
 							recommended.
 						</p>
 						{isLowVariety && !hasAcceptedSupplementation && (
-							<ActionButton
+							<button
 								type="button"
 								onClick={() => acceptSupplementation()}
-								variant="outline"
+								{...stylex.props(styles.varietyAction, base.focusOutline)}
 							>
 								Add random tiles
-							</ActionButton>
+							</button>
 						)}
 					</article>
 				)}
