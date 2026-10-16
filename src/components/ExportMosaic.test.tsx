@@ -1,5 +1,6 @@
-import { fireEvent, screen, waitFor } from "@testing-library/react";
+import { act, fireEvent, screen, waitFor } from "@testing-library/react";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
+import { isGeneratingMosaicAtom } from "../atoms/ui-atoms";
 import * as exportEngine from "../engine/export";
 import { WorkflowStep } from "../engine/workflow-state";
 import { renderWithWorkflow } from "../test-utils/workflow";
@@ -88,6 +89,20 @@ describe("ExportMosaic", () => {
 		expect(
 			screen.getByRole("button", { name: "Download" }),
 		).toBeInTheDocument();
+	});
+
+	it("hides export features while a mosaic is generating", () => {
+		const { store } = renderWithWorkflow(<ExportMosaic />, mockState);
+
+		act(() => {
+			store.set(isGeneratingMosaicAtom, true);
+		});
+
+		expect(
+			screen.queryByRole("button", { name: "Download" }),
+		).not.toBeInTheDocument();
+		expect(screen.queryByText("Export Settings")).not.toBeInTheDocument();
+		expect(screen.getByText("Generating mosaic...")).toBeInTheDocument();
 	});
 
 	it("should trigger download when Download button is clicked", async () => {

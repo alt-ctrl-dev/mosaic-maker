@@ -1,7 +1,11 @@
 import * as stylex from "@stylexjs/stylex";
 import { useAtom, useAtomValue } from "jotai";
 import { useEffect, useState } from "react";
-import { exportErrorAtom, isExportingAtom } from "../atoms/ui-atoms";
+import {
+	exportErrorAtom,
+	isExportingAtom,
+	isGeneratingMosaicAtom,
+} from "../atoms/ui-atoms";
 import {
 	exportBackgroundColorAtom,
 	exportFormatAtom,
@@ -21,7 +25,7 @@ const styles = stylex.create({
 	settingLegend: { fontWeight: "bold", marginBottom: "0.5rem" },
 	inputGroup: { marginBottom: "1rem" },
 	inputGroupLabel: { display: "block", marginBottom: "0.5rem" },
-	exportPreview: { margin: "2rem 0", textAlign: "center" },
+	exportPreview: { margin: "1rem 0", textAlign: "center" },
 	// The old stylesheet gave details content a 1rem margin on every side.
 	detailsContent: { margin: "1rem" },
 	summary: {
@@ -38,7 +42,7 @@ const styles = stylex.create({
 	},
 	mosaicPreview: {
 		maxWidth: "100%",
-		maxHeight: "400px",
+		maxHeight: "70vh",
 		width: "auto",
 		height: "auto",
 		borderRadius: tokens.radius,
@@ -220,9 +224,11 @@ export function ExportMosaic() {
 		exportBackgroundColorAtom,
 	);
 	const [isExporting, setIsExporting] = useAtom(isExportingAtom);
-	const [isDelivered, setIsDelivered] = useState(false);
 
 	const [error, setError] = useAtom(exportErrorAtom);
+	const [isDelivered, setIsDelivered] = useState(false);
+	// Export controls stay hidden while a (re)generation is in flight.
+	const isGenerating = useAtomValue(isGeneratingMosaicAtom);
 	const canShare = supportsWebShare();
 
 	useEffect(() => {
@@ -382,128 +388,152 @@ export function ExportMosaic() {
 							{...stylex.props(styles.mosaicPreview)}
 						/>
 					</div>
-					<div {...stylex.props(styles.summary)}>
-						{exportFormat.toUpperCase()} · {mosaicResult.width}×
-						{mosaicResult.height} · ~
-						{Math.round((mosaicResult.dataUrl.length * 0.75) / 1024)} KB
-					</div>
-					<details
-						{...stylex.props(base.details)}
-						open={exportFormat === "jpeg" || exportFormat === "webp"}
-					>
-						<summary {...stylex.props(base.summary)}>Export Settings</summary>
-						<div {...stylex.props(styles.detailsContent)}>
-							<fieldset {...stylex.props(base.fieldset, styles.settingGroup)}>
-								<legend {...stylex.props(base.legend, styles.settingLegend)}>
-									Format Settings
-								</legend>
-								<div {...stylex.props(styles.inputGroup)}>
-									<label
-										htmlFor="export-format"
-										{...stylex.props(base.label, styles.inputGroupLabel)}
-									>
-										Format:
-									</label>
-									<select
-										id="export-format"
-										value={exportFormat}
-										onChange={(e) => {
-											const value = e.target.value;
-											if (isExportFormat(value)) {
-												setExportFormat(value);
-											}
-										}}
-										disabled={isExporting}
-										{...stylex.props(base.field, base.focusOutline)}
-									>
-										<option value="png">PNG</option>
-										<option value="jpeg">JPEG</option>
-										<option value="webp">WebP</option>
-									</select>
-								</div>
-							</fieldset>
-
-							{(exportFormat === "jpeg" || exportFormat === "webp") && (
-								<fieldset {...stylex.props(base.fieldset, styles.settingGroup)}>
-									<legend {...stylex.props(base.legend, styles.settingLegend)}>
-										Quality Settings
-									</legend>
-									<div {...stylex.props(styles.inputGroup)}>
-										<label
-											htmlFor="export-quality"
-											{...stylex.props(base.label, styles.inputGroupLabel)}
-										>
-											Quality: {Math.round(exportQuality * 100)}%
-										</label>
-										<input
-											id="export-quality"
-											type="range"
-											min="0"
-											max="1"
-											step="0.01"
-											value={exportQuality}
-											onChange={(e) =>
-												setExportQuality(parseFloat(e.target.value))
-											}
-											disabled={isExporting}
-											{...stylex.props(base.rangeInput, base.focusOutline)}
-										/>
-									</div>
-								</fieldset>
-							)}
-
-							{exportFormat === "jpeg" && (
-								<fieldset {...stylex.props(base.fieldset, styles.settingGroup)}>
-									<legend {...stylex.props(base.legend, styles.settingLegend)}>
-										Background Settings
-									</legend>
-									<div {...stylex.props(styles.inputGroup)}>
-										<label
-											htmlFor="export-background"
-											{...stylex.props(base.label, styles.inputGroupLabel)}
-										>
-											Background Color:
-										</label>
-										<input
-											id="export-background"
-											type="color"
-											value={exportBackgroundColor}
-											onChange={(e) => setExportBackgroundColor(e.target.value)}
-											disabled={isExporting}
-											{...stylex.props(base.colorInput, base.focusOutline)}
-										/>
-									</div>
-								</fieldset>
-							)}
-						</div>
-					</details>
-
-					<div>
-						<ActionButton
-							type="button"
-							onClick={handleExport}
-							disabled={isExporting}
-							aria-busy={isExporting}
-						>
-							{exportButtonLabel(isExporting, canShare)}
-						</ActionButton>
-
-						{isDelivered && (
-							<div {...stylex.props(styles.confirmation)} role="status">
-								Delivered!
+					{isGenerating ? (
+						<p {...stylex.props(base.paragraph, base.busySpinner)}>
+							Generating mosaic...
+						</p>
+					) : (
+						<>
+							<div {...stylex.props(styles.summary)}>
+								{exportFormat.toUpperCase()} · {mosaicResult.width}×
+								{mosaicResult.height} · ~
+								{Math.round((mosaicResult.dataUrl.length * 0.75) / 1024)} KB
 							</div>
-						)}
-
-						{error && (
-							<article
-								{...errorPanelProps}
-								className={`error-message ${errorPanelProps.className}`}
-								role="alert"
+							<details
+								{...stylex.props(base.details)}
+								open={exportFormat === "jpeg" || exportFormat === "webp"}
 							>
-								<strong>Error:</strong> {error}
-							</article>
-						)}
-					</div>
+								<summary {...stylex.props(base.summary)}>
+									Export Settings
+								</summary>
+								<div {...stylex.props(styles.detailsContent)}>
+									<fieldset
+										{...stylex.props(base.fieldset, styles.settingGroup)}
+									>
+										<legend
+											{...stylex.props(base.legend, styles.settingLegend)}
+										>
+											Format Settings
+										</legend>
+										<div {...stylex.props(styles.inputGroup)}>
+											<label
+												htmlFor="export-format"
+												{...stylex.props(base.label, styles.inputGroupLabel)}
+											>
+												Format:
+											</label>
+											<select
+												id="export-format"
+												value={exportFormat}
+												onChange={(e) => {
+													const value = e.target.value;
+													if (isExportFormat(value)) {
+														setExportFormat(value);
+													}
+												}}
+												disabled={isExporting}
+												{...stylex.props(base.field, base.focusOutline)}
+											>
+												<option value="png">PNG</option>
+												<option value="jpeg">JPEG</option>
+												<option value="webp">WebP</option>
+											</select>
+										</div>
+									</fieldset>
+
+									{(exportFormat === "jpeg" || exportFormat === "webp") && (
+										<fieldset
+											{...stylex.props(base.fieldset, styles.settingGroup)}
+										>
+											<legend
+												{...stylex.props(base.legend, styles.settingLegend)}
+											>
+												Quality Settings
+											</legend>
+											<div {...stylex.props(styles.inputGroup)}>
+												<label
+													htmlFor="export-quality"
+													{...stylex.props(base.label, styles.inputGroupLabel)}
+												>
+													Quality: {Math.round(exportQuality * 100)}%
+												</label>
+												<input
+													id="export-quality"
+													type="range"
+													min="0"
+													max="1"
+													step="0.01"
+													value={exportQuality}
+													onChange={(e) =>
+														setExportQuality(parseFloat(e.target.value))
+													}
+													disabled={isExporting}
+													{...stylex.props(base.rangeInput, base.focusOutline)}
+												/>
+											</div>
+										</fieldset>
+									)}
+
+									{exportFormat === "jpeg" && (
+										<fieldset
+											{...stylex.props(base.fieldset, styles.settingGroup)}
+										>
+											<legend
+												{...stylex.props(base.legend, styles.settingLegend)}
+											>
+												Background Settings
+											</legend>
+											<div {...stylex.props(styles.inputGroup)}>
+												<label
+													htmlFor="export-background"
+													{...stylex.props(base.label, styles.inputGroupLabel)}
+												>
+													Background Color:
+												</label>
+												<input
+													id="export-background"
+													type="color"
+													value={exportBackgroundColor}
+													onChange={(e) =>
+														setExportBackgroundColor(e.target.value)
+													}
+													disabled={isExporting}
+													{...stylex.props(base.colorInput, base.focusOutline)}
+												/>
+											</div>
+										</fieldset>
+									)}
+								</div>
+							</details>
+
+							<div>
+								<ActionButton
+									type="button"
+									onClick={handleExport}
+									disabled={isExporting}
+									aria-busy={isExporting}
+								>
+									{exportButtonLabel(isExporting, canShare)}
+								</ActionButton>
+
+								{isDelivered && (
+									<div {...stylex.props(styles.confirmation)} role="status">
+										Delivered!
+									</div>
+								)}
+
+								{error && (
+									<article
+										{...errorPanelProps}
+										className={`error-message ${errorPanelProps.className}`}
+										role="alert"
+									>
+										<strong>Error:</strong> {error}
+									</article>
+								)}
+							</div>
+						</>
+					)}
 				</>
 			) : (
 				<div>
