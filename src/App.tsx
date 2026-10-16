@@ -73,7 +73,6 @@ const styles = stylex.create({
 		colorScheme: "dark",
 		fontFamily: "system-ui, sans-serif",
 		fontSize: "100%",
-		backgroundColor: tokens.background,
 		color: tokens.text,
 		lineHeight: 1.5,
 		paddingInline: "16px",
