@@ -46,8 +46,12 @@ export const modeAtom = atom<MosaicMode>("photomosaic");
 export const sourceImageAtom = atom<SourceImageInfo | null>(null);
 /** User-facing error from source image selection or processing. */
 export const sourceImageErrorAtom = atom<string | null>(null);
-/** Tessera pixel size requested by the user, before adjustment. */
-export const requestedTesseraSizeAtom = atom<number | null>(null);
+/**
+ * Tessera pixel size requested by the user, before adjustment. Defaults to
+ * {@link DEFAULT_TESSERA_SIZE}, so an adjusted size exists as soon as a
+ * valid source image is selected — no mount-time commit needed.
+ */
+export const requestedTesseraSizeAtom = atom<number>(DEFAULT_TESSERA_SIZE);
 /** Collection of uploaded, generated, or synthetic tesserae. */
 export const tesseraeAtom = atom<TesseraInfo[]>([]);
 /** Whether the user accepted supplementing with generated tesserae. */
@@ -87,11 +91,7 @@ export const hasValidSourceDimensionsAtom = atom((get) => {
 export const adjustedTesseraSizeAtom = atom<number | null>((get) => {
 	const sourceImage = get(sourceImageAtom);
 	const requestedSize = get(requestedTesseraSizeAtom);
-	if (
-		!sourceImage ||
-		requestedSize === null ||
-		!get(hasValidSourceDimensionsAtom)
-	) {
+	if (!sourceImage || !get(hasValidSourceDimensionsAtom)) {
 		return null;
 	}
 	return calculateAdjustedTesseraSize(
@@ -355,7 +355,7 @@ export function hydrateWorkflowStore(
 	if (state.sourceImageError !== undefined)
 		store.set(sourceImageErrorAtom, state.sourceImageError);
 	const requestedSize = state.requestedTesseraSize ?? state.adjustedTesseraSize;
-	if (requestedSize !== undefined)
+	if (typeof requestedSize === "number")
 		store.set(requestedTesseraSizeAtom, requestedSize);
 	if (state.tesserae !== undefined) store.set(tesseraeAtom, state.tesserae);
 	if (state.hasAcceptedSupplementation !== undefined)

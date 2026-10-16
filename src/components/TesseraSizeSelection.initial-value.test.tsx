@@ -31,7 +31,7 @@ describe("TesseraSizeSelection initial value registration", () => {
 		cleanup();
 	});
 
-	it("commits the default size on initial render", () => {
+	it("exposes the default size from the start", () => {
 		const { store } = renderSizeSelection();
 
 		const rangeInput = screen.getByRole("slider");

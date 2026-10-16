@@ -69,9 +69,7 @@ export function TesseraSizeSelection() {
 	const hasValidSourceDimensions = useAtomValue(hasValidSourceDimensionsAtom);
 	const initialRequestedSize = useAtomValue(requestedTesseraSizeAtom);
 	const commitTesseraSize = useSetAtom(commitTesseraSizeAtom);
-	const [requestedSize, setRequestedSize] = useState<number>(
-		() => initialRequestedSize ?? 16,
-	);
+	const [requestedSize, setRequestedSize] = useState(initialRequestedSize);
 
 	// Derived during render, not in an effect, so the preview never shows a
 	// stale one-render-behind size.
@@ -107,11 +105,6 @@ export function TesseraSizeSelection() {
 
 	useEffect(() => {
 		trackStepView("pick_tile_size");
-	}, []);
-
-	// biome-ignore lint/correctness/useExhaustiveDependencies: intentional mount-only effect
-	useEffect(() => {
-		commitTesseraSize(requestedSize);
 	}, []);
 
 	useEffect(() => {

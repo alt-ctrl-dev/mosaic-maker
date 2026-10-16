@@ -82,14 +82,11 @@ describe("TesseraSizeSelection", () => {
 		vi.useFakeTimers();
 		const { store } = renderSizeSelection();
 
-		// Clear the initial mount commit
-		store.set(requestedTesseraSizeAtom, null);
-
 		const rangeInput = screen.getByRole("slider");
 		fireEvent.change(rangeInput, { target: { value: "32" } });
 
 		// Should not be committed immediately (debounced)
-		expect(store.get(requestedTesseraSizeAtom)).toBeNull();
+		expect(store.get(requestedTesseraSizeAtom)).toBe(16);
 
 		// Advance timers to allow debounce to complete
 		vi.advanceTimersByTime(300);

@@ -107,7 +107,7 @@ describe("workflow atoms", () => {
 		const store = createWorkflowStore();
 		store.set(commitTesseraSizeAtom, 16);
 
-		expect(store.get(requestedTesseraSizeAtom)).toBeNull();
+		expect(store.get(requestedTesseraSizeAtom)).toBe(16);
 		expect(store.get(currentStepAtom)).toBe(WorkflowStep.CHOOSE_SOURCE_IMAGE);
 	});
 

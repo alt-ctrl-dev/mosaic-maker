@@ -39,9 +39,6 @@ describe("TesseraSizeSelection debouncing", () => {
 	it("debounces rapid slider changes to a single commit", () => {
 		const { store } = renderSizeSelection();
 
-		// Clear the initial mount commit
-		store.set(requestedTesseraSizeAtom, null);
-
 		const rangeInput = screen.getByRole("slider");
 
 		// Simulate rapid slider movements
@@ -51,7 +48,7 @@ describe("TesseraSizeSelection debouncing", () => {
 		fireEvent.change(rangeInput, { target: { value: "35" } });
 
 		// Should not have been committed yet (debounced)
-		expect(store.get(requestedTesseraSizeAtom)).toBeNull();
+		expect(store.get(requestedTesseraSizeAtom)).toBe(16);
 
 		// Advance timers to allow debounce to complete
 		vi.advanceTimersByTime(300);
@@ -63,23 +60,20 @@ describe("TesseraSizeSelection debouncing", () => {
 	it("delays the commit during rapid slider changes", () => {
 		const { store } = renderSizeSelection();
 
-		// Clear the initial mount commit
-		store.set(requestedTesseraSizeAtom, null);
-
 		const rangeInput = screen.getByRole("slider");
 
 		// First change should be debounced
 		fireEvent.change(rangeInput, { target: { value: "20" } });
 
 		// Should not have been committed yet (debounced)
-		expect(store.get(requestedTesseraSizeAtom)).toBeNull();
+		expect(store.get(requestedTesseraSizeAtom)).toBe(16);
 
 		// Rapid subsequent changes should also be debounced
 		fireEvent.change(rangeInput, { target: { value: "25" } });
 		fireEvent.change(rangeInput, { target: { value: "30" } });
 
 		// Should still not have been committed
-		expect(store.get(requestedTesseraSizeAtom)).toBeNull();
+		expect(store.get(requestedTesseraSizeAtom)).toBe(16);
 
 		// Advance timers to allow debounce to complete
 		vi.advanceTimersByTime(300);
