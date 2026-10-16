@@ -59,8 +59,26 @@ export function TesseraSizeSelection() {
 	const [requestedSize, setRequestedSize] = useState<number>(
 		() => initialRequestedSize ?? 16,
 	);
-	const [adjustedSize, setAdjustedSize] = useState<number | null>(null);
-	const [gridCellCount, setGridCellCount] = useState<number | null>(null);
+
+	// Derived synchronously (not in an effect): a one-render-lag copy of the
+	// adjusted size flashed the "adjusted to fit" note while dragging.
+	const adjustedSize =
+		sourceImage && hasValidSourceDimensions
+			? calculateAdjustedTesseraSize(
+					requestedSize,
+					sourceImage.width,
+					sourceImage.height,
+				)
+			: null;
+
+	const gridCellCount =
+		adjustedSize !== null && sourceImage
+			? calculateGridCellCount(
+					adjustedSize,
+					sourceImage.width,
+					sourceImage.height,
+				)
+			: null;
 
 	const isCoarse = gridCellCount !== null && isCoarseGrid(gridCellCount);
 
@@ -90,30 +108,6 @@ export function TesseraSizeSelection() {
 			}
 		};
 	}, []);
-
-	useEffect(() => {
-		if (sourceImage && hasValidSourceDimensions) {
-			const adjusted = calculateAdjustedTesseraSize(
-				requestedSize,
-				sourceImage.width,
-				sourceImage.height,
-			);
-
-			setAdjustedSize(adjusted);
-
-			if (adjusted !== null) {
-				const cellCount = calculateGridCellCount(
-					adjusted,
-					sourceImage.width,
-					sourceImage.height,
-				);
-
-				setGridCellCount(cellCount);
-			} else {
-				setGridCellCount(null);
-			}
-		}
-	}, [requestedSize, sourceImage, hasValidSourceDimensions]);
 
 	const handleSizeChange = (e: React.ChangeEvent<HTMLInputElement>) => {
 		const newSize = Number(e.target.value);
