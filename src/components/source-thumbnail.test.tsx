@@ -61,7 +61,7 @@ function queryBarThumbnail(): HTMLImageElement | null {
 
 describe("Source Thumbnail Persistence", () => {
 	it("shows source thumbnail and dimensions below the switcher after source selection", () => {
-		renderWithState(makeAdjustedState(WorkflowStep.BUILD_TESSERAE));
+		renderWithState(makeAdjustedState(WorkflowStep.PICK_TILE_SIZE));
 
 		const thumbnail = queryBarThumbnail();
 		expect(thumbnail).toBeInTheDocument();
@@ -86,7 +86,7 @@ describe("Source Thumbnail Persistence", () => {
 	});
 
 	it("shows thumbnail on tessera size step", () => {
-		renderWithState(makeAdjustedState(WorkflowStep.BUILD_TESSERAE));
+		renderWithState(makeAdjustedState(WorkflowStep.PICK_TILE_SIZE));
 
 		expect(queryBarThumbnail()).toBeInTheDocument();
 	});
@@ -104,7 +104,7 @@ describe("Source Thumbnail Persistence", () => {
 	});
 
 	it("returns to source selection when the change button is clicked", () => {
-		renderWithState(makeAdjustedState(WorkflowStep.BUILD_TESSERAE));
+		renderWithState(makeAdjustedState(WorkflowStep.PICK_TILE_SIZE));
 
 		const bar = queryThumbnailBar();
 		expect(bar).not.toBeNull();

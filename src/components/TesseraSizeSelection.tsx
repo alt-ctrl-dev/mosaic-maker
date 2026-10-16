@@ -93,7 +93,7 @@ export function TesseraSizeSelection() {
 	const debounceTimerRef = useRef<NodeJS.Timeout | null>(null);
 
 	useEffect(() => {
-		trackStepView("build_tesserae");
+		trackStepView("pick_tile_size");
 	}, []);
 
 	// biome-ignore lint/correctness/useExhaustiveDependencies: intentional mount-only effect

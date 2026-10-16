@@ -25,7 +25,8 @@ export const DEFAULT_TESSERA_SIZE = 16;
 
 const WORKFLOW_STEP_NAMES = [
 	"choose_source_image",
-	"build_tesserae",
+	"pick_tile_size",
+	"pick_tiles",
 	"generate_and_preview",
 	"export_mosaic",
 ] as const;
@@ -196,7 +197,7 @@ export const selectSourceImageAtom = atom(
 		set(sourceImageAtom, sourceImage);
 		if (hasValidTesseraSizes(sourceImage.width, sourceImage.height)) {
 			set(sourceImageErrorAtom, null);
-			set(advanceToStepAtom, WorkflowStep.BUILD_TESSERAE);
+			set(advanceToStepAtom, WorkflowStep.PICK_TILE_SIZE);
 		} else {
 			set(
 				sourceImageErrorAtom,
@@ -218,14 +219,14 @@ export const reportSourceErrorAtom = atom(
 
 /**
  * Commit a requested tessera size, then resize any existing tesserae to it.
- * Ignored until a source image with valid dimensions is present.
+ * Ignored until a source image with valid dimensions is present. Does not
+ * change the step; leaving the size step goes through advanceFromSizeAtom.
  */
 export const commitTesseraSizeAtom = atom(
 	null,
 	async (get, set, size: number) => {
 		if (!get(sourceImageAtom) || !get(hasValidSourceDimensionsAtom)) return;
 		set(requestedTesseraSizeAtom, size);
-		set(advanceToStepAtom, WorkflowStep.BUILD_TESSERAE);
 
 		const tesserae = get(tesseraeAtom);
 		if (tesserae.length === 0) return;
@@ -246,7 +247,7 @@ export const replaceTesseraeAtom = atom(
 	null,
 	(_get, set, tesserae: TesseraInfo[]) => {
 		set(tesseraeAtom, tesserae);
-		set(advanceToStepAtom, WorkflowStep.BUILD_TESSERAE);
+		set(advanceToStepAtom, WorkflowStep.PICK_TILES);
 	},
 );
 
@@ -321,6 +322,11 @@ export const completeMosaicAtom = atom(
 /** Discard an incomplete or failed mosaic result. */
 export const discardMosaicAtom = atom(null, (_get, set) => {
 	set(mosaicResultAtom, null);
+});
+
+/** Advance from tile size selection to the tile picking step. */
+export const advanceFromSizeAtom = atom(null, (_get, set) => {
+	set(advanceToStepAtom, WorkflowStep.PICK_TILES);
 });
 
 /** Advance from tessera review to the generate-and-preview step. */

@@ -9,7 +9,7 @@ describe("workflow-step-button styling", () => {
 		render(<App />);
 
 		const button = screen.getAllByRole("button", {
-			name: /build tiles/i,
+			name: /pick tiles/i,
 		})[0];
 		expect(button).toBeDefined();
 

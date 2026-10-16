@@ -196,7 +196,7 @@ export function TesseraReview() {
 					onClick={() => advanceFromReview()}
 					disabled={validCount === 0}
 				>
-					Continue to step 3 →
+					Continue to step 4 →
 				</ActionButton>
 			</div>
 		</div>

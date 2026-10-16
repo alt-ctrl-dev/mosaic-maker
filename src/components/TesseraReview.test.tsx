@@ -62,7 +62,7 @@ describe("TesseraReview", () => {
 		renderWithWorkflow(<TesseraReview />, { tesserae: mockTesserae });
 
 		const continueButton = screen.getByRole("button", {
-			name: /continue to step 3/i,
+			name: /continue to step 4/i,
 		});
 
 		const details = continueButton?.closest("details");

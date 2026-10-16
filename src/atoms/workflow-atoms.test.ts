@@ -8,6 +8,7 @@ import {
 import {
 	adjustedTesseraSizeAtom,
 	advanceFromReviewAtom,
+	advanceFromSizeAtom,
 	appendGeneratedTesseraeAtom,
 	clearTesseraeAtom,
 	commitTesseraSizeAtom,
@@ -58,15 +59,15 @@ function makeTessera(fileName: string, isValid = true): TesseraInfo {
 }
 
 describe("workflow atoms", () => {
-	it("advances to build tesserae when a valid source image is selected", () => {
+	it("advances to tile size selection when a valid source image is selected", () => {
 		const store = createWorkflowStore();
 		store.set(selectSourceImageAtom, makeSourceImage());
 
 		expect(store.get(sourceImageAtom)).not.toBeNull();
 		expect(store.get(sourceImageErrorAtom)).toBeNull();
-		expect(store.get(currentStepAtom)).toBe(WorkflowStep.BUILD_TESSERAE);
+		expect(store.get(currentStepAtom)).toBe(WorkflowStep.PICK_TILE_SIZE);
 		expect(store.get(furthestCompletedStepAtom)).toBe(
-			WorkflowStep.BUILD_TESSERAE,
+			WorkflowStep.PICK_TILE_SIZE,
 		);
 	});
 
@@ -99,7 +100,7 @@ describe("workflow atoms", () => {
 
 		expect(store.get(requestedTesseraSizeAtom)).toBe(16);
 		expect(store.get(adjustedTesseraSizeAtom)).toBe(16);
-		expect(store.get(currentStepAtom)).toBe(WorkflowStep.BUILD_TESSERAE);
+		expect(store.get(currentStepAtom)).toBe(WorkflowStep.PICK_TILE_SIZE);
 	});
 
 	it("ignores a committed size without a valid source image", () => {
@@ -120,7 +121,7 @@ describe("workflow atoms", () => {
 		expect(store.get(validTesseraCountAtom)).toBe(1);
 		expect(store.get(rejectedTesseraCountAtom)).toBe(1);
 		expect(store.get(totalTesseraCountAtom)).toBe(2);
-		expect(store.get(currentStepAtom)).toBe(WorkflowStep.BUILD_TESSERAE);
+		expect(store.get(currentStepAtom)).toBe(WorkflowStep.PICK_TILES);
 	});
 
 	it("keeps uploaded tesserae and replaces generated ones when appending generated", () => {
@@ -207,7 +208,7 @@ describe("workflow atoms", () => {
 	it("starts at the source image step and blocks forward navigation", () => {
 		const store = createWorkflowStore();
 
-		store.set(goToStepAtom, WorkflowStep.BUILD_TESSERAE);
+		store.set(goToStepAtom, WorkflowStep.PICK_TILE_SIZE);
 
 		expect(store.get(currentStepAtom)).toBe(WorkflowStep.CHOOSE_SOURCE_IMAGE);
 	});
@@ -220,8 +221,17 @@ describe("workflow atoms", () => {
 
 		expect(store.get(currentStepAtom)).toBe(WorkflowStep.CHOOSE_SOURCE_IMAGE);
 		expect(store.get(furthestCompletedStepAtom)).toBe(
-			WorkflowStep.BUILD_TESSERAE,
+			WorkflowStep.PICK_TILE_SIZE,
 		);
+	});
+
+	it("advances from size selection to tile picking", () => {
+		const store = createWorkflowStore();
+
+		store.set(advanceFromSizeAtom);
+
+		expect(store.get(currentStepAtom)).toBe(WorkflowStep.PICK_TILES);
+		expect(store.get(furthestCompletedStepAtom)).toBe(WorkflowStep.PICK_TILES);
 	});
 
 	it("advances from review to generate-and-preview", () => {
@@ -318,7 +328,7 @@ describe("workflow atoms", () => {
 		expect(trackEvent).toHaveBeenCalledWith(
 			"workflow_step_navigate",
 			expect.objectContaining({
-				fromStep: "build_tesserae",
+				fromStep: "pick_tile_size",
 				toStep: "choose_source_image",
 				isBackward: true,
 			}),

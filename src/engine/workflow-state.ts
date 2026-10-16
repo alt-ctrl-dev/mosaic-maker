@@ -115,7 +115,8 @@ export interface WorkflowState {
  */
 export enum WorkflowStep {
 	CHOOSE_SOURCE_IMAGE,
-	BUILD_TESSERAE,
+	PICK_TILE_SIZE,
+	PICK_TILES,
 	GENERATE_AND_PREVIEW,
 	EXPORT_MOSAIC,
 }

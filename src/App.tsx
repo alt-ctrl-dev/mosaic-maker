@@ -2,6 +2,7 @@ import * as stylex from "@stylexjs/stylex";
 import { Provider, useAtomValue, useSetAtom } from "jotai";
 import { flushSync } from "react-dom";
 import {
+	advanceFromSizeAtom,
 	clearTesseraeAtom,
 	currentStepAtom,
 	furthestCompletedStepAtom,
@@ -35,7 +36,8 @@ const REDUCED_MOTION = "@media (prefers-reduced-motion: reduce)";
 
 const stages = [
 	"Choose source image",
-	"Build tiles",
+	"Pick tile size",
+	"Pick tiles",
 	"Generate and preview",
 	"Export mosaic",
 ] as const;
@@ -249,7 +251,7 @@ const styles = stylex.create({
 	},
 	canvas: { width: "100%", maxWidth: "48rem", marginInline: "auto" },
 	content: { flex: 1, viewTransitionName: "step-content" },
-	buildTesserae: { display: "flex", flexDirection: "column", gap: "2rem" },
+	pickTiles: { display: "flex", flexDirection: "column", gap: "2rem" },
 	tesseraInputs: {
 		display: "flex",
 		flexWrap: "wrap",
@@ -303,13 +305,25 @@ export function WorkflowApp() {
 	const validTesseraCount = useAtomValue(validTesseraCountAtom);
 	const rejectedTesseraCount = useAtomValue(rejectedTesseraCountAtom);
 	const goToStep = useSetAtom(goToStepAtom);
+	const advanceFromSize = useSetAtom(advanceFromSizeAtom);
 	const clearTesserae = useSetAtom(clearTesseraeAtom);
 
 	function renderStepContent(stepIndex: number) {
 		switch (stepIndex) {
 			case WorkflowStepEnum.CHOOSE_SOURCE_IMAGE:
 				return <SourceImageSelection />;
-			case WorkflowStepEnum.BUILD_TESSERAE: {
+			case WorkflowStepEnum.PICK_TILE_SIZE:
+				return (
+					<div {...stylex.props(styles.pickTiles)}>
+						<TesseraSizeSelection />
+						<div>
+							<ActionButton type="button" onClick={() => advanceFromSize()}>
+								Continue to step 3 →
+							</ActionButton>
+						</div>
+					</div>
+				);
+			case WorkflowStepEnum.PICK_TILES: {
 				const isPhotomosaic = mode === "photomosaic";
 				const isBrick = mode === "brick";
 				const hasPhotomosaicTesserae = isPhotomosaic && tesserae.length > 0;
@@ -317,8 +331,7 @@ export function WorkflowApp() {
 				const canReview = hasPhotomosaicTesserae || hasBrickColors;
 
 				return (
-					<div {...stylex.props(styles.buildTesserae)}>
-						<TesseraSizeSelection />
+					<div {...stylex.props(styles.pickTiles)}>
 						{isPhotomosaic && (
 							<>
 								<div {...stylex.props(styles.tesseraInputs)}>

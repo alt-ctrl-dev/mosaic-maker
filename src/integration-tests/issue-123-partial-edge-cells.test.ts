@@ -62,7 +62,7 @@ describe("Issue #123: Allow partial edge cells", () => {
 		// Should accept the image
 		expect(store.get(hasValidSourceDimensionsAtom)).toBe(true);
 		expect(store.get(sourceImageErrorAtom)).toBeNull();
-		// Should advance to the BUILD_TESSERAE step
+		// Should advance past the source image step
 		expect(store.get(currentStepAtom)).toBeGreaterThan(
 			WorkflowStep.CHOOSE_SOURCE_IMAGE,
 		);
