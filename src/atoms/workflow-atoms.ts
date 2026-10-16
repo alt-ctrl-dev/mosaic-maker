@@ -216,6 +216,15 @@ export const selectModeAtom = atom(null, (get, set, mode: MosaicMode) => {
 	set(seedAtom, Math.floor(Math.random() * SEED_MAX));
 	set(generatedTesseraCountAtom, null);
 	set(invalidateGeneratedMosaicAtom);
+	// The new mode needs its own tiles: steps past tile selection no longer
+	// hold, and without a step menu the user could not walk back on their own.
+	if (get(currentStepAtom) > WorkflowStep.PICK_TILES) {
+		set(currentStepAtom, WorkflowStep.PICK_TILES);
+	}
+	set(
+		furthestCompletedStepAtom,
+		Math.min(get(furthestCompletedStepAtom), WorkflowStep.PICK_TILE_SIZE),
+	);
 });
 
 /** Select and validate the source image, advancing on valid dimensions. */

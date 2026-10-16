@@ -297,6 +297,24 @@ describe("workflow atoms", () => {
 		expect(store.get(tesseraeAtom)).toHaveLength(1);
 	});
 
+	it("returns to tile selection when the mode changes on a later step", () => {
+		const store = createWorkflowStore({
+			currentStep: WorkflowStep.GENERATE_AND_PREVIEW,
+			furthestCompletedStep: WorkflowStep.GENERATE_AND_PREVIEW,
+			tesserae: [makeTessera("tessera1.png")],
+			mosaicResult: { dataUrl: "data:test", width: 1, height: 1 },
+		});
+
+		store.set(selectModeAtom, "brick");
+
+		// The new mode needs its own tiles; the generate step would strand
+		// the user with no tiles and no way back.
+		expect(store.get(currentStepAtom)).toBe(WorkflowStep.PICK_TILES);
+		expect(store.get(furthestCompletedStepAtom)).toBe(
+			WorkflowStep.PICK_TILE_SIZE,
+		);
+	});
+
 	describe("variety metrics by mode", () => {
 		const sourceState = {
 			sourceImage: {
