@@ -16,8 +16,8 @@ const mockInitialState = {
 	},
 };
 
-function renderSizeSelection() {
-	const store = createWorkflowStore(mockInitialState);
+function renderSizeSelection(state: Partial<typeof mockInitialState> = {}) {
+	const store = createWorkflowStore({ ...mockInitialState, ...state });
 	const result = render(
 		<Provider store={store}>
 			<TesseraSizeSelection />
@@ -46,6 +46,36 @@ describe("TesseraSizeSelection", () => {
 		renderSizeSelection();
 
 		expect(screen.getByText(/16 pixels x 16 pixels/)).toBeInTheDocument();
+	});
+
+	it("shows the grid overlay when cells are spaced far apart on screen", () => {
+		const { container } = renderSizeSelection();
+
+		expect(container.querySelector('[aria-hidden="true"]')).not.toBeNull();
+	});
+
+	it("keeps the grid visible but strided when cells get crowded", () => {
+		// 4160 × 6240 at 16px tiles: cells render well under a pixel wide, so
+		// the overlay draws every Nth line instead of fusing into a solid fill.
+		const { container } = renderSizeSelection({
+			sourceImage: {
+				url: "blob:test",
+				width: 4160,
+				height: 6240,
+				orientation: 1,
+			},
+		});
+
+		const overlay = container.querySelector(
+			'[aria-hidden="true"]',
+		) as HTMLElement | null;
+		expect(overlay).not.toBeNull();
+
+		const widthPct = Number.parseFloat(
+			overlay?.style.backgroundSize?.split(" ")[0] ?? "0",
+		);
+		const singleCellPct = (16 / 4160) * 100;
+		expect(widthPct).toBeGreaterThan(singleCellPct);
 	});
 
 	it("debounces the size commit when the slider value changes", () => {

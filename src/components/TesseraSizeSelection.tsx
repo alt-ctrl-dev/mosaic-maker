@@ -19,6 +19,14 @@ import { base } from "../styles/base.stylex";
 import { tokens } from "../styles/tokens.stylex";
 import { trackEvent, trackStepView } from "../telemetry";
 
+// The CSS caps mirror these constants; the fit math below predicts the
+// on-screen preview size from them.
+const PREVIEW_MAX_WIDTH_REM = 20;
+const PREVIEW_MAX_HEIGHT_REM = 25;
+// Below this on-screen cell spacing the 1px grid lines merge into a solid
+// fill, so the overlay draws every Nth line to stay legible.
+const MIN_GRID_CELL_REM = 3 / 16;
+
 const styles = stylex.create({
 	// The source image under its live construction grid: dragging the size
 	// re-solves the grid density against the real image dimensions. The
@@ -34,8 +42,8 @@ const styles = stylex.create({
 	},
 	gridPreviewImage: {
 		display: "block",
-		maxWidth: "20rem",
-		maxHeight: "25rem",
+		maxWidth: `${PREVIEW_MAX_WIDTH_REM}rem`,
+		maxHeight: `${PREVIEW_MAX_HEIGHT_REM}rem`,
 	},
 	gridOverlay: {
 		position: "absolute",
@@ -150,6 +158,26 @@ export function TesseraSizeSelection() {
 			? (adjustedSize / sourceImage.height) * 100
 			: null;
 
+	// Fitted preview width (mirrors the CSS caps). When cells crowd below
+	// MIN_GRID_CELL_REM on screen, the overlay draws every Nth line so the
+	// grid stays visible at every tile size instead of fusing into a solid
+	// fill.
+	const previewWidthRem =
+		showGridPreview && sourceImage
+			? Math.min(
+					PREVIEW_MAX_WIDTH_REM,
+					PREVIEW_MAX_HEIGHT_REM * (sourceImage.width / sourceImage.height),
+				)
+			: null;
+	const gridCellRem =
+		showGridPreview && previewWidthRem !== null && sourceImage !== null
+			? (previewWidthRem * adjustedSize) / sourceImage.width
+			: null;
+	const gridStride =
+		gridCellRem !== null && gridCellRem > 0
+			? Math.max(1, Math.ceil(MIN_GRID_CELL_REM / gridCellRem))
+			: 1;
+
 	return (
 		<div>
 			<div>
@@ -181,7 +209,7 @@ export function TesseraSizeSelection() {
 							style={{
 								backgroundImage:
 									"linear-gradient(to right, rgba(10, 12, 18, 0.85) 1px, transparent 1px), linear-gradient(to bottom, rgba(10, 12, 18, 0.85) 1px, transparent 1px)",
-								backgroundSize: `${gridCellWidthPct}% ${gridCellHeightPct}%`,
+								backgroundSize: `${(gridCellWidthPct ?? 0) * gridStride}% ${(gridCellHeightPct ?? 0) * gridStride}%`,
 							}}
 						/>
 					</div>
