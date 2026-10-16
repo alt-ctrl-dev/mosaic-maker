@@ -70,7 +70,7 @@ export function PickTiles() {
 						path === "generated" && styles.segmentButtonActive,
 					)}
 				>
-					Generated tiles
+					Generate random tiles
 				</button>
 			</div>
 			{path === "upload" ? (

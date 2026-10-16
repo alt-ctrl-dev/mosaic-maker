@@ -26,7 +26,9 @@ describe("PickTiles", () => {
 	it("switches to the generated path", () => {
 		renderWithWorkflow(<PickTiles />);
 
-		fireEvent.click(screen.getByRole("button", { name: "Generated tiles" }));
+		fireEvent.click(
+			screen.getByRole("button", { name: "Generate random tiles" }),
+		);
 
 		expect(screen.getByTestId("generated-tesserae")).toBeInTheDocument();
 		expect(screen.queryByTestId("tessera-upload")).not.toBeInTheDocument();
