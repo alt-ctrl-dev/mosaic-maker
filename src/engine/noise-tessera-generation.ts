@@ -189,6 +189,21 @@ function generateNoisePattern(
 }
 
 /**
+ * Decode a PNG data URL into a real image file. Passing the data URL
+ * string directly to the File constructor would store its text, which
+ * image loaders cannot decode (breaks tessera resize).
+ */
+function dataUrlToPngFile(dataUrl: string, fileName: string): File {
+	const base64 = dataUrl.slice(dataUrl.indexOf(",") + 1);
+	const binary = atob(base64);
+	const bytes = new Uint8Array(binary.length);
+	for (let i = 0; i < binary.length; i += 1) {
+		bytes[i] = binary.charCodeAt(i);
+	}
+	return new File([bytes], fileName, { type: "image/png" });
+}
+
+/**
  * Generate noise-based tesserae for the mosaic.
  *
  * Each tessera is a real PNG rendered on a canvas with seeded noise pixels
@@ -231,7 +246,7 @@ export async function generateTesseraeUsingNoise(
 		const fileName = `generated-${i}-${style}-${seed}-${uniqueId}.png`;
 
 		tesserae.push({
-			file: new File([previewUrl], fileName, { type: "image/png" }),
+			file: dataUrlToPngFile(previewUrl, fileName),
 			fileName,
 			isValid: true,
 			error: null,

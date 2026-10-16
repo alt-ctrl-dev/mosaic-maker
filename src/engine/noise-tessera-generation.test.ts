@@ -83,5 +83,16 @@ describe("noise-tessera-generation", () => {
 
 			expect(new Set(allFilenames).size).toBe(6);
 		});
+
+		it("stores decoded PNG bytes in the file so resizing can reload it", async () => {
+			const [tessera] = await generate(1, 2, 42);
+			const file = tessera.file as File;
+			expect(file.type).toBe("image/png");
+
+			// The fake canvas exports the raw 2x2 pixel buffer (16 bytes) as
+			// base64. The file must hold those decoded bytes, not the data URL
+			// text, or image loading fails when the tessera size changes.
+			expect(file.size).toBe(2 * 2 * 4);
+		});
 	});
 });
