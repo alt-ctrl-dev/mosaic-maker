@@ -1,13 +1,15 @@
 import * as stylex from "@stylexjs/stylex";
 import { useAtom, useAtomValue, useSetAtom } from "jotai";
 import type React from "react";
-import { useCallback, useEffect, useRef } from "react";
+import { useCallback, useEffect, useRef, useState } from "react";
 import {
 	isSelectingSourceAtom,
 	isSourceDragActiveAtom,
 } from "../atoms/ui-atoms";
 import {
+	mosaicResultAtom,
 	reportSourceErrorAtom,
+	resetWorkflowAtom,
 	selectSourceImageAtom,
 	sourceImageAtom,
 	sourceImageErrorAtom,
@@ -42,6 +44,63 @@ const styles = stylex.create({
 		flexDirection: "column",
 		alignItems: "center",
 	},
+	backdrop: {
+		position: "fixed",
+		inset: 0,
+		backgroundColor: "rgba(0, 0, 0, 0.7)",
+		display: "flex",
+		alignItems: "center",
+		justifyContent: "center",
+		zIndex: 1000,
+	},
+	dialog: {
+		backgroundColor: tokens.surface,
+		color: tokens.text,
+		borderRadius: tokens.radius,
+		border: `1px solid ${tokens.border}`,
+		padding: "1.5rem",
+		maxWidth: "25rem",
+		width: "90vw",
+		boxShadow: tokens.shadow,
+	},
+	title: {
+		marginTop: 0,
+		marginBottom: "1rem",
+		fontSize: "1.25rem",
+		fontWeight: "bold",
+	},
+	message: {
+		marginBottom: "1.5rem",
+		lineHeight: 1.5,
+	},
+	buttonGroup: {
+		display: "flex",
+		gap: "0.75rem",
+		justifyContent: "flex-end",
+	},
+	button: {
+		padding: "0.5rem 1rem",
+		borderRadius: tokens.radius,
+		border: "none",
+		cursor: "pointer",
+		fontWeight: "500",
+		transition: "background-color 0.2s",
+	},
+	cancelButton: {
+		backgroundColor: tokens.surface,
+		color: tokens.text,
+		border: `1px solid ${tokens.border}`,
+		":hover": {
+			backgroundColor: tokens.secondaryHover,
+		},
+	},
+	confirmButton: {
+		backgroundColor: tokens.primary,
+		color: tokens.onPrimary,
+		":hover": {
+			backgroundColor: tokens.primaryHover,
+		},
+	},
 });
 
 /** StyleX only resolves computed conditional keys defined in the same module. */
@@ -75,15 +134,70 @@ const dragStyles = stylex.create({
 export function SourceImageSelection() {
 	const sourceImage = useAtomValue(sourceImageAtom);
 	const sourceImageError = useAtomValue(sourceImageErrorAtom);
+	const _mosaicResult = useAtomValue(mosaicResultAtom);
 	const selectSourceImage = useSetAtom(selectSourceImageAtom);
 	const reportSourceError = useSetAtom(reportSourceErrorAtom);
+	const _resetWorkflow = useSetAtom(resetWorkflowAtom);
 	const [isProcessing, setIsProcessing] = useAtom(isSelectingSourceAtom);
 	const [isDragging, setIsDragging] = useAtom(isSourceDragActiveAtom);
+	const [_showResetWarning, _setShowResetWarning] = useState(false);
+	const [_pendingFile, _setPendingFile] = useState<FileList | null>(null);
 	const dragDepth = useRef(0);
 
 	useEffect(() => {
 		trackStepView("choose_source_image");
 	}, []);
+
+	const _processFileChange = useCallback(
+		async (files: FileList | null) => {
+			if (!files || files.length === 0) return;
+
+			const file = files[0];
+			setIsProcessing(true);
+			try {
+				const sourceImageInfo = await getSourceImageInfo(file);
+
+				if (
+					isDimensionLimitExceeded(
+						sourceImageInfo.width,
+						sourceImageInfo.height,
+					)
+				) {
+					reportSourceError(
+						getDimensionErrorMessage(
+							sourceImageInfo.width,
+							sourceImageInfo.height,
+						),
+					);
+					return;
+				}
+
+				selectSourceImage(sourceImageInfo);
+
+				trackEvent("source_image_upload", {
+					width: sourceImageInfo.width,
+					height: sourceImageInfo.height,
+					fileSize: file.size,
+					fileType: file.type,
+				});
+				vibrate(10);
+			} catch (error) {
+				const errorMessage =
+					error instanceof Error
+						? error.message
+						: "Failed to process the image.";
+				reportSourceError(errorMessage);
+				trackError("source_image_load", error, {
+					fileName: file.name,
+					fileType: file.type,
+					fileSize: file.size,
+				});
+			} finally {
+				setIsProcessing(false);
+			}
+		},
+		[selectSourceImage, reportSourceError, setIsProcessing],
+	);
 
 	const handleFileChange = useCallback(
 		async (files: FileList | null) => {

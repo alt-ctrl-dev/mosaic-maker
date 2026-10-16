@@ -4,9 +4,12 @@ import {
 	adjustedTesseraSizeAtom,
 	currentStepAtom,
 	goToStepAtom,
+	mosaicResultAtom,
+	parametersChangedAfterGenerationAtom,
 	sourceImageAtom,
 	validTesseraCountAtom,
 } from "../atoms/workflow-atoms";
+import { ParameterChangeConfirmation } from "./ParameterChangeConfirmation";
 import { WorkflowStep } from "../engine/workflow-state";
 import { base } from "../styles/base.stylex";
 import { tokens } from "../styles/tokens.stylex";
@@ -98,6 +101,8 @@ export function SelectionSummary() {
 	const currentStep = useAtomValue(currentStepAtom);
 	const adjustedTesseraSize = useAtomValue(adjustedTesseraSizeAtom);
 	const validTesseraCount = useAtomValue(validTesseraCountAtom);
+	const mosaicResult = useAtomValue(mosaicResultAtom);
+	const parametersChanged = useAtomValue(parametersChangedAfterGenerationAtom);
 	const goToStep = useSetAtom(goToStepAtom);
 
 	if (!sourceImage || currentStep <= WorkflowStep.CHOOSE_SOURCE_IMAGE) {
@@ -108,6 +113,7 @@ export function SelectionSummary() {
 		adjustedTesseraSize !== null && currentStep > WorkflowStep.PICK_TILE_SIZE;
 	const showTiles =
 		validTesseraCount > 0 && currentStep > WorkflowStep.PICK_TILES;
+	const hasMosaicBeenGenerated = mosaicResult !== null;
 
 	return (
 		<div {...stylex.props(styles.bar)} data-testid="selection-summary">
@@ -130,13 +136,23 @@ export function SelectionSummary() {
 							{sourceImage.width} × {sourceImage.height} pixels
 						</span>
 					</div>
-					<button
-						type="button"
-						onClick={() => goToStep(WorkflowStep.CHOOSE_SOURCE_IMAGE)}
-						{...stylex.props(styles.changeButton, base.focusOutline)}
+					<ParameterChangeConfirmation
+						onConfirm={() => goToStep(WorkflowStep.CHOOSE_SOURCE_IMAGE)}
+						parameterName="source image"
 					>
-						Change image
-					</button>
+						<span
+							{...stylex.props(styles.changeButton, base.focusOutline)}
+							style={{
+								display: "inline-block",
+								padding: "0.2rem 0.6rem",
+								cursor: "pointer",
+							}}
+						>
+							{hasMosaicBeenGenerated && parametersChanged
+								? "⚠️ Change image"
+								: "Change image"}
+						</span>
+					</ParameterChangeConfirmation>
 				</div>
 
 				{showTileSize && (
@@ -144,14 +160,24 @@ export function SelectionSummary() {
 						<span {...stylex.props(styles.detail)}>
 							Tile size: {adjustedTesseraSize} × {adjustedTesseraSize} px
 						</span>
-						<button
-							type="button"
-							onClick={() => goToStep(WorkflowStep.PICK_TILE_SIZE)}
-							aria-label="Change tile size"
-							{...stylex.props(styles.changeButton, base.focusOutline)}
+						<ParameterChangeConfirmation
+							onConfirm={() => goToStep(WorkflowStep.PICK_TILE_SIZE)}
+							parameterName="tile size"
 						>
-							Change size
-						</button>
+							<span
+								title="Change tile size"
+								{...stylex.props(styles.changeButton, base.focusOutline)}
+								style={{
+									display: "inline-block",
+									padding: "0.2rem 0.6rem",
+									cursor: "pointer",
+								}}
+							>
+								{hasMosaicBeenGenerated && parametersChanged
+									? "⚠️ Change size"
+									: "Change size"}
+							</span>
+						</ParameterChangeConfirmation>
 					</div>
 				)}
 
@@ -160,14 +186,24 @@ export function SelectionSummary() {
 						<span {...stylex.props(styles.detail)}>
 							Tiles: {validTesseraCount}
 						</span>
-						<button
-							type="button"
-							onClick={() => goToStep(WorkflowStep.PICK_TILES)}
-							aria-label="Change tiles"
-							{...stylex.props(styles.changeButton, base.focusOutline)}
+						<ParameterChangeConfirmation
+							onConfirm={() => goToStep(WorkflowStep.PICK_TILES)}
+							parameterName="tiles"
 						>
-							Change tiles
-						</button>
+							<span
+								title="Change tiles"
+								{...stylex.props(styles.changeButton, base.focusOutline)}
+								style={{
+									display: "inline-block",
+									padding: "0.2rem 0.6rem",
+									cursor: "pointer",
+								}}
+							>
+								{hasMosaicBeenGenerated && parametersChanged
+									? "⚠️ Change tiles"
+									: "Change tiles"}
+							</span>
+						</ParameterChangeConfirmation>
 					</div>
 				)}
 			</div>

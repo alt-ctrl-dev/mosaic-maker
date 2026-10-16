@@ -66,6 +66,22 @@ export const seedAtom = atom<number>(Math.floor(Math.random() * SEED_MAX));
 export const generatedTesseraCountAtom = atom<number | null>(null);
 /** The generated mosaic result, set after generation completes. */
 export const mosaicResultAtom = atom<MosaicResult | null>(null);
+/** Whether parameters have been changed after mosaic generation */
+export const parametersChangedAfterGenerationAtom = atom<boolean>(false);
+/** Reset the workflow to start a new session */
+export const resetWorkflowAtom = atom(null, (_get, set) => {
+	set(sourceImageAtom, null);
+	set(sourceImageErrorAtom, null);
+	set(requestedTesseraSizeAtom, DEFAULT_TESSERA_SIZE);
+	set(tesseraeAtom, []);
+	set(hasAcceptedSupplementationAtom, false);
+	set(seedAtom, Math.floor(Math.random() * SEED_MAX));
+	set(generatedTesseraCountAtom, null);
+	set(mosaicResultAtom, null);
+	set(currentStepAtom, WorkflowStep.CHOOSE_SOURCE_IMAGE);
+	set(furthestCompletedStepAtom, WorkflowStep.CHOOSE_SOURCE_IMAGE);
+	set(parametersChangedAfterGenerationAtom, false);
+});
 /** The workflow step currently displayed. */
 export const currentStepAtom = atom<WorkflowStep>(
 	WorkflowStep.CHOOSE_SOURCE_IMAGE,
@@ -185,6 +201,7 @@ export const goToStepAtom = atom(null, (get, set, step: number) => {
 /** Select the mosaic mode; changing it resets the tessera collection. */
 export const selectModeAtom = atom(null, (get, set, mode: MosaicMode) => {
 	if (get(modeAtom) === mode) return;
+	const hasMosaicBeenGenerated = get(mosaicResultAtom) !== null;
 	set(modeAtom, mode);
 	// Tesserae from the other mode don't carry over; keep the source image.
 	set(tesseraeAtom, []);
@@ -192,13 +209,20 @@ export const selectModeAtom = atom(null, (get, set, mode: MosaicMode) => {
 	set(seedAtom, Math.floor(Math.random() * SEED_MAX));
 	set(generatedTesseraCountAtom, null);
 	set(mosaicResultAtom, null);
+	if (hasMosaicBeenGenerated) {
+		set(parametersChangedAfterGenerationAtom, true);
+	}
 });
 
 /** Select and validate the source image, advancing on valid dimensions. */
 export const selectSourceImageAtom = atom(
 	null,
-	(_get, set, sourceImage: SourceImageInfo) => {
+	(get, set, sourceImage: SourceImageInfo) => {
+		const hasMosaicBeenGenerated = get(mosaicResultAtom) !== null;
 		set(sourceImageAtom, sourceImage);
+		if (hasMosaicBeenGenerated) {
+			set(parametersChangedAfterGenerationAtom, true);
+		}
 		if (hasValidTesseraSizes(sourceImage.width, sourceImage.height)) {
 			set(sourceImageErrorAtom, null);
 			set(advanceToStepAtom, WorkflowStep.PICK_TILE_SIZE);
@@ -230,7 +254,12 @@ export const commitTesseraSizeAtom = atom(
 	null,
 	async (get, set, size: number) => {
 		if (!get(sourceImageAtom) || !get(hasValidSourceDimensionsAtom)) return;
+		const hasMosaicBeenGenerated = get(mosaicResultAtom) !== null;
 		set(requestedTesseraSizeAtom, size);
+
+		if (hasMosaicBeenGenerated) {
+			set(parametersChangedAfterGenerationAtom, true);
+		}
 
 		const tesserae = get(tesseraeAtom);
 		if (tesserae.length === 0) return;
@@ -249,8 +278,12 @@ export const commitTesseraSizeAtom = atom(
 /** Replace the tessera collection (uploads and brick palettes). */
 export const replaceTesseraeAtom = atom(
 	null,
-	(_get, set, tesserae: TesseraInfo[]) => {
+	(get, set, tesserae: TesseraInfo[]) => {
+		const hasMosaicBeenGenerated = get(mosaicResultAtom) !== null;
 		set(tesseraeAtom, tesserae);
+		if (hasMosaicBeenGenerated) {
+			set(parametersChangedAfterGenerationAtom, true);
+		}
 		set(advanceToStepAtom, WorkflowStep.PICK_TILES);
 	},
 );
@@ -316,6 +349,7 @@ export const completeMosaicAtom = atom(
 	null,
 	(get, set, mosaicResult: MosaicResult) => {
 		set(mosaicResultAtom, mosaicResult);
+		set(parametersChangedAfterGenerationAtom, false);
 		set(
 			furthestCompletedStepAtom,
 			Math.max(get(furthestCompletedStepAtom), WorkflowStep.EXPORT_MOSAIC),
@@ -379,6 +413,7 @@ export function hydrateWorkflowStore(
 		store.set(exportQualityAtom, state.exportQuality);
 	if (state.exportBackgroundColor !== undefined)
 		store.set(exportBackgroundColorAtom, state.exportBackgroundColor);
+	// Note: parametersChangedAfterGenerationAtom is not hydrated as it's transient state
 }
 
 /** Create a store pre-seeded from a (partial) workflow state snapshot. */
