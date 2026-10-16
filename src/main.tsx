@@ -1,15 +1,8 @@
 import { StrictMode } from "react";
 import { createRoot } from "react-dom/client";
 import { App } from "./App";
-import { tokens } from "./styles/tokens.stylex";
 import "./styles/view-transitions.css";
 import { initializeTelemetry, trackDeviceAnalytics } from "./telemetry";
-
-// ponytail: StyleX cannot target elements outside the React tree, so the
-// body-level resets the deleted global stylesheet provided live here.
-// Upgrade if StyleX gains a global-styles story.
-document.body.style.margin = "0";
-document.body.style.backgroundColor = tokens.background;
 
 // Initialize telemetry before app bootstrap
 initializeTelemetry();

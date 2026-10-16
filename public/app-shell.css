@@ -1,0 +1,14 @@
+/* First-paint shell: paints the workbench theme before React and StyleX
+   mount, so the page never flashes white. The colors must stay in sync
+   with tokens.background and tokens.text in src/styles/tokens.stylex.ts. */
+
+html {
+	color-scheme: dark;
+	background-color: #12141c;
+}
+
+body {
+	margin: 0;
+	background-color: #12141c;
+	color: #e8eaf2;
+}
