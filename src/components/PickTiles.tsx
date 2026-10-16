@@ -1,7 +1,5 @@
 import * as stylex from "@stylexjs/stylex";
-import { useAtomValue } from "jotai";
 import { useState } from "react";
-import { tesseraeAtom } from "../atoms/workflow-atoms";
 import { tokens } from "../styles/tokens.stylex";
 import { GeneratedTesserae } from "./GeneratedTesserae";
 import { TesseraReview } from "./TesseraReview";
@@ -48,7 +46,6 @@ type TesseraPath = "upload" | "generated";
  */
 export function PickTiles() {
 	const [path, setPath] = useState<TesseraPath>("upload");
-	const hasTesserae = useAtomValue(tesseraeAtom).length > 0;
 
 	return (
 		<div {...stylex.props(styles.root)} data-testid="pick-tiles">
@@ -88,7 +85,7 @@ export function PickTiles() {
 			) : (
 				<GeneratedTesserae />
 			)}
-			{hasTesserae && <TesseraReview />}
+			<TesseraReview />
 		</div>
 	);
 }

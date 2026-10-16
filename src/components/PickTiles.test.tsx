@@ -32,6 +32,17 @@ describe("PickTiles", () => {
 		expect(screen.queryByTestId("tessera-upload")).not.toBeInTheDocument();
 	});
 
+	it("always shows the review accordion, even with no tiles", () => {
+		renderWithWorkflow(<PickTiles />);
+
+		expect(
+			screen.getByText("Review tiles (0 valid, 0 rejected)"),
+		).toBeInTheDocument();
+		expect(
+			screen.queryByRole("button", { name: "Clear all tiles" }),
+		).not.toBeInTheDocument();
+	});
+
 	it("clears all tiles from inside the review accordion", () => {
 		// A rejected tile keeps the accordion open, where the clear action lives.
 		const { store } = renderWithWorkflow(<PickTiles />, {

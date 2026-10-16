@@ -186,15 +186,17 @@ export function TesseraReview() {
 					Review tiles ({validCount} valid, {rejectedCount} rejected)
 				</summary>
 
-				<div {...stylex.props(styles.clearRow)}>
-					<ActionButton
-						type="button"
-						onClick={() => clearTesserae()}
-						variant="secondary"
-					>
-						Clear all tiles
-					</ActionButton>
-				</div>
+				{tesserae.length > 0 && (
+					<div {...stylex.props(styles.clearRow)}>
+						<ActionButton
+							type="button"
+							onClick={() => clearTesserae()}
+							variant="secondary"
+						>
+							Clear all tiles
+						</ActionButton>
+					</div>
+				)}
 
 				{isLowVariety && varietyRecommendation && (
 					<article
