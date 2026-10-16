@@ -65,8 +65,8 @@ export function TesseraSizeSelection() {
 	const sourceImage = useAtomValue(sourceImageAtom);
 	const hasValidSourceDimensions = useAtomValue(hasValidSourceDimensionsAtom);
 	// The slider is bound straight to the atom: the derived adjusted size and
-	// grid metrics follow live, and only the expensive commit (step advance,
-	// tile resize) is debounced.
+	// grid metrics follow live, and only the commit (clearing existing tiles)
+	// is debounced.
 	const [requestedSize, setRequestedSize] = useAtom(requestedTesseraSizeAtom);
 	const adjustedSize = useAtomValue(adjustedTesseraSizeAtom);
 	const gridCellCount = useAtomValue(gridCellCountAtom);
@@ -82,6 +82,9 @@ export function TesseraSizeSelection() {
 			: 100;
 
 	const debounceTimerRef = useRef<NodeJS.Timeout | null>(null);
+	// Committing clears existing tiles; skip commits that land on the size
+	// already in effect (e.g. dragging the slider away and back).
+	const lastCommittedSizeRef = useRef(requestedSize);
 
 	useEffect(() => {
 		trackStepView("pick_tile_size");
@@ -104,7 +107,10 @@ export function TesseraSizeSelection() {
 		}
 
 		debounceTimerRef.current = setTimeout(() => {
-			commitTesseraSize(newSize);
+			if (newSize !== lastCommittedSizeRef.current) {
+				commitTesseraSize(newSize);
+				lastCommittedSizeRef.current = newSize;
+			}
 			trackEvent("tessera_size_changed", { size: newSize });
 			debounceTimerRef.current = null;
 		}, 150);

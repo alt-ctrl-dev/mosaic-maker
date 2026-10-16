@@ -103,6 +103,34 @@ describe("workflow atoms", () => {
 		expect(store.get(currentStepAtom)).toBe(WorkflowStep.PICK_TILE_SIZE);
 	});
 
+	it("clears existing tesserae when a new size is committed", () => {
+		const store = createWorkflowStore();
+		store.set(selectSourceImageAtom, makeSourceImage());
+		store.set(replaceTesseraeAtom, [makeTessera("tile.png")]);
+		store.set(commitTesseraSizeAtom, 24);
+
+		expect(store.get(requestedTesseraSizeAtom)).toBe(24);
+		expect(store.get(tesseraeAtom)).toEqual([]);
+	});
+
+	it("discards a generated mosaic when the size changes", () => {
+		const store = createWorkflowStore();
+		store.set(selectSourceImageAtom, makeSourceImage());
+		store.set(replaceTesseraeAtom, [makeTessera("tile.png")]);
+		store.set(completeMosaicAtom, {
+			dataUrl: "data:image/png;base64,x",
+			width: 10,
+			height: 10,
+		});
+
+		store.set(commitTesseraSizeAtom, 24);
+
+		expect(store.get(mosaicResultAtom)).toBeNull();
+		expect(store.get(furthestCompletedStepAtom)).toBe(
+			WorkflowStep.GENERATE_AND_PREVIEW,
+		);
+	});
+
 	it("ignores a committed size without a valid source image", () => {
 		const store = createWorkflowStore();
 		store.set(commitTesseraSizeAtom, 16);

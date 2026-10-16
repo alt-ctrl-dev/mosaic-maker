@@ -2,7 +2,6 @@ import { atom, createStore } from "jotai";
 import type { ExportFormat } from "../engine/export";
 import type { SourceImageInfo } from "../engine/image-processing";
 import type { MosaicResult } from "../engine/mosaic-engine";
-import { resizeTesserae } from "../engine/tessera-processing";
 import {
 	calculateAdjustedTesseraSize,
 	calculateGridCellCount,
@@ -18,7 +17,7 @@ import {
 	type WorkflowState,
 	WorkflowStep,
 } from "../engine/workflow-state";
-import { trackError, trackEvent } from "../telemetry";
+import { trackEvent } from "../telemetry";
 
 /** Fallback tessera size when no adjusted size has been calculated yet. */
 export const DEFAULT_TESSERA_SIZE = 16;
@@ -198,31 +197,39 @@ export const goToStepAtom = atom(null, (get, set, step: number) => {
 	}
 });
 
+/**
+ * Discard a generated mosaic whose inputs no longer match: the stored
+ * preview would be stale, so the workflow falls back to the generate
+ * step and must regenerate.
+ */
+const invalidateGeneratedMosaicAtom = atom(null, (get, set) => {
+	if (get(mosaicResultAtom) === null) return;
+	set(mosaicResultAtom, null);
+	set(parametersChangedAfterGenerationAtom, true);
+	set(
+		furthestCompletedStepAtom,
+		Math.min(get(furthestCompletedStepAtom), WorkflowStep.GENERATE_AND_PREVIEW),
+	);
+});
+
 /** Select the mosaic mode; changing it resets the tessera collection. */
 export const selectModeAtom = atom(null, (get, set, mode: MosaicMode) => {
 	if (get(modeAtom) === mode) return;
-	const hasMosaicBeenGenerated = get(mosaicResultAtom) !== null;
 	set(modeAtom, mode);
 	// Tesserae from the other mode don't carry over; keep the source image.
 	set(tesseraeAtom, []);
 	set(hasAcceptedSupplementationAtom, false);
 	set(seedAtom, Math.floor(Math.random() * SEED_MAX));
 	set(generatedTesseraCountAtom, null);
-	set(mosaicResultAtom, null);
-	if (hasMosaicBeenGenerated) {
-		set(parametersChangedAfterGenerationAtom, true);
-	}
+	set(invalidateGeneratedMosaicAtom);
 });
 
 /** Select and validate the source image, advancing on valid dimensions. */
 export const selectSourceImageAtom = atom(
 	null,
-	(get, set, sourceImage: SourceImageInfo) => {
-		const hasMosaicBeenGenerated = get(mosaicResultAtom) !== null;
+	(_get, set, sourceImage: SourceImageInfo) => {
 		set(sourceImageAtom, sourceImage);
-		if (hasMosaicBeenGenerated) {
-			set(parametersChangedAfterGenerationAtom, true);
-		}
+		set(invalidateGeneratedMosaicAtom);
 		if (hasValidTesseraSizes(sourceImage.width, sourceImage.height)) {
 			set(sourceImageErrorAtom, null);
 			set(advanceToStepAtom, WorkflowStep.PICK_TILE_SIZE);
@@ -246,44 +253,27 @@ export const reportSourceErrorAtom = atom(
 );
 
 /**
- * Commit a requested tessera size, then resize any existing tesserae to it.
- * Ignored until a source image with valid dimensions is present. Does not
- * change the step; leaving the size step goes through advanceFromSizeAtom.
+ * Commit a requested tessera size, clearing any existing tesserae since
+ * they were processed for the previous size. Ignored until a source
+ * image with valid dimensions is present. Does not change the step;
+ * leaving the size step goes through advanceFromSizeAtom.
  */
-export const commitTesseraSizeAtom = atom(
-	null,
-	async (get, set, size: number) => {
-		if (!get(sourceImageAtom) || !get(hasValidSourceDimensionsAtom)) return;
-		const hasMosaicBeenGenerated = get(mosaicResultAtom) !== null;
-		set(requestedTesseraSizeAtom, size);
+export const commitTesseraSizeAtom = atom(null, (get, set, size: number) => {
+	if (!get(sourceImageAtom) || !get(hasValidSourceDimensionsAtom)) return;
+	set(requestedTesseraSizeAtom, size);
+	set(invalidateGeneratedMosaicAtom);
 
-		if (hasMosaicBeenGenerated) {
-			set(parametersChangedAfterGenerationAtom, true);
-		}
-
-		const tesserae = get(tesseraeAtom);
-		if (tesserae.length === 0) return;
-		try {
-			set(tesseraeAtom, await resizeTesserae(tesserae, size));
-		} catch (error) {
-			console.error("Error resizing tesserae:", error);
-			trackError("tesserae_resize", error, {
-				tesseraCount: tesserae.length,
-				targetSize: size,
-			});
-		}
-	},
-);
+	if (get(tesseraeAtom).length > 0) {
+		set(tesseraeAtom, []);
+	}
+});
 
 /** Replace the tessera collection (uploads and brick palettes). */
 export const replaceTesseraeAtom = atom(
 	null,
-	(get, set, tesserae: TesseraInfo[]) => {
-		const hasMosaicBeenGenerated = get(mosaicResultAtom) !== null;
+	(_get, set, tesserae: TesseraInfo[]) => {
 		set(tesseraeAtom, tesserae);
-		if (hasMosaicBeenGenerated) {
-			set(parametersChangedAfterGenerationAtom, true);
-		}
+		set(invalidateGeneratedMosaicAtom);
 		set(advanceToStepAtom, WorkflowStep.PICK_TILES);
 	},
 );
@@ -297,6 +287,7 @@ export const appendGeneratedTesseraeAtom = atom(
 	(get, set, tesserae: TesseraInfo[]) => {
 		const kept = get(tesseraeAtom).filter((tessera) => !tessera.isSupplemented);
 		set(tesseraeAtom, [...kept, ...tesserae]);
+		set(invalidateGeneratedMosaicAtom);
 	},
 );
 
@@ -308,11 +299,13 @@ export const removeTesseraAtom = atom(null, (get, set, index: number) => {
 		tesseraeAtom,
 		tesserae.filter((_, i) => i !== index),
 	);
+	set(invalidateGeneratedMosaicAtom);
 });
 
 /** Clear the whole tessera collection. */
 export const clearTesseraeAtom = atom(null, (_get, set) => {
 	set(tesseraeAtom, []);
+	set(invalidateGeneratedMosaicAtom);
 });
 
 /**
@@ -342,6 +335,7 @@ export const acceptSupplementationAtom = atom(null, async (get, set) => {
 
 	set(tesseraeAtom, [...get(tesseraeAtom), ...supplemented]);
 	set(hasAcceptedSupplementationAtom, true);
+	set(invalidateGeneratedMosaicAtom);
 });
 
 /** Store a finished mosaic and unlock the export step. */

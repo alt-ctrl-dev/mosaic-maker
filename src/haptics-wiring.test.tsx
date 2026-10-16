@@ -24,7 +24,6 @@ vi.mock("./engine/image-processing", async () => {
 
 vi.mock("./engine/tessera-processing", () => ({
 	processTesserae: () => Promise.resolve([]),
-	resizeTesserae: () => Promise.resolve([]),
 }));
 
 vi.mock("./engine/generate-noise-tesserae-helper", () => ({

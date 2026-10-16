@@ -1,7 +1,8 @@
 import * as stylex from "@stylexjs/stylex";
 import { useAtomValue, useSetAtom } from "jotai";
-import { useState, type ReactNode } from "react";
+import { type ReactNode, useState } from "react";
 import {
+	mosaicResultAtom,
 	parametersChangedAfterGenerationAtom,
 	resetWorkflowAtom,
 } from "../atoms/workflow-atoms";
@@ -84,11 +85,14 @@ export function ParameterChangeConfirmation({
 	parameterName,
 }: ParameterChangeConfirmationProps) {
 	const parametersChanged = useAtomValue(parametersChangedAfterGenerationAtom);
+	// The dialog protects a mosaic that still exists; parameter changes
+	// already discard it, so nothing is left to confirm.
+	const mosaicResult = useAtomValue(mosaicResultAtom);
 	const resetWorkflow = useSetAtom(resetWorkflowAtom);
 	const [showConfirmation, setShowConfirmation] = useState(false);
 
 	const handleClick = () => {
-		if (parametersChanged) {
+		if (parametersChanged && mosaicResult !== null) {
 			setShowConfirmation(true);
 		} else {
 			onConfirm();

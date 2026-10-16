@@ -4,14 +4,9 @@ import { afterEach, describe, expect, it, vi } from "vitest";
 import {
 	createWorkflowStore,
 	requestedTesseraSizeAtom,
+	tesseraeAtom,
 } from "../atoms/workflow-atoms";
 import { TesseraSizeSelection } from "./TesseraSizeSelection";
-
-// The commit's observable side effect is resizing existing tiles.
-vi.mock("../engine/tessera-processing", () => ({
-	resizeTesserae: vi.fn().mockResolvedValue([]),
-	processTesserae: vi.fn().mockResolvedValue([]),
-}));
 
 const existingTessera = {
 	file: new File([], "tile.png", { type: "image/png" }),
@@ -56,9 +51,7 @@ describe("TesseraSizeSelection initial value registration", () => {
 		expect(store.get(requestedTesseraSizeAtom)).toBe(16);
 	});
 
-	it("debounces the size commit when user changes slider value", async () => {
-		const { resizeTesserae } = await import("../engine/tessera-processing");
-		vi.mocked(resizeTesserae).mockClear();
+	it("debounces the size commit when user changes slider value", () => {
 		vi.useFakeTimers();
 		const { store } = renderSizeSelection();
 
@@ -68,15 +61,14 @@ describe("TesseraSizeSelection initial value registration", () => {
 
 		// The draft lands in the atom immediately…
 		expect(store.get(requestedTesseraSizeAtom)).toBe(32);
-		// …but the commit side effect waits for the debounce.
-		expect(resizeTesserae).not.toHaveBeenCalled();
+		// …but the commit side effect (clearing old tiles) waits for the debounce.
+		expect(store.get(tesseraeAtom)).toHaveLength(1);
 
 		// Advance timers to allow debounce to complete
 		vi.advanceTimersByTime(300);
 
-		// Committed after debounce
-		expect(resizeTesserae).toHaveBeenCalledTimes(1);
-		expect(resizeTesserae).toHaveBeenCalledWith([existingTessera], 32);
+		// Committed after debounce: tiles sized for the old value are gone
+		expect(store.get(tesseraeAtom)).toHaveLength(0);
 		vi.useRealTimers();
 	});
 });
