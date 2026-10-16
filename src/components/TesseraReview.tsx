@@ -113,32 +113,32 @@ export function TesseraReview() {
 			<div aria-live="polite" aria-atomic="true" {...stylex.props(base.srOnly)}>
 				Tile counts updated: {validCount} valid, {rejectedCount} rejected
 			</div>
-			{isLowVariety && varietyRecommendation && (
-				<article
-					{...warningProps}
-					className={`warning-message ${warningProps.className}`}
-					role="alert"
-				>
-					<p {...stylex.props(base.paragraph)}>
-						Low variety: You have {validCount} tiles, but{" "}
-						{varietyRecommendation} are recommended.
-					</p>
-					{isLowVariety && !hasAcceptedSupplementation && (
-						<ActionButton
-							type="button"
-							onClick={() => acceptSupplementation()}
-							variant="outline"
-						>
-							Add random tesserae
-						</ActionButton>
-					)}
-				</article>
-			)}
-
 			<details {...stylex.props(base.details)} open={open}>
 				<summary {...stylex.props(base.summary)}>
 					Review tiles ({validCount} valid, {rejectedCount} rejected)
 				</summary>
+
+				{isLowVariety && varietyRecommendation && (
+					<article
+						{...warningProps}
+						className={`warning-message ${warningProps.className}`}
+						role="alert"
+					>
+						<p {...stylex.props(base.paragraph)}>
+							Low variety: You have {validCount} tiles, but{" "}
+							{varietyRecommendation} are recommended.
+						</p>
+						{isLowVariety && !hasAcceptedSupplementation && (
+							<ActionButton
+								type="button"
+								onClick={() => acceptSupplementation()}
+								variant="outline"
+							>
+								Add random tiles
+							</ActionButton>
+						)}
+					</article>
+				)}
 
 				<div {...stylex.props(styles.grid)}>
 					{tesserae.map((tessera, index) => {

@@ -69,7 +69,7 @@ describe("TesseraReview", () => {
 		expect(details).toBeNull();
 	});
 
-	it("renders warnings outside accordion", () => {
+	it("renders warnings inside accordion", () => {
 		const { container } = renderWithWorkflow(<TesseraReview />, {
 			...lowVarietyState,
 			tesserae: mockTesserae,
@@ -79,7 +79,7 @@ describe("TesseraReview", () => {
 		expect(warning).toBeTruthy();
 
 		const details = warning?.closest("details");
-		expect(details).toBeNull();
+		expect(details).not.toBeNull();
 	});
 
 	it("applies invalid styling when tessera is not valid", () => {
