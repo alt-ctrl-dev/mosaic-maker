@@ -65,6 +65,19 @@ const styles = stylex.create({
 		cursor: "pointer",
 		fontSize: "0.75rem",
 		lineHeight: 1,
+		// Thumbs need bigger targets than cursors.
+		"@media (max-width: 576px)": {
+			width: "2rem",
+			height: "2rem",
+			fontSize: "0.875rem",
+		},
+		"@media (pointer: coarse)": {
+			width: "2.75rem",
+			height: "2.75rem",
+			top: "0.25rem",
+			right: "0.25rem",
+			fontSize: "1rem",
+		},
 		":hover": { color: tokens.invalid, borderColor: tokens.invalid },
 	},
 	preview: {
