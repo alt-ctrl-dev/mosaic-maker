@@ -30,6 +30,7 @@ const styles = stylex.create({
 		padding: "1rem",
 	},
 	control: { marginBottom: "1rem" },
+	seedControl: { marginTop: "1rem" },
 	controlLabel: {
 		display: "block",
 		marginBottom: "0.5rem",
@@ -137,7 +138,7 @@ export function GeneratedTesserae() {
 				</div>
 				<details {...stylex.props(base.details)}>
 					<summary {...stylex.props(base.summary)}>Advanced settings</summary>
-					<div {...stylex.props(styles.control)}>
+					<div {...stylex.props(styles.control, styles.seedControl)}>
 						<label
 							htmlFor="seed"
 							{...stylex.props(base.label, styles.controlLabel)}
