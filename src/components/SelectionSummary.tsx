@@ -1,9 +1,11 @@
 import * as stylex from "@stylexjs/stylex";
-import { useAtomValue } from "jotai";
+import { useAtomValue, useSetAtom } from "jotai";
 import {
 	adjustedTesseraSizeAtom,
 	currentStepAtom,
+	goToStepAtom,
 	sourceImageAtom,
+	validTesseraCountAtom,
 } from "../atoms/workflow-atoms";
 import { WorkflowStep } from "../engine/workflow-state";
 import { base } from "../styles/base.stylex";
@@ -16,8 +18,6 @@ const styles = stylex.create({
 	bar: {
 		boxSizing: "border-box",
 		display: "flex",
-		alignItems: "center",
-		justifyContent: "space-between",
 		width: "100%",
 		maxWidth: "48rem",
 		marginInline: "auto",
@@ -30,10 +30,18 @@ const styles = stylex.create({
 	},
 	items: {
 		display: "flex",
-		alignItems: "center",
-		gap: "1.5rem",
+		flexDirection: "column",
+		alignItems: "stretch",
+		width: "100%",
+		gap: "0.75rem",
 	},
 	item: {
+		display: "flex",
+		alignItems: "center",
+		justifyContent: "space-between",
+		gap: "1rem",
+	},
+	itemInfo: {
 		display: "flex",
 		alignItems: "center",
 		gap: "1rem",
@@ -68,20 +76,19 @@ const styles = stylex.create({
 	},
 });
 
-interface SelectionSummaryProps {
-	/** Called when the user asks to change the source image. */
-	onChangeSource: () => void;
-}
-
 /**
  * Summarizes the selections made so far in the workflow: the source image
- * once it is chosen, and the committed tile size once the size step is
- * completed. Hidden until a source image exists.
+ * once it is chosen, the committed tile size once the size step is
+ * completed, and the tile collection once tiles are chosen. Hidden until a
+ * source image exists. Each item carries a button that navigates back to
+ * its step through {@link goToStepAtom}.
  */
-export function SelectionSummary({ onChangeSource }: SelectionSummaryProps) {
+export function SelectionSummary() {
 	const sourceImage = useAtomValue(sourceImageAtom);
 	const currentStep = useAtomValue(currentStepAtom);
 	const adjustedTesseraSize = useAtomValue(adjustedTesseraSizeAtom);
+	const validTesseraCount = useAtomValue(validTesseraCountAtom);
+	const goToStep = useSetAtom(goToStepAtom);
 
 	if (!sourceImage || currentStep <= WorkflowStep.CHOOSE_SOURCE_IMAGE) {
 		return null;
@@ -89,19 +96,31 @@ export function SelectionSummary({ onChangeSource }: SelectionSummaryProps) {
 
 	const showTileSize =
 		adjustedTesseraSize !== null && currentStep > WorkflowStep.PICK_TILE_SIZE;
+	const showTiles =
+		validTesseraCount > 0 && currentStep > WorkflowStep.PICK_TILES;
 
 	return (
 		<div {...stylex.props(styles.bar)} data-testid="selection-summary">
 			<div {...stylex.props(styles.items)}>
 				<div {...stylex.props(styles.item)}>
-					<img
-						src={sourceImage.url}
-						alt="Source"
-						{...stylex.props(styles.thumbnail)}
-					/>
-					<span {...stylex.props(styles.detail)}>
-						{sourceImage.width} × {sourceImage.height} pixels
-					</span>
+					<div {...stylex.props(styles.itemInfo)}>
+						<img
+							src={sourceImage.url}
+							alt="Source"
+							{...stylex.props(styles.thumbnail)}
+						/>
+						<span {...stylex.props(styles.detail)}>
+							{sourceImage.width} × {sourceImage.height} pixels
+						</span>
+					</div>
+					<button
+						type="button"
+						onClick={() => goToStep(WorkflowStep.CHOOSE_SOURCE_IMAGE)}
+						aria-label="Change source image"
+						{...stylex.props(styles.changeButton, base.focusOutline)}
+					>
+						Change image
+					</button>
 				</div>
 
 				{showTileSize && (
@@ -109,18 +128,33 @@ export function SelectionSummary({ onChangeSource }: SelectionSummaryProps) {
 						<span {...stylex.props(styles.detail)}>
 							Tile size: {adjustedTesseraSize} × {adjustedTesseraSize} px
 						</span>
+						<button
+							type="button"
+							onClick={() => goToStep(WorkflowStep.PICK_TILE_SIZE)}
+							aria-label="Change tile size"
+							{...stylex.props(styles.changeButton, base.focusOutline)}
+						>
+							Change size
+						</button>
+					</div>
+				)}
+
+				{showTiles && (
+					<div {...stylex.props(styles.item)}>
+						<span {...stylex.props(styles.detail)}>
+							Tiles: {validTesseraCount}
+						</span>
+						<button
+							type="button"
+							onClick={() => goToStep(WorkflowStep.PICK_TILES)}
+							aria-label="Change tiles"
+							{...stylex.props(styles.changeButton, base.focusOutline)}
+						>
+							Change tiles
+						</button>
 					</div>
 				)}
 			</div>
-
-			<button
-				type="button"
-				onClick={onChangeSource}
-				aria-label="Change source image"
-				{...stylex.props(styles.changeButton, base.focusOutline)}
-			>
-				Change image
-			</button>
 		</div>
 	);
 }

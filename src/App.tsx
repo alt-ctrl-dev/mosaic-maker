@@ -302,13 +302,7 @@ export function WorkflowApp() {
 				<ModeSelection />
 			</div>
 
-			<SelectionSummary
-				onChangeSource={() =>
-					navigateWithTransition(() =>
-						goToStep(WorkflowStepEnum.CHOOSE_SOURCE_IMAGE),
-					)
-				}
-			/>
+			<SelectionSummary />
 
 			<ErrorBoundary>
 				<main id="main-content" {...stylex.props(styles.workflow)}>
