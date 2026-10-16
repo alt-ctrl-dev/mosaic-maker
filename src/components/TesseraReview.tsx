@@ -15,6 +15,7 @@ import { base } from "../styles/base.stylex";
 import { tokens } from "../styles/tokens.stylex";
 import { trackEvent } from "../telemetry";
 import { ActionButton } from "./ActionButton";
+import { Badge } from "./Badge";
 import { OptionalButton } from "./OptionalButton";
 
 // StyleX only resolves computed conditional keys defined in the same module.
@@ -61,16 +62,6 @@ const styles = stylex.create({
 		borderColor: tokens.border,
 		borderLeftWidth: "3px",
 		borderLeftColor: tokens.primary,
-	},
-	varietyBadge: {
-		fontSize: "0.7rem",
-		fontWeight: "bold",
-		textTransform: "uppercase",
-		letterSpacing: "0.06em",
-		color: tokens.muted,
-		backgroundColor: tokens.secondary,
-		padding: "0.2rem 0.5rem",
-		whiteSpace: "nowrap",
 	},
 	varietyText: { margin: 0, flex: 1, fontSize: "0.9rem" },
 	removeButton: {
@@ -200,7 +191,7 @@ export function TesseraReview() {
 						className={`warning-message ${warningProps.className}`}
 						role="alert"
 					>
-						<span {...stylex.props(styles.varietyBadge)}>(Optional)</span>
+						<Badge>(Optional)</Badge>
 						<p {...stylex.props(styles.varietyText)}>
 							You have {validCount} tiles, but {varietyRecommendation} are
 							recommended.
