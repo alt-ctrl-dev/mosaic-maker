@@ -18,10 +18,7 @@ describe("TesseraSizeSelection state persistence", () => {
 
 		const slider = screen.getByRole("slider");
 		expect(slider).toHaveValue("32");
-		expect(screen.getByText("Adjusted size:")).toBeInTheDocument();
-		expect(
-			screen.getByText("32px", { selector: "strong" }),
-		).toBeInTheDocument();
+		expect(screen.getByText("32px")).toBeInTheDocument();
 	});
 
 	it("uses default value of 16 when no size is stored", () => {

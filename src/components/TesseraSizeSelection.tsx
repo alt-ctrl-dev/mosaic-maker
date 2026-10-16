@@ -60,8 +60,8 @@ export function TesseraSizeSelection() {
 		() => initialRequestedSize ?? 16,
 	);
 
-	// Derived synchronously (not in an effect): a one-render-lag copy of the
-	// adjusted size flashed the "adjusted to fit" note while dragging.
+	// Derived during render, not in an effect, so the preview never shows a
+	// stale one-render-behind size.
 	const adjustedSize =
 		sourceImage && hasValidSourceDimensions
 			? calculateAdjustedTesseraSize(
@@ -162,19 +162,6 @@ export function TesseraSizeSelection() {
 				/>
 				<span>{requestedSize}px</span>
 			</div>
-
-			{adjustedSize !== null && (
-				<div>
-					<p {...stylex.props(base.paragraph)}>
-						Adjusted size: <strong>{adjustedSize}px</strong>
-					</p>
-					{requestedSize !== adjustedSize && (
-						<p {...stylex.props(base.paragraph)}>
-							Adjusted to fit within the valid tile size range.
-						</p>
-					)}
-				</div>
-			)}
 
 			{showGridPreview && sourceImage && (
 				<div>
