@@ -47,6 +47,34 @@ const styles = stylex.create({
 		borderStyle: "solid",
 		borderColor: tokens.valid,
 	},
+	varietyBar: {
+		display: "flex",
+		flexWrap: "wrap",
+		alignItems: "center",
+		gap: "0.5rem 1rem",
+		margin: 0,
+		padding: "0.75rem 1rem",
+		backgroundColor: tokens.surface,
+		borderWidth: "1px",
+		borderStyle: "solid",
+		borderColor: tokens.border,
+		borderLeftWidth: "3px",
+		borderLeftColor: tokens.primary,
+	},
+	varietyBadge: {
+		fontSize: "0.7rem",
+		fontWeight: "bold",
+		textTransform: "uppercase",
+		letterSpacing: "0.06em",
+		color: tokens.muted,
+		borderWidth: "1px",
+		borderStyle: "solid",
+		borderColor: tokens.border,
+		borderRadius: "999px",
+		padding: "0.15rem 0.5rem",
+		whiteSpace: "nowrap",
+	},
+	varietyText: { margin: 0, flex: 1, fontSize: "0.9rem" },
 	removeButton: {
 		position: "absolute",
 		top: "0.375rem",
@@ -150,7 +178,7 @@ export function TesseraReview() {
 		hasAcceptedSupplementation,
 	]);
 
-	const warningProps = stylex.props(base.card);
+	const warningProps = stylex.props(styles.varietyBar);
 
 	return (
 		<div>
@@ -174,9 +202,10 @@ export function TesseraReview() {
 						className={`warning-message ${warningProps.className}`}
 						role="alert"
 					>
-						<p {...stylex.props(base.paragraph)}>
-							Low variety: You have {validCount} tiles, but{" "}
-							{varietyRecommendation} are recommended.
+						<span {...stylex.props(styles.varietyBadge)}>(Optional)</span>
+						<p {...stylex.props(styles.varietyText)}>
+							You have {validCount} tiles, but {varietyRecommendation} are
+							recommended.
 						</p>
 						{isLowVariety && !hasAcceptedSupplementation && (
 							<ActionButton
