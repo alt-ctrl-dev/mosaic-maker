@@ -22,10 +22,10 @@ describe("tessera-sizing with partial edge cells", () => {
 
 	describe("calculateAdjustedTesseraSize", () => {
 		it("clamps requested size to valid range for images without common divisors", () => {
-			// 476 x 600 example - no common divisors >= 8, but we should accept any size 8-476
+			// 476 x 600 example - no common divisors >= 8, but we should accept any size 8-150
 			expect(calculateAdjustedTesseraSize(10, 476, 600)).toBe(10);
 			expect(calculateAdjustedTesseraSize(5, 476, 600)).toBe(8); // Clamped to minimum
-			expect(calculateAdjustedTesseraSize(500, 476, 600)).toBe(476); // Clamped to maximum
+			expect(calculateAdjustedTesseraSize(500, 476, 600)).toBe(150); // Clamped to product maximum
 		});
 
 		it("clamps requested size to valid range for images with common divisors too", () => {

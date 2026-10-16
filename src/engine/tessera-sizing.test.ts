@@ -21,6 +21,10 @@ describe("tessera-sizing", () => {
 			expect(calculateAdjustedTesseraSize(150, 100, 50)).toBe(50);
 		});
 
+		it("clamps to the product maximum even on large images", () => {
+			expect(calculateAdjustedTesseraSize(300, 1000, 1000)).toBe(150); // MAX_TESSERA_SIZE
+		});
+
 		it("respects the minimum tessera size of 8", () => {
 			expect(calculateAdjustedTesseraSize(1, 16, 16)).toBe(8);
 		});

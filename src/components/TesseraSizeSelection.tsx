@@ -9,6 +9,8 @@ import {
 	sourceImageAtom,
 } from "../atoms/workflow-atoms";
 import {
+	MAX_TESSERA_SIZE,
+	MIN_TESSERA_SIZE,
 	calculateAdjustedTesseraSize,
 	calculateGridCellCount,
 	isCoarseGrid,
@@ -24,6 +26,7 @@ const styles = stylex.create({
 		position: "relative",
 		maxWidth: "20rem",
 		marginTop: "1rem",
+		marginInline: "auto",
 		borderWidth: "1px",
 		borderStyle: "solid",
 		borderColor: tokens.border,
@@ -36,6 +39,7 @@ const styles = stylex.create({
 	},
 	gridReadout: {
 		marginTop: "0.5rem",
+		textAlign: "center",
 		fontFamily: "ui-monospace, monospace",
 		fontSize: "0.8rem",
 		color: tokens.info,
@@ -61,10 +65,11 @@ export function TesseraSizeSelection() {
 	const isCoarse = gridCellCount !== null && isCoarseGrid(gridCellCount);
 
 	// The ceiling is engine truth: no tessera larger than the source's
-	// short side. 100 covers the no-image-yet case.
+	// short side, and never larger than the product max. 100 covers the
+	// no-image-yet case.
 	const maxTesseraSize =
 		sourceImage && hasValidSourceDimensions
-			? Math.min(sourceImage.width, sourceImage.height)
+			? Math.min(MAX_TESSERA_SIZE, sourceImage.width, sourceImage.height)
 			: 100;
 
 	const debounceTimerRef = useRef<NodeJS.Timeout | null>(null);
@@ -155,7 +160,7 @@ export function TesseraSizeSelection() {
 				<input
 					id="tessera-size"
 					type="range"
-					min="2"
+					min={MIN_TESSERA_SIZE}
 					max={maxTesseraSize}
 					value={requestedSize}
 					onChange={handleSizeChange}
