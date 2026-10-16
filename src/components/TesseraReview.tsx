@@ -45,11 +45,6 @@ const styles = stylex.create({
 		borderColor: tokens.invalid,
 		backgroundColor: tokens.invalidSoft,
 	},
-	itemSupplemented: {
-		borderWidth: "2px",
-		borderStyle: "solid",
-		borderColor: tokens.valid,
-	},
 	varietyBar: {
 		display: "flex",
 		flexWrap: "wrap",
@@ -245,7 +240,6 @@ export function TesseraReview() {
 						const itemProps = stylex.props(
 							styles.item,
 							!tessera.isValid && styles.itemInvalid,
-							tessera.isSupplemented && styles.itemSupplemented,
 						);
 						return (
 							<div
