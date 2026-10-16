@@ -64,6 +64,7 @@ const styles = stylex.create({
 		borderLeftColor: tokens.primary,
 	},
 	varietyText: { margin: 0, flex: 1, fontSize: "0.9rem" },
+	clearRow: { margin: "1rem" },
 	removeButton: {
 		position: "absolute",
 		top: "0.375rem",
@@ -185,13 +186,15 @@ export function TesseraReview() {
 					Review tiles ({validCount} valid, {rejectedCount} rejected)
 				</summary>
 
-				<ActionButton
-					type="button"
-					onClick={() => clearTesserae()}
-					variant="secondary"
-				>
-					Clear all tiles
-				</ActionButton>
+				<div {...stylex.props(styles.clearRow)}>
+					<ActionButton
+						type="button"
+						onClick={() => clearTesserae()}
+						variant="secondary"
+					>
+						Clear all tiles
+					</ActionButton>
+				</div>
 
 				{isLowVariety && varietyRecommendation && (
 					<article
