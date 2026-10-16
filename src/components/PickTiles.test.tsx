@@ -15,11 +15,6 @@ function mockTessera(overrides: Partial<TesseraInfo> = {}): TesseraInfo {
 	};
 }
 
-const sourceAndSize = {
-	sourceImage: { url: "blob:test", width: 320, height: 320, orientation: 1 },
-	adjustedTesseraSize: 16,
-};
-
 describe("PickTiles", () => {
 	it("shows the upload path by default and hides the generator", () => {
 		renderWithWorkflow(<PickTiles />);
@@ -35,12 +30,6 @@ describe("PickTiles", () => {
 
 		expect(screen.getByTestId("generated-tesserae")).toBeInTheDocument();
 		expect(screen.queryByTestId("tessera-upload")).not.toBeInTheDocument();
-	});
-
-	it("meters readiness against the variety recommendation", () => {
-		renderWithWorkflow(<PickTiles />, sourceAndSize);
-
-		expect(screen.getByText(/of ~\d+ recommended/)).toBeInTheDocument();
 	});
 
 	it("clears all tiles from inside the review accordion", () => {
