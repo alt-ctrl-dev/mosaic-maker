@@ -1,7 +1,7 @@
 import * as stylex from "@stylexjs/stylex";
 import { useAtomValue, useSetAtom } from "jotai";
 import type React from "react";
-import { useCallback, useEffect, useState } from "react";
+import { useCallback, useEffect, useRef, useState } from "react";
 import {
 	reportSourceErrorAtom,
 	selectSourceImageAtom,
@@ -25,11 +25,55 @@ const styles = stylex.create({
 	imagePreview: { marginTop: "1rem" },
 	previewImage: {
 		maxWidth: "100%",
+		width: "auto",
 		height: "auto",
+		// shortcut: reserves a fixed allowance for the surrounding chrome;
+		// switch to flex-fill if the step layout stack changes.
+		maxHeight: "max(8rem, calc(100dvh - 38rem))",
+		objectFit: "contain",
 		borderRadius: tokens.radius,
 		boxShadow: tokens.shadow,
 	},
 	panelSpacing: { marginTop: "1rem", textAlign: "center" },
+	// Drag and drop only exists on pointer devices, so the hint only
+	// renders there.
+	dragHint: {
+		margin: 0,
+		marginTop: "0.25rem",
+		fontSize: "0.875rem",
+		color: tokens.muted,
+		display: "none",
+		"@media (hover: hover) and (pointer: fine)": { display: "block" },
+	},
+	dropText: {
+		display: "flex",
+		flexDirection: "column",
+		alignItems: "center",
+	},
+});
+
+/** StyleX only resolves computed conditional keys defined in the same module. */
+const REDUCED_MOTION = "@media (prefers-reduced-motion: reduce)";
+
+/** The drop zone's internal grid marches while an image hovers over it. */
+const gridMarch = stylex.keyframes({
+	from: { backgroundPosition: "0 0, 0 0" },
+	to: { backgroundPosition: "1.5rem 1.5rem, 1.5rem 1.5rem" },
+});
+
+const dragStyles = stylex.create({
+	dropZoneDragging: {
+		borderColor: tokens.primary,
+		backgroundColor: tokens.primarySoft,
+		animationName: gridMarch,
+		animationDuration: "1.2s",
+		animationTimingFunction: "linear",
+		animationIterationCount: "infinite",
+		[REDUCED_MOTION]: {
+			animationDuration: "0.01ms",
+			animationIterationCount: "1",
+		},
+	},
 });
 
 /**
@@ -42,6 +86,8 @@ export function SourceImageSelection() {
 	const selectSourceImage = useSetAtom(selectSourceImageAtom);
 	const reportSourceError = useSetAtom(reportSourceErrorAtom);
 	const [isProcessing, setIsProcessing] = useState(false);
+	const [isDragging, setIsDragging] = useState(false);
+	const dragDepth = useRef(0);
 
 	useEffect(() => {
 		trackStepView("choose_source_image");
@@ -110,6 +156,18 @@ export function SourceImageSelection() {
 		[selectSourceImage, reportSourceError],
 	);
 
+	const handleDragEnter = useCallback((e: React.DragEvent) => {
+		e.preventDefault();
+		// Depth counter: enter/leave also fire for the drop zone's children.
+		dragDepth.current += 1;
+		setIsDragging(true);
+	}, []);
+
+	const handleDragLeave = useCallback(() => {
+		dragDepth.current = Math.max(0, dragDepth.current - 1);
+		if (dragDepth.current === 0) setIsDragging(false);
+	}, []);
+
 	const handleDragOver = useCallback((e: React.DragEvent) => {
 		e.preventDefault();
 		e.stopPropagation();
@@ -119,6 +177,8 @@ export function SourceImageSelection() {
 		(e: React.DragEvent) => {
 			e.preventDefault();
 			e.stopPropagation();
+			dragDepth.current = 0;
+			setIsDragging(false);
 			handleFileChange(e.dataTransfer.files);
 		},
 		[handleFileChange],
@@ -135,12 +195,27 @@ export function SourceImageSelection() {
 		<div>
 			<button
 				type="button"
+				onDragEnter={handleDragEnter}
+				onDragLeave={handleDragLeave}
 				onDragOver={handleDragOver}
 				onDrop={handleDrop}
-				{...stylex.props(base.dropZone, base.focusOutline)}
-				aria-label="Drop images here or click to select"
+				{...stylex.props(
+					base.dropZone,
+					base.focusOutline,
+					isDragging && dragStyles.dropZoneDragging,
+				)}
+				aria-label="Tap or click here to choose a source image"
 			>
-				<p {...stylex.props(base.paragraph)}>Drop images here or click below</p>
+				<div {...stylex.props(styles.dropText)}>
+					<p {...stylex.props(base.paragraph)}>
+						{isDragging
+							? "Release to place your source image on the bench"
+							: "Tap or click here to choose a source image"}
+					</p>
+					{!isDragging && (
+						<p {...stylex.props(styles.dragHint)}>or drag and drop one here</p>
+					)}
+				</div>
 				<input
 					type="file"
 					accept="image/jpeg,image/png,image/webp"
