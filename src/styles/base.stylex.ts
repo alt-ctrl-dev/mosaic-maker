@@ -190,4 +190,20 @@ export const base = stylex.create({
 		borderStyle: "solid",
 		borderColor: tokens.border,
 	},
+	/**
+	 * Shared framing for full source-image previews: the same height cap and
+	 * centered placement wherever the source image appears.
+	 */
+	sourcePreviewContainer: { margin: "1rem 0", textAlign: "center" },
+	sourcePreviewImage: {
+		display: "block",
+		marginInline: "auto",
+		maxWidth: "100%",
+		maxHeight: "60vh",
+		width: "auto",
+		height: "auto",
+		objectFit: "contain",
+		borderRadius: tokens.radius,
+		boxShadow: tokens.shadow,
+	},
 });

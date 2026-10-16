@@ -20,7 +20,6 @@ import { generateMosaic, type ProgressCallback } from "../engine/mosaic-engine";
 import { ANDROID_READBACK_FAILURE } from "../engine/mosaic-shared";
 import { vibrate } from "../haptics";
 import { base } from "../styles/base.stylex";
-import { tokens } from "../styles/tokens.stylex";
 import { trackError, trackMosaicGeneration, trackStepView } from "../telemetry";
 import { SourceImageOverlay } from "./SourceImageOverlay";
 import { ExportPanel } from "./ExportMosaic";
@@ -49,21 +48,12 @@ export function overlayGridFor(
 }
 
 const styles = stylex.create({
-	previewContainer: { margin: "1rem 0", textAlign: "center" },
 	// Idle state: the source image centered with the generate button on top.
+	// The container shrink-wraps the image so overlays sit flush on it.
 	sourceContainer: {
 		position: "relative",
 		display: "inline-block",
 		maxWidth: "100%",
-	},
-	sourceImage: {
-		display: "block",
-		maxWidth: "100%",
-		maxHeight: "70vh",
-		width: "auto",
-		height: "auto",
-		borderRadius: tokens.radius,
-		boxShadow: tokens.shadow,
 	},
 });
 
@@ -398,7 +388,7 @@ export function GenerateAndPreview() {
 	return (
 		<div>
 			{!mosaicResult && sourceImage && (
-				<div {...stylex.props(styles.previewContainer)}>
+				<div {...stylex.props(base.sourcePreviewContainer)}>
 					<div
 						{...stylex.props(styles.sourceContainer)}
 						aria-busy={isGenerating}
@@ -406,7 +396,7 @@ export function GenerateAndPreview() {
 						<img
 							src={sourceImage.url}
 							alt="Source"
-							{...stylex.props(styles.sourceImage)}
+							{...stylex.props(base.sourcePreviewImage)}
 						/>
 						<SourceImageOverlay
 							isGenerating={isGenerating}

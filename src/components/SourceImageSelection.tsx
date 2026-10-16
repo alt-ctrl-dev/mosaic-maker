@@ -26,18 +26,6 @@ import { trackError, trackEvent, trackStepView } from "../telemetry";
 import { ActionButton } from "./ActionButton";
 
 const styles = stylex.create({
-	imagePreview: { marginTop: "1rem" },
-	previewImage: {
-		maxWidth: "100%",
-		width: "auto",
-		height: "auto",
-		// shortcut: reserves a fixed allowance for the surrounding chrome;
-		// switch to flex-fill if the step layout stack changes.
-		maxHeight: "max(8rem, calc(100dvh - 38rem))",
-		objectFit: "contain",
-		borderRadius: tokens.radius,
-		boxShadow: tokens.shadow,
-	},
 	panelSpacing: { marginTop: "1rem", textAlign: "center" },
 	// Drag and drop only exists on pointer devices, so the hint only
 	// renders there.
@@ -244,14 +232,14 @@ export function SourceImageSelection() {
 			)}
 
 			{sourceImage && (
-				<div {...stylex.props(styles.imagePreview)}>
+				<div {...stylex.props(base.sourcePreviewContainer)}>
 					<p {...stylex.props(base.paragraph)}>Source image preview:</p>
 					{/* Reuses the object URL the engine holds rather than creating a
 					    second one; it lives as long as the source image is selected. */}
 					<img
 						src={sourceImage.url}
 						alt="Source"
-						{...stylex.props(styles.previewImage)}
+						{...stylex.props(base.sourcePreviewImage)}
 					/>
 					<p {...stylex.props(base.paragraph)}>
 						Dimensions: {sourceImage.width} × {sourceImage.height} pixels
