@@ -23,37 +23,19 @@ describe("TesseraReview accordion opening", () => {
 		expect(details.open).toBe(false);
 	});
 
-	it("opens the accordion when tiles are added", () => {
+	it("stays closed and pulses the summary when tiles are added", () => {
 		const { container, store } = renderWithWorkflow(<TesseraReview />);
 		const details = container.querySelector("details") as HTMLDetailsElement;
+		const summary = container.querySelector("summary") as HTMLElement;
+		const baseClass = summary.className;
 
 		act(() => {
 			store.set(tesseraeAtom, [mockTessera({ fileName: "added.png" })]);
 		});
 
-		expect(details.open).toBe(true);
-	});
-
-	it("lets the user collapse the accordion again", () => {
-		const { container, store } = renderWithWorkflow(<TesseraReview />);
-		const details = container.querySelector("details") as HTMLDetailsElement;
-
-		act(() => {
-			store.set(tesseraeAtom, [mockTessera()]);
-		});
-		expect(details.open).toBe(true);
-
-		act(() => {
-			details.open = false;
-			details.dispatchEvent(new Event("toggle"));
-		});
-
 		expect(details.open).toBe(false);
-		// Still collapsed after an unrelated re-render.
-		act(() => {
-			store.set(tesseraeAtom, [mockTessera()]);
-		});
-		expect(details.open).toBe(false);
+		// The pulse adds animation classes to the summary.
+		expect(summary.className).not.toBe(baseClass);
 	});
 
 	it("keeps a screen-reader announcement when counts change", () => {
@@ -66,15 +48,19 @@ describe("TesseraReview accordion opening", () => {
 		).toBeInTheDocument();
 	});
 
-	it("shows the loading row inside the accordion while generating", () => {
+	it("stays closed while generating and pulses the summary", () => {
 		const { container, store } = renderWithWorkflow(<TesseraReview />);
 		const details = container.querySelector("details") as HTMLDetailsElement;
+		const summary = container.querySelector("summary") as HTMLElement;
+		const baseClass = summary.className;
 
 		act(() => {
 			store.set(isGeneratingTilesAtom, true);
 		});
 
-		expect(details.open).toBe(true);
+		expect(details.open).toBe(false);
+		expect(summary.className).not.toBe(baseClass);
+		// The loading row still renders inside the closed accordion.
 		const loading = screen.getByText("Generating tiles...");
 		expect(loading.closest("details")).toBe(details);
 	});

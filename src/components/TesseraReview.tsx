@@ -22,6 +22,12 @@ import { OptionalButton } from "./OptionalButton";
 // StyleX only resolves computed conditional keys defined in the same module.
 const REDUCED_MOTION = "@media (prefers-reduced-motion: reduce)";
 
+/** Flash for the review summary when tiles are added while it is closed. */
+const summaryFlash = stylex.keyframes({
+	from: { backgroundColor: tokens.primarySoft },
+	to: { backgroundColor: "transparent" },
+});
+
 const styles = stylex.create({
 	grid: {
 		display: "grid",
@@ -119,6 +125,12 @@ const styles = stylex.create({
 		padding: "0.1rem 0.3rem",
 		borderRadius: `calc(${tokens.radius} / 2)`,
 	},
+	summaryPulse: {
+		animationName: summaryFlash,
+		animationDuration: "0.8s",
+		animationTimingFunction: "ease-out",
+		[REDUCED_MOTION]: { animationDuration: "0.01ms" },
+	},
 });
 
 /**
@@ -139,18 +151,24 @@ export function TesseraReview() {
 	const acceptSupplementation = useSetAtom(acceptSupplementationAtom);
 	const advanceFromReview = useSetAtom(advanceFromReviewAtom);
 
-	// Open the accordion as soon as tiles are added; the user can still
-	// collapse it. Rejected tiles always keep it open.
+	// Adding tiles keeps the accordion closed but pulses the summary to
+	// signal the change. Rejected tiles always keep it open.
 	const prevCountRef = useRef(tesserae.length);
-	const [openedOnAdd, setOpenedOnAdd] = useState(false);
+	const prevGeneratingRef = useRef(isGenerating);
+	const [summaryPulse, setSummaryPulse] = useState(false);
 
 	useEffect(() => {
-		if (tesserae.length > prevCountRef.current) setOpenedOnAdd(true);
+		if (
+			tesserae.length > prevCountRef.current ||
+			(isGenerating && !prevGeneratingRef.current)
+		) {
+			setSummaryPulse(true);
+		}
 		prevCountRef.current = tesserae.length;
-	}, [tesserae.length]);
+		prevGeneratingRef.current = isGenerating;
+	}, [tesserae.length, isGenerating]);
 
-	const open =
-		tesserae.some((tessera) => !tessera.isValid) || openedOnAdd || isGenerating;
+	const open = tesserae.some((tessera) => !tessera.isValid);
 	const validCount = tesserae.filter((t) => t.isValid).length;
 	const rejectedCount = tesserae.length - validCount;
 
@@ -184,11 +202,11 @@ export function TesseraReview() {
 				{...stylex.props(base.details)}
 				open={open}
 				aria-busy={isGenerating}
-				onToggle={(event) => {
-					if (!event.currentTarget.open) setOpenedOnAdd(false);
-				}}
 			>
-				<summary {...stylex.props(base.summary)}>
+				<summary
+					{...stylex.props(base.summary, summaryPulse && styles.summaryPulse)}
+					onAnimationEnd={() => setSummaryPulse(false)}
+				>
 					Review tiles ({validCount} valid, {rejectedCount} rejected)
 				</summary>
 
