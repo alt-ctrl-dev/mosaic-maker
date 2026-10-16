@@ -81,6 +81,7 @@ const styles = stylex.create({
 		color: tokens.muted,
 		fontSize: "0.75rem",
 		padding: "0.2rem 0.6rem",
+		textAlign: "center",
 		cursor: "pointer",
 		":hover": {
 			color: tokens.text,
