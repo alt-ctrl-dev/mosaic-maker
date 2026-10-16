@@ -17,11 +17,13 @@ const MODES: MosaicMode[] = ["photomosaic", "brick"];
 /** StyleX only resolves computed conditional keys defined in the same module. */
 const REDUCED_MOTION = "@media (prefers-reduced-motion: reduce)";
 
-/* Neumorphic palette: soft dual shadows need tonal headroom around the surface. */
-const groove = "#171b26";
+/* Neumorphic palette: soft dual shadows need tonal headroom around the surface.
+   Each value is a light-dark() pair so the groove reads in both schemes. */
+const groove = "light-dark(#dfe3ec, #171b26)";
 const thumb = tokens.secondary;
-const darkShadow = "rgba(0, 0, 0, 0.5)";
-const lightShadow = "rgba(255, 255, 255, 0.04)";
+const darkShadow = "light-dark(rgba(0, 0, 0, 0.18), rgba(0, 0, 0, 0.5))";
+const lightShadow =
+	"light-dark(rgba(255, 255, 255, 0.9), rgba(255, 255, 255, 0.04))";
 
 const styles = stylex.create({
 	root: {

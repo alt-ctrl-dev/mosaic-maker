@@ -28,8 +28,8 @@
     /* Browser surfaces themed from the world palette: the parts of the
        page the app does not draw still carry the design. */
     html {
-      caret-color: #ffcf3f;
-      scrollbar-color: #2a3040 #12141c;
+      caret-color: light-dark(#8a6100, #ffcf3f);
+      scrollbar-color: light-dark(#c9cedb, #2a3040) light-dark(#eceef3, #12141c);
     }
 
     ::selection {
@@ -43,32 +43,45 @@
     }
 
     ::-webkit-scrollbar-track {
-      background: #12141c;
+      background: light-dark(#eceef3, #12141c);
     }
 
     ::-webkit-scrollbar-thumb {
-      background: #2a3040;
-      border: 0.125rem solid #12141c;
+      background: light-dark(#c9cedb, #2a3040);
+      border: 0.125rem solid light-dark(#eceef3, #12141c);
     }
 
     ::-webkit-scrollbar-thumb:hover {
-      background: #2e374c;
+      background: light-dark(#b6bdcd, #2e374c);
     }
 
-    /* First-paint shell: paints the workbench theme before React and
-       StyleX mount, so the page never flashes white. The colors must
-       stay in sync with the background and text design tokens. */
+    /* First-paint shell: paints the workbench before React mounts, so the
+       page never flashes the wrong field. Every color is a light-dark()
+       pair resolved by the used color-scheme on <html>: "light dark"
+       follows the OS, and a saved choice pins one (see the script below).
+       The colors must stay in sync with the background and text design
+       tokens. */
     html {
-      color-scheme: dark;
-      background-color: #12141c;
+      color-scheme: light dark;
+      background-color: light-dark(#eceef3, #12141c);
     }
 
     body {
       margin: 0;
-      background-color: #12141c;
-      color: #e8eaf2;
+      background-color: light-dark(#eceef3, #12141c);
+      color: light-dark(#1b1e28, #e8eaf2);
     }
   </style>
+  <script>
+    // Pin the saved scheme before first paint; without one the stylesheet's
+    // "light dark" keeps following the OS.
+    try {
+      const saved = localStorage.getItem("color-scheme");
+      if (saved === "light" || saved === "dark") {
+        document.documentElement.style.colorScheme = saved;
+      }
+    } catch {}
+  </script>
 </head>
 
 <body>

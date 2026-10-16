@@ -28,7 +28,7 @@ const styles = stylex.create({
 	// Shell chrome formerly provided by :root/body/base.css globals.
 	root: {
 		boxSizing: "border-box",
-		colorScheme: "dark",
+		// color-scheme is inherited from <html>, which the theme toggle pins.
 		fontFamily: "system-ui, sans-serif",
 		fontSize: "100%",
 		color: tokens.text,
@@ -157,6 +157,7 @@ export function WorkflowApp() {
 
 	// The tokens from defineVars are emitted on :root, so no theme class is
 	// needed on the shell; it only carries the former :root/body globals.
+	// Light/dark comes from the color-scheme inherited from <html>.
 	const rootProps = stylex.props(styles.root);
 
 	return (
