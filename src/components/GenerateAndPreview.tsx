@@ -1,6 +1,6 @@
 import * as stylex from "@stylexjs/stylex";
 import { useAtom, useAtomValue, useSetAtom } from "jotai";
-import { useCallback, useEffect, useRef } from "react";
+import { useCallback, useEffect, useMemo, useRef } from "react";
 import {
 	generationErrorAtom,
 	generationProgressAtom,
@@ -40,40 +40,31 @@ const previewIn = stylex.keyframes({
 	to: { opacity: 1, transform: "none" },
 });
 
-/** Number of sprite cells in the generation progress grid (16 × 9). */
-const PROGRESS_CELL_COUNT = 144;
+/** Cap on DOM cells in the tile-fill animation over the source image. */
+const MAX_OVERLAY_CELLS = 2500;
 
-/** Stable identities for the static progress cells. */
-const PROGRESS_CELL_IDS = Array.from(
-	{ length: PROGRESS_CELL_COUNT },
-	(_, i) => `progress-cell-${i}`,
-);
+/**
+ * Overlay grid mirroring the mosaic grid for the chosen tile size
+ * (ceil(source / tile) per axis), scaled down to MAX_OVERLAY_CELLS while
+ * keeping the tile aspect ratio so huge grids stay renderable.
+ */
+export function overlayGridFor(
+	sourceWidth: number,
+	sourceHeight: number,
+	tesseraSize: number,
+): { cols: number; rows: number } {
+	let cols = Math.max(1, Math.ceil(sourceWidth / tesseraSize));
+	let rows = Math.max(1, Math.ceil(sourceHeight / tesseraSize));
+	const scale = Math.sqrt(MAX_OVERLAY_CELLS / (cols * rows));
+	if (scale < 1) {
+		cols = Math.max(1, Math.floor(cols * scale));
+		rows = Math.max(1, Math.floor(rows * scale));
+	}
+	return { cols, rows };
+}
 
 const styles = stylex.create({
 	progressPanel: { textAlign: "center" },
-	// Generation progress rendered as sprite cells filling row by row;
-	// the container background forms the 1px keylines between cells.
-	cellGrid: {
-		display: "grid",
-		gridTemplateColumns: "repeat(16, 1fr)",
-		gap: "2px",
-		maxWidth: "20rem",
-		margin: "0.5rem auto",
-		padding: "2px",
-		backgroundColor: tokens.border,
-		borderWidth: "1px",
-		borderStyle: "solid",
-		borderColor: tokens.border,
-	},
-	cell: {
-		aspectRatio: "1",
-		backgroundColor: {
-			default: tokens.surface,
-		},
-		transition: "background-color 0.15s ease-out",
-		[REDUCED_MOTION]: { transitionDuration: "0.01ms" },
-	},
-	cellFilled: { backgroundColor: tokens.valid },
 	progressBar: {
 		width: "100%",
 		margin: "0.5rem 0",
@@ -156,6 +147,23 @@ const styles = stylex.create({
 		},
 		":disabled": { cursor: "not-allowed", opacity: 0.5 },
 	},
+	// Tile-fill animation over the source image while generating: cells
+	// light up row by row as progress advances.
+	tileOverlay: {
+		position: "absolute",
+		inset: 0,
+		display: "grid",
+		gap: "1px",
+		backgroundColor: "rgba(18, 20, 28, 0.35)",
+		borderRadius: tokens.radius,
+		overflow: "hidden",
+	},
+	tileCell: {
+		backgroundColor: "transparent",
+		transition: "background-color 0.15s ease-out",
+		[REDUCED_MOTION]: { transitionDuration: "0.01ms" },
+	},
+	tileCellFilled: { backgroundColor: "rgba(62, 198, 168, 0.5)" },
 	mosaicPreview: {
 		maxWidth: "100%",
 		maxHeight: "70vh",
@@ -481,8 +489,25 @@ export function GenerateAndPreview() {
 		adjustedTesseraSize !== null &&
 		(mode === "brick" ? tesserae.length >= 2 : tesserae.length > 0);
 
+	const overlayGrid =
+		sourceImage && adjustedTesseraSize
+			? overlayGridFor(
+					sourceImage.width,
+					sourceImage.height,
+					adjustedTesseraSize,
+				)
+			: null;
+	const overlayCellCount = overlayGrid
+		? overlayGrid.cols * overlayGrid.rows
+		: 0;
+	// Stable string keys; the lint rule rejects array-index keys.
+	const overlayCellIds = useMemo(
+		() =>
+			Array.from({ length: overlayCellCount }, (_, i) => `overlay-cell-${i}`),
+		[overlayCellCount],
+	);
 	const filledProgressCells = progress
-		? Math.round((progress.percent / 100) * PROGRESS_CELL_COUNT)
+		? Math.round((progress.percent / 100) * overlayCellCount)
 		: 0;
 
 	const errorPanelProps = stylex.props(base.card);
@@ -494,16 +519,42 @@ export function GenerateAndPreview() {
 
 	return (
 		<div>
-			{!isGenerating && !mosaicResult && (
-				<div>
-					{sourceImage ? (
-						<div {...stylex.props(styles.previewContainer)}>
-							<div {...stylex.props(styles.sourceContainer)}>
-								<img
-									src={sourceImage.url}
-									alt="Source"
-									{...stylex.props(styles.sourceImage)}
-								/>
+			{!mosaicResult && sourceImage && (
+				<div {...stylex.props(styles.previewContainer)}>
+					<div
+						{...stylex.props(styles.sourceContainer)}
+						aria-busy={isGenerating}
+					>
+						<img
+							src={sourceImage.url}
+							alt="Source"
+							{...stylex.props(styles.sourceImage)}
+						/>
+						{isGenerating ? (
+							<div
+								{...stylex.props(styles.tileOverlay)}
+								style={
+									overlayGrid
+										? {
+												gridTemplateColumns: `repeat(${overlayGrid.cols}, 1fr)`,
+												gridTemplateRows: `repeat(${overlayGrid.rows}, 1fr)`,
+											}
+										: undefined
+								}
+								aria-hidden="true"
+							>
+								{overlayCellIds.map((cellId, index) => (
+									<div
+										key={cellId}
+										{...stylex.props(
+											styles.tileCell,
+											index < filledProgressCells && styles.tileCellFilled,
+										)}
+									/>
+								))}
+							</div>
+						) : (
+							<>
 								<div aria-hidden="true" {...stylex.props(styles.sourceGlass)} />
 								<div {...stylex.props(styles.generateOverlay)}>
 									<button
@@ -516,10 +567,14 @@ export function GenerateAndPreview() {
 										Generate Mosaic
 									</button>
 								</div>
-							</div>
-						</div>
-					) : null}
+							</>
+						)}
+					</div>
+				</div>
+			)}
 
+			{!isGenerating && !mosaicResult && (
+				<div>
 					{!canGenerate && (
 						<p {...stylex.props(base.paragraph)}>
 							Please ensure you have a source image, tile size, and tiles before
@@ -548,17 +603,6 @@ export function GenerateAndPreview() {
 					<h3 {...stylex.props(base.heading, base.h3)}>Generating Mosaic...</h3>
 					{progress ? (
 						<div>
-							<div {...stylex.props(styles.cellGrid)} aria-hidden="true">
-								{PROGRESS_CELL_IDS.map((cellId, index) => (
-									<div
-										key={cellId}
-										{...stylex.props(
-											styles.cell,
-											index < filledProgressCells && styles.cellFilled,
-										)}
-									/>
-								))}
-							</div>
 							<progress
 								{...stylex.props(styles.progressBar)}
 								value={progress.percent}
