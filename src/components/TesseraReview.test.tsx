@@ -82,6 +82,18 @@ describe("TesseraReview", () => {
 		expect(details).not.toBeNull();
 	});
 
+	it("keeps the add-more button visible after supplementation was accepted", () => {
+		renderWithWorkflow(<TesseraReview />, {
+			...lowVarietyState,
+			tesserae: mockTesserae,
+			hasAcceptedSupplementation: true,
+		});
+
+		expect(
+			screen.getByRole("button", { name: /add random tiles/i }),
+		).toBeInTheDocument();
+	});
+
 	it("applies invalid styling when tessera is not valid", () => {
 		const tesserae = [
 			mockTessera({

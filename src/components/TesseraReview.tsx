@@ -229,7 +229,7 @@ export function TesseraReview() {
 							You have {validCount} tiles, but {varietyRecommendation} are
 							recommended.
 						</p>
-						{isLowVariety && !hasAcceptedSupplementation && (
+						{isLowVariety && (
 							<OptionalButton
 								type="button"
 								onClick={() => acceptSupplementation()}
