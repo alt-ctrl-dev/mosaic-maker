@@ -1,10 +1,8 @@
 import { cleanup, fireEvent, screen, waitFor } from "@testing-library/react";
 import { afterEach, describe, expect, it, vi } from "vitest";
-import type { WorkflowState } from "../engine/workflow-state";
 import { tokens } from "../styles/tokens.stylex";
 import { declaredValuesFor } from "../test-utils/style-inspection";
 import { renderWithWorkflow } from "../test-utils/workflow";
-import { GenerateAndPreview } from "./GenerateAndPreview";
 import { GeneratedTesserae } from "./GeneratedTesserae";
 import { SourceImageSelection } from "./SourceImageSelection";
 import { TesseraReview } from "./TesseraReview";
@@ -34,11 +32,6 @@ vi.mock("../engine/tessera-processing", () => ({
 vi.mock("../engine/generate-noise-tesserae-helper", () => ({
 	// Never resolves, so the "generation-info" panel stays mounted.
 	generateNoiseTesseraeFromState: () => new Promise(() => {}),
-}));
-
-vi.mock("../engine/mosaic-engine", () => ({
-	// Never resolves, so the "generation-progress" panel stays mounted.
-	generateMosaic: () => new Promise(() => {}),
 }));
 
 afterEach(cleanup);
@@ -121,30 +114,6 @@ describe("Status panels use the shared card styling", () => {
 			return found as Element;
 		});
 		expect(loading.closest("details")).not.toBeNull();
-	});
-
-	it("GenerateAndPreview progress panel uses the shared card style", async () => {
-		const { container } = renderWithWorkflow(<GenerateAndPreview />, {
-			sourceImage: {
-				url: "blob:test",
-				width: 100,
-				height: 100,
-				orientation: 1,
-			},
-			adjustedTesseraSize: 10,
-			tesserae: [
-				{ isValid: true } as unknown as WorkflowState["tesserae"][number],
-			],
-		});
-
-		fireEvent.click(screen.getByRole("button", { name: /generate mosaic/i }));
-
-		const panel = await waitFor(() => {
-			const found = container.querySelector(".generation-progress");
-			expect(found).not.toBeNull();
-			return found as Element;
-		});
-		expectUsesSharedPanelStyling(panel);
 	});
 
 	it("TesseraReview warning panel uses the shared card style", () => {

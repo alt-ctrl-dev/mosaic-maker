@@ -28,12 +28,6 @@ import { ExportPanel } from "./ExportMosaic";
 // StyleX only resolves computed conditional keys defined in the same module.
 const REDUCED_MOTION = "@media (prefers-reduced-motion: reduce)";
 
-// Keyframes must be defined in the same module: StyleX does not resolve
-// imported keyframe bindings in animation values.
-const spin = stylex.keyframes({
-	to: { transform: "rotate(360deg)" },
-});
-
 /** Cap on DOM cells in the tile-fill animation over the source image. */
 const MAX_OVERLAY_CELLS = 2500;
 
@@ -58,32 +52,6 @@ export function overlayGridFor(
 }
 
 const styles = stylex.create({
-	progressPanel: { textAlign: "center" },
-	progressBar: {
-		width: "100%",
-		margin: "0.5rem 0",
-		accentColor: tokens.primary,
-	},
-	spinner: {
-		width: "2rem",
-		height: "2rem",
-		borderWidth: "3px",
-		borderStyle: "solid",
-		borderColor: tokens.text,
-		borderTopWidth: "3px",
-		borderTopStyle: "solid",
-		borderTopColor: tokens.primary,
-		borderRadius: "50%",
-		animationName: spin,
-		animationDuration: "1s",
-		animationTimingFunction: "linear",
-		animationIterationCount: "infinite",
-		margin: "0 auto 1rem",
-		[REDUCED_MOTION]: {
-			animationDuration: "0.01ms",
-			animationIterationCount: 1,
-		},
-	},
 	previewContainer: { margin: "1rem 0", textAlign: "center" },
 	// Idle state: the source image centered with the generate button on top.
 	sourceContainer: {
@@ -493,11 +461,6 @@ export function GenerateAndPreview() {
 		: 0;
 
 	const errorPanelProps = stylex.props(base.card);
-	const progressPanelProps = stylex.props(
-		base.card,
-		base.busySpinner,
-		styles.progressPanel,
-	);
 
 	return (
 		<div>
@@ -513,28 +476,39 @@ export function GenerateAndPreview() {
 							{...stylex.props(styles.sourceImage)}
 						/>
 						{isGenerating ? (
-							<div
-								{...stylex.props(styles.tileOverlay)}
-								style={
-									overlayGrid
-										? {
-												gridTemplateColumns: `repeat(${overlayGrid.cols}, 1fr)`,
-												gridTemplateRows: `repeat(${overlayGrid.rows}, 1fr)`,
-											}
-										: undefined
-								}
-								aria-hidden="true"
-							>
-								{overlayCellIds.map((cellId, index) => (
-									<div
-										key={cellId}
-										{...stylex.props(
-											styles.tileCell,
-											index < filledProgressCells && styles.tileCellFilled,
-										)}
-									/>
-								))}
-							</div>
+							<>
+								<div
+									{...stylex.props(styles.tileOverlay)}
+									style={
+										overlayGrid
+											? {
+													gridTemplateColumns: `repeat(${overlayGrid.cols}, 1fr)`,
+													gridTemplateRows: `repeat(${overlayGrid.rows}, 1fr)`,
+												}
+											: undefined
+									}
+									aria-hidden="true"
+								>
+									{overlayCellIds.map((cellId, index) => (
+										<div
+											key={cellId}
+											{...stylex.props(
+												styles.tileCell,
+												index < filledProgressCells && styles.tileCellFilled,
+											)}
+										/>
+									))}
+								</div>
+								<div {...stylex.props(styles.generateOverlay)}>
+									<ActionButton
+										type="button"
+										onClick={handleCancel}
+										variant="outline"
+									>
+										Cancel
+									</ActionButton>
+								</div>
+							</>
 						) : (
 							<>
 								<div aria-hidden="true" {...stylex.props(styles.sourceGlass)} />
@@ -574,37 +548,6 @@ export function GenerateAndPreview() {
 						</article>
 					)}
 				</div>
-			)}
-
-			{isGenerating && (
-				<article
-					{...progressPanelProps}
-					className={`generation-progress ${progressPanelProps.className}`}
-					aria-busy="true"
-				>
-					<h3 {...stylex.props(base.heading, base.h3)}>Generating Mosaic...</h3>
-					{progress ? (
-						<div>
-							<progress
-								{...stylex.props(styles.progressBar)}
-								value={progress.percent}
-								max="100"
-								aria-label="Generation progress"
-							>
-								{progress.percent}%
-							</progress>
-							<p {...stylex.props(base.paragraph)}>{progress.message}</p>
-						</div>
-					) : (
-						<div>
-							<div {...stylex.props(styles.spinner)} aria-hidden="true" />
-							<p {...stylex.props(base.paragraph)}>Processing...</p>
-						</div>
-					)}
-					<ActionButton type="button" onClick={handleCancel} variant="outline">
-						Cancel
-					</ActionButton>
-				</article>
 			)}
 
 			{!isGenerating && mosaicResult && <ExportPanel />}
