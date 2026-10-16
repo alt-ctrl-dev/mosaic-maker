@@ -79,7 +79,7 @@ describe("haptic feedback at workflow milestones", () => {
 			generatedTesseraCount: 20,
 		});
 
-		fireEvent.click(screen.getByRole("button", { name: /generate tesserae/i }));
+		fireEvent.click(screen.getByRole("button", { name: /generate tiles/i }));
 
 		await waitFor(() => expect(vibrate).toHaveBeenCalledWith(15));
 	});

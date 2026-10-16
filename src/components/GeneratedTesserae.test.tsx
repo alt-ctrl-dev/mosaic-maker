@@ -26,7 +26,7 @@ test("initializes count to spec-recommended default when no explicit count is se
 	renderWithWorkflow(<GeneratedTesserae />, createGridState(100, 100, 10));
 
 	const countInput = screen.getByLabelText(
-		"Number of tesserae to generate",
+		"Number of tiles to generate",
 	) as HTMLInputElement;
 	expect(countInput.value).toBe("10");
 });
@@ -38,7 +38,7 @@ test("uses explicit count when provided in state", () => {
 	});
 
 	const countInput = screen.getByLabelText(
-		"Number of tesserae to generate",
+		"Number of tiles to generate",
 	) as HTMLInputElement;
 	expect(countInput.value).toBe("25");
 });
@@ -47,7 +47,7 @@ test("recommends 100 as max for large grid", () => {
 	renderWithWorkflow(<GeneratedTesserae />, createGridState(1000, 1000, 10));
 
 	const countInput = screen.getByLabelText(
-		"Number of tesserae to generate",
+		"Number of tiles to generate",
 	) as HTMLInputElement;
 	expect(countInput.value).toBe("100");
 });

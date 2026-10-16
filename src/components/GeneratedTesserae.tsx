@@ -1,5 +1,5 @@
 import * as stylex from "@stylexjs/stylex";
-import { useAtomValue, useSetAtom } from "jotai";
+import { useAtom, useAtomValue, useSetAtom } from "jotai";
 import { useEffect, useState } from "react";
 import {
 	adjustedTesseraSizeAtom,
@@ -40,18 +40,13 @@ const styles = stylex.create({
 });
 
 /**
- * Compute the default tessera count. Returns the explicit count when set,
- * the variety recommendation when source image and tessera size are
- * available, or 20 as a fallback.
+ * Compute the default tessera count: the variety recommendation when source
+ * image and tessera size are available, or 20 as a fallback.
  */
 function computeDefaultTesseraCount(
-	generatedTesseraCount: number | null,
 	sourceImage: SourceImageInfo | null,
 	adjustedTesseraSize: number | null,
 ): number {
-	if (generatedTesseraCount !== null) {
-		return generatedTesseraCount;
-	}
 	if (sourceImage && adjustedTesseraSize) {
 		const gridCellCount = calculateGridCellCount(
 			adjustedTesseraSize,
@@ -70,37 +65,23 @@ export function GeneratedTesserae() {
 	const sourceImage = useAtomValue(sourceImageAtom);
 	const adjustedTesseraSize = useAtomValue(adjustedTesseraSizeAtom);
 	const stateSeed = useAtomValue(seedAtom);
-	const generatedTesseraCount = useAtomValue(generatedTesseraCountAtom);
+	const [generatedTesseraCount, setGeneratedTesseraCount] = useAtom(
+		generatedTesseraCountAtom,
+	);
 	const appendGeneratedTesserae = useSetAtom(appendGeneratedTesseraeAtom);
 
 	const [isGenerating, setIsGenerating] = useState(false);
+	// Local draft: needs a stable random value when no seed is stored.
 	const [seed, setSeed] = useState<number>(
 		stateSeed ?? Math.floor(Math.random() * SEED_MAX),
 	);
-	const [count, setCount] = useState<number>(() =>
-		computeDefaultTesseraCount(
-			generatedTesseraCount,
-			sourceImage,
-			adjustedTesseraSize,
-		),
-	);
+	const count =
+		generatedTesseraCount ??
+		computeDefaultTesseraCount(sourceImage, adjustedTesseraSize);
 
 	useEffect(() => {
 		trackStepView("generated_tesserae");
 	}, []);
-
-	useEffect(() => {
-		if (stateSeed !== null) {
-			setSeed(stateSeed);
-		}
-		setCount(
-			computeDefaultTesseraCount(
-				generatedTesseraCount,
-				sourceImage,
-				adjustedTesseraSize,
-			),
-		);
-	}, [stateSeed, generatedTesseraCount, sourceImage, adjustedTesseraSize]);
 
 	const handleGenerate = async () => {
 		setIsGenerating(true);
@@ -145,7 +126,7 @@ export function GeneratedTesserae() {
 	return (
 		<div {...stylex.props(styles.root)} data-testid="generated-tesserae">
 			<fieldset {...stylex.props(base.fieldset, styles.controlGroup)}>
-				<legend {...stylex.props(base.legend)}>Generate random tesserae</legend>
+				<legend {...stylex.props(base.legend)}>Generate random tiles</legend>
 				<div {...stylex.props(styles.control)}>
 					<label
 						htmlFor="seed"
@@ -177,7 +158,7 @@ export function GeneratedTesserae() {
 						htmlFor="count"
 						{...stylex.props(base.label, styles.controlLabel)}
 					>
-						Number of tesserae:
+						Number of tiles:
 					</label>
 					<input
 						id="count"
@@ -185,8 +166,8 @@ export function GeneratedTesserae() {
 						min="1"
 						max="1000"
 						value={count}
-						onChange={(e) => setCount(Number(e.target.value))}
-						aria-label="Number of tesserae to generate"
+						onChange={(e) => setGeneratedTesseraCount(Number(e.target.value))}
+						aria-label="Number of tiles to generate"
 						{...stylex.props(base.field, base.focusOutline)}
 					/>
 				</div>
@@ -199,7 +180,7 @@ export function GeneratedTesserae() {
 				aria-busy={isGenerating}
 				variant="secondary"
 			>
-				{isGenerating ? "Generating..." : "Generate tesserae"}
+				{isGenerating ? "Generating..." : "Generate tiles"}
 			</ActionButton>
 			{isGenerating && (
 				<article
@@ -207,7 +188,7 @@ export function GeneratedTesserae() {
 					className={`generation-info ${generationInfoProps.className}`}
 					aria-busy="true"
 				>
-					Generating {count} tesserae with seed {seed}...
+					Generating {count} tiles with seed {seed}...
 				</article>
 			)}
 		</div>

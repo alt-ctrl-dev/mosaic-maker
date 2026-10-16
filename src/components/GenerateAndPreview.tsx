@@ -6,6 +6,7 @@ import {
 	completeMosaicAtom,
 	discardMosaicAtom,
 	modeAtom,
+	mosaicResultAtom,
 	sourceImageAtom,
 	tesseraeAtom,
 } from "../atoms/workflow-atoms";
@@ -134,6 +135,8 @@ export function GenerateAndPreview() {
 	const sourceImage = useAtomValue(sourceImageAtom);
 	const adjustedTesseraSize = useAtomValue(adjustedTesseraSizeAtom);
 	const tesserae = useAtomValue(tesseraeAtom);
+	// The finished mosaic is workflow state; the preview renders from it.
+	const mosaicResult = useAtomValue(mosaicResultAtom);
 	const completeMosaic = useSetAtom(completeMosaicAtom);
 	const discardMosaic = useSetAtom(discardMosaicAtom);
 
@@ -143,11 +146,6 @@ export function GenerateAndPreview() {
 		message: string;
 	} | null>(null);
 	const [error, setError] = useState<string | null>(null);
-	const [previewUrl, setPreviewUrl] = useState<string | null>(null);
-	const [previewDimensions, setPreviewDimensions] = useState<{
-		width: number;
-		height: number;
-	} | null>(null);
 
 	const beforeUnloadRef = useRef(onBeforeUnload);
 	const workerRef = useRef<Worker | null>(null);
@@ -197,8 +195,6 @@ export function GenerateAndPreview() {
 		setIsGenerating(true);
 		setError(null);
 		setProgress(null);
-		setPreviewUrl(null);
-		setPreviewDimensions(null);
 		generationPathRef.current =
 			typeof Worker !== "undefined"
 				? { executionPath: "worker" }
@@ -237,11 +233,6 @@ export function GenerateAndPreview() {
 								"worker",
 							);
 							if (success) {
-								setPreviewUrl(data.dataUrl);
-								setPreviewDimensions({
-									width: data.width,
-									height: data.height,
-								});
 								vibrate(MOSAIC_COMPLETE_VIBRATION);
 								completeMosaic({
 									dataUrl: data.dataUrl,
@@ -367,8 +358,6 @@ export function GenerateAndPreview() {
 			);
 
 			setProgress({ percent: 100, message: "Mosaic generated successfully" });
-			setPreviewUrl(result.dataUrl);
-			setPreviewDimensions({ width: result.width, height: result.height });
 			vibrate(MOSAIC_COMPLETE_VIBRATION);
 
 			completeMosaic(result);
@@ -447,7 +436,7 @@ export function GenerateAndPreview() {
 
 	return (
 		<div>
-			{!isGenerating && !previewUrl && (
+			{!isGenerating && !mosaicResult && (
 				<div>
 					<p {...stylex.props(base.paragraph)}>
 						Ready to generate your mosaic? Press the "Generate Mosaic" button
@@ -523,19 +512,18 @@ export function GenerateAndPreview() {
 				</article>
 			)}
 
-			{previewUrl && previewDimensions && (
+			{!isGenerating && mosaicResult && (
 				<div>
 					<h3 {...stylex.props(base.heading, base.h3)}>Preview</h3>
 					<div {...stylex.props(styles.previewContainer)}>
 						<img
-							src={previewUrl}
+							src={mosaicResult.dataUrl}
 							alt="Generated mosaic preview"
 							{...stylex.props(styles.mosaicPreview)}
 						/>
 					</div>
 					<p {...stylex.props(base.paragraph)}>
-						Dimensions: {previewDimensions.width} × {previewDimensions.height}{" "}
-						pixels
+						Dimensions: {mosaicResult.width} × {mosaicResult.height} pixels
 					</p>
 				</div>
 			)}

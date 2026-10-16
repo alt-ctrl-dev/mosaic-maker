@@ -51,19 +51,14 @@ const PRESET_PALETTES = [
 export function BrickColorPicker() {
 	const tesserae = useAtomValue(tesseraeAtom);
 	const replaceTesserae = useSetAtom(replaceTesseraeAtom);
-	// Previously selected colors, restored when revisiting this step. The
-	// lazy initializer captures the first-render collection; the step
-	// content remounts on step changes so it is always current.
-	const [selectedColors, setSelectedColors] = useState<string[]>(() =>
-		tesserae
-			.map((tessera) => tessera.color)
-			.filter((color): color is string => color !== undefined),
-	);
+	// The selected colors are the brick tesserae in the store; no local copy.
+	const selectedColors = tesserae
+		.map((tessera) => tessera.color)
+		.filter((color): color is string => color !== undefined);
 	const [customColor, setCustomColor] = useState("#FF0000");
 	const [activePalette, setActivePalette] = useState<number | null>(null);
 
 	const updateColors = (next: string[]) => {
-		setSelectedColors(next);
 		replaceTesserae(createBrickTesserae(next));
 	};
 

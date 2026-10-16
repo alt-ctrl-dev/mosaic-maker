@@ -31,8 +31,6 @@ vi.mock("../engine/mosaic-worker.ts?worker", () => ({
 
 const mockState = {
 	currentStep: WorkflowStep.GENERATE_AND_PREVIEW,
-	// Seeded so cancellation visibly discards it.
-	mosaicResult: { dataUrl: "data:stale", width: 1, height: 1 },
 	sourceImage: {
 		width: 100,
 		height: 100,
@@ -236,7 +234,7 @@ describe("GenerateAndPreview Android readback fallback", () => {
 			},
 		]);
 		expect(generateMosaic).toHaveBeenCalled();
-		// Cancellation discards any stale mosaic result.
+		// Failure leaves no mosaic result behind.
 		expect(store.get(mosaicResultAtom)).toBeNull();
 		expect(
 			screen.queryByRole("button", { name: "Cancel" }),
