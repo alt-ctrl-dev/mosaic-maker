@@ -1,25 +1,80 @@
 <!doctype html>
 <html lang="en">
-  <head>
-    <meta charset="UTF-8" />
-    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-    <meta
-      name="description"
-      content="Create a full-resolution photomosaic privately in your browser."
-    />
-    <!-- Security Policies -->
-    <meta http-equiv="Content-Security-Policy" content="default-src 'self'; script-src 'self' 'unsafe-inline' 'unsafe-eval'; style-src 'self' 'unsafe-inline'; img-src 'self' blob: data:; connect-src 'self'; worker-src 'self' blob:; object-src 'none'; frame-ancestors 'none'; base-uri 'none'; form-action 'none';" />
-    <meta http-equiv="Referrer-Policy" content="strict-origin-when-cross-origin" />
-    <meta http-equiv="Permissions-Policy" content="geolocation=(), camera=(), microphone=(), payment=(), usb=(), autoplay=()" />
 
-    <title>Mosaic Maker</title>
-    <meta name="color-scheme" content="dark" />
-    <link rel="icon" type="image/svg+xml" href="%BASE_URL%favicon.svg" />
-    <link rel="stylesheet" href="%BASE_URL%fonts.css" />
-    <link rel="stylesheet" href="%BASE_URL%app-shell.css" />
-  </head>
-  <body>
-    <div id="root"></div>
-    <script type="module" src="/src/main.tsx"></script>
-  </body>
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <meta name="description" content="Create a full-resolution photomosaic privately in your browser." />
+  <!-- Security Policies -->
+  <meta http-equiv="Content-Security-Policy" content="default-src 'self'; script-src 'self' 'unsafe-inline' 'unsafe-eval'; style-src 'self' 'unsafe-inline'; img-src 'self' blob: data:; connect-src 'self'; worker-src 'self' blob:; object-src 'none'; frame-ancestors 'none'; base-uri 'none'; form-action 'none';" />
+  <meta http-equiv="Referrer-Policy" content="strict-origin-when-cross-origin" />
+  <meta http-equiv="Permissions-Policy" content="geolocation=(), camera=(), microphone=(), payment=(), usb=(), autoplay=()" />
+
+  <title>Mosaic Maker</title>
+  <meta name="color-scheme" content="light dark">
+  <link rel="icon" type="image/svg+xml" href="favicon.svg" />
+  <style>
+    /* Self-hosted display face for the Pixel Sprite Grid world (SIL OFL).
+       Remote font hosts are blocked by the app CSP, so the face ships
+       beside the app. */
+    @font-face {
+      font-family: "Press Start 2P";
+      src: url("fonts/PressStart2P-Regular.ttf") format("truetype");
+      font-weight: 400;
+      font-style: normal;
+      font-display: swap;
+    }
+
+    /* Browser surfaces themed from the world palette: the parts of the
+       page the app does not draw still carry the design. */
+    html {
+      caret-color: #ffcf3f;
+      scrollbar-color: #2a3040 #12141c;
+    }
+
+    ::selection {
+      background: #ffcf3f;
+      color: #16130a;
+    }
+
+    ::-webkit-scrollbar {
+      width: 12px;
+      height: 12px;
+    }
+
+    ::-webkit-scrollbar-track {
+      background: #12141c;
+    }
+
+    ::-webkit-scrollbar-thumb {
+      background: #2a3040;
+      border: 2px solid #12141c;
+    }
+
+    ::-webkit-scrollbar-thumb:hover {
+      background: #2e374c;
+    }
+
+    /* First-paint shell: paints the workbench theme before React and
+       StyleX mount, so the page never flashes white. The colors must
+       stay in sync with tokens.background and tokens.text in
+       src/styles/tokens.stylex.ts. */
+    html {
+      color-scheme: dark;
+      background-color: #12141c;
+    }
+
+    body {
+      margin: 0;
+      background-color: #12141c;
+      color: #e8eaf2;
+    }
+  </style>
+</head>
+
+<body>
+  <div id="root"></div>
+  <script type="module" src="/src/main.tsx"></script>
+</body>
+
 </html>
