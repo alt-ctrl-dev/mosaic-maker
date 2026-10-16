@@ -3,17 +3,17 @@
    new snapshot and cause a flicker on navigation. */
 
 ::view-transition-old(step-content) {
-	animation: 0.18s ease-out both step-content-out;
+	animation: 0.15s cubic-bezier(0.4, 0, 1, 1) both step-content-out;
 }
 
 ::view-transition-new(step-content) {
-	animation: 0.25s ease-out both step-content-in;
+	animation: 0.3s cubic-bezier(0.2, 0, 0, 1) both step-content-in;
 }
 
 @keyframes step-content-in {
 	from {
 		opacity: 0;
-		transform: translateY(8px);
+		transform: translateY(10px);
 	}
 	to {
 		opacity: 1;
@@ -24,8 +24,59 @@
 @keyframes step-content-out {
 	from {
 		opacity: 1;
+		transform: none;
 	}
 	to {
+		opacity: 0;
+		transform: translateY(-6px);
+	}
+}
+
+/* Mobile step-menu popover: fade and rise on open, fade and settle on close.
+   Pure CSS via allow-discrete + @starting-style, which StyleX cannot
+   express; browsers without support simply show/hide instantly. */
+#mobile-workflow-menu {
+	transition:
+		opacity 0.22s ease-out,
+		transform 0.22s ease-out,
+		display 0.22s allow-discrete,
+		overlay 0.22s allow-discrete;
+}
+
+#mobile-workflow-menu:popover-open {
+	opacity: 1;
+	transform: none;
+}
+
+#mobile-workflow-menu:not(:popover-open) {
+	opacity: 0;
+	transform: translateY(0.5rem) scale(0.98);
+}
+
+@starting-style {
+	#mobile-workflow-menu:popover-open {
+		opacity: 0;
+		transform: translateY(0.5rem) scale(0.98);
+	}
+}
+
+#mobile-workflow-menu::backdrop {
+	transition:
+		opacity 0.22s ease-out,
+		display 0.22s allow-discrete,
+		overlay 0.22s allow-discrete;
+}
+
+#mobile-workflow-menu:popover-open::backdrop {
+	opacity: 1;
+}
+
+#mobile-workflow-menu:not(:popover-open)::backdrop {
+	opacity: 0;
+}
+
+@starting-style {
+	#mobile-workflow-menu:popover-open::backdrop {
 		opacity: 0;
 	}
 }
@@ -34,5 +85,10 @@
 	::view-transition-old(step-content),
 	::view-transition-new(step-content) {
 		animation: none;
+	}
+
+	#mobile-workflow-menu,
+	#mobile-workflow-menu::backdrop {
+		transition: none;
 	}
 }

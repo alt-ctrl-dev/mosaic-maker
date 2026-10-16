@@ -45,10 +45,8 @@ const styles = stylex.create({
 			lineHeight: 0,
 		},
 	},
-	// ponytail: the old fade used `opacity` + `@starting-style` and
-	// `display ... allow-discrete` transitions, which StyleX cannot express;
-	// the dialog now shows and hides instantly on both open and close.
-	// Restore the fade once StyleX supports those conditionals.
+	// The open/close fade needs @starting-style + allow-discrete, which
+	// StyleX cannot express; it lives in styles/view-transitions.css.
 	dialog: {
 		boxSizing: "border-box",
 		width: "min(90vw, 30rem)",
