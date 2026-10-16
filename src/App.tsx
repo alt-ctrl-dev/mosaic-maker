@@ -114,6 +114,7 @@ const styles = stylex.create({
 		display: "flex",
 		flexDirection: "column",
 		gap: "2rem",
+		paddingBottom: "2rem",
 	},
 	// The mode switcher is a global setting above the workspace, not a step.
 	modeBar: {
