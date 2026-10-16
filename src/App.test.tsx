@@ -17,44 +17,8 @@ vi.mock("./version", () => ({
 afterEach(cleanup);
 
 describe("Mosaic Maker workflow", () => {
-	it("presents all five stages in order", () => {
+	it("switches modes via the top mode switcher", () => {
 		render(<App />);
-
-		// The desktop rack was removed; the stages now live in the mobile
-		// step-menu dialog.
-		const menu = document.getElementById("mobile-workflow-menu");
-		expect(menu).not.toBeNull();
-		if (!menu) throw new Error("step menu not found");
-
-		const stages = within(menu)
-			.getAllByRole("listitem", { hidden: true })
-			.map(
-				(item) =>
-					within(item)
-						.getByText(
-							/^(Choose source image|Pick tile size|Pick tiles|Generate and preview)$/,
-						)
-						.textContent?.trim() ?? "",
-			);
-
-		expect(stages).toEqual([
-			"Choose source image",
-			"Pick tile size",
-			"Pick tiles",
-			"Generate and preview",
-		]);
-	});
-
-	it("keeps the top mode switcher and step navigation in sync", () => {
-		render(<App />);
-
-		// The workflow starts at source image; mode lives in the top switcher.
-		expect(
-			screen.getAllByRole("button", {
-				name: /choose source image/i,
-				hidden: true,
-			})[0],
-		).toHaveAttribute("aria-current", "step");
 
 		fireEvent.click(
 			screen.getByRole("radio", { name: /Select Brick Style mode/ }),

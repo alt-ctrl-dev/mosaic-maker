@@ -52,12 +52,6 @@ export const customBrickColorAtom = atom("#FF0000");
 /** Which preset palette is active, if any. */
 export const activeBrickPaletteAtom = atom<number | null>(null);
 
-// --- Dialog ---
-
-// shortcut: one shared open flag; if two Dialogs mount at once, move to an
-// atom per dialogId.
-export const dialogOpenAtom = atom(false);
-
 // --- Telemetry consent ---
 
 /**

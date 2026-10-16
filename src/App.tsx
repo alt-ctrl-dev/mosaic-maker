@@ -1,11 +1,8 @@
 import * as stylex from "@stylexjs/stylex";
 import { Provider, useAtomValue, useSetAtom } from "jotai";
-import { flushSync } from "react-dom";
 import {
 	advanceFromSizeAtom,
 	currentStepAtom,
-	furthestCompletedStepAtom,
-	goToStepAtom,
 	modeAtom,
 	rejectedTesseraCountAtom,
 	tesseraeAtom,
@@ -14,7 +11,6 @@ import {
 import { ActionButton } from "./components/ActionButton";
 import { AppFooter } from "./components/AppFooter";
 import { BrickColorPicker } from "./components/BrickColorPicker";
-import { Dialog } from "./components/Dialog";
 import { ErrorBoundary } from "./components/ErrorBoundary";
 import { GenerateAndPreview } from "./components/GenerateAndPreview";
 import { ModeSelection } from "./components/ModeSelection";
@@ -23,46 +19,9 @@ import { SelectionSummary } from "./components/SelectionSummary";
 import { SourceImageSelection } from "./components/SourceImageSelection";
 import { TesseraReview } from "./components/TesseraReview";
 import { TesseraSizeSelection } from "./components/TesseraSizeSelection";
-import { prefersReducedMotion } from "./engine/accessibility-utils";
 import { WorkflowStep as WorkflowStepEnum } from "./engine/workflow-state";
 import { base } from "./styles/base.stylex";
 import { tokens } from "./styles/tokens.stylex";
-
-// StyleX only resolves computed conditional keys defined in the same module.
-const REDUCED_MOTION = "@media (prefers-reduced-motion: reduce)";
-
-const stages = [
-	"Choose source image",
-	"Pick tile size",
-	"Pick tiles",
-	"Generate and preview",
-] as const;
-
-/** Spinner keyframe for the step-content entrance. Local because StyleX
- * does not resolve imported keyframe bindings. */
-/** Document with the optional View Transition API. */
-type DocumentWithViewTransition = Document & {
-	startViewTransition?: (callback: () => void) => void;
-};
-
-/**
- * Runs a step change inside a view transition when the browser supports
- * it and motion is allowed; otherwise updates directly.
- */
-function navigateWithTransition(update: () => void): void {
-	const doc = document as DocumentWithViewTransition;
-	if (
-		typeof doc.startViewTransition === "function" &&
-		!prefersReducedMotion()
-	) {
-		doc.startViewTransition(() => {
-			// The DOM must change inside the callback to form the snapshot pair.
-			flushSync(update);
-		});
-	} else {
-		update();
-	}
-}
 
 const styles = stylex.create({
 	// Shell chrome formerly provided by :root/body/base.css globals.
@@ -120,77 +79,8 @@ const styles = stylex.create({
 		justifyContent: "center",
 		paddingBlock: "1rem",
 	},
-	stepsList: { listStyle: "none", padding: 0, margin: 0 },
-	// Sprite-rack stage cells: hard keylines, square counters, no dimming.
-	stepButton: {
-		boxSizing: "border-box",
-		display: "flex",
-		alignItems: "center",
-		width: "100%",
-		textAlign: "left",
-		padding: "0.75rem 1rem",
-		marginBottom: "0.5rem",
-		borderWidth: "1px",
-		borderStyle: "solid",
-		borderColor: tokens.border,
-		cursor: "pointer",
-		backgroundColor: {
-			default: tokens.surface,
-			":hover": tokens.secondaryHover,
-		},
-		color: tokens.text,
-		font: "inherit",
-		transition: "background-color 0.2s",
-		":focus-visible": {
-			outline: "2px solid currentColor",
-			outlineOffset: "2px",
-		},
-		":disabled": {
-			cursor: "not-allowed",
-			backgroundColor: tokens.background,
-			color: tokens.muted,
-		},
-		"@media (max-width: 900px)": { padding: "1rem" },
-		[REDUCED_MOTION]: { transitionDuration: "0.01ms" },
-	},
-	// The current stage takes a gold keyline and gold ink; the gold fill
-	// stays reserved for the primary action plate.
-	stepButtonCurrent: {
-		backgroundColor: {
-			default: tokens.surface,
-			":hover": tokens.secondaryHover,
-		},
-		borderColor: tokens.primary,
-		color: tokens.primary,
-	},
-	stepButtonCompleted: {
-		borderColor: tokens.valid,
-		color: tokens.valid,
-	},
-
-	stepIndicator: {
-		display: "inline-flex",
-		alignItems: "center",
-		justifyContent: "center",
-		width: "1.75rem",
-		height: "1.75rem",
-		marginRight: "0.75rem",
-		fontFamily: "ui-monospace, monospace",
-		fontWeight: "bold",
-		flexShrink: 0,
-		borderWidth: "1px",
-		borderStyle: "solid",
-		borderColor: "currentColor",
-	},
-	stepIndicatorCurrent: {
-		color: tokens.primary,
-	},
-	stepTitle: {
-		fontWeight: 500,
-		"@media (max-width: 900px)": { fontSize: "1rem" },
-	},
 	canvas: { width: "100%", maxWidth: "48rem", marginInline: "auto" },
-	content: { flex: 1, viewTransitionName: "step-content" },
+	content: { flex: 1 },
 	pickTiles: { display: "flex", flexDirection: "column", gap: "2rem" },
 });
 
@@ -208,12 +98,10 @@ export function App() {
 /** Internal workflow component exported for testing. */
 export function WorkflowApp() {
 	const currentStep = useAtomValue(currentStepAtom);
-	const furthestCompletedStep = useAtomValue(furthestCompletedStepAtom);
 	const mode = useAtomValue(modeAtom);
 	const tesserae = useAtomValue(tesseraeAtom);
 	const validTesseraCount = useAtomValue(validTesseraCountAtom);
 	const rejectedTesseraCount = useAtomValue(rejectedTesseraCountAtom);
-	const goToStep = useSetAtom(goToStepAtom);
 	const advanceFromSize = useSetAtom(advanceFromSizeAtom);
 
 	function renderStepContent(stepIndex: number) {
@@ -266,8 +154,6 @@ export function WorkflowApp() {
 		}
 	}
 
-	// The rack is the navigation: no wizard counter or back/next chrome.
-
 	// The tokens from defineVars are emitted on :root, so no theme class is
 	// needed on the shell; it only carries the former :root/body globals.
 	const rootProps = stylex.props(styles.root);
@@ -290,64 +176,6 @@ export function WorkflowApp() {
 
 			<ErrorBoundary>
 				<main id="main-content" {...stylex.props(styles.workflow)}>
-					<Dialog
-						dialogId="mobile-workflow-menu"
-						ariaLabel="Toggle workflow steps"
-					>
-						<ol {...stylex.props(styles.stepsList)}>
-							{stages.map((title, index) => {
-								const isCurrent = currentStep === index;
-								const isCompleted = index < furthestCompletedStep;
-								const isDisabled = index > furthestCompletedStep;
-								return (
-									<li key={title}>
-										<button
-											type="button"
-											{...stylex.props(
-												styles.stepButton,
-												isCurrent && styles.stepButtonCurrent,
-												isCompleted && styles.stepButtonCompleted,
-											)}
-											aria-current={isCurrent ? "step" : undefined}
-											onClick={() =>
-												navigateWithTransition(() => goToStep(index))
-											}
-											disabled={isDisabled}
-											commandfor="mobile-workflow-menu"
-											command="close"
-										>
-											<span
-												{...stylex.props(
-													styles.stepIndicator,
-													isCurrent && styles.stepIndicatorCurrent,
-												)}
-											>
-												{isCompleted ? (
-													<svg
-														width="12"
-														height="12"
-														viewBox="0 0 12 12"
-														aria-hidden="true"
-													>
-														<path
-															d="M1.5 6.5 4.5 9.5 10.5 2.5"
-															fill="none"
-															stroke="currentColor"
-															strokeWidth="2"
-														/>
-													</svg>
-												) : (
-													<span>{index + 1}</span>
-												)}
-											</span>
-											<span {...stylex.props(styles.stepTitle)}>{title}</span>
-										</button>
-									</li>
-								);
-							})}
-						</ol>
-					</Dialog>
-
 					<div {...stylex.props(styles.canvas)}>
 						<div key={currentStep} {...stylex.props(styles.content)}>
 							{renderStepContent(currentStep)}

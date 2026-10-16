@@ -1,7 +1,6 @@
 import { StrictMode } from "react";
 import { createRoot } from "react-dom/client";
 import { App } from "./App";
-import "./styles/view-transitions.css";
 import { initializeTelemetry, trackDeviceAnalytics } from "./telemetry";
 
 // Initialize telemetry before app bootstrap
