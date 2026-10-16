@@ -1,5 +1,6 @@
 import { fireEvent, screen, waitFor } from "@testing-library/react";
 import { describe, expect, it, vi } from "vitest";
+import { tesseraeAtom } from "../atoms/workflow-atoms";
 import { renderWithWorkflow } from "../test-utils/workflow";
 import { TesseraUpload } from "./TesseraUpload";
 
@@ -147,5 +148,54 @@ describe("TesseraUpload", () => {
 			expect(screen.getByRole("alert")).toBeInTheDocument();
 		});
 		expect(screen.getByRole("alert")).toHaveTextContent("Total size exceeded");
+	});
+
+	it("keeps existing tiles when uploading new ones", async () => {
+		const { getImageDimensions } = await import("../engine/resource-policy");
+		const { processTesserae } = await import("../engine/tessera-processing");
+		vi.mocked(getImageDimensions).mockResolvedValue({
+			width: 100,
+			height: 100,
+		});
+		vi.mocked(processTesserae).mockResolvedValue([
+			{
+				fileName: "new.jpg",
+				isValid: true,
+				error: null,
+				isLowResolution: false,
+				previewUrl: null,
+			},
+		]);
+
+		const existing = {
+			fileName: "existing.jpg",
+			isValid: true,
+			error: null,
+			isLowResolution: false,
+			previewUrl: null,
+		};
+		const { store } = renderWithWorkflow(<TesseraUpload />, {
+			...tesseraUploadState,
+			tesserae: [existing],
+		});
+
+		const input = screen.getByLabelText("Upload tile images");
+		fireEvent.change(input, {
+			target: {
+				files: [
+					new File([new ArrayBuffer(1024)], "new.jpg", {
+						type: "image/jpeg",
+					}),
+				],
+			},
+		});
+
+		await waitFor(() => {
+			expect(store.get(tesseraeAtom)).toHaveLength(2);
+		});
+		expect(store.get(tesseraeAtom).map((t) => t.fileName)).toEqual([
+			"existing.jpg",
+			"new.jpg",
+		]);
 	});
 });

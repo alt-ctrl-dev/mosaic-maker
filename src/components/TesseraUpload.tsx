@@ -148,7 +148,7 @@ export function TesseraUpload() {
 					);
 					tesserae = [...processed, ...dimensionRejected];
 				}
-				replaceTesserae(tesserae);
+				replaceTesserae([...currentTesserae, ...tesserae]);
 				vibrate(15);
 			} catch (error) {
 				console.error("Error processing tesserae:", error);
