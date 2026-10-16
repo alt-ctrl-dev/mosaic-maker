@@ -1,6 +1,6 @@
 import * as stylex from "@stylexjs/stylex";
 import { useAtomValue, useSetAtom } from "jotai";
-import { useEffect } from "react";
+import { useEffect, useRef, useState } from "react";
 import {
 	acceptSupplementationAtom,
 	advanceFromReviewAtom,
@@ -83,7 +83,17 @@ export function TesseraReview() {
 	const acceptSupplementation = useSetAtom(acceptSupplementationAtom);
 	const advanceFromReview = useSetAtom(advanceFromReviewAtom);
 
-	const open = tesserae.some((tessera) => !tessera.isValid);
+	// Open the accordion as soon as tiles are added; the user can still
+	// collapse it. Rejected tiles always keep it open.
+	const prevCountRef = useRef(tesserae.length);
+	const [openedOnAdd, setOpenedOnAdd] = useState(false);
+
+	useEffect(() => {
+		if (tesserae.length > prevCountRef.current) setOpenedOnAdd(true);
+		prevCountRef.current = tesserae.length;
+	}, [tesserae.length]);
+
+	const open = tesserae.some((tessera) => !tessera.isValid) || openedOnAdd;
 	const validCount = tesserae.filter((t) => t.isValid).length;
 	const rejectedCount = tesserae.length - validCount;
 
@@ -113,7 +123,13 @@ export function TesseraReview() {
 			<div aria-live="polite" aria-atomic="true" {...stylex.props(base.srOnly)}>
 				Tile counts updated: {validCount} valid, {rejectedCount} rejected
 			</div>
-			<details {...stylex.props(base.details)} open={open}>
+			<details
+				{...stylex.props(base.details)}
+				open={open}
+				onToggle={(event) => {
+					if (!event.currentTarget.open) setOpenedOnAdd(false);
+				}}
+			>
 				<summary {...stylex.props(base.summary)}>
 					Review tiles ({validCount} valid, {rejectedCount} rejected)
 				</summary>
