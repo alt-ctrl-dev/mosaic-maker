@@ -185,6 +185,14 @@ export function TesseraReview() {
 					Review tiles ({validCount} valid, {rejectedCount} rejected)
 				</summary>
 
+				<ActionButton
+					type="button"
+					onClick={() => clearTesserae()}
+					variant="secondary"
+				>
+					Clear all tiles
+				</ActionButton>
+
 				{isLowVariety && varietyRecommendation && (
 					<article
 						{...warningProps}
@@ -257,14 +265,6 @@ export function TesseraReview() {
 						);
 					})}
 				</div>
-
-				<ActionButton
-					type="button"
-					onClick={() => clearTesserae()}
-					variant="secondary"
-				>
-					Clear all tiles
-				</ActionButton>
 			</details>
 
 			<div>
