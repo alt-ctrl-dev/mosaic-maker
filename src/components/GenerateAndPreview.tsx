@@ -100,6 +100,62 @@ const styles = stylex.create({
 		},
 	},
 	previewContainer: { margin: "1rem 0", textAlign: "center" },
+	// Idle state: the source image centered with the generate button on top.
+	sourceContainer: {
+		position: "relative",
+		display: "inline-block",
+		maxWidth: "100%",
+	},
+	sourceImage: {
+		display: "block",
+		maxWidth: "100%",
+		maxHeight: "70vh",
+		width: "auto",
+		height: "auto",
+		borderRadius: tokens.radius,
+		boxShadow: tokens.shadow,
+	},
+	// Frosted-glass pane between the image and the overlay button.
+	sourceGlass: {
+		position: "absolute",
+		inset: 0,
+		backgroundColor: "rgba(26, 30, 42, 0.35)",
+		backdropFilter: "blur(8px) saturate(1.2)",
+		borderRadius: tokens.radius,
+		pointerEvents: "none",
+	},
+	generateOverlay: {
+		position: "absolute",
+		top: "50%",
+		left: "50%",
+		transform: "translate(-50%, -50%)",
+	},
+	// Neumorphic raise on the dark field: soft dark drop shadow plus a faint
+	// top-left highlight; pressing flips it to an inset (pushed-in) look.
+	neuGenerateButton: {
+		appearance: "none",
+		borderWidth: 0,
+		borderStyle: "none",
+		borderRadius: "12px",
+		padding: "0.85rem 1.75rem",
+		font: "inherit",
+		fontWeight: 700,
+		letterSpacing: "0.02em",
+		color: tokens.onPrimary,
+		backgroundColor: { default: tokens.primary, ":hover": tokens.primaryHover },
+		boxShadow: {
+			default:
+				"6px 6px 14px rgba(0, 0, 0, 0.55), -4px -4px 10px rgba(255, 255, 255, 0.08)",
+			":active":
+				"inset 4px 4px 9px rgba(0, 0, 0, 0.5), inset -3px -3px 7px rgba(255, 255, 255, 0.1)",
+		},
+		cursor: "pointer",
+		":focus-visible": {
+			outline: "2px solid currentColor",
+			outlineOffset: "3px",
+		},
+		":disabled": { cursor: "not-allowed", opacity: 0.5 },
+	},
 	mosaicPreview: {
 		maxWidth: "100%",
 		maxHeight: "70vh",
@@ -440,18 +496,29 @@ export function GenerateAndPreview() {
 		<div>
 			{!isGenerating && !mosaicResult && (
 				<div>
-					<p {...stylex.props(base.paragraph)}>
-						Ready to generate your mosaic? Press the "Generate Mosaic" button
-						below. You can go back to the previous step anytime if needed.
-					</p>
-					<ActionButton
-						type="button"
-						onClick={handleGenerate}
-						disabled={!canGenerate || isGenerating}
-						aria-busy={isGenerating}
-					>
-						Generate Mosaic
-					</ActionButton>
+					{sourceImage ? (
+						<div {...stylex.props(styles.previewContainer)}>
+							<div {...stylex.props(styles.sourceContainer)}>
+								<img
+									src={sourceImage.url}
+									alt="Source"
+									{...stylex.props(styles.sourceImage)}
+								/>
+								<div aria-hidden="true" {...stylex.props(styles.sourceGlass)} />
+								<div {...stylex.props(styles.generateOverlay)}>
+									<button
+										type="button"
+										onClick={handleGenerate}
+										disabled={!canGenerate || isGenerating}
+										aria-busy={isGenerating}
+										{...stylex.props(styles.neuGenerateButton)}
+									>
+										Generate Mosaic
+									</button>
+								</div>
+							</div>
+						</div>
+					) : null}
 
 					{!canGenerate && (
 						<p {...stylex.props(base.paragraph)}>
