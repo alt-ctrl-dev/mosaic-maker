@@ -92,6 +92,9 @@ const styles = stylex.create({
 		marginTop: "1rem",
 		marginBottom: "0.5rem",
 		padding: "1rem",
+		borderTopWidth: "1px",
+		borderTopStyle: "solid",
+		borderTopColor: tokens.border,
 	},
 	sourceThumbnailGroup: {
 		display: "flex",
