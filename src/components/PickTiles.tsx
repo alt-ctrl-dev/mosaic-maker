@@ -54,6 +54,15 @@ const styles = stylex.create({
 		backgroundColor: tokens.primarySoft,
 		color: tokens.primary,
 	},
+	infoBanner: {
+		margin: 0,
+		padding: "0.75rem 1rem",
+		borderWidth: "1px",
+		borderStyle: "solid",
+		borderColor: tokens.info,
+		color: tokens.text,
+		fontSize: "0.875rem",
+	},
 });
 
 type TesseraPath = "upload" | "generated";
@@ -104,7 +113,7 @@ export function PickTiles() {
 						path === "upload" && styles.segmentButtonActive,
 					)}
 				>
-					Your photos
+					Choose your photos
 				</button>
 				<button
 					type="button"
@@ -118,7 +127,18 @@ export function PickTiles() {
 					Generated tiles
 				</button>
 			</div>
-			{path === "upload" ? <TesseraUpload /> : <GeneratedTesserae />}
+			{path === "upload" ? (
+				<>
+					<p {...stylex.props(styles.infoBanner)} role="note">
+						Each image is cropped to the tessera size and becomes a tile in your
+						mosaic. Tiles may repeat; unused photos stay unused. Your files
+						never leave your device.
+					</p>
+					<TesseraUpload />
+				</>
+			) : (
+				<GeneratedTesserae />
+			)}
 			{hasTesserae && (
 				<>
 					<ActionButton
