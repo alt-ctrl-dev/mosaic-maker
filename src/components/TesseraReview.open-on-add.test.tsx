@@ -1,4 +1,5 @@
 import { act, screen } from "@testing-library/react";
+import { isGeneratingTilesAtom } from "../atoms/ui-atoms";
 import { tesseraeAtom } from "../atoms/workflow-atoms";
 import type { TesseraInfo } from "../engine/workflow-state";
 import { renderWithWorkflow } from "../test-utils/workflow";
@@ -63,5 +64,18 @@ describe("TesseraReview accordion opening", () => {
 		expect(
 			screen.getByText("Tile counts updated: 1 valid, 0 rejected"),
 		).toBeInTheDocument();
+	});
+
+	it("shows the loading row inside the accordion while generating", () => {
+		const { container, store } = renderWithWorkflow(<TesseraReview />);
+		const details = container.querySelector("details") as HTMLDetailsElement;
+
+		act(() => {
+			store.set(isGeneratingTilesAtom, true);
+		});
+
+		expect(details.open).toBe(true);
+		const loading = screen.getByText("Generating tiles...");
+		expect(loading.closest("details")).toBe(details);
 	});
 });

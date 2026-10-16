@@ -101,20 +101,26 @@ describe("Status panels use the shared card styling", () => {
 		expectUsesSharedPanelStyling(panel);
 	});
 
-	it("GeneratedTesserae generation panel uses the shared card style", async () => {
-		const { container } = renderWithWorkflow(<GeneratedTesserae />, {
-			seed: 42,
-			generatedTesseraCount: 20,
-		});
+	it("tile generation status appears inside the review accordion", async () => {
+		renderWithWorkflow(
+			<>
+				<GeneratedTesserae />
+				<TesseraReview />
+			</>,
+			{
+				seed: 42,
+				generatedTesseraCount: 20,
+			},
+		);
 
 		fireEvent.click(screen.getByRole("button", { name: /generate tiles/i }));
 
-		const panel = await waitFor(() => {
-			const found = container.querySelector(".generation-info");
+		const loading = await waitFor(() => {
+			const found = screen.queryByText("Generating tiles...");
 			expect(found).not.toBeNull();
 			return found as Element;
 		});
-		expectUsesSharedPanelStyling(panel);
+		expect(loading.closest("details")).not.toBeNull();
 	});
 
 	it("GenerateAndPreview progress panel uses the shared card style", async () => {

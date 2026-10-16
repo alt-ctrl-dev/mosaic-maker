@@ -37,7 +37,6 @@ const styles = stylex.create({
 	},
 	inputGroup: { display: "flex", gap: "0.5rem", alignItems: "center" },
 	flexField: { flex: 1 },
-	generationInfo: { marginTop: "1rem", fontSize: "0.9em" },
 });
 
 /**
@@ -114,12 +113,6 @@ export function GeneratedTesserae() {
 		setSeed(Math.floor(Math.random() * SEED_MAX));
 	};
 
-	const generationInfoProps = stylex.props(
-		base.card,
-		base.busySpinner,
-		styles.generationInfo,
-	);
-
 	return (
 		<div {...stylex.props(styles.root)} data-testid="generated-tesserae">
 			<fieldset {...stylex.props(base.fieldset, styles.controlGroup)}>
@@ -179,15 +172,6 @@ export function GeneratedTesserae() {
 			>
 				{isGenerating ? "Generating..." : "Generate tiles"}
 			</ActionButton>
-			{isGenerating && (
-				<article
-					{...generationInfoProps}
-					className={`generation-info ${generationInfoProps.className}`}
-					aria-busy="true"
-				>
-					Generating {count} tiles with seed {seed}...
-				</article>
-			)}
 		</div>
 	);
 }

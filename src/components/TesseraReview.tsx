@@ -1,6 +1,7 @@
 import * as stylex from "@stylexjs/stylex";
 import { useAtomValue, useSetAtom } from "jotai";
 import { useEffect, useRef, useState } from "react";
+import { isGeneratingTilesAtom } from "../atoms/ui-atoms";
 import {
 	acceptSupplementationAtom,
 	advanceFromReviewAtom,
@@ -65,6 +66,13 @@ const styles = stylex.create({
 	},
 	varietyText: { margin: 0, flex: 1, fontSize: "0.9rem" },
 	clearRow: { margin: "1rem" },
+	loadingRow: {
+		display: "flex",
+		alignItems: "center",
+		margin: "1rem 1rem 0",
+		fontSize: "0.9rem",
+		color: tokens.muted,
+	},
 	removeButton: {
 		position: "absolute",
 		top: "0.375rem",
@@ -132,6 +140,7 @@ export function TesseraReview() {
 	);
 	const removeTessera = useSetAtom(removeTesseraAtom);
 	const clearTesserae = useSetAtom(clearTesseraeAtom);
+	const isGenerating = useAtomValue(isGeneratingTilesAtom);
 	const acceptSupplementation = useSetAtom(acceptSupplementationAtom);
 	const advanceFromReview = useSetAtom(advanceFromReviewAtom);
 
@@ -145,7 +154,8 @@ export function TesseraReview() {
 		prevCountRef.current = tesserae.length;
 	}, [tesserae.length]);
 
-	const open = tesserae.some((tessera) => !tessera.isValid) || openedOnAdd;
+	const open =
+		tesserae.some((tessera) => !tessera.isValid) || openedOnAdd || isGenerating;
 	const validCount = tesserae.filter((t) => t.isValid).length;
 	const rejectedCount = tesserae.length - validCount;
 
@@ -178,6 +188,7 @@ export function TesseraReview() {
 			<details
 				{...stylex.props(base.details)}
 				open={open}
+				aria-busy={isGenerating}
 				onToggle={(event) => {
 					if (!event.currentTarget.open) setOpenedOnAdd(false);
 				}}
@@ -185,6 +196,15 @@ export function TesseraReview() {
 				<summary {...stylex.props(base.summary)}>
 					Review tiles ({validCount} valid, {rejectedCount} rejected)
 				</summary>
+
+				{isGenerating && (
+					<p
+						{...stylex.props(styles.loadingRow, base.busySpinner)}
+						aria-live="polite"
+					>
+						Generating tiles...
+					</p>
+				)}
 
 				{tesserae.length > 0 && (
 					<div {...stylex.props(styles.clearRow)}>
