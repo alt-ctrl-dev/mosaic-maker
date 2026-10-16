@@ -23,6 +23,7 @@ import { base } from "../styles/base.stylex";
 import { tokens } from "../styles/tokens.stylex";
 import { trackError, trackMosaicGeneration, trackStepView } from "../telemetry";
 import { ActionButton } from "./ActionButton";
+import { ExportPanel } from "./ExportMosaic";
 
 // StyleX only resolves computed conditional keys defined in the same module.
 const REDUCED_MOTION = "@media (prefers-reduced-motion: reduce)";
@@ -31,13 +32,6 @@ const REDUCED_MOTION = "@media (prefers-reduced-motion: reduce)";
 // imported keyframe bindings in animation values.
 const spin = stylex.keyframes({
 	to: { transform: "rotate(360deg)" },
-});
-
-/** Pop-in for the finished mosaic preview. Local because StyleX does not
- * resolve imported keyframe bindings. */
-const previewIn = stylex.keyframes({
-	from: { opacity: 0, transform: "scale(0.98)" },
-	to: { opacity: 1, transform: "none" },
 });
 
 /** Cap on DOM cells in the tile-fill animation over the source image. */
@@ -164,18 +158,6 @@ const styles = stylex.create({
 		[REDUCED_MOTION]: { transitionDuration: "0.01ms" },
 	},
 	tileCellFilled: { backgroundColor: "rgba(62, 198, 168, 0.5)" },
-	mosaicPreview: {
-		maxWidth: "100%",
-		maxHeight: "70vh",
-		width: "auto",
-		height: "auto",
-		borderRadius: tokens.radius,
-		boxShadow: tokens.shadow,
-		animationName: previewIn,
-		animationDuration: "0.3s",
-		animationTimingFunction: "ease-out",
-		[REDUCED_MOTION]: { animationDuration: "0.01ms" },
-	},
 });
 
 /**
@@ -625,21 +607,7 @@ export function GenerateAndPreview() {
 				</article>
 			)}
 
-			{!isGenerating && mosaicResult && (
-				<div>
-					<h3 {...stylex.props(base.heading, base.h3)}>Preview</h3>
-					<div {...stylex.props(styles.previewContainer)}>
-						<img
-							src={mosaicResult.dataUrl}
-							alt="Generated mosaic preview"
-							{...stylex.props(styles.mosaicPreview)}
-						/>
-					</div>
-					<p {...stylex.props(base.paragraph)}>
-						Dimensions: {mosaicResult.width} × {mosaicResult.height} pixels
-					</p>
-				</div>
-			)}
+			{!isGenerating && mosaicResult && <ExportPanel />}
 		</div>
 	);
 }

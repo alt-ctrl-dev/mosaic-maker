@@ -81,10 +81,8 @@ describe("GenerateAndPreview Mosaic Reveal", () => {
 				generateButton.click();
 			});
 
-			await screen.findByAltText("Generated mosaic preview");
-			expect(
-				screen.getByAltText("Generated mosaic preview"),
-			).toBeInTheDocument();
+			await screen.findByAltText("Generated mosaic");
+			expect(screen.getByAltText("Generated mosaic")).toBeInTheDocument();
 
 			expect(store.get(mosaicResultAtom)).toEqual(mockResult);
 

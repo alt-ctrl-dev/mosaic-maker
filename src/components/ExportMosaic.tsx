@@ -213,10 +213,10 @@ function exportButtonLabel(isExporting: boolean, canShare: boolean): string {
 }
 
 /**
- * Export step that lets the user configure format, quality, and alt text,
- * preview the mosaic, and trigger a file download.
+ * Mosaic preview plus export settings and delivery. Shared between the
+ * export step and the generate step once a mosaic is ready.
  */
-export function ExportMosaic() {
+export function ExportPanel() {
 	const mosaicResult = useAtomValue(mosaicResultAtom);
 	const [exportFormat, setExportFormat] = useAtom(exportFormatAtom);
 	const [exportQuality, setExportQuality] = useAtom(exportQualityAtom);
@@ -230,10 +230,6 @@ export function ExportMosaic() {
 	// Export controls stay hidden while a (re)generation is in flight.
 	const isGenerating = useAtomValue(isGeneratingMosaicAtom);
 	const canShare = supportsWebShare();
-
-	useEffect(() => {
-		trackStepView("export_mosaic");
-	}, []);
 
 	/**
 	 * Share the mosaic via the Web Share API. Returns `false` when the browser
@@ -545,4 +541,13 @@ export function ExportMosaic() {
 			)}
 		</div>
 	);
+}
+
+/** Export step: records the step view and shows the shared export panel. */
+export function ExportMosaic() {
+	useEffect(() => {
+		trackStepView("export_mosaic");
+	}, []);
+
+	return <ExportPanel />;
 }
