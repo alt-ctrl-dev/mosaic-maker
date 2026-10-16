@@ -4,7 +4,7 @@ import { isGeneratingMosaicAtom } from "../atoms/ui-atoms";
 import * as exportEngine from "../engine/export";
 import { WorkflowStep } from "../engine/workflow-state";
 import { renderWithWorkflow } from "../test-utils/workflow";
-import { ExportMosaic } from "./ExportMosaic";
+import { ExportPanel } from "./ExportMosaic";
 
 const validBase64 =
 	"iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAYAAAAfFcSJAAAADUlEQVR42mP8/5+hHgAHggJ/PchI7wAAAABJRU5ErkJggg==";
@@ -17,7 +17,7 @@ const mockMosaicResult = {
 };
 
 const mockState = {
-	currentStep: WorkflowStep.EXPORT_MOSAIC,
+	currentStep: WorkflowStep.GENERATE_AND_PREVIEW,
 	mosaicResult: mockMosaicResult,
 	exportFormat: "png" as const,
 	exportQuality: 0.9,
@@ -41,7 +41,7 @@ function createMockPopupWindow() {
 	};
 }
 
-describe("ExportMosaic", () => {
+describe("ExportPanel", () => {
 	/** Enable the Web Share API surface for tests that exercise sharing. */
 	function enableWebShare() {
 		Object.defineProperty(navigator, "share", {
@@ -82,7 +82,7 @@ describe("ExportMosaic", () => {
 	});
 
 	it("should render export preview when mosaic result is available", () => {
-		renderWithWorkflow(<ExportMosaic />, mockState);
+		renderWithWorkflow(<ExportPanel />, mockState);
 
 		expect(screen.getByText("Preview")).toBeInTheDocument();
 		expect(screen.getByAltText("Generated mosaic")).toBeInTheDocument();
@@ -92,7 +92,7 @@ describe("ExportMosaic", () => {
 	});
 
 	it("hides export features while a mosaic is generating", () => {
-		const { store } = renderWithWorkflow(<ExportMosaic />, mockState);
+		const { store } = renderWithWorkflow(<ExportPanel />, mockState);
 
 		act(() => {
 			store.set(isGeneratingMosaicAtom, true);
@@ -110,7 +110,7 @@ describe("ExportMosaic", () => {
 			.spyOn(exportEngine, "exportMosaic")
 			.mockResolvedValue("data:image/png;base64,exported-image-data");
 
-		renderWithWorkflow(<ExportMosaic />, mockState);
+		renderWithWorkflow(<ExportPanel />, mockState);
 
 		const downloadButton = screen.getByRole("button", { name: "Download" });
 		fireEvent.click(downloadButton);
@@ -133,7 +133,7 @@ describe("ExportMosaic", () => {
 			.spyOn(exportEngine, "exportMosaic")
 			.mockRejectedValue(new Error("Export failed"));
 
-		renderWithWorkflow(<ExportMosaic />, mockState);
+		renderWithWorkflow(<ExportPanel />, mockState);
 
 		const downloadButton = screen.getByRole("button", { name: "Download" });
 		fireEvent.click(downloadButton);
@@ -163,7 +163,7 @@ describe("ExportMosaic", () => {
 			.spyOn(exportEngine, "exportMosaic")
 			.mockResolvedValue(validDataUrl);
 
-		renderWithWorkflow(<ExportMosaic />, mockState);
+		renderWithWorkflow(<ExportPanel />, mockState);
 
 		const downloadButton = screen.getByRole("button", { name: "Download" });
 		fireEvent.click(downloadButton);
@@ -208,7 +208,7 @@ describe("ExportMosaic", () => {
 			.spyOn(exportEngine, "exportMosaic")
 			.mockResolvedValue(validDataUrl);
 
-		renderWithWorkflow(<ExportMosaic />, mockState);
+		renderWithWorkflow(<ExportPanel />, mockState);
 
 		const downloadButton = screen.getByRole("button", { name: "Download" });
 		fireEvent.click(downloadButton);
@@ -240,7 +240,7 @@ describe("ExportMosaic", () => {
 
 		window.open = vi.fn().mockReturnValue(null);
 
-		renderWithWorkflow(<ExportMosaic />, mockState);
+		renderWithWorkflow(<ExportPanel />, mockState);
 
 		fireEvent.click(screen.getByRole("button", { name: "Download" }));
 
@@ -264,7 +264,7 @@ describe("ExportMosaic", () => {
 			.spyOn(exportEngine, "exportMosaic")
 			.mockResolvedValue("data:image/png;base64,!!!not-valid-base64!!!");
 
-		renderWithWorkflow(<ExportMosaic />, mockState);
+		renderWithWorkflow(<ExportPanel />, mockState);
 
 		fireEvent.click(screen.getByRole("button", { name: "Download" }));
 
@@ -296,7 +296,7 @@ describe("ExportMosaic", () => {
 			.spyOn(exportEngine, "exportMosaic")
 			.mockResolvedValue(validDataUrl);
 
-		renderWithWorkflow(<ExportMosaic />, mockState);
+		renderWithWorkflow(<ExportPanel />, mockState);
 
 		fireEvent.click(screen.getByRole("button", { name: "Download" }));
 
@@ -329,7 +329,7 @@ describe("ExportMosaic", () => {
 			.spyOn(exportEngine, "exportMosaic")
 			.mockResolvedValue(validDataUrl);
 
-		renderWithWorkflow(<ExportMosaic />, mockState);
+		renderWithWorkflow(<ExportPanel />, mockState);
 
 		fireEvent.click(screen.getByRole("button", { name: "Download" }));
 
@@ -352,7 +352,7 @@ describe("ExportMosaic", () => {
 		mockNavigatorCanShare.mockReturnValue(true);
 		mockNavigatorShare.mockResolvedValue(undefined);
 
-		renderWithWorkflow(<ExportMosaic />, mockState);
+		renderWithWorkflow(<ExportPanel />, mockState);
 
 		expect(screen.getByRole("button", { name: "Share" })).toBeInTheDocument();
 		expect(
@@ -369,7 +369,7 @@ describe("ExportMosaic", () => {
 			.spyOn(exportEngine, "exportMosaic")
 			.mockResolvedValue(validDataUrl);
 
-		renderWithWorkflow(<ExportMosaic />, mockState);
+		renderWithWorkflow(<ExportPanel />, mockState);
 
 		const shareButton = screen.getByRole("button", { name: "Share" });
 		fireEvent.click(shareButton);
@@ -382,7 +382,7 @@ describe("ExportMosaic", () => {
 	});
 
 	it("should label the single export button Download when Web Share API is not available", () => {
-		renderWithWorkflow(<ExportMosaic />, mockState);
+		renderWithWorkflow(<ExportPanel />, mockState);
 
 		expect(
 			screen.getByRole("button", { name: "Download" }),
@@ -401,7 +401,7 @@ describe("ExportMosaic", () => {
 			.spyOn(exportEngine, "exportMosaic")
 			.mockResolvedValue(validDataUrl);
 
-		renderWithWorkflow(<ExportMosaic />, mockState);
+		renderWithWorkflow(<ExportPanel />, mockState);
 
 		const shareButton = screen.getByRole("button", { name: "Share" });
 		fireEvent.click(shareButton);
@@ -423,7 +423,7 @@ describe("ExportMosaic", () => {
 			.spyOn(exportEngine, "exportMosaic")
 			.mockResolvedValue(validDataUrl);
 
-		renderWithWorkflow(<ExportMosaic />, mockState);
+		renderWithWorkflow(<ExportPanel />, mockState);
 
 		const shareButton = screen.getByRole("button", { name: "Share" });
 		fireEvent.click(shareButton);

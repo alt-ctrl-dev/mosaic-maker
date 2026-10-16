@@ -118,7 +118,6 @@ export enum WorkflowStep {
 	PICK_TILE_SIZE,
 	PICK_TILES,
 	GENERATE_AND_PREVIEW,
-	EXPORT_MOSAIC,
 }
 
 /**

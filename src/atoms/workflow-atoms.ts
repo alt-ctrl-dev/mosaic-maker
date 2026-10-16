@@ -27,7 +27,6 @@ const WORKFLOW_STEP_NAMES = [
 	"pick_tile_size",
 	"pick_tiles",
 	"generate_and_preview",
-	"export_mosaic",
 ] as const;
 
 /** Count of workflow steps derived from the enum's string-key members. */
@@ -199,17 +198,12 @@ export const goToStepAtom = atom(null, (get, set, step: number) => {
 
 /**
  * Discard a generated mosaic whose inputs no longer match: the stored
- * preview would be stale, so the workflow falls back to the generate
- * step and must regenerate.
+ * preview would be stale, so the workflow must regenerate.
  */
 const invalidateGeneratedMosaicAtom = atom(null, (get, set) => {
 	if (get(mosaicResultAtom) === null) return;
 	set(mosaicResultAtom, null);
 	set(parametersChangedAfterGenerationAtom, true);
-	set(
-		furthestCompletedStepAtom,
-		Math.min(get(furthestCompletedStepAtom), WorkflowStep.GENERATE_AND_PREVIEW),
-	);
 });
 
 /** Select the mosaic mode; changing it resets the tessera collection. */
@@ -338,7 +332,7 @@ export const acceptSupplementationAtom = atom(null, async (get, set) => {
 	set(invalidateGeneratedMosaicAtom);
 });
 
-/** Store a finished mosaic and unlock the export step. */
+/** Store a finished mosaic; the export panel appears on the generate step. */
 export const completeMosaicAtom = atom(
 	null,
 	(get, set, mosaicResult: MosaicResult) => {
@@ -346,7 +340,10 @@ export const completeMosaicAtom = atom(
 		set(parametersChangedAfterGenerationAtom, false);
 		set(
 			furthestCompletedStepAtom,
-			Math.max(get(furthestCompletedStepAtom), WorkflowStep.EXPORT_MOSAIC),
+			Math.max(
+				get(furthestCompletedStepAtom),
+				WorkflowStep.GENERATE_AND_PREVIEW,
+			),
 		);
 	},
 );

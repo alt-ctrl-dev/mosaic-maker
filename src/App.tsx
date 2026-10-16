@@ -16,7 +16,6 @@ import { AppFooter } from "./components/AppFooter";
 import { BrickColorPicker } from "./components/BrickColorPicker";
 import { Dialog } from "./components/Dialog";
 import { ErrorBoundary } from "./components/ErrorBoundary";
-import { ExportMosaic } from "./components/ExportMosaic";
 import { GenerateAndPreview } from "./components/GenerateAndPreview";
 import { ModeSelection } from "./components/ModeSelection";
 import { PickTiles } from "./components/PickTiles";
@@ -37,7 +36,6 @@ const stages = [
 	"Pick tile size",
 	"Pick tiles",
 	"Generate and preview",
-	"Export mosaic",
 ] as const;
 
 /** Spinner keyframe for the step-content entrance. Local because StyleX
@@ -263,8 +261,6 @@ export function WorkflowApp() {
 			}
 			case WorkflowStepEnum.GENERATE_AND_PREVIEW:
 				return <GenerateAndPreview />;
-			case WorkflowStepEnum.EXPORT_MOSAIC:
-				return <ExportMosaic />;
 			default:
 				return <div>Step {stepIndex + 1} content coming soon</div>;
 		}

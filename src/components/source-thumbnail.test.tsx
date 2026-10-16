@@ -97,12 +97,6 @@ describe("Source Thumbnail Persistence", () => {
 		expect(queryBarThumbnail()).toBeInTheDocument();
 	});
 
-	it("shows thumbnail on export step", () => {
-		renderWithState(makeAdjustedState(WorkflowStep.EXPORT_MOSAIC));
-
-		expect(queryBarThumbnail()).toBeInTheDocument();
-	});
-
 	it("shows the committed tile size once the size step is complete", () => {
 		renderWithState({
 			...makeAdjustedState(WorkflowStep.PICK_TILES),

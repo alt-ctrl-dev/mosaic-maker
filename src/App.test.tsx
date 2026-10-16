@@ -32,7 +32,7 @@ describe("Mosaic Maker workflow", () => {
 				(item) =>
 					within(item)
 						.getByText(
-							/^(Choose source image|Pick tile size|Pick tiles|Generate and preview|Export mosaic)$/,
+							/^(Choose source image|Pick tile size|Pick tiles|Generate and preview)$/,
 						)
 						.textContent?.trim() ?? "",
 			);
@@ -42,7 +42,6 @@ describe("Mosaic Maker workflow", () => {
 			"Pick tile size",
 			"Pick tiles",
 			"Generate and preview",
-			"Export mosaic",
 		]);
 	});
 

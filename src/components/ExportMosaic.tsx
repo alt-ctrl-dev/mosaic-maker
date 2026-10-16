@@ -1,6 +1,6 @@
 import * as stylex from "@stylexjs/stylex";
 import { useAtom, useAtomValue } from "jotai";
-import { useEffect, useState } from "react";
+import { useState } from "react";
 import {
 	exportErrorAtom,
 	isExportingAtom,
@@ -17,7 +17,7 @@ import { exportMosaic } from "../engine/export";
 import type { MosaicResult } from "../engine/mosaic-engine";
 import { base } from "../styles/base.stylex";
 import { tokens } from "../styles/tokens.stylex";
-import { trackError, trackEvent, trackStepView } from "../telemetry";
+import { trackError, trackEvent } from "../telemetry";
 import { ActionButton } from "./ActionButton";
 
 const styles = stylex.create({
@@ -213,8 +213,8 @@ function exportButtonLabel(isExporting: boolean, canShare: boolean): string {
 }
 
 /**
- * Mosaic preview plus export settings and delivery. Shared between the
- * export step and the generate step once a mosaic is ready.
+ * Mosaic preview plus export settings and delivery. Shown on the
+ * generate step once a mosaic is ready.
  */
 export function ExportPanel() {
 	const mosaicResult = useAtomValue(mosaicResultAtom);
@@ -541,13 +541,4 @@ export function ExportPanel() {
 			)}
 		</div>
 	);
-}
-
-/** Export step: records the step view and shows the shared export panel. */
-export function ExportMosaic() {
-	useEffect(() => {
-		trackStepView("export_mosaic");
-	}, []);
-
-	return <ExportPanel />;
 }

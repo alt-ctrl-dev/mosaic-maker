@@ -18,7 +18,6 @@ const EXPECTED_STEP_TITLES = [
 	"Pick tile size",
 	"Pick tiles",
 	"Generate and preview",
-	"Export mosaic",
 ] as const;
 
 /**
@@ -44,7 +43,7 @@ describe("workflow navigation", () => {
 		const labels = stepButtons.map((button) => {
 			const title = within(button)
 				.getByText(
-					/^(Choose source image|Pick tile size|Pick tiles|Generate and preview|Export mosaic)$/,
+					/^(Choose source image|Pick tile size|Pick tiles|Generate and preview)$/,
 				)
 				.textContent?.trim();
 			return title;

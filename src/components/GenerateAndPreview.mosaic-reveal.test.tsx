@@ -3,7 +3,6 @@ import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 import {
 	currentStepAtom,
 	furthestCompletedStepAtom,
-	goToStepAtom,
 	mosaicResultAtom,
 } from "../atoms/workflow-atoms";
 import * as mosaicEngine from "../engine/mosaic-engine";
@@ -87,26 +86,15 @@ describe("GenerateAndPreview Mosaic Reveal", () => {
 			expect(store.get(mosaicResultAtom)).toEqual(mockResult);
 
 			// The atoms must keep currentStep at GENERATE_AND_PREVIEW
-			// and advance only furthestCompletedStep to EXPORT_MOSAIC.
+			// the export panel appears on this same step.
 			expect(store.get(currentStepAtom)).toBe(
 				WorkflowStep.GENERATE_AND_PREVIEW,
 			);
 			expect(store.get(furthestCompletedStepAtom)).toBe(
-				WorkflowStep.EXPORT_MOSAIC,
+				WorkflowStep.GENERATE_AND_PREVIEW,
 			);
 		} finally {
 			window.Worker = originalWorker;
 		}
-	});
-
-	it("allows explicit continue action to advance to export after generation", () => {
-		const { store } = renderWithWorkflow(<GenerateAndPreview />, {
-			...mockState,
-			furthestCompletedStep: WorkflowStep.EXPORT_MOSAIC,
-		});
-
-		store.set(goToStepAtom, WorkflowStep.EXPORT_MOSAIC);
-
-		expect(store.get(currentStepAtom)).toBe(WorkflowStep.EXPORT_MOSAIC);
 	});
 });

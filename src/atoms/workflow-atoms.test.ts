@@ -219,7 +219,7 @@ describe("workflow atoms", () => {
 		expect(store.get(mosaicResultAtom)).toEqual(mosaicResult);
 		expect(store.get(currentStepAtom)).toBe(WorkflowStep.GENERATE_AND_PREVIEW);
 		expect(store.get(furthestCompletedStepAtom)).toBe(
-			WorkflowStep.EXPORT_MOSAIC,
+			WorkflowStep.GENERATE_AND_PREVIEW,
 		);
 	});
 
