@@ -50,7 +50,7 @@ function renderWithState(state: Partial<WorkflowState>) {
  * switcher, rather than the source-image preview in step content.
  */
 function queryThumbnailBar(): HTMLDivElement | null {
-	return document.querySelector('[data-testid="source-thumbnail-bar"]');
+	return document.querySelector('[data-testid="selection-summary"]');
 }
 
 function queryBarThumbnail(): HTMLImageElement | null {
@@ -101,6 +101,32 @@ describe("Source Thumbnail Persistence", () => {
 		renderWithState(makeAdjustedState(WorkflowStep.EXPORT_MOSAIC));
 
 		expect(queryBarThumbnail()).toBeInTheDocument();
+	});
+
+	it("shows the committed tile size once the size step is complete", () => {
+		renderWithState({
+			...makeAdjustedState(WorkflowStep.PICK_TILES),
+			requestedTesseraSize: 16,
+		});
+
+		const bar = queryThumbnailBar();
+		expect(bar).not.toBeNull();
+		if (!bar) throw new Error("summary bar not found");
+		expect(within(bar).getByText("Tile size: 16 × 16 px")).toBeInTheDocument();
+	});
+
+	it("does not show the tile size on the size step itself", () => {
+		renderWithState({
+			...makeAdjustedState(WorkflowStep.PICK_TILE_SIZE),
+			requestedTesseraSize: 16,
+		});
+
+		const bar = queryThumbnailBar();
+		expect(bar).not.toBeNull();
+		if (!bar) throw new Error("summary bar not found");
+		expect(
+			within(bar).queryByText("Tile size: 16 × 16 px"),
+		).not.toBeInTheDocument();
 	});
 
 	it("returns to source selection when the change button is clicked", () => {

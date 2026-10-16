@@ -9,7 +9,6 @@ import {
 	goToStepAtom,
 	modeAtom,
 	rejectedTesseraCountAtom,
-	sourceImageAtom,
 	tesseraeAtom,
 	validTesseraCountAtom,
 } from "./atoms/workflow-atoms";
@@ -22,11 +21,12 @@ import { ExportMosaic } from "./components/ExportMosaic";
 import { GenerateAndPreview } from "./components/GenerateAndPreview";
 import { GeneratedTesserae } from "./components/GeneratedTesserae";
 import { ModeSelection } from "./components/ModeSelection";
+import { SelectionSummary } from "./components/SelectionSummary";
 import { SourceImageSelection } from "./components/SourceImageSelection";
 import { TesseraReview } from "./components/TesseraReview";
 import { TesseraSizeSelection } from "./components/TesseraSizeSelection";
-import { prefersReducedMotion } from "./engine/accessibility-utils";
 import { TesseraUpload } from "./components/TesseraUpload";
+import { prefersReducedMotion } from "./engine/accessibility-utils";
 import { WorkflowStep as WorkflowStepEnum } from "./engine/workflow-state";
 import { base } from "./styles/base.stylex";
 import { tokens } from "./styles/tokens.stylex";
@@ -80,39 +80,6 @@ const styles = stylex.create({
 		paddingInline: "16px",
 		marginInline: "auto",
 		"@media (min-width: 80rem)": { maxWidth: "80rem" },
-	},
-	sourceThumbnailHeader: {
-		boxSizing: "border-box",
-		display: "flex",
-		alignItems: "center",
-		justifyContent: "space-between",
-		width: "100%",
-		maxWidth: "48rem",
-		marginInline: "auto",
-		marginTop: "1rem",
-		marginBottom: "0.5rem",
-		padding: "1rem",
-		borderTopWidth: "1px",
-		borderTopStyle: "solid",
-		borderTopColor: tokens.border,
-	},
-	sourceThumbnailGroup: {
-		display: "flex",
-		alignItems: "center",
-		gap: "1rem",
-	},
-	sourceThumbnailImage: {
-		width: "40px",
-		height: "40px",
-		objectFit: "cover",
-		borderWidth: "1px",
-		borderStyle: "solid",
-		borderColor: tokens.border,
-	},
-	sourceThumbnailDimensions: {
-		fontSize: "0.85rem",
-		color: tokens.muted,
-		fontVariantNumeric: "tabular-nums",
 	},
 	header: {
 		display: "flex",
@@ -237,21 +204,6 @@ const styles = stylex.create({
 		fontWeight: 500,
 		"@media (max-width: 900px)": { fontSize: "1rem" },
 	},
-	thumbnailChangeButton: {
-		backgroundColor: "transparent",
-		borderWidth: "1px",
-		borderStyle: "solid",
-		borderColor: tokens.border,
-		borderRadius: "999px",
-		color: tokens.muted,
-		fontSize: "0.75rem",
-		padding: "0.2rem 0.6rem",
-		cursor: "pointer",
-		":hover": {
-			color: tokens.text,
-			borderColor: tokens.primary,
-		},
-	},
 	canvas: { width: "100%", maxWidth: "48rem", marginInline: "auto" },
 	content: { flex: 1, viewTransitionName: "step-content" },
 	pickTiles: { display: "flex", flexDirection: "column", gap: "2rem" },
@@ -302,7 +254,6 @@ export function App() {
 export function WorkflowApp() {
 	const currentStep = useAtomValue(currentStepAtom);
 	const furthestCompletedStep = useAtomValue(furthestCompletedStepAtom);
-	const sourceImage = useAtomValue(sourceImageAtom);
 	const mode = useAtomValue(modeAtom);
 	const tesserae = useAtomValue(tesseraeAtom);
 	const validTesseraCount = useAtomValue(validTesseraCountAtom);
@@ -398,35 +349,13 @@ export function WorkflowApp() {
 				<ModeSelection />
 			</div>
 
-			{sourceImage && currentStep > WorkflowStepEnum.CHOOSE_SOURCE_IMAGE && (
-				<div
-					{...stylex.props(styles.sourceThumbnailHeader)}
-					data-testid="source-thumbnail-bar"
-				>
-					<div {...stylex.props(styles.sourceThumbnailGroup)}>
-						<img
-							src={sourceImage.url}
-							alt="Source"
-							{...stylex.props(styles.sourceThumbnailImage)}
-						/>
-						<span {...stylex.props(styles.sourceThumbnailDimensions)}>
-							{sourceImage.width} × {sourceImage.height} pixels
-						</span>
-					</div>
-					<button
-						type="button"
-						onClick={() =>
-							navigateWithTransition(() =>
-								goToStep(WorkflowStepEnum.CHOOSE_SOURCE_IMAGE),
-							)
-						}
-						aria-label="Change source image"
-						{...stylex.props(styles.thumbnailChangeButton, base.focusOutline)}
-					>
-						Change image
-					</button>
-				</div>
-			)}
+			<SelectionSummary
+				onChangeSource={() =>
+					navigateWithTransition(() =>
+						goToStep(WorkflowStepEnum.CHOOSE_SOURCE_IMAGE),
+					)
+				}
+			/>
 
 			<ErrorBoundary>
 				<main id="main-content" {...stylex.props(styles.workflow)}>
