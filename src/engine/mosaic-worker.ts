@@ -382,7 +382,7 @@ async function generateMosaicWithProgress(
 
 	self.postMessage({
 		type: "progress",
-		percent: 10,
+		percent: 1,
 		message: "Loading source image...",
 	});
 	const sourceCanvas = await createCanvasFromSource(sourceImage);
@@ -396,7 +396,7 @@ async function generateMosaicWithProgress(
 
 	self.postMessage({
 		type: "progress",
-		percent: 30,
+		percent: 10,
 		message: "Processing tiles...",
 	});
 	const processedTesserae: ProcessedTessera[] = [];
@@ -410,7 +410,7 @@ async function generateMosaicWithProgress(
 		processedTesserae.push({ info: tessera, canvas, colorGrid });
 
 		if (i % 5 === 0) {
-			const progress = 30 + (i / validTesserae.length) * 30;
+			const progress = 10 + (i / validTesserae.length) * 30;
 			self.postMessage({
 				type: "progress",
 				percent: Math.round(progress),
@@ -423,7 +423,7 @@ async function generateMosaicWithProgress(
 
 	self.postMessage({
 		type: "progress",
-		percent: 70,
+		percent: 50,
 		message: "Generating mosaic...",
 	});
 	const cellGrids = await cellGridsPromise;
