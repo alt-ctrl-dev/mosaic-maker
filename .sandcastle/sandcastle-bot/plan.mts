@@ -1,7 +1,7 @@
 import * as sandcastle from "@ai-hero/sandcastle";
 import { z } from "zod";
 import type { Agent, Issue } from "../shared/types.ts";
-import type { DockerSandbox } from "../shared/docker.mts";
+import type { IsolatedDockerSandbox } from "../shared/isolated-docker.mts";
 
 const planSchema = z.object({
   issues: z.array(
@@ -9,9 +9,14 @@ const planSchema = z.object({
   ),
 });
 
-
-export const createPlanAgent = (dockerSandbox: DockerSandbox): Agent<Issue | never> => {
-const agentName = "planner"
+/**
+ * Creates a planning agent that reads the open issue list, builds a dependency
+ * graph, and selects the next unblocked issue to work on.
+ */
+export const createPlanAgent = (
+  sandbox: IsolatedDockerSandbox,
+): Agent<Issue | never> => {
+  const agentName = "planner";
   const planWork = async (): Promise<Issue | never> => {
     // -------------------------------------------------------------------------
     // Phase: Plan
@@ -23,7 +28,7 @@ const agentName = "planner"
     // It outputs a <plan> JSON block — Output.object parses and validates it.
     // -------------------------------------------------------------------------
     const plan = await sandcastle.run({
-      sandbox: dockerSandbox,
+      sandbox,
       name: agentName,
       // One iteration is enough: the planner just needs to read and reason,
       // not write code. (Structured output requires maxIterations: 1.)
@@ -44,11 +49,9 @@ const agentName = "planner"
       );
     }
     return plan.output.issues[0];
-  }
+  };
 
   return {
-    run: planWork
-  }
-
-}
-
+    run: planWork,
+  };
+};
