@@ -264,7 +264,7 @@ async function generateMosaicCanvas(
 			if (isCancelled) return resultCanvas;
 
 			if (cellCount % Math.max(1, Math.floor(totalCells / 20)) === 0) {
-				const progressPercent = 70 + Math.round((cellCount / totalCells) * 25);
+				const progressPercent = 50 + Math.round((cellCount / totalCells) * 45);
 				self.postMessage({
 					type: "progress",
 					percent: progressPercent,
