@@ -2,12 +2,17 @@ import { runDeviceCapacityPreflight } from "./device-capacity-preflight";
 import {
 	ANDROID_READBACK_FAILURE,
 	BLEND_SOURCE_ALPHA,
-	COLOR_GRID_SIZE,
 	type ColorGrid,
-	type Oklab,
-	rgbToOklab,
 	selectTessera as sharedSelectTessera,
 } from "./mosaic-shared";
+import SourceSamplerWorker from "./source-sampler-worker.ts?worker";
+import {
+	PACKED_GRID_LENGTH,
+	sampleCellGrids,
+	sampleColorGrid,
+	splitIntoBands,
+	unpackColorGrid,
+} from "./source-sampling";
 import type { MosaicMode } from "./workflow-state";
 
 /** Source image data received from the main thread. */
@@ -129,64 +134,6 @@ function selectTessera(
 	);
 }
 
-/** Downsample a region of a canvas to a 3×3 OKLab color grid. */
-function sampleColorGrid(
-	source: OffscreenCanvas,
-	offsetX: number,
-	offsetY: number,
-	regionWidth: number,
-	regionHeight: number,
-	reusableCtx?: OffscreenCanvasRenderingContext2D,
-): ColorGrid {
-	let tempCtx: OffscreenCanvasRenderingContext2D;
-
-	if (reusableCtx) {
-		tempCtx = reusableCtx;
-		tempCtx.clearRect(0, 0, COLOR_GRID_SIZE, COLOR_GRID_SIZE);
-	} else {
-		const tempCanvas = createCanvas(COLOR_GRID_SIZE, COLOR_GRID_SIZE);
-		const ctx = tempCanvas.getContext("2d");
-		if (!ctx) {
-			throw new Error("Failed to get temporary canvas context");
-		}
-		tempCtx = ctx;
-	}
-
-	tempCtx.drawImage(
-		source,
-		offsetX,
-		offsetY,
-		regionWidth,
-		regionHeight,
-		0,
-		0,
-		COLOR_GRID_SIZE,
-		COLOR_GRID_SIZE,
-	);
-
-	const imageData = tempCtx.getImageData(
-		0,
-		0,
-		COLOR_GRID_SIZE,
-		COLOR_GRID_SIZE,
-	);
-	const { data } = imageData;
-
-	const colors: Oklab[][] = [];
-	for (let rowIndex = 0; rowIndex < COLOR_GRID_SIZE; rowIndex++) {
-		const row: Oklab[] = [];
-		for (let colIndex = 0; colIndex < COLOR_GRID_SIZE; colIndex++) {
-			const idx = (rowIndex * COLOR_GRID_SIZE + colIndex) * 4;
-			row.push(
-				rgbToOklab({ r: data[idx], g: data[idx + 1], b: data[idx + 2] }),
-			);
-		}
-		colors.push(row);
-	}
-
-	return { colors };
-}
-
 async function renderTessera(
 	tessera: WorkerTessera,
 	tesseraSize: number,
@@ -228,9 +175,67 @@ async function createCanvasFromSource(
 	return canvas;
 }
 
+/** Sample one band of the source in its own worker. */
+function sampleBandInWorker(
+	band: ImageBitmap,
+	tesseraSize: number,
+): Promise<Float64Array> {
+	return new Promise((resolve, reject) => {
+		const worker = new SourceSamplerWorker();
+		worker.onmessage = (event) => {
+			worker.terminate();
+			if (event.data.type === "result") resolve(event.data.grids);
+			else reject(new Error(event.data.message));
+		};
+		worker.onerror = (event) => {
+			worker.terminate();
+			reject(new Error(event.message || "Source sampler worker failed"));
+		};
+		worker.postMessage({ band, tesseraSize }, [band]);
+	});
+}
+
+/**
+ * Sample every source cell's color grid, row-major, split across a pool of
+ * worker threads by horizontal band. Falls back to sampling in this worker
+ * when nested workers are unavailable.
+ */
+async function sampleSourceInParallel(
+	sourceCanvas: OffscreenCanvas,
+	tesseraSize: number,
+): Promise<Float64Array> {
+	if (typeof Worker === "undefined") {
+		return sampleCellGrids(sourceCanvas, tesseraSize);
+	}
+
+	// Leave one core for this worker, which processes tesserae meanwhile.
+	const poolSize = Math.max(1, (navigator.hardwareConcurrency || 4) - 1);
+	const bands = splitIntoBands(sourceCanvas.height, tesseraSize, poolSize);
+	const results = await Promise.all(
+		bands.map(async ({ y, height }) =>
+			sampleBandInWorker(
+				await createImageBitmap(sourceCanvas, 0, y, sourceCanvas.width, height),
+				tesseraSize,
+			),
+		),
+	);
+
+	const cols = Math.ceil(sourceCanvas.width / tesseraSize);
+	const packed = new Float64Array(
+		cols * Math.ceil(sourceCanvas.height / tesseraSize) * PACKED_GRID_LENGTH,
+	);
+	let offset = 0;
+	for (const grids of results) {
+		packed.set(grids, offset);
+		offset += grids.length;
+	}
+	return packed;
+}
+
 /** Fill the result canvas cell by cell, reporting progress. */
 async function generateMosaicCanvas(
 	sourceCanvas: OffscreenCanvas,
+	cellGrids: Float64Array,
 	processedTesserae: ProcessedTessera[],
 	tesseraSize: number,
 	mode: MosaicMode,
@@ -248,13 +253,6 @@ async function generateMosaicCanvas(
 		tesseraGrid[row] = new Array(gridCols).fill(null);
 	}
 
-	// Reuse a single temporary canvas for color sampling to reduce allocations
-	const tempCanvas = createCanvas(COLOR_GRID_SIZE, COLOR_GRID_SIZE);
-	const tempCtx = tempCanvas.getContext("2d");
-	if (!tempCtx) {
-		throw new Error("Failed to get temporary canvas context");
-	}
-
 	let cellCount = 0;
 	const totalCells = gridRows * gridCols;
 
@@ -266,7 +264,7 @@ async function generateMosaicCanvas(
 			if (isCancelled) return resultCanvas;
 
 			if (cellCount % Math.max(1, Math.floor(totalCells / 20)) === 0) {
-				const progressPercent = 70 + Math.round((cellCount / totalCells) * 25);
+				const progressPercent = 50 + Math.round((cellCount / totalCells) * 45);
 				self.postMessage({
 					type: "progress",
 					percent: progressPercent,
@@ -275,14 +273,7 @@ async function generateMosaicCanvas(
 			}
 			cellCount++;
 
-			const cellGrid = sampleColorGrid(
-				sourceCanvas,
-				x,
-				y,
-				tesseraSize,
-				tesseraSize,
-				tempCtx,
-			);
+			const cellGrid = unpackColorGrid(cellGrids, gridY * gridCols + gridX);
 
 			const bestMatchIndex = selectTessera(
 				cellGrid,
@@ -391,16 +382,21 @@ async function generateMosaicWithProgress(
 
 	self.postMessage({
 		type: "progress",
-		percent: 10,
+		percent: 1,
 		message: "Loading source image...",
 	});
 	const sourceCanvas = await createCanvasFromSource(sourceImage);
 
 	if (isCancelled) return { dataUrl: "", width: 0, height: 0 };
 
+	// Sample source cells in parallel workers while tesserae are processed below.
+	const cellGridsPromise = sampleSourceInParallel(sourceCanvas, tesseraSize);
+	// Avoid an unhandled rejection if tessera processing fails first.
+	cellGridsPromise.catch(() => {});
+
 	self.postMessage({
 		type: "progress",
-		percent: 30,
+		percent: 10,
 		message: "Processing tiles...",
 	});
 	const processedTesserae: ProcessedTessera[] = [];
@@ -414,7 +410,7 @@ async function generateMosaicWithProgress(
 		processedTesserae.push({ info: tessera, canvas, colorGrid });
 
 		if (i % 5 === 0) {
-			const progress = 30 + (i / validTesserae.length) * 30;
+			const progress = 10 + (i / validTesserae.length) * 30;
 			self.postMessage({
 				type: "progress",
 				percent: Math.round(progress),
@@ -427,11 +423,16 @@ async function generateMosaicWithProgress(
 
 	self.postMessage({
 		type: "progress",
-		percent: 70,
+		percent: 50,
 		message: "Generating mosaic...",
 	});
+	const cellGrids = await cellGridsPromise;
+
+	if (isCancelled) return { dataUrl: "", width: 0, height: 0 };
+
 	const resultCanvas = await generateMosaicCanvas(
 		sourceCanvas,
+		cellGrids,
 		processedTesserae,
 		tesseraSize,
 		mode,
